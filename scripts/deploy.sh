@@ -9,6 +9,7 @@ IMAGE_NAME="${IMAGE_NAME:-localhost/polish-github-rank:latest}"
 rsync -az --delete \
   --exclude '.env.local' \
   --exclude '.git/' \
+  --exclude 'AGENTS.md' \
   --exclude 'coverage/' \
   --exclude 'db/*.sqlite3' \
   --exclude 'db/*.sqlite3-*' \
@@ -18,4 +19,3 @@ rsync -az --delete \
   ./ "${REMOTE_HOST}:${REMOTE_DIR}/"
 
 ssh "${REMOTE_HOST}" "cd ${REMOTE_DIR} && podman build -t ${IMAGE_NAME} . && sudo systemctl restart ${SERVICE_NAME} && sudo systemctl status ${SERVICE_NAME} --no-pager"
-
