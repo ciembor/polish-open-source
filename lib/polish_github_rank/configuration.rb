@@ -3,7 +3,7 @@
 module PolishGithubRank
   class Configuration
     DEFAULT_DATABASE_PATH = "db/polish_github_rank.sqlite3"
-    DEFAULT_REQUESTS_PER_MINUTE = 45
+    DEFAULT_REQUESTS_PER_MINUTE = 25
 
     def self.load(path = PolishGithubRank.root.join(".env.local"))
       new(path).load
@@ -31,6 +31,10 @@ module PolishGithubRank
       ENV.fetch("REQUESTS_PER_MINUTE", DEFAULT_REQUESTS_PER_MINUTE).to_i
     end
 
+    def github_base_url
+      ENV.fetch("GITHUB_BASE_URL", "https://api.github.com")
+    end
+
     private
 
     attr_reader :env_path
@@ -45,4 +49,3 @@ module PolishGithubRank
     end
   end
 end
-

@@ -15,9 +15,15 @@ module PolishGithubRank
         period = MonthPeriod.parse(month_argument || MonthPeriod.previous_month.key)
         configuration = Configuration.load
         store = Infrastructure::SQLiteStore.new(configuration.database_path).migrate!
-        run_id = store.create_run(period)
-        store.finish_run(run_id)
-        puts "Prepared monthly ranking run for #{period.key}"
+        client = Infrastructure::GitHubClient.new(
+          token: configuration.github_token,
+          base_url: configuration.github_base_url,
+          requests_per_minute: configuration.requests_per_minute
+        )
+        github = Infrastructure::GitHubGateway.new(client)
+
+        MonthlySnapshotJob.new(store: store, github: github).call(period)
+        puts "Finished monthly ranking run for #{period.key}"
       end
 
       private
@@ -31,4 +37,3 @@ module PolishGithubRank
     end
   end
 end
-
