@@ -6,7 +6,7 @@
     <meta name="robots" content="index,follow">
     <meta name="description" content="<%= h @description %>">
     <link rel="canonical" href="<%= h canonical_url %>">
-    <link rel="stylesheet" href="/css/application.css">
+    <link rel="stylesheet" href="<%= h app_path('/css/application.css') %>">
     <title><%= h @title %></title>
     <script type="application/ld+json">
       <%= structured_data %>
@@ -15,11 +15,11 @@
   <body>
     <header class="site-header">
       <div class="site-header__inner">
-        <a class="brand" href="/">Polish GitHub Rank</a>
+        <a class="brand" href="<%= h app_path('/') %>">Polish GitHub Rank</a>
         <nav class="nav" aria-label="Rankingi lokalizacji">
           <% scopes.each do |scope| %>
             <% href = scope.fetch(:slug) == "poland" ? "/" : city_path(scope.fetch(:slug)) %>
-            <a class="nav__link" href="<%= h href %>"><%= h scope.fetch(:name) %></a>
+            <a class="nav__link" href="<%= h app_path(href) %>"><%= h scope.fetch(:name) %></a>
           <% end %>
         </nav>
       </div>
@@ -34,4 +34,3 @@
     </footer>
   </body>
 </html>
-

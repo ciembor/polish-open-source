@@ -15,6 +15,7 @@ Style/Documentation:
 Metrics/BlockLength:
   Exclude:
     - "spec/**/*"
+    - "lib/polish_github_rank/web/app.rb"
 
 Metrics/AbcSize:
   Max: 30
