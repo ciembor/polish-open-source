@@ -9,10 +9,10 @@
 - [x] Przygotować schemat SQLite i zapis miesięcznych snapshotów użytkowników, repozytoriów oraz kandydatów do synchronizacji.
 - [x] Dodać adapter GitHub API z odstępami między requestami, obsługą limitów, retry, backoffem i checkpointami joba.
 - [x] Dodać miesięczny job pobierania danych i idempotentne wznawianie.
+- [x] Dodać rankingi Polski i miast: top użytkownicy, trending użytkownicy, aktywni użytkownicy, top repozytoria i trending repozytoria.
+- [x] Zbudować semantyczne widoki HTML5 z dobrym SEO.
 
 ## In progress
 
-- [ ] Dodać rankingi Polski i miast: top użytkownicy, trending użytkownicy, aktywni użytkownicy, top repozytoria i trending repozytoria.
-- [ ] Zbudować semantyczne widoki HTML5 z dobrym SEO.
 - [ ] Dodać RSpec, SimpleCov z wymaganym 100% coverage, RuboCop, Reek i pre-commit.
 - [ ] Uruchomić pełną jakość lokalnie i uzupełnić dokumentację uruchomienia.

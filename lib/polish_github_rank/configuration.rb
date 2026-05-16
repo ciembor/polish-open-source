@@ -35,6 +35,10 @@ module PolishGithubRank
       ENV.fetch("GITHUB_BASE_URL", "https://api.github.com")
     end
 
+    def public_base_url
+      ENV.fetch("BASE_URL", "http://localhost:9292")
+    end
+
     private
 
     attr_reader :env_path
