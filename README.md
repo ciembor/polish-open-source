@@ -87,10 +87,9 @@ The app is deployed behind Nginx at `https://maciej-ciemborowicz.eu/polish-githu
 - [deploy/polish-github-rank-monthly.service](deploy/polish-github-rank-monthly.service)
 - [deploy/polish-github-rank-monthly.timer](deploy/polish-github-rank-monthly.timer)
 
-GitHub Actions runs quality checks and then calls [scripts/deploy.sh](scripts/deploy.sh). Required repository secrets:
+GitHub Actions runs quality checks and then calls [scripts/deploy.sh](scripts/deploy.sh). Required repository secret:
 
-- `DEPLOY_HOST`: SSH host, currently `maciej-ciemborowicz.eu`.
-- `DEPLOY_KEY`: private SSH key accepted for `ciembor@DEPLOY_HOST`.
+- `DEPLOY_KEY`: private SSH key accepted for `ciembor@maciej-ciemborowicz.eu`.
 
 ## Quality
 

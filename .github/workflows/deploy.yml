@@ -25,6 +25,8 @@ jobs:
   deploy:
     needs: quality
     runs-on: ubuntu-latest
+    env:
+      DEPLOY_HOST: maciej-ciemborowicz.eu
 
     steps:
       - name: Checkout
@@ -33,14 +35,13 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          printf "%s" "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+          printf "%s" "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${DEPLOY_HOST}" >> ~/.ssh/known_hosts
         shell: bash
 
       - name: Deploy
         env:
-          REMOTE_HOST: ciembor@${{ secrets.DEPLOY_HOST }}
+          REMOTE_HOST: ciembor@${{ env.DEPLOY_HOST }}
         run: scripts/deploy.sh
         shell: bash
-
