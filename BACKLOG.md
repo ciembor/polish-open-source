@@ -15,7 +15,11 @@
 - [x] Uruchomić pełną jakość lokalnie i uzupełnić dokumentację uruchomienia.
 - [x] Dodać obsługę działania pod `/polish-github-rank`.
 - [x] Dodać Podman/systemd/Nginx artefakty deployu i GitHub Actions workflow.
+- [x] Przygotować serwer: katalog aplikacji, `.env.local`, Nginx proxy, systemd service i miesięczny timer.
+- [x] Wdrożyć aplikację na `https://maciej-ciemborowicz.eu/polish-github-rank` i zweryfikować `/healthz`.
+- [x] Przygotować osobny klucz SSH dla GitHub Actions i dodać jego publiczną część do `authorized_keys`.
 
-## In progress
+## Blocked
 
-Brak aktywnych zadań.
+- [ ] Ustawić sekret repozytorium `DEPLOY_KEY`; lokalne `gh auth` ma nieważny token, więc nie mogę zrobić tego automatycznie z tej sesji.
+- [ ] Po ustawieniu sekretu wypchnąć aktualny HEAD na `master`, żeby workflow przejął kolejne deploye.
