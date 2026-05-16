@@ -27,6 +27,7 @@ RSpec.describe PolishGithubRank::Configuration do
     expect(configuration.requests_per_minute).to eq(33)
     expect(configuration.github_base_url).to eq('https://github.test')
     expect(configuration.public_base_url).to eq('https://rank.test')
+    expect(configuration.app_base_path).to eq('')
   end
 
   it 'uses stable defaults without an env file' do
@@ -36,5 +37,13 @@ RSpec.describe PolishGithubRank::Configuration do
     expect(configuration.requests_per_minute).to eq(25)
     expect(configuration.github_base_url).to eq('https://api.github.com')
     expect(configuration.public_base_url).to eq('http://localhost:9292')
+    expect(configuration.app_base_path).to eq('')
+  end
+
+  it 'normalizes a configured base path' do
+    ENV['APP_BASE_PATH'] = '/polish-github-rank/'
+    configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
+
+    expect(configuration.app_base_path).to eq('/polish-github-rank')
   end
 end

@@ -25,8 +25,12 @@ module PolishGithubRank
           "/locations/#{slug}"
         end
 
+        def app_path(path)
+          "#{configuration.app_base_path}#{path}"
+        end
+
         def canonical_url
-          base_url = Configuration.load.public_base_url.delete_suffix('/')
+          base_url = configuration.public_base_url.delete_suffix('/')
           "#{base_url}#{@canonical_path || request.path_info}"
         end
 
@@ -38,6 +42,10 @@ module PolishGithubRank
             'description' => @description,
             'url' => canonical_url
           )
+        end
+
+        def configuration
+          @configuration ||= Configuration.load
         end
       end
 
@@ -77,10 +85,7 @@ module PolishGithubRank
       end
 
       def store
-        @store ||= begin
-          configuration = Configuration.load
-          Infrastructure::SQLiteStore.new(configuration.database_path).migrate!
-        end
+        @store ||= Infrastructure::SQLiteStore.new(configuration.database_path).migrate!
       end
 
       def rankings_or_empty(period)

@@ -4,11 +4,13 @@ RSpec.describe PolishGithubRank::Web::App do
   around do |example|
     old_database_url = ENV.fetch('DATABASE_URL', nil)
     old_base_url = ENV.fetch('BASE_URL', nil)
+    old_app_base_path = ENV.fetch('APP_BASE_PATH', nil)
     ENV['BASE_URL'] = 'https://rank.example'
     example.run
   ensure
     ENV['DATABASE_URL'] = old_database_url
     ENV['BASE_URL'] = old_base_url
+    ENV['APP_BASE_PATH'] = old_app_base_path
   end
 
   it 'renders the Poland ranking with SEO metadata' do
@@ -31,6 +33,18 @@ RSpec.describe PolishGithubRank::Web::App do
     expect(response.status).to eq(200)
     expect(response.body).to include('Kraków')
     expect(response.body).to include('Brak danych rankingowych')
+  end
+
+  it 'renders links and assets under a configured app base path' do
+    ENV['DATABASE_URL'] = "sqlite://#{empty_database}"
+    ENV['BASE_URL'] = 'https://rank.example/polish-github-rank'
+    ENV['APP_BASE_PATH'] = '/polish-github-rank'
+
+    response = Rack::MockRequest.new(described_class).get('/')
+
+    expect(response.body).to include('rel="canonical" href="https://rank.example/polish-github-rank/"')
+    expect(response.body).to include('href="/polish-github-rank/css/application.css"')
+    expect(response.body).to include('href="/polish-github-rank/locations/krakow"')
   end
 
   it 'serves health checks and 404 pages' do

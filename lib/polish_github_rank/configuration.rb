@@ -39,6 +39,13 @@ module PolishGithubRank
       ENV.fetch('BASE_URL', 'http://localhost:9292')
     end
 
+    def app_base_path
+      raw_path = ENV.fetch('APP_BASE_PATH', '').strip
+      return '' if raw_path.empty? || raw_path == '/'
+
+      "/#{raw_path.delete_prefix('/').delete_suffix('/')}"
+    end
+
     private
 
     attr_reader :env_path
