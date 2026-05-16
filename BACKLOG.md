@@ -13,6 +13,8 @@
 - [x] Zbudować semantyczne widoki HTML5 z dobrym SEO.
 - [x] Dodać RSpec, SimpleCov z wymaganym 100% coverage, RuboCop, Reek i pre-commit.
 - [x] Uruchomić pełną jakość lokalnie i uzupełnić dokumentację uruchomienia.
+- [x] Dodać obsługę działania pod `/polish-github-rank`.
+- [x] Dodać Podman/systemd/Nginx artefakty deployu i GitHub Actions workflow.
 
 ## In progress
 
