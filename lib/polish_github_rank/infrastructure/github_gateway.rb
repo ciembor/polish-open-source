@@ -3,7 +3,7 @@
 module PolishGithubRank
   module Infrastructure
     class GitHubGateway
-      STAR_ACCEPT = "application/vnd.github.star+json"
+      STAR_ACCEPT = 'application/vnd.github.star+json'
       PER_PAGE = 100
       SEARCH_PAGE_LIMIT = 10
 
@@ -13,8 +13,8 @@ module PolishGithubRank
 
       def search_users_by_location(term)
         query = %(type:user location:"#{term}")
-        each_page("/search/users", { q: query }, limit: SEARCH_PAGE_LIMIT)
-          .flat_map { |response| response.body.fetch("items", []) }
+        each_page('/search/users', { q: query }, limit: SEARCH_PAGE_LIMIT)
+          .flat_map { |response| response.body.fetch('items', []) }
       end
 
       def user(login)
@@ -24,14 +24,14 @@ module PolishGithubRank
       def repositories_for(login)
         each_page(
           "/users/#{login}/repos",
-          { type: "owner", sort: "full_name", direction: "asc" }
+          { type: 'owner', sort: 'full_name', direction: 'asc' }
         ).flat_map(&:body)
       end
 
       def repository_stars_delta(full_name, period)
-        owner, repo = full_name.split("/", 2)
+        owner, repo = full_name.split('/', 2)
         first_page = stargazers_page(owner, repo, 1)
-        last_page = last_page_number(first_page.headers.fetch("link", nil)) || 1
+        last_page = last_page_number(first_page.headers.fetch('link', nil)) || 1
         return count_stars(first_page.body, period) if last_page == 1
 
         count_stars_backwards(owner, repo, period, last_page)
@@ -40,7 +40,7 @@ module PolishGithubRank
       def public_activity_count(login, period)
         count = 0
         each_page("/users/#{login}/events/public", {}) do |response|
-          times = response.body.map { |event| Time.parse(event.fetch("created_at")) }
+          times = response.body.map { |event| Time.parse(event.fetch('created_at')) }
           count += times.count { |time| period.cover_time?(time) }
           :stop if times.any? && times.all? { |time| time.to_date < period.start_date }
         end
@@ -58,7 +58,7 @@ module PolishGithubRank
         loop do
           response = client.get(path, params: params.merge(per_page: PER_PAGE, page: page))
           signal = yield response
-          break unless next_page?(response.headers.fetch("link", nil))
+          break unless next_page?(response.headers.fetch('link', nil))
           break if limit && page >= limit
           break if signal == :stop
 
@@ -77,7 +77,7 @@ module PolishGithubRank
       def count_stars_backwards(owner, repo, period, last_page)
         count = 0
         last_page.downto(1) do |page|
-          times = stargazers_page(owner, repo, page).body.map { |star| Time.parse(star.fetch("starred_at")) }
+          times = stargazers_page(owner, repo, page).body.map { |star| Time.parse(star.fetch('starred_at')) }
           count += times.count { |time| period.cover_time?(time) }
           break if times.any? && times.all? { |time| time.to_date < period.start_date }
         end
@@ -85,7 +85,7 @@ module PolishGithubRank
       end
 
       def count_stars(stargazers, period)
-        stargazers.count { |star| period.cover_time?(Time.parse(star.fetch("starred_at"))) }
+        stargazers.count { |star| period.cover_time?(Time.parse(star.fetch('starred_at'))) }
       end
 
       def next_page?(link_header)

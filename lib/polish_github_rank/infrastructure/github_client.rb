@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require "net/http"
-require "uri"
+require 'net/http'
+require 'uri'
 
 module PolishGithubRank
   module Infrastructure
@@ -20,11 +20,11 @@ module PolishGithubRank
 
       class NotFound < Error; end
 
-      API_VERSION = "2022-11-28"
-      DEFAULT_ACCEPT = "application/vnd.github+json"
+      API_VERSION = '2022-11-28'
+      DEFAULT_ACCEPT = 'application/vnd.github+json'
       RETRYABLE_STATUSES = [403, 429, 500, 502, 503, 504].freeze
 
-      def initialize(token:, requests_per_minute:, base_url: "https://api.github.com", max_retries: 5,
+      def initialize(token:, requests_per_minute:, base_url: 'https://api.github.com', max_retries: 5,
                      sleeper: Kernel.method(:sleep), logger: $stdout)
         @token = token
         @base_url = base_url
@@ -59,7 +59,7 @@ module PolishGithubRank
         throttle
         uri = build_uri(path, params)
         request = Net::HTTP::Get.new(uri, request_headers(accept))
-        Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") do |http|
+        Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == 'https') do |http|
           http.request(request)
         end
       end
@@ -84,10 +84,10 @@ module PolishGithubRank
 
       def request_headers(accept)
         {
-          "Accept" => accept,
-          "Authorization" => "Bearer #{token}",
-          "User-Agent" => "polish-github-rank",
-          "X-GitHub-Api-Version" => API_VERSION
+          'Accept' => accept,
+          'Authorization' => "Bearer #{token}",
+          'User-Agent' => 'polish-github-rank',
+          'X-GitHub-Api-Version' => API_VERSION
         }
       end
 
@@ -107,14 +107,14 @@ module PolishGithubRank
       end
 
       def retry_after(response)
-        header = response["retry-after"]
+        header = response['retry-after']
         header&.to_f
       end
 
       def rate_limit_reset_wait(response)
-        return unless response["x-ratelimit-remaining"] == "0"
+        return unless response['x-ratelimit-remaining'] == '0'
 
-        [response["x-ratelimit-reset"].to_i - Time.now.to_i + 1, 1].max
+        [response['x-ratelimit-reset'].to_i - Time.now.to_i + 1, 1].max
       end
 
       def sleep_until_reset(response)
@@ -131,7 +131,8 @@ module PolishGithubRank
 
       def http_error(response)
         error_class = response.code.to_i == 404 ? NotFound : Error
-        error_class.new("GitHub API request failed with HTTP #{response.code}", status: response.code.to_i, body: response.body)
+        error_class.new("GitHub API request failed with HTTP #{response.code}", status: response.code.to_i,
+                                                                                body: response.body)
       end
 
       def normalized_headers(response)
