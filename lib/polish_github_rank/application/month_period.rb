@@ -9,7 +9,7 @@ module PolishGithubRank
       end
 
       def self.parse(value)
-        year, month = value.split("-", 2).map(&:to_i)
+        year, month = value.split('-', 2).map(&:to_i)
         from_month(Date.new(year, month, 1))
       end
 
@@ -20,7 +20,7 @@ module PolishGithubRank
       end
 
       def key
-        start_date.strftime("%Y-%m")
+        start_date.strftime('%Y-%m')
       end
 
       def cover_time?(time)
@@ -30,4 +30,3 @@ module PolishGithubRank
     end
   end
 end
-

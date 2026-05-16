@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "sqlite3"
+require 'sqlite3'
 
 module PolishGithubRank
   module Infrastructure
@@ -13,7 +13,7 @@ module PolishGithubRank
 
       def migrate!
         FileUtils.mkdir_p(path.dirname)
-        database.execute_batch("PRAGMA foreign_keys = ON;")
+        database.execute_batch('PRAGMA foreign_keys = ON;')
         create_schema
         self
       end
@@ -29,11 +29,12 @@ module PolishGithubRank
             finished_at = NULL,
             error = NULL
         SQL
-        fetch_value("SELECT id FROM sync_runs WHERE period_start = ?", [period.start_date.to_s])
+        fetch_value('SELECT id FROM sync_runs WHERE period_start = ?', [period.start_date.to_s])
       end
 
       def finish_run(run_id)
-        execute("UPDATE sync_runs SET status = 'finished', finished_at = ? WHERE id = ?", [Time.now.utc.iso8601, run_id])
+        execute("UPDATE sync_runs SET status = 'finished', finished_at = ? WHERE id = ?",
+                [Time.now.utc.iso8601, run_id])
       end
 
       def fail_run(run_id, error)
@@ -75,7 +76,7 @@ module PolishGithubRank
 
       def processed_user?(period, github_id)
         fetch_value(
-          "SELECT 1 FROM user_monthly_stats WHERE period_start = ? AND user_github_id = ?",
+          'SELECT 1 FROM user_monthly_stats WHERE period_start = ? AND user_github_id = ?',
           [period.start_date.to_s, github_id]
         )
       end
@@ -158,21 +159,21 @@ module PolishGithubRank
       end
 
       def latest_period
-        fetch_value("SELECT MAX(period_start) FROM user_monthly_stats")
+        fetch_value('SELECT MAX(period_start) FROM user_monthly_stats')
       end
 
       def user_rankings(scope, period_start: latest_period)
         {
-          top: ranked_users(scope, period_start, "total_stars"),
-          trending: ranked_users(scope, period_start, "monthly_stars_delta"),
-          active: ranked_users(scope, period_start, "public_activity_count")
+          top: ranked_users(scope, period_start, 'total_stars'),
+          trending: ranked_users(scope, period_start, 'monthly_stars_delta'),
+          active: ranked_users(scope, period_start, 'public_activity_count')
         }
       end
 
       def repository_rankings(scope, period_start: latest_period)
         {
-          top: ranked_repositories(scope, period_start, "stargazers_count"),
-          trending: ranked_repositories(scope, period_start, "monthly_stars_delta")
+          top: ranked_repositories(scope, period_start, 'stargazers_count'),
+          trending: ranked_repositories(scope, period_start, 'monthly_stars_delta')
         }
       end
 
@@ -236,15 +237,15 @@ module PolishGithubRank
       end
 
       def user_scope(scope)
-        return ["stats.country = ?", ["Poland"]] if scope == "poland"
+        return ['stats.country = ?', ['Poland']] if scope == 'poland'
 
-        ["stats.city = ?", [Domain::LocationCatalog.city_name(scope)]]
+        ['stats.city = ?', [Domain::LocationCatalog.city_name(scope)]]
       end
 
       def repository_scope(scope)
-        return ["stats.owner_country = ?", ["Poland"]] if scope == "poland"
+        return ['stats.owner_country = ?', ['Poland']] if scope == 'poland'
 
-        ["stats.owner_city = ?", [Domain::LocationCatalog.city_name(scope)]]
+        ['stats.owner_city = ?', [Domain::LocationCatalog.city_name(scope)]]
       end
 
       def user_values(attributes)

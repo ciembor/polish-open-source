@@ -49,4 +49,3 @@ module PolishGithubRank
     end
   end
 end
-

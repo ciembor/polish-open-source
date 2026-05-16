@@ -3,44 +3,44 @@
 module PolishGithubRank
   module Domain
     module LocationCatalog
-      COUNTRY = "Poland"
+      COUNTRY = 'Poland'
       COUNTRY_VARIANTS = %w[Polska polska Poland poland].freeze
 
       CITIES = [
         {
-          slug: "krakow",
-          name: "Kraków",
-          variants: ["Kraków", "kraków", "Krakow", "krakow", "Cracow", "cracow"]
+          slug: 'krakow',
+          name: 'Kraków',
+          variants: %W[Krak\u00F3w krak\u00F3w Krakow krakow Cracow cracow]
         },
         {
-          slug: "wroclaw",
-          name: "Wrocław",
-          variants: ["Wrocław", "wrocław", "Wroclaw", "wroclaw"]
+          slug: 'wroclaw',
+          name: 'Wrocław',
+          variants: %W[Wroc\u0142aw wroc\u0142aw Wroclaw wroclaw]
         },
         {
-          slug: "warszawa",
-          name: "Warszawa",
-          variants: ["Warszawa", "warszawa", "Warsaw", "warsaw"]
+          slug: 'warszawa',
+          name: 'Warszawa',
+          variants: %w[Warszawa warszawa Warsaw warsaw]
         },
         {
-          slug: "gdansk",
-          name: "Gdańsk",
-          variants: ["Gdańsk", "gdańsk", "Gdansk", "gdansk"]
+          slug: 'gdansk',
+          name: 'Gdańsk',
+          variants: %W[Gda\u0144sk gda\u0144sk Gdansk gdansk]
         },
         {
-          slug: "poznan",
-          name: "Poznań",
-          variants: ["Poznań", "poznań", "Poznan", "poznan"]
+          slug: 'poznan',
+          name: 'Poznań',
+          variants: %W[Pozna\u0144 pozna\u0144 Poznan poznan]
         },
         {
-          slug: "szczecin",
-          name: "Szczecin",
-          variants: ["Szczecin", "szczecin"]
+          slug: 'szczecin',
+          name: 'Szczecin',
+          variants: %w[Szczecin szczecin]
         },
         {
-          slug: "lodz",
-          name: "Łódź",
-          variants: ["Łódź", "łódź", "Lodz", "lodz"]
+          slug: 'lodz',
+          name: 'Łódź',
+          variants: %W[\u0141\u00F3d\u017A \u0142\u00F3d\u017A Lodz lodz]
         }
       ].freeze
 
@@ -57,7 +57,7 @@ module PolishGithubRank
       end
 
       def scopes
-        [{ slug: "poland", name: "Polska", type: :country }] +
+        [{ slug: 'poland', name: 'Polska', type: :country }] +
           CITIES.map { |city| city.slice(:slug, :name).merge(type: :city) }
       end
 
@@ -67,4 +67,3 @@ module PolishGithubRank
     end
   end
 end
-

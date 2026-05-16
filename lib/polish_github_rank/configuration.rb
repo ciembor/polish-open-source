@@ -2,10 +2,10 @@
 
 module PolishGithubRank
   class Configuration
-    DEFAULT_DATABASE_PATH = "db/polish_github_rank.sqlite3"
+    DEFAULT_DATABASE_PATH = 'db/polish_github_rank.sqlite3'
     DEFAULT_REQUESTS_PER_MINUTE = 25
 
-    def self.load(path = PolishGithubRank.root.join(".env.local"))
+    def self.load(path = PolishGithubRank.root.join('.env.local'))
       new(path).load
     end
 
@@ -19,24 +19,24 @@ module PolishGithubRank
     end
 
     def github_token
-      ENV.fetch("GITHUB_TOKEN")
+      ENV.fetch('GITHUB_TOKEN')
     end
 
     def database_path
-      database_url = ENV.fetch("DATABASE_URL", "sqlite://#{DEFAULT_DATABASE_PATH}")
-      database_url.delete_prefix("sqlite://")
+      database_url = ENV.fetch('DATABASE_URL', "sqlite://#{DEFAULT_DATABASE_PATH}")
+      database_url.delete_prefix('sqlite://')
     end
 
     def requests_per_minute
-      ENV.fetch("REQUESTS_PER_MINUTE", DEFAULT_REQUESTS_PER_MINUTE).to_i
+      ENV.fetch('REQUESTS_PER_MINUTE', DEFAULT_REQUESTS_PER_MINUTE).to_i
     end
 
     def github_base_url
-      ENV.fetch("GITHUB_BASE_URL", "https://api.github.com")
+      ENV.fetch('GITHUB_BASE_URL', 'https://api.github.com')
     end
 
     def public_base_url
-      ENV.fetch("BASE_URL", "http://localhost:9292")
+      ENV.fetch('BASE_URL', 'http://localhost:9292')
     end
 
     private
@@ -47,7 +47,7 @@ module PolishGithubRank
       return unless env_path.file?
 
       env_path.each_line(chomp: true) do |line|
-        key, value = line.split("=", 2)
+        key, value = line.split('=', 2)
         ENV[key] ||= value if key && value && !key.empty?
       end
     end

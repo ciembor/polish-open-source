@@ -31,7 +31,7 @@ module PolishGithubRank
       attr_reader :argv
 
       def month_argument
-        index = argv.index("--month")
+        index = argv.index('--month')
         argv[index + 1] if index
       end
     end

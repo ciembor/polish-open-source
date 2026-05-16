@@ -22,7 +22,7 @@
               <a class="muted-link" href="<%= h row[:homepage] %>">www</a>
             <% end %>
           </td>
-          <td><%= h row[:city] || "Polska" %></td>
+          <td><%= h(row[:city] || "Polska") %></td>
           <td class="metric"><%= number(row.fetch(metric)) %></td>
         </tr>
       <% end %>
@@ -34,4 +34,3 @@
     </tbody>
   </table>
 </article>
-
