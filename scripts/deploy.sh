@@ -18,4 +18,4 @@ rsync -az --delete \
   --exclude 'vendor/bundle/' \
   ./ "${REMOTE_HOST}:${REMOTE_DIR}/"
 
-ssh "${REMOTE_HOST}" "cd ${REMOTE_DIR} && podman build -t ${IMAGE_NAME} . && sudo systemctl restart ${SERVICE_NAME} && sudo systemctl status ${SERVICE_NAME} --no-pager"
+ssh "${REMOTE_HOST}" "cd ${REMOTE_DIR} && sudo podman build -t ${IMAGE_NAME} . && sudo systemctl restart ${SERVICE_NAME} && sudo systemctl status ${SERVICE_NAME} --no-pager"
