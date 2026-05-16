@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+
+bundle exec rubocop
+bundle exec reek
+bundle exec rspec
+

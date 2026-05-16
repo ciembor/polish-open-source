@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+commands = [
+  ["bundle", "exec", "rubocop"],
+  ["bundle", "exec", "reek"],
+  ["bundle", "exec", "rspec"]
+]
+
+commands.each do |command|
+  puts "$ #{command.join(' ')}"
+  system(*command) || exit($?.exitstatus || 1)
+end

@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+ENV["RACK_ENV"] ||= "development"
+exec "bundle", "exec", "rackup", "-p", ENV.fetch("PORT", "9292")
