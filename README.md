@@ -36,7 +36,7 @@ Put the GitHub token in `.env.local`. That file is ignored by git.
 GITHUB_TOKEN=...
 DATABASE_URL=sqlite://db/polish_github_rank.sqlite3
 REQUESTS_PER_MINUTE=25
-BASE_URL=https://maciej.ciemborowicz.eu/polish-github-rank
+BASE_URL=https://maciej-ciemborowicz.eu/polish-github-rank
 APP_BASE_PATH=/polish-github-rank
 ```
 
@@ -80,7 +80,7 @@ The HTML uses semantic sections, tables, canonical URLs, meta descriptions, and 
 
 ## Deployment
 
-The app is deployed behind Nginx at `/polish-github-rank`. The server runs it as a Podman container via systemd:
+The app is deployed behind Nginx at `https://maciej-ciemborowicz.eu/polish-github-rank`. The server runs it as a Podman container via systemd:
 
 - [deploy/nginx-polish-github-rank.conf](deploy/nginx-polish-github-rank.conf)
 - [deploy/polish-github-rank.service](deploy/polish-github-rank.service)
