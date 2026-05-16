@@ -1,4 +1,4 @@
-FROM ruby:3.4-slim
+FROM docker.io/library/ruby:3.4-slim
 
 ENV APP_HOME=/app \
     BUNDLE_WITHOUT=development:test \
@@ -21,4 +21,3 @@ RUN mkdir -p db log tmp
 EXPOSE 9293
 
 CMD ["bundle", "exec", "rackup", "--host", "0.0.0.0", "--port", "9293"]
-
