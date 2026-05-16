@@ -10,9 +10,10 @@ Restart=always
 RestartSec=5
 TimeoutStartSec=90
 
-ExecStartPre=/usr/bin/podman rm -f polish-github-rank || true
+ExecStartPre=-/usr/bin/podman rm -f polish-github-rank
 ExecStart=/usr/bin/podman run --name=polish-github-rank -p 127.0.0.1:9293:9293 --env-file /home/ciembor/polish-github-rank/.env.local -e RACK_ENV=production -e APP_BASE_PATH=/polish-github-rank -e BASE_URL=https://maciej.ciemborowicz.eu/polish-github-rank -v /home/ciembor/polish-github-rank/db:/app/db -v /home/ciembor/polish-github-rank/log:/app/log localhost/polish-github-rank:latest
-ExecStop=/usr/bin/podman stop polish-github-rank
+ExecStop=/usr/bin/podman stop --time 30 polish-github-rank
+ExecStopPost=-/usr/bin/podman rm -f polish-github-rank
 KillMode=none
 
 [Install]
