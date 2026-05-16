@@ -46,7 +46,11 @@ module PolishGithubRank
           VALUES (?, ?, ?, ?, 'pending', ?)
           ON CONFLICT(period_start, login) DO UPDATE SET
             github_id = excluded.github_id,
-            source_query = candidate_users.source_query || ', ' || excluded.source_query,
+            source_query = CASE
+              WHEN instr(candidate_users.source_query, excluded.source_query) > 0
+              THEN candidate_users.source_query
+              ELSE candidate_users.source_query || ', ' || excluded.source_query
+            END,
             updated_at = excluded.updated_at
         SQL
       end
@@ -55,7 +59,7 @@ module PolishGithubRank
         fetch_all(<<~SQL, [period.start_date.to_s, limit])
           SELECT github_id, login
           FROM candidate_users
-          WHERE period_start = ? AND status = 'pending'
+          WHERE period_start = ? AND status IN ('pending', 'failed')
           ORDER BY login COLLATE NOCASE ASC
           LIMIT ?
         SQL
@@ -384,4 +388,3 @@ module PolishGithubRank
     end
   end
 end
-
