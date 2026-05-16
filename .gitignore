@@ -8,3 +8,5 @@ db/*.sqlite3-*
 log/
 tmp/
 vendor/bundle/
+QUERIES.md
+BACKLOG.md
