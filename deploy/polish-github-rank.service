@@ -4,8 +4,6 @@ After=network.target
 
 [Service]
 Type=simple
-User=ciembor
-Group=ciembor
 WorkingDirectory=/home/ciembor/polish-github-rank
 EnvironmentFile=/home/ciembor/polish-github-rank/.env.local
 Restart=always
@@ -15,8 +13,7 @@ TimeoutStartSec=90
 ExecStartPre=/usr/bin/podman rm -f polish-github-rank || true
 ExecStart=/usr/bin/podman run --name=polish-github-rank -p 127.0.0.1:9293:9293 --env-file /home/ciembor/polish-github-rank/.env.local -e RACK_ENV=production -e APP_BASE_PATH=/polish-github-rank -e BASE_URL=https://maciej.ciemborowicz.eu/polish-github-rank -v /home/ciembor/polish-github-rank/db:/app/db -v /home/ciembor/polish-github-rank/log:/app/log --replace localhost/polish-github-rank:latest
 ExecStop=/usr/bin/podman stop polish-github-rank
-KillMode=none
+KillMode=mixed
 
 [Install]
 WantedBy=multi-user.target
-
