@@ -36,7 +36,8 @@ Put the GitHub token in `.env.local`. That file is ignored by git.
 GITHUB_TOKEN=...
 DATABASE_URL=sqlite://db/polish_github_rank.sqlite3
 REQUESTS_PER_MINUTE=25
-BASE_URL=https://example.com
+BASE_URL=https://maciej.ciemborowicz.eu/polish-github-rank
+APP_BASE_PATH=/polish-github-rank
 ```
 
 ## Monthly Job
@@ -61,7 +62,7 @@ The job intentionally favors stability over speed:
 - retries 403, 429, and 5xx responses with backoff;
 - stores candidate status in SQLite so failed runs can be resumed.
 
-Example cron entry is in [config/cron.example](config/cron.example).
+Production uses the systemd timer in [deploy/polish-github-rank-monthly.timer](deploy/polish-github-rank-monthly.timer).
 
 ## Web App
 
@@ -76,6 +77,20 @@ Routes:
 - `/healthz`.
 
 The HTML uses semantic sections, tables, canonical URLs, meta descriptions, and JSON-LD dataset metadata.
+
+## Deployment
+
+The app is deployed behind Nginx at `/polish-github-rank`. The server runs it as a Podman container via systemd:
+
+- [deploy/nginx-polish-github-rank.conf](deploy/nginx-polish-github-rank.conf)
+- [deploy/polish-github-rank.service](deploy/polish-github-rank.service)
+- [deploy/polish-github-rank-monthly.service](deploy/polish-github-rank-monthly.service)
+- [deploy/polish-github-rank-monthly.timer](deploy/polish-github-rank-monthly.timer)
+
+GitHub Actions runs quality checks and then calls [scripts/deploy.sh](scripts/deploy.sh). Required repository secrets:
+
+- `DEPLOY_HOST`: SSH host, currently `maciej-ciemborowicz.eu`.
+- `DEPLOY_KEY`: private SSH key accepted for `ciembor@DEPLOY_HOST`.
 
 ## Quality
 
