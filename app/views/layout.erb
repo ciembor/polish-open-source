@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pl">
+<html lang="<%= h current_locale %>">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -17,21 +17,26 @@
     <header class="site-header">
       <div class="site-header__inner">
         <a class="brand" href="<%= h app_path('/latest') %>">Polish Open Source Rank</a>
-        <nav class="nav" aria-label="Rankingi lokalizacji">
-          <a class="nav__link" href="<%= h app_path(scope_path(scopes.first)) %>">Polska</a>
+        <nav class="nav" aria-label="<%= h t('nav.locations') %>">
+          <a class="nav__link" href="<%= h app_path(scope_path(scopes.first)) %>"><%= h t('nav.country') %></a>
           <% primary_city_scopes.each do |scope| %>
             <a class="nav__link" href="<%= h app_path(scope_path(scope)) %>"><%= h scope.fetch(:name) %></a>
           <% end %>
           <details class="nav-menu">
-            <summary>Więcej miast</summary>
+            <summary><%= h t('nav.more_cities') %></summary>
             <div class="nav-menu__panel">
               <% secondary_city_scopes.each do |scope| %>
                 <a class="nav__link" href="<%= h app_path(scope_path(scope)) %>"><%= h scope.fetch(:name) %></a>
               <% end %>
             </div>
           </details>
-          <a class="nav__link" href="<%= h app_path(editions_path) %>">Edycje</a>
-          <a class="nav__link" href="<%= h app_path('/about') %>">About</a>
+          <a class="nav__link" href="<%= h app_path(editions_path) %>"><%= h t('nav.editions') %></a>
+          <a class="nav__link" href="<%= h app_path('/about') %>"><%= h t('nav.about') %></a>
+          <div class="language-switch" aria-label="<%= h t('nav.language') %>">
+            <% SUPPORTED_LOCALES.each do |locale| %>
+              <a class="language-switch__link <%= 'is-active' if current_locale?(locale) %>" href="<%= h locale_path(locale) %>" hreflang="<%= h locale %>" lang="<%= h locale %>"><%= h locale.upcase %></a>
+            <% end %>
+          </div>
         </nav>
       </div>
     </header>
@@ -41,7 +46,7 @@
     </main>
 
     <footer class="site-footer">
-      <p>Dane pochodzą z publicznych API GitHuba, GitLaba i Codeberga i są odświeżane miesięcznie.</p>
+      <p><%= h t('footer.data_source') %></p>
     </footer>
   </body>
 </html>

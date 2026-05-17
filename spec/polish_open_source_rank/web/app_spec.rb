@@ -37,7 +37,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.status).to eq(200)
     expect(response.body).to include('Kraków')
     expect(response.body).to include('Brak danych rankingowych')
-    expect(response.body).to include('Więcej miast')
+    expect(response.body).to include('More cities')
   end
 
   it 'renders rankings for completed month slugs' do
@@ -148,6 +148,24 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(about_response.body).to include('src="/icons/gitlab.svg"')
     expect(about_response.body).to include('src="/icons/codeberg.svg"')
     expect(about_response.body).not_to include('Publiczne profile, projekty')
+  end
+
+  it 'renders a language switch in the navigation' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    request = Rack::MockRequest.new(described_class)
+
+    polish_response = request.get('/', 'HTTP_ACCEPT_LANGUAGE' => 'pl-PL,pl;q=0.9')
+    english_response = request.get('/latest?lang=en')
+    cookie_response = request.get('/latest', 'HTTP_COOKIE' => 'locale=en')
+
+    expect(polish_response.body).to include('<html lang="pl">')
+    expect(polish_response.body).to include('aria-label="Język"')
+    expect(polish_response.body).to include('href="/?lang=en"')
+    expect(english_response.body).to include('<html lang="en">')
+    expect(english_response.body).to include('>Poland</a>')
+    expect(english_response.body).to include('>More cities</summary>')
+    expect(english_response['Set-Cookie']).to include('locale=en')
+    expect(cookie_response.body).to include('<html lang="en">')
   end
 
   it 'renders links and assets under a configured app base path' do
