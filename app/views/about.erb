@@ -64,33 +64,21 @@
     <div class="platform-grid">
       <article class="platform-card platform-card--github">
         <div class="platform-logo" aria-hidden="true">
-          <svg viewBox="0 0 64 64" role="img">
-            <circle cx="32" cy="32" r="28"></circle>
-            <text x="32" y="38" text-anchor="middle">GH</text>
-          </svg>
+          <img class="platform-logo__image" src="<%= h app_path(platform_icon_path("github")) %>" alt="" width="64" height="64">
         </div>
         <h3>GitHub</h3>
-        <p>Publiczne profile, repozytoria, gwiazdki, stargazer history i public activity events.</p>
       </article>
       <article class="platform-card platform-card--gitlab">
         <div class="platform-logo" aria-hidden="true">
-          <svg viewBox="0 0 64 64" role="img">
-            <path d="M32 6 56 22 47 54H17L8 22Z"></path>
-            <text x="32" y="38" text-anchor="middle">GL</text>
-          </svg>
+          <img class="platform-logo__image" src="<%= h app_path(platform_icon_path("gitlab")) %>" alt="" width="64" height="64">
         </div>
         <h3>GitLab</h3>
-        <p>Publiczne profile, projekty, gwiazdki projektów i publiczne zdarzenia użytkowników.</p>
       </article>
       <article class="platform-card platform-card--codeberg">
         <div class="platform-logo" aria-hidden="true">
-          <svg viewBox="0 0 64 64" role="img">
-            <path d="M8 50 28 14l8 14 6-9 14 31Z"></path>
-            <text x="32" y="54" text-anchor="middle">CB</text>
-          </svg>
+          <img class="platform-logo__image" src="<%= h app_path(platform_icon_path("codeberg")) %>" alt="" width="64" height="64">
         </div>
         <h3>Codeberg</h3>
-        <p>Publiczne profile, repozytoria, gwiazdki i publiczna aktywność z instancji Codeberg.</p>
       </article>
     </div>
   </div>

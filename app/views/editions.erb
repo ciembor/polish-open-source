@@ -46,7 +46,7 @@
                 <ol class="edition-toplist">
                   <% edition.fetch(:repositories).each do |row| %>
                     <li>
-                      <a class="primary-link" href="<%= h row.fetch(:html_url) %>"><span class="platform-mark platform-mark--<%= h row.fetch(:platform, "github") %>"><%= h platform_mark(row.fetch(:platform, "github")) %></span><%= h row.fetch(:full_name) %></a>
+                      <a class="primary-link" href="<%= h row.fetch(:html_url) %>"><%= erb :platform_icon, locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:full_name) %></a>
                       <span><%= number(row.fetch(:stargazers_count)) %> gwiazdek</span>
                     </li>
                   <% end %>
@@ -58,7 +58,7 @@
                 <ol class="edition-toplist">
                   <% edition.fetch(:users_by_stars).each do |row| %>
                     <li>
-                      <a class="primary-link" href="<%= h row.fetch(:html_url) %>"><span class="platform-mark platform-mark--<%= h row.fetch(:platform, "github") %>"><%= h platform_mark(row.fetch(:platform, "github")) %></span><%= h row.fetch(:login) %></a>
+                      <a class="primary-link" href="<%= h row.fetch(:html_url) %>"><%= erb :platform_icon, locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:login) %></a>
                       <span><%= number(row.fetch(:total_stars)) %> gwiazdek</span>
                     </li>
                   <% end %>
@@ -70,7 +70,7 @@
                 <ol class="edition-toplist">
                   <% edition.fetch(:users_by_activity).each do |row| %>
                     <li>
-                      <a class="primary-link" href="<%= h row.fetch(:html_url) %>"><span class="platform-mark platform-mark--<%= h row.fetch(:platform, "github") %>"><%= h platform_mark(row.fetch(:platform, "github")) %></span><%= h row.fetch(:login) %></a>
+                      <a class="primary-link" href="<%= h row.fetch(:html_url) %>"><%= erb :platform_icon, locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:login) %></a>
                       <span><%= number(row.fetch(:public_activity_count)) %> zdarzeń</span>
                     </li>
                   <% end %>
