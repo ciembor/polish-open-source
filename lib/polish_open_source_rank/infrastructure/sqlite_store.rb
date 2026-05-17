@@ -14,41 +14,22 @@ module PolishOpenSourceRank
 
       def migrate!
         FileUtils.mkdir_p(path.dirname)
-        database.execute_batch('PRAGMA foreign_keys = ON;')
+        execute_batch('PRAGMA foreign_keys = ON;')
         migration = PlatformSchemaMigration.new(database, schema_sql)
         migration.needed? ? migration.run : create_schema
         self
       end
 
       def create_run(period)
-        return if fetch_value(
-          'SELECT 1 FROM sync_runs WHERE period_start = ? AND status = ?',
-          [period.start_date.to_s, 'finished']
-        )
-
-        execute(<<~SQL, [period.start_date.to_s, period.end_date.to_s, Time.now.utc.iso8601])
-          INSERT INTO sync_runs(period_start, period_end, status, started_at)
-          VALUES (?, ?, 'running', ?)
-          ON CONFLICT(period_start) DO UPDATE SET
-            period_end = excluded.period_end,
-            status = 'running',
-            started_at = excluded.started_at,
-            finished_at = NULL,
-            error = NULL
-        SQL
-        fetch_value('SELECT id FROM sync_runs WHERE period_start = ?', [period.start_date.to_s])
+        run_lifecycle.create(period)
       end
 
       def finish_run(run_id)
-        execute("UPDATE sync_runs SET status = 'finished', finished_at = ? WHERE id = ?",
-                [Time.now.utc.iso8601, run_id])
+        run_lifecycle.finish(run_id)
       end
 
       def fail_run(run_id, error)
-        execute(
-          "UPDATE sync_runs SET status = 'failed', error = ? WHERE id = ?",
-          [error, run_id]
-        )
+        run_lifecycle.fail(run_id, error)
       end
 
       def record_candidate(period, login:, source_query:, platform: 'github', source_id: nil, github_id: nil)
@@ -68,20 +49,20 @@ module PolishOpenSourceRank
       end
 
       def pending_candidates(period, limit: 100, platform: nil)
-        platform_sql = platform ? 'AND platform = ?' : ''
+        platform_sql = 'AND platform = ?' if platform
         params = [period.start_date.to_s]
         params << platform if platform
         params << limit
         fetch_all(<<~SQL, params)
           SELECT platform, github_id, github_id AS source_id, login
           FROM candidate_users
-          WHERE period_start = ? AND status IN ('pending', 'failed') #{platform_sql}
+          WHERE period_start = ? AND status = 'pending' #{platform_sql}
           ORDER BY platform ASC, login COLLATE NOCASE ASC
           LIMIT ?
         SQL
       end
 
-      def mark_candidate(period, platform, login = nil, status = nil, error = nil)
+      def mark_candidate(period, platform, login, status = nil, error = nil)
         unless %w[github gitlab codeberg].include?(platform)
           error = status
           status = login
@@ -104,6 +85,10 @@ module PolishOpenSourceRank
           'SELECT 1 FROM user_monthly_stats WHERE period_start = ? AND platform = ? AND user_github_id = ?',
           [period.start_date.to_s, platform, github_id]
         )
+      end
+
+      def retryable_candidates?(period)
+        run_lifecycle.retryable_candidates?(period)
       end
 
       def upsert_user(attributes)
@@ -274,11 +259,15 @@ module PolishOpenSourceRank
       end
 
       def fetch_all(sql, params = [])
-        database.execute(sql, params).map { |row| symbolize(row) }
+        execute(sql, params).map { |row| symbolize(row) }
       end
 
       def fetch_value(sql, params = [])
         database.get_first_value(sql, params)
+      end
+
+      def run_lifecycle
+        @run_lifecycle ||= SQLiteRunLifecycle.new(database)
       end
 
       def ranked_users(scope, period_start, order_column, limit: RANKING_LIMIT)
@@ -309,6 +298,10 @@ module PolishOpenSourceRank
         SQL
       end
 
+      def bounded_limit(limit)
+        limit.to_i.clamp(1, RANKING_LIMIT)
+      end
+
       def edition_period_condition
         <<~SQL
           (
@@ -324,10 +317,6 @@ module PolishOpenSourceRank
             )
           )
         SQL
-      end
-
-      def bounded_limit(limit)
-        limit.to_i.clamp(1, RANKING_LIMIT)
       end
 
       def trending_filter(order_column, table_alias)

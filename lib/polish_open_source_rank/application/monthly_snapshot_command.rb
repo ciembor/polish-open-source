@@ -2,7 +2,11 @@
 
 module PolishOpenSourceRank
   module Application
+    class MonthlySnapshotInterrupted < StandardError; end
+
     class MonthlySnapshotCommand
+      INTERRUPT_SIGNALS = %w[INT TERM].freeze
+
       def self.call(argv, job:, output: $stdout)
         new(argv: argv, job: job, output: output).call
       end
@@ -15,13 +19,33 @@ module PolishOpenSourceRank
 
       def call
         period = MonthPeriod.parse(month_argument || MonthPeriod.previous_month.key)
-        job.call(period)
+        with_interrupt_handling { job.call(period) }
         output.puts "Finished monthly ranking run for #{period.key}"
       end
 
       private
 
       attr_reader :argv, :job, :output
+
+      def with_interrupt_handling
+        previous_handlers = install_interrupt_handlers
+        yield
+      ensure
+        restore_interrupt_handlers(previous_handlers) if previous_handlers
+      end
+
+      def install_interrupt_handlers
+        INTERRUPT_SIGNALS.to_h do |signal|
+          previous = Signal.trap(signal) do
+            raise MonthlySnapshotInterrupted, "Received SIG#{signal}"
+          end
+          [signal, previous]
+        end
+      end
+
+      def restore_interrupt_handlers(previous_handlers)
+        previous_handlers.each { |signal, handler| Signal.trap(signal, handler) }
+      end
 
       def month_argument
         index = argv.index('--month')

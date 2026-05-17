@@ -13,25 +13,27 @@ module PolishOpenSourceRank
         @catalog = catalog
         @logger = logger
         @store_mutex = Mutex.new
-        @log_mutex = Mutex.new
       end
 
       def call(period)
         run_id = store.create_run(period)
         return unless run_id
 
-        discover_candidates(period)
+        discover_candidates(period) unless store.retryable_candidates?(period)
         process_candidates(period)
-        with_store { store.prune_rankings(period) }
-        with_store { store.finish_run(run_id) }
+
+        return store.fail_run(run_id, 'Retryable candidates remain') if store.retryable_candidates?(period)
+
+        store.prune_rankings(period)
+        store.finish_run(run_id)
       rescue StandardError => e
-        with_store { store.fail_run(run_id, "#{e.class}: #{e.message}") } if run_id
+        store.fail_run(run_id, "#{e.class}: #{e.message}") if run_id
         raise
       end
 
       private
 
-      attr_reader :catalog, :classifier, :log_mutex, :logger, :sources, :store, :store_mutex
+      attr_reader :catalog, :classifier, :logger, :sources, :store, :store_mutex
 
       def discover_candidates(period)
         run_sources_in_parallel('discover') { |source| discover_source_candidates(period, source) }
@@ -82,7 +84,7 @@ module PolishOpenSourceRank
         with_store { store.mark_candidate(period, platform, login, 'missing') }
       rescue StandardError => e
         with_store { store.mark_candidate(period, platform, login, 'failed', "#{e.class}: #{e.message}") }
-        raise
+        log(source, "candidate #{login.inspect} failed: #{e.class}: #{e.message}")
       end
 
       def process_unseen_candidate(period, source, login, source_id)
@@ -187,7 +189,7 @@ module PolishOpenSourceRank
       end
 
       def blank_to_nil(value)
-        value.to_s.strip.empty? ? nil : value
+        value if value.to_s.match?(/\S/)
       end
 
       def run_sources_in_parallel(stage)
@@ -209,10 +211,8 @@ module PolishOpenSourceRank
       end
 
       def log(source, message)
-        log_mutex.synchronize do
-          logger.puts "[#{source.platform}] #{message}"
-          logger.flush if logger.respond_to?(:flush)
-        end
+        logger.puts "[#{source.platform}] #{message}"
+        logger.flush if logger.respond_to?(:flush)
       end
     end
   end

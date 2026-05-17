@@ -103,6 +103,14 @@ bin/quality
 
 This runs RuboCop, Reek, and RSpec. SimpleCov enforces 100% line coverage for `lib/**/*.rb`.
 
+Mutation checks are available on demand through [Mutant](https://github.com/mbj/mutant):
+
+```sh
+bin/mutant-changed
+```
+
+That command only mutation-tests staged Ruby production subjects. Full Mutant output is written to `tmp/mutant-last.log`; the terminal output stays short enough for agent-driven review.
+
 Pre-commit hooks live in `.githooks/pre-commit`. This checkout is configured with:
 
 ```sh
