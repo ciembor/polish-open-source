@@ -1,37 +1,37 @@
 <section class="hero">
   <div class="hero__inner">
     <p class="eyebrow">Open-source ranking</p>
-    <h1><%= h @scope.fetch(:name) %></h1>
-    <p class="lede">Publiczni użytkownicy i repozytoria uporządkowane według gwiazdek, miesięcznego trendu i aktywności.</p>
+    <h1><%= h scope_name(@scope) %></h1>
+    <p class="lede"><%= h t('rankings.hero.lede') %></p>
     <% if @period %>
-      <p class="period">Snapshot: <time datetime="<%= h @period %>"><%= h @period %></time></p>
+      <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @period %>"><%= h @period %></time></p>
     <% end %>
   </div>
 </section>
 
 <% unless @period %>
   <section class="empty-state" aria-live="polite">
-    <h2>Brak danych rankingowych</h2>
-    <p>Pierwszy snapshot miesięczny nie został jeszcze zapisany.</p>
+    <h2><%= h t('rankings.empty.title') %></h2>
+    <p><%= h t('rankings.empty.body') %></p>
   </section>
 <% else %>
   <section class="ranking-band" aria-labelledby="users-heading">
     <div class="content">
-      <h2 id="users-heading">Użytkownicy</h2>
+      <h2 id="users-heading"><%= h t('rankings.users') %></h2>
       <div class="ranking-grid">
-        <%= erb :user_table, locals: { title: "Top 10 według gwiazdek", rows: @user_rankings.fetch(:top).first(10), metric: :total_stars, metric_label: "Gwiazdek", top_path: ranking_path("users", "top") } %>
-        <%= erb :user_table, locals: { title: "Trending 10 w miesiącu", rows: @user_rankings.fetch(:trending).first(10), metric: :monthly_stars_delta, metric_label: "Nowe gwiazdki", top_path: ranking_path("users", "trending") } %>
-        <%= erb :user_table, locals: { title: "Aktywność w miesiącu", rows: @user_rankings.fetch(:active).first(10), metric: :public_activity_count, metric_label: "Zdarzeń", top_path: ranking_path("users", "active") } %>
+        <%= erb :user_table, locals: { title: t('rankings.top_10_stars'), rows: @user_rankings.fetch(:top).first(10), metric: :total_stars, metric_label: t('rankings.metric.stars'), top_path: ranking_path("users", "top") } %>
+        <%= erb :user_table, locals: { title: t('rankings.trending_10_month'), rows: @user_rankings.fetch(:trending).first(10), metric: :monthly_stars_delta, metric_label: t('rankings.metric.new_stars'), top_path: ranking_path("users", "trending") } %>
+        <%= erb :user_table, locals: { title: t('rankings.users_activity_month'), rows: @user_rankings.fetch(:active).first(10), metric: :public_activity_count, metric_label: t('rankings.metric.events'), top_path: ranking_path("users", "active") } %>
       </div>
     </div>
   </section>
 
   <section class="ranking-band ranking-band--alt" aria-labelledby="repositories-heading">
     <div class="content">
-      <h2 id="repositories-heading">Repozytoria</h2>
+      <h2 id="repositories-heading"><%= h t('rankings.repositories') %></h2>
       <div class="ranking-grid ranking-grid--two">
-        <%= erb :repository_table, locals: { title: "Top 10 według gwiazdek", rows: @repository_rankings.fetch(:top).first(10), metric: :stargazers_count, metric_label: "Gwiazdek", top_path: ranking_path("repositories", "top") } %>
-        <%= erb :repository_table, locals: { title: "Trending 10 w miesiącu", rows: @repository_rankings.fetch(:trending).first(10), metric: :monthly_stars_delta, metric_label: "Nowe gwiazdki", top_path: ranking_path("repositories", "trending") } %>
+        <%= erb :repository_table, locals: { title: t('rankings.top_10_stars'), rows: @repository_rankings.fetch(:top).first(10), metric: :stargazers_count, metric_label: t('rankings.metric.stars'), top_path: ranking_path("repositories", "top") } %>
+        <%= erb :repository_table, locals: { title: t('rankings.trending_10_month'), rows: @repository_rankings.fetch(:trending).first(10), metric: :monthly_stars_delta, metric_label: t('rankings.metric.new_stars'), top_path: ranking_path("repositories", "trending") } %>
       </div>
     </div>
   </section>

@@ -1,30 +1,30 @@
 <section class="hero">
   <div class="hero__inner">
-    <p class="eyebrow">Archiwum rankingów</p>
-    <h1>Edycje</h1>
-    <p class="lede">Miesięczne snapshoty rankingu Polski z liderami projektów, gwiazdek użytkowników i aktywności.</p>
+    <p class="eyebrow"><%= h t('editions.hero.eyebrow') %></p>
+    <h1><%= h t('editions.title') %></h1>
+    <p class="lede"><%= h t('editions.hero.lede') %></p>
     <% if @year %>
-      <p class="period">Rok: <%= h @year %></p>
+      <p class="period"><%= h t('editions.period_prefix') %> <%= h @year %></p>
     <% end %>
   </div>
 </section>
 
 <% if @editions.empty? %>
   <section class="empty-state" aria-live="polite">
-    <h2>Brak edycji</h2>
-    <p>Nie ma jeszcze zakończonych miesięcznych snapshotów.</p>
+    <h2><%= h t('editions.empty.title') %></h2>
+    <p><%= h t('editions.empty.body') %></p>
   </section>
 <% else %>
   <section class="ranking-band" aria-labelledby="editions-heading">
     <div class="content">
       <div class="edition-header">
         <h2 id="editions-heading"><%= h @year %></h2>
-        <nav class="edition-pagination" aria-label="Wybór roku">
+        <nav class="edition-pagination" aria-label="<%= h t('editions.pagination_label') %>">
           <% if @newer_year %>
-            <a class="ranking-action" href="<%= h app_path(editions_path(@newer_year)) %>">Nowszy rok</a>
+            <a class="ranking-action" href="<%= h app_path(editions_path(@newer_year)) %>"><%= h t('editions.newer_year') %></a>
           <% end %>
           <% if @older_year %>
-            <a class="ranking-action" href="<%= h app_path(editions_path(@older_year)) %>">Starszy rok</a>
+            <a class="ranking-action" href="<%= h app_path(editions_path(@older_year)) %>"><%= h t('editions.older_year') %></a>
           <% end %>
         </nav>
       </div>
@@ -37,41 +37,41 @@
               <h3>
                 <a class="primary-link" href="<%= h app_path(period_base_path(period_slug)) %>"><%= h period_label(edition.fetch(:period_start)) %></a>
               </h3>
-              <a class="ranking-action" href="<%= h app_path(period_base_path(period_slug)) %>">Ranking miesiąca</a>
+              <a class="ranking-action" href="<%= h app_path(period_base_path(period_slug)) %>"><%= h t('editions.action.month_ranking') %></a>
             </header>
 
             <div class="edition-card__grid">
               <section>
-                <h4>Top projekty</h4>
+                <h4><%= h t('editions.top_projects') %></h4>
                 <ol class="edition-toplist">
                   <% edition.fetch(:repositories).each do |row| %>
                     <li>
                       <a class="primary-link" href="<%= h row.fetch(:html_url) %>"><%= erb :platform_icon, locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:full_name) %></a>
-                      <span><%= number(row.fetch(:stargazers_count)) %> gwiazdek</span>
+                      <span><%= number(row.fetch(:stargazers_count)) %> <%= h t('editions.stars_suffix') %></span>
                     </li>
                   <% end %>
                 </ol>
               </section>
 
               <section>
-                <h4>Top userzy: gwiazdki</h4>
+                <h4><%= h t('editions.top_users_stars') %></h4>
                 <ol class="edition-toplist">
                   <% edition.fetch(:users_by_stars).each do |row| %>
                     <li>
                       <a class="primary-link" href="<%= h row.fetch(:html_url) %>"><%= erb :platform_icon, locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:login) %></a>
-                      <span><%= number(row.fetch(:total_stars)) %> gwiazdek</span>
+                      <span><%= number(row.fetch(:total_stars)) %> <%= h t('editions.stars_suffix') %></span>
                     </li>
                   <% end %>
                 </ol>
               </section>
 
               <section>
-                <h4>Top userzy: aktywność</h4>
+                <h4><%= h t('editions.top_users_activity') %></h4>
                 <ol class="edition-toplist">
                   <% edition.fetch(:users_by_activity).each do |row| %>
                     <li>
                       <a class="primary-link" href="<%= h row.fetch(:html_url) %>"><%= erb :platform_icon, locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:login) %></a>
-                      <span><%= number(row.fetch(:public_activity_count)) %> zdarzeń</span>
+                      <span><%= number(row.fetch(:public_activity_count)) %> <%= h t('editions.activity_suffix') %></span>
                     </li>
                   <% end %>
                 </ol>

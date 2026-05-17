@@ -93,7 +93,7 @@ The app is deployed behind Nginx at `https://maciej-ciemborowicz.eu/polish-open-
 
 GitHub Actions runs quality checks and then calls [scripts/deploy.sh](scripts/deploy.sh). Required repository secret:
 
-- `DEPLOY_KEY`: private SSH key accepted for `ciembor@maciej-ciemborowicz.eu`.
+- `SSH_PRIVATE_KEY_B64`: base64-encoded private SSH key accepted for `ciembor@maciej-ciemborowicz.eu`.
 
 ## Quality
 

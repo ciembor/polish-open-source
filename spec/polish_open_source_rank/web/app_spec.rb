@@ -20,11 +20,11 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     response = Rack::MockRequest.new(described_class).get('/')
 
     expect(response.status).to eq(200)
-    expect(response.body).to include('<title>Polska open-source ranking</title>')
+    expect(response.body).to include('<title>Poland open-source ranking</title>')
     expect(response.body).to include('rel="canonical" href="https://rank.example/latest"')
     expect(response.body).to include('alice/app')
     expect(response.body).to include('href="/latest/users/top"')
-    expect(response.body).to include('Zobacz top 100')
+    expect(response.body).to include('See top 100')
     expect(response.body).to include('href="/editions"')
     expect(response.body).to include('application/ld+json')
   end
@@ -36,7 +36,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     expect(response.status).to eq(200)
     expect(response.body).to include('Kraków')
-    expect(response.body).to include('Brak danych rankingowych')
+    expect(response.body).to include('No ranking data')
     expect(response.body).to include('More cities')
   end
 
@@ -62,7 +62,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     latest_response = Rack::MockRequest.new(described_class).get('/latest')
     month_response = Rack::MockRequest.new(described_class).get('/2026-04')
 
-    expect(latest_response.body).to include('Brak danych rankingowych')
+    expect(latest_response.body).to include('No ranking data')
     expect(month_response.status).to eq(200)
     expect(month_response.body).to include('alice/app')
   end
@@ -77,13 +77,13 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     invalid_response = Rack::MockRequest.new(described_class).get('/2026-04/repositories/active')
 
     expect(user_response.status).to eq(200)
-    expect(user_response.body).to include('Top 100 aktywnych użytkowników')
+    expect(user_response.body).to include('Top 100 active users')
     expect(repo_response.status).to eq(200)
-    expect(repo_response.body).to include('Top 100 trendujących repozytoriów')
+    expect(repo_response.body).to include('Top 100 trending repositories')
     expect(latest_user_response.status).to eq(200)
-    expect(latest_user_response.body).to include('Gwiazdek')
+    expect(latest_user_response.body).to include('Stars')
     expect(latest_city_response.status).to eq(200)
-    expect(latest_city_response.body).to include('Top 100 repozytoriów według gwiazdek')
+    expect(latest_city_response.body).to include('Top 100 repositories by stars')
     expect(invalid_response.status).to eq(404)
   end
 
@@ -93,12 +93,12 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     response = Rack::MockRequest.new(described_class).get('/editions')
 
     expect(response.status).to eq(200)
-    expect(response.body).to include('<title>Edycje</title>')
-    expect(response.body).to include('>Edycje</h1>')
-    expect(response.body).to include('kwiecień 2026')
-    expect(response.body).to include('Top projekty')
-    expect(response.body).to include('Top userzy: gwiazdki')
-    expect(response.body).to include('Top userzy: aktywność')
+    expect(response.body).to include('<title>Editions</title>')
+    expect(response.body).to include('>Editions</h1>')
+    expect(response.body).to include('April 2026')
+    expect(response.body).to include('Top projects')
+    expect(response.body).to include('Top users: stars')
+    expect(response.body).to include('Top users: activity')
     expect(response.body).to include('href="/2026-04"')
     expect(response.body).to include('href="/editions/2025"')
   end
@@ -110,7 +110,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     invalid_response = Rack::MockRequest.new(described_class).get('/editions/2024')
 
     expect(year_response.status).to eq(200)
-    expect(year_response.body).to include('grudzień 2025')
+    expect(year_response.body).to include('December 2025')
     expect(year_response.body).to include('href="/editions/2026"')
     expect(invalid_response.status).to eq(404)
   end
@@ -119,8 +119,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     response = Rack::MockRequest.new(described_class).get('/about')
 
     expect(response.status).to eq(200)
-    expect(response.body).to include('Misja')
-    expect(response.body).to include('wyłącznie dane publiczne')
+    expect(response.body).to include('Mission')
+    expect(response.body).to include('Only public data')
     expect(response.body).to include('GitHub')
     expect(response.body).to include('GitLab')
     expect(response.body).to include('Codeberg')
@@ -150,20 +150,31 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(about_response.body).not_to include('Publiczne profile, projekty')
   end
 
-  it 'renders a language switch in the navigation' do
+  it 'renders Polish content when requested by accepted language' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     request = Rack::MockRequest.new(described_class)
 
     polish_response = request.get('/', 'HTTP_ACCEPT_LANGUAGE' => 'pl-PL,pl;q=0.9')
-    english_response = request.get('/latest?lang=en')
-    cookie_response = request.get('/latest', 'HTTP_COOKIE' => 'locale=en')
 
     expect(polish_response.body).to include('<html lang="pl">')
     expect(polish_response.body).to include('aria-label="Język"')
+    expect(polish_response.body).to include('Użytkownicy')
+    expect(polish_response.body).to include('Zobacz top 100')
     expect(polish_response.body).to include('href="/?lang=en"')
+  end
+
+  it 'renders English content by explicit locale and cookie' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    request = Rack::MockRequest.new(described_class)
+
+    english_response = request.get('/latest?lang=en')
+    cookie_response = request.get('/latest', 'HTTP_COOKIE' => 'locale=en')
+
     expect(english_response.body).to include('<html lang="en">')
     expect(english_response.body).to include('>Poland</a>')
     expect(english_response.body).to include('>More cities</summary>')
+    expect(english_response.body).to include('Top 10 by stars')
+    expect(english_response.body).to include('Repositories')
     expect(english_response['Set-Cookie']).to include('locale=en')
     expect(cookie_response.body).to include('<html lang="en">')
   end

@@ -15,7 +15,6 @@ Style/Documentation:
 Metrics/BlockLength:
   Exclude:
     - "spec/**/*"
-    - "lib/polish_open_source_rank/web/app.rb"
 
 Metrics/AbcSize:
   Max: 30

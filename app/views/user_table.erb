@@ -4,8 +4,8 @@
     <thead>
       <tr>
         <th scope="col">#</th>
-        <th scope="col">User</th>
-        <th scope="col">Miasto</th>
+        <th scope="col"><%= h t('rankings.table.user') %></th>
+        <th scope="col"><%= h t('rankings.table.city') %></th>
         <th scope="col"><%= h metric_label %></th>
       </tr>
     </thead>
@@ -23,18 +23,18 @@
               <a class="muted-link" href="<%= h row[:homepage] %>">www</a>
             <% end %>
           </td>
-          <td><%= h(row[:city] || "Polska") %></td>
+          <td><%= h(row[:city] || t('scope.poland')) %></td>
           <td class="metric"><%= number(row.fetch(metric)) %></td>
         </tr>
       <% end %>
       <% if rows.empty? %>
         <tr>
-          <td colspan="4">Brak rekordów.</td>
+          <td colspan="4"><%= h t('rankings.empty.records') %></td>
         </tr>
       <% end %>
     </tbody>
   </table>
   <% if defined?(top_path) && top_path %>
-    <a class="ranking-action" href="<%= h app_path(top_path) %>">Zobacz top 100</a>
+    <a class="ranking-action" href="<%= h app_path(top_path) %>"><%= h t('rankings.see_top_100') %></a>
   <% end %>
 </article>
