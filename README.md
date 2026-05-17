@@ -1,13 +1,13 @@
-# Polish GitHub Rank
+# Polish Open Source Rank
 
-Monthly Ruby application that builds GitHub rankings for Poland and selected Polish cities.
+Monthly Ruby application that builds public code-hosting rankings for Poland and selected Polish cities.
 
-The GitHub API does not provide regex search over user locations, so the sync job searches a fixed catalog of country and city variants, stores candidates, and then classifies every profile locally with regex-based matching. Interrupted runs are resumable because candidates and monthly snapshots are stored in SQLite.
+Public platform APIs do not provide portable regex search over user locations, so the sync job searches a fixed catalog of country and city variants, stores candidates, and then classifies every profile locally with regex-based matching. Interrupted runs are resumable because candidates and monthly snapshots are stored in SQLite.
 
 ## Data Collected
 
-- GitHub user login, name, raw location, normalized city, normalized country, public email, homepage, profile URL, avatar URL.
-- User monthly stats: public repo count, total stars across owned public repositories, stars gained by those repositories during the month, public activity event count during the month.
+- User login, name, raw location, normalized city, normalized country, public email, homepage, profile URL, avatar URL.
+- User monthly stats: public repo count, total stars across owned public repositories, stars gained by those repositories during the month when the platform exposes dated star history, public activity event count during the month.
 - Repository data per user: name, full name, URL, homepage, language, description, fork/archive flags.
 - Repository monthly stats: current stars and stars gained during the month.
 
@@ -34,11 +34,15 @@ Put the GitHub token in `.env.local`. That file is ignored by git.
 
 ```env
 GITHUB_TOKEN=...
+GITLAB_TOKEN=...
+CODEBERG_TOKEN=...
 DATABASE_URL=sqlite://db/polish_github_rank.sqlite3
 REQUESTS_PER_MINUTE=25
 BASE_URL=https://maciej-ciemborowicz.eu/polish-github-rank
 APP_BASE_PATH=/polish-github-rank
 ```
+
+`GITLAB_TOKEN` and `CODEBERG_TOKEN` are optional for public API access, but recommended for more stable monthly runs.
 
 ## Monthly Job
 

@@ -17,29 +17,74 @@ class FakeJobGitHub
     candidates.fetch(term, [])
   end
 
-  def user(login)
+  def platform
+    'github'
+  end
+
+  def user(login, _id = nil)
     raise 'boom' if fail_logins.include?(login)
     raise missing_error if missing_logins.include?(login)
 
     profiles.fetch(login)
   end
 
-  def repositories_for(login)
-    repositories.fetch(login, [])
+  def repositories_for(profile)
+    repositories.fetch(profile.fetch(:login), [])
   end
 
-  def repository_stars_delta(full_name, _period)
-    deltas.fetch(full_name, 0)
+  def repository_stars_delta(repository, _period)
+    deltas.fetch(repository.fetch(:full_name), 0)
   end
 
-  def public_activity_count(login, _period)
-    activities.fetch(login, 0)
+  def public_activity_count(profile, _period)
+    activities.fetch(profile.fetch(:login), 0)
   end
 
   private
 
   def missing_error
-    PolishGithubRank::Infrastructure::GitHubClient::NotFound.new('missing', status: 404, body: '{}')
+    PolishGithubRank::Application::SourceNotFound.new('missing')
+  end
+end
+
+class FakeJobGitLab < FakeJobGitHub
+  def platform
+    'gitlab'
+  end
+
+  private
+
+  def missing_error
+    PolishGithubRank::Application::SourceNotFound.new('missing')
+  end
+end
+
+class FakeJobCodeberg < FakeJobGitHub
+  def platform
+    'codeberg'
+  end
+
+  private
+
+  def missing_error
+    PolishGithubRank::Application::SourceNotFound.new('missing')
+  end
+end
+
+class BlockingDiscoverySource < FakeJobGitHub
+  attr_reader :platform
+
+  def initialize(platform, started, release)
+    super()
+    @platform = platform
+    @started = started
+    @release = release
+  end
+
+  def search_users_by_location(_term)
+    @started << platform
+    @release.pop
+    []
   end
 end
 
@@ -51,7 +96,9 @@ RSpec.describe PolishGithubRank::Application::MonthlySnapshotJob do
   let(:job) { described_class.new(store: store, github: github, catalog: catalog, logger: StringIO.new) }
 
   it 'discovers candidates, rejects non-Polish profiles, and stores Polish snapshots' do
-    github.candidates = { 'Poland' => [{ 'id' => 1, 'login' => 'alice' }, { 'id' => 2, 'login' => 'bob' }] }
+    github.candidates = {
+      'Poland' => [{ source_id: 1, login: 'alice' }, { source_id: 2, login: 'bob' }]
+    }
     github.profiles = {
       'alice' => profile(1, 'alice', 'Krakow, Poland', blog: ''),
       'bob' => profile(2, 'bob', 'Berlin, Germany')
@@ -81,46 +128,126 @@ RSpec.describe PolishGithubRank::Application::MonthlySnapshotJob do
   end
 
   it 'marks missing users without failing the run' do
-    github.candidates = { 'Poland' => [{ 'id' => 404, 'login' => 'missing' }] }
+    github.candidates = { 'Poland' => [{ source_id: 404, login: 'missing' }] }
     github.missing_logins = ['missing']
 
     expect { job.call(period) }.not_to raise_error
     expect(store.pending_candidates(period)).to be_empty
   end
 
+  it 'marks missing GitLab users without failing the run' do
+    gitlab = FakeJobGitLab.new
+    gitlab.candidates = { 'Poland' => [{ source_id: 404, login: 'missing' }] }
+    gitlab.missing_logins = ['missing']
+
+    described_class.new(store: store, sources: [gitlab], catalog: catalog, logger: StringIO.new).call(period)
+
+    expect(store.pending_candidates(period)).to be_empty
+  end
+
+  it 'stores Codeberg profiles through the normalized source contract' do
+    codeberg = FakeJobCodeberg.new
+    codeberg.candidates = { 'Poland' => [{ source_id: 3, login: 'celina' }] }
+    codeberg.profiles = { 'celina' => codeberg_profile }
+    codeberg.repositories = { 'celina' => [codeberg_repository] }
+
+    described_class.new(store: store, sources: [codeberg], catalog: catalog, logger: StringIO.new).call(period)
+
+    expect(store.user_rankings('warszawa').fetch(:top).first).to include(
+      platform: 'codeberg',
+      login: 'celina',
+      name: 'Celina C',
+      homepage: 'https://celina.example',
+      total_stars: 9
+    )
+    expect(store.repository_rankings('warszawa').fetch(:top).first).to include(
+      platform: 'codeberg',
+      full_name: 'celina/tool',
+      stargazers_count: 9
+    )
+  end
+
   it 'records candidate and run failures for retryable job crashes' do
-    github.candidates = { 'Poland' => [{ 'id' => 500, 'login' => 'broken' }] }
+    github.candidates = { 'Poland' => [{ source_id: 500, login: 'broken' }] }
     github.fail_logins = ['broken']
 
     expect { job.call(period) }.to raise_error(RuntimeError, 'boom')
     expect(store.pending_candidates(period)).to contain_exactly(include(login: 'broken'))
   end
 
+  it 'discovers sources in parallel and writes platform-prefixed logs' do
+    started = Queue.new
+    release = Queue.new
+    logger = StringIO.new
+    sources = [
+      BlockingDiscoverySource.new('github', started, release),
+      BlockingDiscoverySource.new('gitlab', started, release)
+    ]
+    thread = Thread.new do
+      described_class.new(store: store, sources: sources, catalog: catalog, logger: logger).call(period)
+    end
+
+    expect([started.pop, started.pop].sort).to eq(%w[github gitlab])
+    2.times { release << true }
+    thread.value
+
+    expect(logger.string).to include('[github] discovering users for location "Poland"')
+    expect(logger.string).to include('[gitlab] discovering users for location "Poland"')
+  end
+
   def profile(id, login, location, blog: 'https://example.com')
     {
-      'id' => id,
-      'login' => login,
-      'name' => login.capitalize,
-      'location' => location,
-      'email' => "#{login}@example.com",
-      'blog' => blog,
-      'html_url' => "https://github.com/#{login}",
-      'avatar_url' => "https://avatars.example/#{login}.png"
+      source_id: id,
+      login: login,
+      name: login.capitalize,
+      location: location,
+      email: "#{login}@example.com",
+      homepage: blog,
+      html_url: "https://github.com/#{login}",
+      avatar_url: "https://avatars.example/#{login}.png"
     }
   end
 
   def repository(id, full_name, stars, homepage: 'https://repo.example')
     {
-      'id' => id,
-      'name' => full_name.split('/').last,
-      'full_name' => full_name,
-      'description' => "Repository #{full_name}",
-      'html_url' => "https://github.com/#{full_name}",
-      'homepage' => homepage,
-      'language' => 'Ruby',
-      'fork' => false,
-      'archived' => false,
-      'stargazers_count' => stars
+      source_id: id,
+      name: full_name.split('/').last,
+      full_name: full_name,
+      description: "Repository #{full_name}",
+      html_url: "https://github.com/#{full_name}",
+      homepage: homepage,
+      language: 'Ruby',
+      fork: false,
+      archived: false,
+      stars: stars
+    }
+  end
+
+  def codeberg_profile
+    {
+      source_id: 3,
+      login: 'celina',
+      name: 'Celina C',
+      location: 'Warsaw, Poland',
+      email: nil,
+      homepage: 'https://celina.example',
+      html_url: 'https://codeberg.org/celina',
+      avatar_url: nil
+    }
+  end
+
+  def codeberg_repository
+    {
+      source_id: 30,
+      name: 'tool',
+      full_name: 'celina/tool',
+      description: 'Codeberg tool',
+      html_url: 'https://codeberg.org/celina/tool',
+      homepage: 'https://tool.example',
+      language: 'Ruby',
+      fork: false,
+      archived: false,
+      stars: 9
     }
   end
 

@@ -11,33 +11,46 @@ module PolishGithubRank
         @client = client
       end
 
+      def platform
+        'github'
+      end
+
       def search_users_by_location(term)
         query = %(type:user location:"#{term}")
         each_page('/search/users', { q: query }, limit: SEARCH_PAGE_LIMIT)
-          .flat_map { |response| response.body.fetch('items', []) }
+          .flat_map { |response| response.body.fetch('items', []).map { |user| candidate(user) } }
       end
 
-      def user(login)
-        client.get("/users/#{login}").body
+      def user(login, _github_id = nil)
+        profile(client.get("/users/#{login}").body)
+      rescue GitHubClient::NotFound
+        raise Application::SourceNotFound
       end
 
-      def repositories_for(login)
+      def repositories_for(profile)
+        login = profile.fetch(:login)
         each_page(
           "/users/#{login}/repos",
           { type: 'owner', sort: 'full_name', direction: 'asc' }
-        ).flat_map(&:body)
+        ).flat_map { |response| response.body.map { |repository| repository(repository) } }
       end
 
-      def repository_stars_delta(full_name, period)
+      def repository_stars_delta(repository, period)
+        full_name = repository.fetch(:full_name)
         owner, repo = full_name.split('/', 2)
         first_page = stargazers_page(owner, repo, 1)
         last_page = last_page_number(first_page.headers.fetch('link', nil)) || 1
         return count_stars(first_page.body, period) if last_page == 1
 
         count_stars_backwards(owner, repo, period, last_page)
+      rescue GitHubClient::Error => e
+        raise unless e.status == 451
+
+        0
       end
 
-      def public_activity_count(login, period)
+      def public_activity_count(profile, period)
+        login = profile.fetch(:login)
         count = 0
         each_page("/users/#{login}/events/public", {}) do |response|
           times = response.body.map { |event| Time.parse(event.fetch('created_at')) }
@@ -50,6 +63,38 @@ module PolishGithubRank
       private
 
       attr_reader :client
+
+      def candidate(user)
+        { source_id: user.fetch('id'), login: user.fetch('login') }
+      end
+
+      def profile(user)
+        {
+          source_id: user.fetch('id'),
+          login: user.fetch('login'),
+          name: user['name'],
+          location: user['location'],
+          email: user['email'],
+          homepage: user['blog'],
+          html_url: user.fetch('html_url'),
+          avatar_url: user['avatar_url']
+        }
+      end
+
+      def repository(repository)
+        {
+          source_id: repository.fetch('id'),
+          name: repository.fetch('name'),
+          full_name: repository.fetch('full_name'),
+          description: repository['description'],
+          html_url: repository.fetch('html_url'),
+          homepage: repository['homepage'],
+          language: repository['language'],
+          fork: repository.fetch('fork'),
+          archived: repository.fetch('archived'),
+          stars: repository.fetch('stargazers_count').to_i
+        }
+      end
 
       def each_page(path, params, limit: nil)
         return enum_for(:each_page, path, params, limit: limit) unless block_given?
