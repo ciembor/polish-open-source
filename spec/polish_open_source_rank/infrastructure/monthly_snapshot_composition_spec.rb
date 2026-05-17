@@ -14,6 +14,33 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::MonthlySnapshotComposition 
     expect(PolishOpenSourceRank::Infrastructure::CodebergGateway).to have_received(:new).with(clients.fetch(:codeberg))
   end
 
+  it 'builds a command for one selected platform' do
+    configuration = command_configuration
+    clients = stub_clients
+    stub_gateways(clients)
+
+    command = described_class.build(
+      ['--month', '2026-04', '--platform', 'gitlab'],
+      configuration: configuration,
+      output: StringIO.new
+    )
+
+    expect(command).to be_a(PolishOpenSourceRank::Application::MonthlySnapshotCommand)
+    expect(PolishOpenSourceRank::Infrastructure::GitHubGateway).not_to have_received(:new)
+    expect(PolishOpenSourceRank::Infrastructure::GitLabGateway).to have_received(:new).with(clients.fetch(:gitlab))
+    expect(PolishOpenSourceRank::Infrastructure::CodebergGateway).not_to have_received(:new)
+  end
+
+  it 'rejects unsupported selected platforms' do
+    configuration = command_configuration
+    clients = stub_clients
+    stub_gateways(clients)
+
+    expect do
+      described_class.build(['--platform', 'sourcehut'], configuration: configuration, output: StringIO.new)
+    end.to raise_error(ArgumentError, 'Unsupported platform: sourcehut')
+  end
+
   def command_configuration
     instance_double(
       PolishOpenSourceRank::Configuration,

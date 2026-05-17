@@ -3,6 +3,8 @@
 module PolishOpenSourceRank
   module Infrastructure
     class MonthlySnapshotComposition
+      SUPPORTED_PLATFORMS = %w[github gitlab codeberg].freeze
+
       def self.build(argv, configuration: Configuration.load, output: $stdout)
         new(argv, configuration: configuration, output: output).build
       end
@@ -34,7 +36,28 @@ module PolishOpenSourceRank
       end
 
       def sources
-        [github_source, gitlab_source, codeberg_source]
+        selected_platforms.map { |platform| source_for(platform) }
+      end
+
+      def selected_platforms
+        platform_argument ? [platform_argument] : SUPPORTED_PLATFORMS
+      end
+
+      def platform_argument
+        index = argv.index('--platform')
+        return unless index
+
+        argv.fetch(index + 1).tap do |platform|
+          raise ArgumentError, "Unsupported platform: #{platform}" unless SUPPORTED_PLATFORMS.include?(platform)
+        end
+      end
+
+      def source_for(platform)
+        case platform
+        when 'github' then github_source
+        when 'gitlab' then gitlab_source
+        when 'codeberg' then codeberg_source
+        end
       end
 
       def github_source
