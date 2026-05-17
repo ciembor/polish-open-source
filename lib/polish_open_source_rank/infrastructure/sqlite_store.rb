@@ -7,6 +7,23 @@ module PolishOpenSourceRank
     class SQLiteStore
       SCHEMA_VERSION = 1
       RANKING_LIMIT = 100
+      PROCESSED_USER_SQL = <<~SQL
+        SELECT 1
+        FROM user_monthly_stats user_stats
+        WHERE user_stats.period_start = ?
+          AND user_stats.platform = ?
+          AND user_stats.user_github_id = ?
+          AND (
+            user_stats.public_repo_count = 0
+            OR EXISTS (
+              SELECT 1
+              FROM repository_monthly_stats repository_stats
+              WHERE repository_stats.period_start = user_stats.period_start
+                AND repository_stats.platform = user_stats.platform
+                AND repository_stats.owner_github_id = user_stats.user_github_id
+            )
+          )
+      SQL
 
       def initialize(path)
         @path = Pathname(path)
@@ -84,10 +101,7 @@ module PolishOpenSourceRank
           github_id = platform
           platform = 'github'
         end
-        fetch_value(
-          'SELECT 1 FROM user_monthly_stats WHERE period_start = ? AND platform = ? AND user_github_id = ?',
-          [period.start_date.to_s, platform, github_id]
-        )
+        fetch_value(PROCESSED_USER_SQL, [period.start_date.to_s, platform, github_id])
       end
 
       def retryable_candidates?(period)

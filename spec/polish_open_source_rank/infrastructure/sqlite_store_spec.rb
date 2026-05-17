@@ -50,12 +50,27 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     store.create_run(period)
     store.upsert_user(user_attributes(10, 'alice', 'Kraków'))
     store.record_user_stats(user_stats(10, 'alice', 'Kraków', total_stars: 30, delta: 4, activity: 9))
+    store.upsert_repository(repository_attributes(100, 10, 'alice', 'alice/app', 30))
+    store.record_repository_stats(repository_stats(100, 10, 'alice', 'Kraków', stars: 30, delta: 4))
 
     expect(store.processed_user?(period, 10)).to eq(1)
     expect(store.processed_user?(period, 'github', 10)).to eq(1)
     expect(store.recorded_period?('2026-04-01')).to be(true)
     expect(store.recorded_period?('2026-05-01')).to be(false)
     expect(store.retryable_candidates?(period)).to be(false)
+  end
+
+  it 'does not treat user stats as complete when repository stats are missing' do
+    store.create_run(period)
+    store.upsert_user(user_attributes(10, 'alice', 'Kraków'))
+    store.record_user_stats(user_stats(10, 'alice', 'Kraków', total_stars: 30, delta: 4, activity: 9))
+
+    expect(store.processed_user?(period, 10)).to be_nil
+
+    store.upsert_repository(repository_attributes(100, 10, 'alice', 'alice/app', 30))
+    store.record_repository_stats(repository_stats(100, 10, 'alice', 'Kraków', stars: 30, delta: 4))
+
+    expect(store.processed_user?(period, 10)).to eq(1)
   end
 
   it 'keeps city rankings scoped to the requested city' do
