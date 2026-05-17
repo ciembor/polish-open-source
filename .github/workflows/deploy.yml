@@ -33,12 +33,18 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup SSH
+        shell: bash
+        env:
+          SSH_PRIVATE_KEY_B64: ${{ secrets.SSH_PRIVATE_KEY_B64 }}
         run: |
           mkdir -p ~/.ssh
-          printf "%s" "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_ed25519
+          chmod 700 ~/.ssh
+
+          printf '%s' "$SSH_PRIVATE_KEY_B64" | base64 -d > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
+
+          ssh-keygen -lf ~/.ssh/id_ed25519
           ssh-keyscan -H "${DEPLOY_HOST}" >> ~/.ssh/known_hosts
-        shell: bash
 
       - name: Deploy
         env:
