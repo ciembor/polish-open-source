@@ -44,7 +44,10 @@ module PolishOpenSourceRank
               THEN candidate_users.source_query
               ELSE candidate_users.source_query || ', ' || excluded.source_query
             END,
-            updated_at = excluded.updated_at
+            updated_at = CASE
+              WHEN candidate_users.status = 'pending' THEN excluded.updated_at
+              ELSE candidate_users.updated_at
+            END
         SQL
       end
 
