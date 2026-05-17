@@ -36,10 +36,10 @@ Put the GitHub token in `.env.local`. That file is ignored by git.
 GITHUB_TOKEN=...
 GITLAB_TOKEN=...
 CODEBERG_TOKEN=...
-DATABASE_URL=sqlite://db/polish_github_rank.sqlite3
+DATABASE_URL=sqlite://db/polish_open_source_rank.sqlite3
 REQUESTS_PER_MINUTE=25
-BASE_URL=https://maciej-ciemborowicz.eu/polish-github-rank
-APP_BASE_PATH=/polish-github-rank
+BASE_URL=https://maciej-ciemborowicz.eu/polish-open-source-rank
+APP_BASE_PATH=/polish-open-source-rank
 ```
 
 `GITLAB_TOKEN` and `CODEBERG_TOKEN` are optional for public API access, but recommended for more stable monthly runs.
@@ -66,7 +66,7 @@ The job intentionally favors stability over speed:
 - retries 403, 429, and 5xx responses with backoff;
 - stores candidate status in SQLite so failed runs can be resumed.
 
-Production uses the systemd timer in [deploy/polish-github-rank-monthly.timer](deploy/polish-github-rank-monthly.timer).
+Production uses the systemd timer in [deploy/polish-open-source-rank-monthly.timer](deploy/polish-open-source-rank-monthly.timer).
 
 ## Web App
 
@@ -84,12 +84,12 @@ The HTML uses semantic sections, tables, canonical URLs, meta descriptions, and 
 
 ## Deployment
 
-The app is deployed behind Nginx at `https://maciej-ciemborowicz.eu/polish-github-rank`. The server runs it as a Podman container via systemd:
+The app is deployed behind Nginx at `https://maciej-ciemborowicz.eu/polish-open-source-rank`. The server runs it as a Podman container via systemd:
 
-- [deploy/nginx-polish-github-rank.conf](deploy/nginx-polish-github-rank.conf)
-- [deploy/polish-github-rank.service](deploy/polish-github-rank.service)
-- [deploy/polish-github-rank-monthly.service](deploy/polish-github-rank-monthly.service)
-- [deploy/polish-github-rank-monthly.timer](deploy/polish-github-rank-monthly.timer)
+- [deploy/nginx-polish-open-source-rank.conf](deploy/nginx-polish-open-source-rank.conf)
+- [deploy/polish-open-source-rank.service](deploy/polish-open-source-rank.service)
+- [deploy/polish-open-source-rank-monthly.service](deploy/polish-open-source-rank-monthly.service)
+- [deploy/polish-open-source-rank-monthly.timer](deploy/polish-open-source-rank-monthly.timer)
 
 GitHub Actions runs quality checks and then calls [scripts/deploy.sh](scripts/deploy.sh). Required repository secret:
 

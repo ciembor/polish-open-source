@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require_relative '../lib/polish_github_rank'
+require_relative '../lib/polish_open_source_rank'
 
-PolishGithubRank::Infrastructure::MonthlySnapshotComposition.build(ARGV).call
+PolishOpenSourceRank::Infrastructure::MonthlySnapshotComposition.build(ARGV).call
