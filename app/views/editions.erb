@@ -1,0 +1,85 @@
+<section class="hero">
+  <div class="hero__inner">
+    <p class="eyebrow">Archiwum rankingów</p>
+    <h1>Poprzednie edycje</h1>
+    <p class="lede">Miesięczne snapshoty rankingu Polski z liderami projektów, gwiazdek użytkowników i aktywności.</p>
+    <% if @year %>
+      <p class="period">Rok: <%= h @year %></p>
+    <% end %>
+  </div>
+</section>
+
+<% if @editions.empty? %>
+  <section class="empty-state" aria-live="polite">
+    <h2>Brak poprzednich edycji</h2>
+    <p>Nie ma jeszcze zakończonych miesięcznych snapshotów.</p>
+  </section>
+<% else %>
+  <section class="ranking-band" aria-labelledby="editions-heading">
+    <div class="content">
+      <div class="edition-header">
+        <h2 id="editions-heading"><%= h @year %></h2>
+        <nav class="edition-pagination" aria-label="Wybór roku">
+          <% if @newer_year %>
+            <a class="ranking-action" href="<%= h app_path(editions_path(@newer_year)) %>">Nowszy rok</a>
+          <% end %>
+          <% if @older_year %>
+            <a class="ranking-action" href="<%= h app_path(editions_path(@older_year)) %>">Starszy rok</a>
+          <% end %>
+        </nav>
+      </div>
+
+      <div class="edition-list">
+        <% @editions.each do |edition| %>
+          <% period_slug = Date.parse(edition.fetch(:period_start)).strftime('%Y-%m') %>
+          <article class="edition-card">
+            <header class="edition-card__header">
+              <h3>
+                <a class="primary-link" href="<%= h app_path(period_base_path(period_slug)) %>"><%= h period_label(edition.fetch(:period_start)) %></a>
+              </h3>
+              <a class="ranking-action" href="<%= h app_path(period_base_path(period_slug)) %>">Ranking miesiąca</a>
+            </header>
+
+            <div class="edition-card__grid">
+              <section>
+                <h4>Top projekty</h4>
+                <ol class="edition-toplist">
+                  <% edition.fetch(:repositories).each do |row| %>
+                    <li>
+                      <a class="primary-link" href="<%= h row.fetch(:html_url) %>"><span class="platform-mark platform-mark--<%= h row.fetch(:platform, "github") %>"><%= h platform_mark(row.fetch(:platform, "github")) %></span><%= h row.fetch(:full_name) %></a>
+                      <span><%= number(row.fetch(:stargazers_count)) %> gwiazdek</span>
+                    </li>
+                  <% end %>
+                </ol>
+              </section>
+
+              <section>
+                <h4>Top userzy: gwiazdki</h4>
+                <ol class="edition-toplist">
+                  <% edition.fetch(:users_by_stars).each do |row| %>
+                    <li>
+                      <a class="primary-link" href="<%= h row.fetch(:html_url) %>"><span class="platform-mark platform-mark--<%= h row.fetch(:platform, "github") %>"><%= h platform_mark(row.fetch(:platform, "github")) %></span><%= h row.fetch(:login) %></a>
+                      <span><%= number(row.fetch(:total_stars)) %> gwiazdek</span>
+                    </li>
+                  <% end %>
+                </ol>
+              </section>
+
+              <section>
+                <h4>Top userzy: aktywność</h4>
+                <ol class="edition-toplist">
+                  <% edition.fetch(:users_by_activity).each do |row| %>
+                    <li>
+                      <a class="primary-link" href="<%= h row.fetch(:html_url) %>"><span class="platform-mark platform-mark--<%= h row.fetch(:platform, "github") %>"><%= h platform_mark(row.fetch(:platform, "github")) %></span><%= h row.fetch(:login) %></a>
+                      <span><%= number(row.fetch(:public_activity_count)) %> zdarzeń</span>
+                    </li>
+                  <% end %>
+                </ol>
+              </section>
+            </div>
+          </article>
+        <% end %>
+      </div>
+    </div>
+  </section>
+<% end %>

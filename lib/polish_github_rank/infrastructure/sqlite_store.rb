@@ -200,6 +200,32 @@ module PolishGithubRank
         SQL
       end
 
+      def edition_years
+        fetch_all(<<~SQL)
+          SELECT DISTINCT substr(period_start, 1, 4) AS year
+          FROM sync_runs
+          WHERE status = 'finished'
+          ORDER BY year DESC
+        SQL
+      end
+
+      def monthly_editions(year, scope: 'poland')
+        fetch_all(<<~SQL, [year.to_s]).map do |row|
+          SELECT period_start
+          FROM sync_runs
+          WHERE status = 'finished' AND substr(period_start, 1, 4) = ?
+          ORDER BY period_start DESC
+        SQL
+          period_start = row.fetch(:period_start)
+          {
+            period_start: period_start,
+            repositories: ranked_repositories(scope, period_start, 'stargazers_count', limit: 3),
+            users_by_stars: ranked_users(scope, period_start, 'total_stars', limit: 3),
+            users_by_activity: ranked_users(scope, period_start, 'public_activity_count', limit: 3)
+          }
+        end
+      end
+
       def recorded_period?(period_start)
         !fetch_value('SELECT 1 FROM sync_runs WHERE period_start = ?', [period_start]).nil?
       end
@@ -251,7 +277,7 @@ module PolishGithubRank
         database.get_first_value(sql, params)
       end
 
-      def ranked_users(scope, period_start, order_column)
+      def ranked_users(scope, period_start, order_column, limit: RANKING_LIMIT)
         sql_scope, params = user_scope(scope)
         fetch_all(<<~SQL, [period_start, *params])
           SELECT users.platform, users.login, users.name, users.email, users.homepage, users.html_url, users.avatar_url,
@@ -261,11 +287,11 @@ module PolishGithubRank
           INNER JOIN users ON users.platform = stats.platform AND users.github_id = stats.user_github_id
           WHERE stats.period_start = ? AND #{sql_scope} #{trending_filter(order_column, 'stats')}
           ORDER BY stats.#{order_column} DESC, users.platform ASC, users.login COLLATE NOCASE ASC
-          LIMIT #{RANKING_LIMIT}
+          LIMIT #{bounded_limit(limit)}
         SQL
       end
 
-      def ranked_repositories(scope, period_start, order_column)
+      def ranked_repositories(scope, period_start, order_column, limit: RANKING_LIMIT)
         sql_scope, params = repository_scope(scope)
         fetch_all(<<~SQL, [period_start, *params])
           SELECT repositories.platform, repositories.full_name, repositories.name, repositories.description, repositories.html_url,
@@ -275,8 +301,12 @@ module PolishGithubRank
           INNER JOIN repositories ON repositories.platform = stats.platform AND repositories.github_id = stats.repository_github_id
           WHERE stats.period_start = ? AND #{sql_scope} #{trending_filter(order_column, 'stats')}
           ORDER BY stats.#{order_column} DESC, repositories.platform ASC, repositories.full_name COLLATE NOCASE ASC
-          LIMIT #{RANKING_LIMIT}
+          LIMIT #{bounded_limit(limit)}
         SQL
+      end
+
+      def bounded_limit(limit)
+        limit.to_i.clamp(1, RANKING_LIMIT)
       end
 
       def trending_filter(order_column, table_alias)
