@@ -63,22 +63,28 @@
     <h2 id="platforms-heading">Publiczne źródła rankingu</h2>
     <div class="platform-grid">
       <article class="platform-card platform-card--github">
-        <div class="platform-logo" aria-hidden="true">
-          <img class="platform-logo__image" src="<%= h app_path(platform_icon_path("github")) %>" alt="" width="64" height="64">
-        </div>
-        <h3>GitHub</h3>
+        <a class="platform-card__link" href="https://github.com/">
+          <span class="platform-logo" aria-hidden="true">
+            <img class="platform-logo__image" src="<%= h app_path(platform_icon_path("github")) %>" alt="" width="64" height="64">
+          </span>
+          <span class="platform-card__name">GitHub</span>
+        </a>
       </article>
       <article class="platform-card platform-card--gitlab">
-        <div class="platform-logo" aria-hidden="true">
-          <img class="platform-logo__image" src="<%= h app_path(platform_icon_path("gitlab")) %>" alt="" width="64" height="64">
-        </div>
-        <h3>GitLab</h3>
+        <a class="platform-card__link" href="https://gitlab.com/">
+          <span class="platform-logo" aria-hidden="true">
+            <img class="platform-logo__image" src="<%= h app_path(platform_icon_path("gitlab")) %>" alt="" width="64" height="64">
+          </span>
+          <span class="platform-card__name">GitLab</span>
+        </a>
       </article>
       <article class="platform-card platform-card--codeberg">
-        <div class="platform-logo" aria-hidden="true">
-          <img class="platform-logo__image" src="<%= h app_path(platform_icon_path("codeberg")) %>" alt="" width="64" height="64">
-        </div>
-        <h3>Codeberg</h3>
+        <a class="platform-card__link" href="https://codeberg.org/">
+          <span class="platform-logo" aria-hidden="true">
+            <img class="platform-logo__image" src="<%= h app_path(platform_icon_path("codeberg")) %>" alt="" width="64" height="64">
+          </span>
+          <span class="platform-card__name">Codeberg</span>
+        </a>
       </article>
     </div>
   </div>
