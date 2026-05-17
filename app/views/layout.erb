@@ -6,21 +6,31 @@
     <meta name="robots" content="index,follow">
     <meta name="description" content="<%= h @description %>">
     <link rel="canonical" href="<%= h canonical_url %>">
-    <link rel="stylesheet" href="<%= h app_path('/css/application.css') %>">
+    <link rel="stylesheet" href="<%= h app_path('/css/application.css?v=20260517-about') %>">
     <title><%= h @title %></title>
     <script type="application/ld+json">
       <%= structured_data %>
     </script>
+    <script defer src="<%= h app_path('/js/navigation.js?v=20260517-menu3') %>"></script>
   </head>
   <body>
     <header class="site-header">
       <div class="site-header__inner">
-        <a class="brand" href="<%= h app_path('/') %>">Polish GitHub Rank</a>
+        <a class="brand" href="<%= h app_path('/latest') %>">Polish Open Source Rank</a>
         <nav class="nav" aria-label="Rankingi lokalizacji">
-          <% scopes.each do |scope| %>
-            <% href = scope.fetch(:slug) == "poland" ? "/" : city_path(scope.fetch(:slug)) %>
-            <a class="nav__link" href="<%= h app_path(href) %>"><%= h scope.fetch(:name) %></a>
+          <a class="nav__link" href="<%= h app_path(scope_path(scopes.first)) %>">Polska</a>
+          <% primary_city_scopes.each do |scope| %>
+            <a class="nav__link" href="<%= h app_path(scope_path(scope)) %>"><%= h scope.fetch(:name) %></a>
           <% end %>
+          <details class="nav-menu">
+            <summary>Więcej miast</summary>
+            <div class="nav-menu__panel">
+              <% secondary_city_scopes.each do |scope| %>
+                <a class="nav__link" href="<%= h app_path(scope_path(scope)) %>"><%= h scope.fetch(:name) %></a>
+              <% end %>
+            </div>
+          </details>
+          <a class="nav__link" href="<%= h app_path('/about') %>">About</a>
         </nav>
       </div>
     </header>
@@ -30,7 +40,7 @@
     </main>
 
     <footer class="site-footer">
-      <p>Dane pochodzą z publicznego API GitHuba i są odświeżane miesięcznie.</p>
+      <p>Dane pochodzą z publicznych API GitHuba, GitLaba i Codeberga i są odświeżane miesięcznie.</p>
     </footer>
   </body>
 </html>

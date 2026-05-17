@@ -3,4 +3,4 @@
 
 require_relative '../lib/polish_github_rank'
 
-PolishGithubRank::Application::MonthlySnapshotCommand.call(ARGV)
+PolishGithubRank::Infrastructure::MonthlySnapshotComposition.build(ARGV).call
