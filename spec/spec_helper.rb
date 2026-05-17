@@ -16,8 +16,8 @@ require 'tmpdir'
 
 $LOAD_PATH.unshift File.expand_path('../lib', __dir__)
 
-require 'polish_github_rank'
-require 'polish_github_rank/web/app'
+require 'polish_open_source_rank'
+require 'polish_open_source_rank/web/app'
 
 RSpec.configure do |config|
   config.disable_monkey_patching!

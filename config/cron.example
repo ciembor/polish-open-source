@@ -1,4 +1,4 @@
 # Run shortly after the previous month has closed.
 # Update the path to match the deployment directory.
-15 3 2 * * cd /srv/polish-github-rank && bundle exec ruby bin/monthly_rankings >> log/monthly_rankings.log 2>&1
+15 3 2 * * cd /srv/polish-open-source-rank && bundle exec ruby bin/monthly_rankings >> log/monthly_rankings.log 2>&1
 
