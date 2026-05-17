@@ -83,10 +83,18 @@ module PolishOpenSourceRank
 
       def last_checked_user(period_start, platform)
         fetch_all(<<~SQL, [period_start, platform]).first
-          SELECT login, status, updated_at AS checked_at
+          SELECT candidate_users.login,
+                 candidate_users.status,
+                 COALESCE(user_monthly_stats.updated_at, candidate_users.updated_at) AS checked_at
           FROM candidate_users
-          WHERE period_start = ? AND platform = ? AND status != 'pending'
-          ORDER BY datetime(updated_at) DESC, login COLLATE NOCASE ASC
+          LEFT JOIN user_monthly_stats
+            ON user_monthly_stats.period_start = candidate_users.period_start
+           AND user_monthly_stats.platform = candidate_users.platform
+           AND user_monthly_stats.user_github_id = candidate_users.github_id
+          WHERE candidate_users.period_start = ?
+            AND candidate_users.platform = ?
+            AND candidate_users.status != 'pending'
+          ORDER BY datetime(checked_at) DESC, candidate_users.login COLLATE NOCASE ASC
           LIMIT 1
         SQL
       end

@@ -165,6 +165,23 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     expect(store.job_progress(now: Time.utc(2026, 4, 1, 10, 1, 1))).to eq(expected_running_progress)
   end
 
+  it 'reports processed user progress from user stats timestamps instead of discovery timestamps' do
+    seed_progress_run
+    set_current_run_times(started_at: '2026-04-01T10:00:00Z', finished_at: nil)
+    database.execute(
+      'UPDATE candidate_users SET updated_at = ? WHERE platform = ? AND login = ?',
+      ['2026-04-01T10:05:00Z', 'github', 'alice']
+    )
+
+    progress = store.job_progress(now: Time.utc(2026, 4, 1, 10, 6, 0))
+
+    expect(progress.fetch(:platforms).first.fetch(:last_checked_user)).to eq(
+      login: 'alice',
+      status: 'processed',
+      checked_at: '2026-04-01T10:00:25Z'
+    )
+  end
+
   it 'reports an empty job progress snapshot when no run exists' do
     now = Time.utc(2026, 4, 1, 10, 1, 1)
 
@@ -359,6 +376,21 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     store.record_candidate(period, github_id: 10, login: 'alice', source_query: 'Poland')
 
     expect(fetch_candidate('alice')).to include(updated_at: '2026-04-01T10:00:00Z')
+  end
+
+  it 'keeps checked candidate timestamps stable during repeated discovery' do
+    store.create_run(period)
+    allow(Time).to receive(:now) { Time.new(2026, 4, 1, 12, 0, 0, '+02:00') }
+    store.record_candidate(period, github_id: 10, login: 'alice', source_query: 'Poland')
+    store.mark_candidate(period, 'alice', 'processed')
+
+    allow(Time).to receive(:now) { Time.new(2026, 4, 1, 12, 5, 0, '+02:00') }
+    store.record_candidate(period, github_id: 10, login: 'alice', source_query: 'Krakow')
+
+    expect(fetch_candidate('alice')).to include(status: 'processed', updated_at: '2026-04-01T10:00:00Z')
+    expect(fetch_row('SELECT source_query FROM candidate_users WHERE login = ?', ['alice'])).to include(
+      source_query: 'Poland, Krakow'
+    )
   end
 
   it 'marks candidates with platform-aware and legacy GitHub arguments' do
@@ -610,6 +642,10 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
       ['2026-04-01T10:00:20Z', 'github', 'alice']
     )
     database.execute(
+      'UPDATE user_monthly_stats SET updated_at = ? WHERE platform = ? AND user_github_id = ?',
+      ['2026-04-01T10:00:25Z', 'github', 10]
+    )
+    database.execute(
       'UPDATE candidate_users SET updated_at = ? WHERE platform = ? AND login = ?',
       ['2026-04-01T10:00:10Z', 'gitlab', 'bob']
     )
@@ -674,7 +710,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
       crawled_records_count: 2,
       checked_users_count: 1,
       checked_repositories_count: 1,
-      last_checked_user: { login: 'alice', status: 'processed', checked_at: '2026-04-01T10:00:20Z' },
+      last_checked_user: { login: 'alice', status: 'processed', checked_at: '2026-04-01T10:00:25Z' },
       last_checked_repository: { full_name: 'alice/app', owner_login: 'alice', checked_at: '2026-04-01T10:00:30Z' }
     }
   end
