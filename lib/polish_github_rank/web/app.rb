@@ -188,7 +188,7 @@ module PolishGithubRank
         @editions = @year ? store.monthly_editions(@year) : []
         @newer_year = adjacent_edition_year(@year, -1)
         @older_year = adjacent_edition_year(@year, 1)
-        @title = @year ? "Poprzednie edycje #{@year}" : 'Poprzednie edycje'
+        @title = year ? "Edycje #{year}" : 'Edycje'
         @description = 'Archiwum miesięcznych rankingów z top projektami, użytkownikami według gwiazdek i aktywności.'
         @canonical_path = year ? editions_path(year) : editions_path
         erb :editions

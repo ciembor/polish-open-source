@@ -87,13 +87,14 @@ RSpec.describe PolishGithubRank::Web::App do
     expect(invalid_response.status).to eq(404)
   end
 
-  it 'renders previous editions with year pagination' do
+  it 'renders editions with year pagination' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
 
     response = Rack::MockRequest.new(described_class).get('/editions')
 
     expect(response.status).to eq(200)
-    expect(response.body).to include('Poprzednie edycje')
+    expect(response.body).to include('<title>Edycje</title>')
+    expect(response.body).to include('>Edycje</h1>')
     expect(response.body).to include('kwiecień 2026')
     expect(response.body).to include('Top projekty')
     expect(response.body).to include('Top userzy: gwiazdki')
