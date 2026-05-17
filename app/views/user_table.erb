@@ -1,0 +1,36 @@
+<article class="ranking-table">
+  <h3><%= h title %></h3>
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">User</th>
+        <th scope="col">Miasto</th>
+        <th scope="col"><%= h metric_label %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% rows.each_with_index do |row, index| %>
+        <tr>
+          <td><%= index + 1 %></td>
+          <td>
+            <a class="primary-link" href="<%= h row.fetch(:html_url) %>"><%= h row.fetch(:login) %></a>
+            <% if row[:name] && !row[:name].empty? %>
+              <span><%= h row[:name] %></span>
+            <% end %>
+            <% if row[:homepage] && !row[:homepage].empty? %>
+              <a class="muted-link" href="<%= h row[:homepage] %>">www</a>
+            <% end %>
+          </td>
+          <td><%= h(row[:city] || "Polska") %></td>
+          <td class="metric"><%= number(row.fetch(metric)) %></td>
+        </tr>
+      <% end %>
+      <% if rows.empty? %>
+        <tr>
+          <td colspan="4">Brak rekordów.</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</article>

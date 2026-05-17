@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+
+bundle exec rubocop --cache-root tmp/rubocop_cache
+bundle exec reek
+bundle exec rspec

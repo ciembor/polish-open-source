@@ -1,0 +1,11 @@
+---
+detectors:
+  TooManyStatements:
+    max_statements: 8
+  UtilityFunction:
+    public_methods_only: true
+exclude_paths:
+  - coverage
+  - vendor
+  - spec
+
