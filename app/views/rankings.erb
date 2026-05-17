@@ -1,0 +1,39 @@
+<section class="hero">
+  <div class="hero__inner">
+    <p class="eyebrow">GitHub ranking</p>
+    <h1><%= h @scope.fetch(:name) %></h1>
+    <p class="lede">Publiczni użytkownicy i repozytoria uporządkowane według gwiazdek, miesięcznego trendu i aktywności.</p>
+    <% if @period %>
+      <p class="period">Snapshot: <time datetime="<%= h @period %>"><%= h @period %></time></p>
+    <% end %>
+  </div>
+</section>
+
+<% unless @period %>
+  <section class="empty-state" aria-live="polite">
+    <h2>Brak danych rankingowych</h2>
+    <p>Pierwszy snapshot miesięczny nie został jeszcze zapisany.</p>
+  </section>
+<% else %>
+  <section class="ranking-band" aria-labelledby="users-heading">
+    <div class="content">
+      <h2 id="users-heading">Użytkownicy</h2>
+      <div class="ranking-grid">
+        <%= erb :user_table, locals: { title: "Top 10 według gwiazdek", rows: @user_rankings.fetch(:top), metric: :total_stars, metric_label: "Gwiazdek" } %>
+        <%= erb :user_table, locals: { title: "Trending 10 w miesiącu", rows: @user_rankings.fetch(:trending), metric: :monthly_stars_delta, metric_label: "Nowe gwiazdki" } %>
+        <%= erb :user_table, locals: { title: "Aktywność w miesiącu", rows: @user_rankings.fetch(:active), metric: :public_activity_count, metric_label: "Zdarzeń" } %>
+      </div>
+    </div>
+  </section>
+
+  <section class="ranking-band ranking-band--alt" aria-labelledby="repositories-heading">
+    <div class="content">
+      <h2 id="repositories-heading">Repozytoria</h2>
+      <div class="ranking-grid ranking-grid--two">
+        <%= erb :repository_table, locals: { title: "Top 10 według gwiazdek", rows: @repository_rankings.fetch(:top), metric: :stargazers_count, metric_label: "Gwiazdek" } %>
+        <%= erb :repository_table, locals: { title: "Trending 10 w miesiącu", rows: @repository_rankings.fetch(:trending), metric: :monthly_stars_delta, metric_label: "Nowe gwiazdki" } %>
+      </div>
+    </div>
+  </section>
+<% end %>
+

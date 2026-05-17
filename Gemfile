@@ -1,0 +1,18 @@
+# frozen_string_literal: true
+
+source 'https://rubygems.org'
+
+ruby '>= 3.2'
+
+gem 'puma', '~> 7.0'
+gem 'rackup', '~> 2.2'
+gem 'sinatra', '~> 4.1'
+gem 'sqlite3', '~> 2.7'
+
+group :development, :test do
+  gem 'reek', '~> 6.5', require: false
+  gem 'rspec', '~> 3.13'
+  gem 'rubocop', '~> 1.81', require: false
+  gem 'rubocop-rspec', '~> 3.7', require: false
+  gem 'simplecov', '~> 0.22', require: false
+end

@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'English'
+commands = [
+  %w[bundle exec rubocop --cache-root tmp/rubocop_cache],
+  %w[bundle exec reek],
+  %w[bundle exec rspec]
+]
+
+commands.each do |command|
+  puts "$ #{command.join(' ')}"
+  system(*command) || exit($CHILD_STATUS.exitstatus || 1)
+end
