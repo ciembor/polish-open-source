@@ -1,0 +1,122 @@
+pl:
+  about:
+    author:
+      body: "Programista i autor projektu. Buduję narzędzia, aplikacje i projekty open source, które porządkują dane i ułatwiają odkrywanie wartościowej pracy technicznej."
+      eyebrow: "Autor"
+    hero:
+      eyebrow: "O projekcie"
+      lede: "Ranking pokazuje publiczną pracę osób związanych z Polską na platformach open source."
+    mission:
+      body: "Celem projektu jest docenianie programistek i programistów zasłużonych dla open source oraz zachęcanie do tworzenia wolnego oprogramowania. Ranking ma ułatwiać odkrywanie aktywnych osób, repozytoriów i lokalnych społeczności technicznych."
+      eyebrow: "Misja"
+      title: "Promować ludzi, którzy budują wolne oprogramowanie"
+    platforms:
+      eyebrow: "Wspierane platformy"
+      title: "Publiczne źródła rankingu"
+    rules:
+      activity:
+        body: "Ranking aktywności użytkowników liczy publiczne zdarzenia z danego miesiąca. Prywatna aktywność, prywatne commity i niepubliczne projekty nie są uwzględniane."
+        title: "Aktywność"
+      data_scope:
+        body: "Używane są wyłącznie dane publiczne udostępniane przez API GitHuba, GitLaba i Codeberga. Projekt nie czyta prywatnych repozytoriów, prywatnej aktywności ani danych niewidocznych publicznie."
+        title: "Zakres danych"
+      eyebrow: "Zasady"
+      snapshots:
+        body: "Dane są odświeżane miesięcznie. Widok najnowszy przełącza się dopiero po zakończeniu pełnego crawlowania, a jawny adres miesiąca może pokazywać dane już w trakcie przeliczania."
+        title: "Snapshoty"
+      stars:
+        body: "Ranking top sortuje użytkowników według łącznej liczby gwiazdek w publicznych repozytoriach, a repozytoria według aktualnej liczby gwiazdek."
+        title: "Top według gwiazdek"
+      title: "Jak powstają rankingi"
+      trending:
+        body: "Ranking trending pokazuje przyrost gwiazdek w danym miesiącu. Dla platform, które nie udostępniają publicznej historii gwiazdek w potrzebnej postaci, miesięczny przyrost jest traktowany jako niedostępny."
+        title: "Trending"
+      users:
+        body: "Osoby są wyszukiwane po publicznych lokalizacjach związanych z Polską i polskimi miastami. Do rankingu trafiają profile, których publiczna lokalizacja pasuje do obsługiwanego kraju albo miasta."
+        title: "Użytkownicy"
+    seo:
+      description: "Misja, zasady generowania rankingów i wspierane platformy Polish Open Source Rank."
+    title: "O Polish Open Source Rank"
+  editions:
+    action:
+      month_ranking: "Ranking miesiąca"
+    activity_suffix: "zdarzeń"
+    empty:
+      body: "Nie ma jeszcze zakończonych miesięcznych snapshotów."
+      title: "Brak edycji"
+    hero:
+      eyebrow: "Archiwum rankingów"
+      lede: "Miesięczne snapshoty rankingu Polski z liderami projektów, gwiazdek użytkowników i aktywności."
+    newer_year: "Nowszy rok"
+    older_year: "Starszy rok"
+    pagination_label: "Wybór roku"
+    period_prefix: "Rok:"
+    seo:
+      description: "Archiwum miesięcznych rankingów z top projektami, użytkownikami według gwiazdek i aktywności."
+    stars_suffix: "gwiazdek"
+    title: "Edycje"
+    top_projects: "Top projekty"
+    top_users_activity: "Top userzy: aktywność"
+    top_users_stars: "Top userzy: gwiazdki"
+  date:
+    months:
+      - "styczeń"
+      - "luty"
+      - "marzec"
+      - "kwiecień"
+      - "maj"
+      - "czerwiec"
+      - "lipiec"
+      - "sierpień"
+      - "wrzesień"
+      - "październik"
+      - "listopad"
+      - "grudzień"
+  footer:
+    data_source: "Dane pochodzą z publicznych API GitHuba, GitLaba i Codeberga i są odświeżane miesięcznie."
+  nav:
+    about: "O projekcie"
+    country: "Polska"
+    editions: "Edycje"
+    language: "Język"
+    locations: "Rankingi lokalizacji"
+    more_cities: "Więcej miast"
+  not_found:
+    body: "Wybrana lokalizacja nie jest obsługiwana."
+    description: "Nie znaleziono rankingu dla podanej lokalizacji."
+    title: "Ranking nie znaleziony"
+  rankings:
+    back: "Wróć do rankingu"
+    empty:
+      body: "Pierwszy snapshot miesięczny nie został jeszcze zapisany."
+      records: "Brak rekordów."
+      title: "Brak danych rankingowych"
+    hero:
+      lede: "Publiczni użytkownicy i repozytoria uporządkowane według gwiazdek, miesięcznego trendu i aktywności."
+    metric:
+      events: "Zdarzeń"
+      new_stars: "Nowe gwiazdki"
+      stars: "Gwiazdek"
+    repositories: "Repozytoria"
+    repository: "Repozytorium"
+    see_top_100: "Zobacz top 100"
+    seo:
+      description: "Top i trending publiczni użytkownicy oraz repozytoria platform kodu dla lokalizacji %{scope}."
+    snapshot: "Snapshot:"
+    table:
+      city: "Miasto"
+      user: "User"
+    title:
+      repositories:
+        top: "Top 100 repozytoriów według gwiazdek"
+        trending: "Top 100 trendujących repozytoriów"
+      users:
+        active: "Top 100 aktywnych użytkowników"
+        top: "Top 100 użytkowników według gwiazdek"
+        trending: "Top 100 trendujących użytkowników"
+    top_10_stars: "Top 10 według gwiazdek"
+    trending_10_month: "Trending 10 w miesiącu"
+    users: "Użytkownicy"
+    users_activity_month: "Aktywność w miesiącu"
+  scope:
+    poland: "Polska"

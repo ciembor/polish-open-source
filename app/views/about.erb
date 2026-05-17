@@ -1,57 +1,57 @@
 <section class="hero about-hero">
   <div class="hero__inner">
-    <p class="eyebrow">O projekcie</p>
+    <p class="eyebrow"><%= h t('about.hero.eyebrow') %></p>
     <h1>Polish Open Source Rank</h1>
-    <p class="lede">Ranking pokazuje publiczną pracę osób związanych z Polską na platformach open source.</p>
+    <p class="lede"><%= h t('about.hero.lede') %></p>
   </div>
 </section>
 
 <section class="about-section" aria-labelledby="mission-heading">
   <div class="content about-grid about-grid--mission">
     <div>
-      <p class="eyebrow">Misja</p>
-      <h2 id="mission-heading">Promować ludzi, którzy budują wolne oprogramowanie</h2>
+      <p class="eyebrow"><%= h t('about.mission.eyebrow') %></p>
+      <h2 id="mission-heading"><%= h t('about.mission.title') %></h2>
     </div>
     <p class="about-lead">
-      Celem projektu jest docenianie programistek i programistów zasłużonych dla open source oraz zachęcanie do tworzenia wolnego oprogramowania. Ranking ma ułatwiać odkrywanie aktywnych osób, repozytoriów i lokalnych społeczności technicznych.
+      <%= h t('about.mission.body') %>
     </p>
   </div>
 </section>
 
 <section class="about-section about-section--alt" aria-labelledby="rules-heading">
   <div class="content">
-    <p class="eyebrow">Zasady</p>
-    <h2 id="rules-heading">Jak powstają rankingi</h2>
+    <p class="eyebrow"><%= h t('about.rules.eyebrow') %></p>
+    <h2 id="rules-heading"><%= h t('about.rules.title') %></h2>
     <div class="rules-grid">
       <article class="rule-card">
         <span class="rule-card__number">01</span>
-        <h3>Zakres danych</h3>
-        <p>Używane są wyłącznie dane publiczne udostępniane przez API GitHuba, GitLaba i Codeberga. Projekt nie czyta prywatnych repozytoriów, prywatnej aktywności ani danych niewidocznych publicznie.</p>
+        <h3><%= h t('about.rules.data_scope.title') %></h3>
+        <p><%= h t('about.rules.data_scope.body') %></p>
       </article>
       <article class="rule-card">
         <span class="rule-card__number">02</span>
-        <h3>Użytkownicy</h3>
-        <p>Osoby są wyszukiwane po publicznych lokalizacjach związanych z Polską i polskimi miastami. Do rankingu trafiają profile, których publiczna lokalizacja pasuje do obsługiwanego kraju albo miasta.</p>
+        <h3><%= h t('about.rules.users.title') %></h3>
+        <p><%= h t('about.rules.users.body') %></p>
       </article>
       <article class="rule-card">
         <span class="rule-card__number">03</span>
-        <h3>Top według gwiazdek</h3>
-        <p>Ranking top sortuje użytkowników według łącznej liczby gwiazdek w publicznych repozytoriach, a repozytoria według aktualnej liczby gwiazdek.</p>
+        <h3><%= h t('about.rules.stars.title') %></h3>
+        <p><%= h t('about.rules.stars.body') %></p>
       </article>
       <article class="rule-card">
         <span class="rule-card__number">04</span>
         <h3>Trending</h3>
-        <p>Ranking trending pokazuje przyrost gwiazdek w danym miesiącu. Dla platform, które nie udostępniają publicznej historii gwiazdek w potrzebnej postaci, miesięczny przyrost jest traktowany jako niedostępny.</p>
+        <p><%= h t('about.rules.trending.body') %></p>
       </article>
       <article class="rule-card">
         <span class="rule-card__number">05</span>
-        <h3>Aktywność</h3>
-        <p>Ranking aktywności użytkowników liczy publiczne zdarzenia z danego miesiąca. Prywatna aktywność, prywatne commity i niepubliczne projekty nie są uwzględniane.</p>
+        <h3><%= h t('about.rules.activity.title') %></h3>
+        <p><%= h t('about.rules.activity.body') %></p>
       </article>
       <article class="rule-card">
         <span class="rule-card__number">06</span>
-        <h3>Snapshoty</h3>
-        <p>Dane są odświeżane miesięcznie. Widok najnowszy przełącza się dopiero po zakończeniu pełnego crawlowania, a jawny adres miesiąca może pokazywać dane już w trakcie przeliczania.</p>
+        <h3><%= h t('about.rules.snapshots.title') %></h3>
+        <p><%= h t('about.rules.snapshots.body') %></p>
       </article>
     </div>
   </div>
@@ -59,8 +59,8 @@
 
 <section class="about-section" aria-labelledby="platforms-heading">
   <div class="content">
-    <p class="eyebrow">Wspierane platformy</p>
-    <h2 id="platforms-heading">Publiczne źródła rankingu</h2>
+    <p class="eyebrow"><%= h t('about.platforms.eyebrow') %></p>
+    <h2 id="platforms-heading"><%= h t('about.platforms.title') %></h2>
     <div class="platform-grid">
       <article class="platform-card platform-card--github">
         <a class="platform-card__link" href="https://github.com/">
@@ -92,8 +92,8 @@
 
 <section class="about-section about-author" aria-labelledby="author-heading">
   <div class="content about-author__inner">
-    <p class="eyebrow">Autor</p>
+    <p class="eyebrow"><%= h t('about.author.eyebrow') %></p>
     <h2 id="author-heading">Maciej Ciemborowicz</h2>
-    <p>Programista i autor projektu. Buduję narzędzia, aplikacje i projekty open source, które porządkują dane i ułatwiają odkrywanie wartościowej pracy technicznej.</p>
+    <p><%= h t('about.author.body') %></p>
   </div>
 </section>

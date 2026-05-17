@@ -2,6 +2,12 @@
 
 require 'sinatra/base'
 
+require_relative 'localization/locale_selector'
+require_relative 'localization/translation_catalog'
+require_relative 'presentation/platform_catalog'
+require_relative 'presentation/ranking_catalog'
+require_relative 'presentation/view_helpers'
+
 module PolishOpenSourceRank
   module Web
     class App < Sinatra::Base
@@ -11,31 +17,20 @@ module PolishOpenSourceRank
       RANKING_DETAIL_SEGMENTS = '(users|repositories)/(top|trending|active)'
       SUPPORTED_LOCALES = %w[en pl].freeze
       DEFAULT_LOCALE = 'en'
-      TRANSLATIONS = {
-        'en' => {
-          'footer.data_source' => 'Data comes from the public APIs of GitHub, GitLab and Codeberg ' \
-                                  'and is refreshed monthly.',
-          'nav.about' => 'About',
-          'nav.country' => 'Poland',
-          'nav.editions' => 'Editions',
-          'nav.language' => 'Language',
-          'nav.locations' => 'Location rankings',
-          'nav.more_cities' => 'More cities'
-        },
-        'pl' => {
-          'footer.data_source' => 'Dane pochodzą z publicznych API GitHuba, GitLaba i Codeberga ' \
-                                  'i są odświeżane miesięcznie.',
-          'nav.about' => 'About',
-          'nav.country' => 'Polska',
-          'nav.editions' => 'Edycje',
-          'nav.language' => 'Język',
-          'nav.locations' => 'Rankingi lokalizacji',
-          'nav.more_cities' => 'Więcej miast'
-        }
-      }.freeze
+      set :default_locale, DEFAULT_LOCALE
+      set :localized_text,
+          Localization::TranslationCatalog.load(root: PolishOpenSourceRank.root, locales: SUPPORTED_LOCALES)
+      set :locale_selector, Localization::LocaleSelector.new(supported: SUPPORTED_LOCALES, default: DEFAULT_LOCALE)
+      set :platform_catalog, Presentation::PlatformCatalog.new
+      set :ranking_catalog, Presentation::RankingCatalog.new
+      helpers Presentation::ViewHelpers
 
       before do
-        @locale = selected_locale
+        @locale = settings.locale_selector.select(
+          params: params,
+          cookies: request.cookies,
+          accept_language: request.env.fetch('HTTP_ACCEPT_LANGUAGE', nil)
+        )
         response.set_cookie(
           'locale',
           value: @locale,
@@ -43,116 +38,6 @@ module PolishOpenSourceRank
           max_age: 31_536_000,
           same_site: :lax
         )
-      end
-
-      helpers do
-        def h(value)
-          Rack::Utils.escape_html(value.to_s)
-        end
-
-        def number(value)
-          value.to_i.to_s.reverse.gsub(/(\d{3})(?=\d)/, '\1 ').reverse
-        end
-
-        def t(key)
-          TRANSLATIONS.fetch(current_locale).fetch(key)
-        end
-
-        def current_locale
-          @locale || DEFAULT_LOCALE
-        end
-
-        def current_locale?(locale)
-          current_locale == locale
-        end
-
-        def locale_path(locale)
-          query = Rack::Utils.parse_nested_query(request.query_string)
-          query.delete('lang')
-          query['lang'] = locale
-          "#{app_path(request.path_info)}?#{Rack::Utils.build_query(query)}"
-        end
-
-        def platform_name(platform)
-          {
-            'codeberg' => 'Codeberg',
-            'gitlab' => 'GitLab',
-            'github' => 'GitHub'
-          }.fetch(platform, 'GitHub')
-        end
-
-        def platform_icon_path(platform)
-          {
-            'codeberg' => '/icons/codeberg.svg',
-            'gitlab' => '/icons/gitlab.svg',
-            'github' => '/icons/github.svg'
-          }.fetch(platform, '/icons/github.svg')
-        end
-
-        def scopes
-          Domain::LocationCatalog.scopes
-        end
-
-        def primary_city_scopes
-          Domain::LocationCatalog.primary_city_scopes
-        end
-
-        def secondary_city_scopes
-          Domain::LocationCatalog.secondary_city_scopes
-        end
-
-        def city_path(slug, period_slug: @period_slug)
-          "#{period_base_path(period_slug)}/locations/#{slug}"
-        end
-
-        def scope_path(scope, period_slug: @period_slug)
-          return period_base_path(period_slug) if scope.fetch(:slug) == 'poland'
-
-          city_path(scope.fetch(:slug), period_slug: period_slug)
-        end
-
-        def ranking_path(kind, metric, period_slug: @period_slug, scope_slug: @scope.fetch(:slug))
-          "#{scope_path({ slug: scope_slug }, period_slug: period_slug)}/#{kind}/#{metric}"
-        end
-
-        def period_base_path(period_slug)
-          return '/latest' if period_slug.nil? || period_slug == 'latest'
-
-          "/#{period_slug}"
-        end
-
-        def app_path(path)
-          "#{configuration.app_base_path}#{path}"
-        end
-
-        def editions_path(year = nil)
-          year ? "/editions/#{year}" : '/editions'
-        end
-
-        def period_label(period_start)
-          date = Date.parse(period_start)
-          months = %w[styczeń luty marzec kwiecień maj czerwiec lipiec sierpień wrzesień październik listopad grudzień]
-          "#{months.fetch(date.month - 1)} #{date.year}"
-        end
-
-        def canonical_url
-          base_url = configuration.public_base_url.delete_suffix('/')
-          "#{base_url}#{@canonical_path || request.path_info}"
-        end
-
-        def structured_data
-          JSON.pretty_generate(
-            '@context' => 'https://schema.org',
-            '@type' => 'Dataset',
-            'name' => @title,
-            'description' => @description,
-            'url' => canonical_url
-          )
-        end
-
-        def configuration
-          @configuration ||= Configuration.load
-        end
       end
 
       get '/' do
@@ -164,8 +49,8 @@ module PolishOpenSourceRank
       end
 
       get '/about' do
-        @title = 'O Polish Open Source Rank'
-        @description = 'Misja, zasady generowania rankingów i wspierane platformy Polish Open Source Rank.'
+        @title = t('about.title')
+        @description = t('about.seo.description')
         @canonical_path = '/about'
         erb :about
       end
@@ -222,33 +107,12 @@ module PolishOpenSourceRank
 
       not_found do
         status 404
-        @title = 'Ranking nie znaleziony'
-        @description = 'Nie znaleziono rankingu dla podanej lokalizacji.'
+        @title = t('not_found.title')
+        @description = t('not_found.description')
         erb :not_found
       end
 
       private
-
-      def selected_locale
-        explicit_locale || cookie_locale || accepted_locale || DEFAULT_LOCALE
-      end
-
-      def explicit_locale
-        locale = params['lang']
-        SUPPORTED_LOCALES.include?(locale) ? locale : nil
-      end
-
-      def cookie_locale
-        locale = request.cookies['locale']
-        SUPPORTED_LOCALES.include?(locale) ? locale : nil
-      end
-
-      def accepted_locale
-        request.env.fetch('HTTP_ACCEPT_LANGUAGE', '').split(',').filter_map do |language|
-          locale = language.split(';', 2).first.to_s.strip.split('-', 2).first
-          locale if SUPPORTED_LOCALES.include?(locale)
-        end.first
-      end
 
       def locale_cookie_path
         configuration.app_base_path.empty? ? '/' : configuration.app_base_path
@@ -272,9 +136,8 @@ module PolishOpenSourceRank
         @period = period_for(period_slug)
         @user_rankings = rankings_or_empty(@period) { store.user_rankings(scope, period_start: @period) }
         @repository_rankings = rankings_or_empty(@period) { store.repository_rankings(scope, period_start: @period) }
-        @title = "#{@scope.fetch(:name)} open-source ranking"
-        @description = 'Top i trending publiczni użytkownicy oraz repozytoria platform kodu ' \
-                       "dla lokalizacji #{@scope.fetch(:name)}."
+        @title = "#{scope_name(@scope)} open-source ranking"
+        @description = t('rankings.seo.description', scope: scope_name(@scope))
         @canonical_path = scope == 'poland' ? period_base_path(period_slug) : city_path(scope, period_slug: period_slug)
         erb :rankings
       end
@@ -285,8 +148,8 @@ module PolishOpenSourceRank
         @editions = @year ? store.monthly_editions(@year) : []
         @newer_year = adjacent_edition_year(@year, -1)
         @older_year = adjacent_edition_year(@year, 1)
-        @title = year ? "Edycje #{year}" : 'Edycje'
-        @description = 'Archiwum miesięcznych rankingów z top projektami, użytkownikami według gwiazdek i aktywności.'
+        @title = year ? "#{t('editions.title')} #{year}" : t('editions.title')
+        @description = t('editions.seo.description')
         @canonical_path = year ? editions_path(year) : editions_path
         erb :editions
       end
@@ -316,8 +179,8 @@ module PolishOpenSourceRank
         @kind = kind
         @metric = metric
         @ranking = ranking_for(scope, kind, metric, @period)
-        @title = "#{@scope.fetch(:name)} #{ranking_title(kind, metric)}"
-        @description = "#{ranking_title(kind, metric)} dla lokalizacji #{@scope.fetch(:name)}."
+        @title = "#{scope_name(@scope)} #{ranking_title(kind, metric)}"
+        @description = "#{ranking_title(kind, metric)} - #{scope_name(@scope)}."
         @canonical_path = ranking_path(kind, metric, period_slug: period_slug, scope_slug: scope)
         erb :ranking_detail
       end
@@ -359,36 +222,19 @@ module PolishOpenSourceRank
       end
 
       def ranking_metric?(kind, metric)
-        return %w[top trending active].include?(metric) if kind == 'users'
-
-        kind == 'repositories' && %w[top trending].include?(metric)
+        settings.ranking_catalog.include?(kind, metric)
       end
 
       def ranking_title(kind, metric)
-        {
-          %w[users top] => 'Top 100 użytkowników według gwiazdek',
-          %w[users trending] => 'Top 100 trendujących użytkowników',
-          %w[users active] => 'Top 100 aktywnych użytkowników',
-          %w[repositories top] => 'Top 100 repozytoriów według gwiazdek',
-          %w[repositories trending] => 'Top 100 trendujących repozytoriów'
-        }.fetch([kind, metric])
+        t(settings.ranking_catalog.descriptor(kind, metric).title_key)
       end
 
       def ranking_metric_column(kind, metric)
-        {
-          %w[users top] => :total_stars,
-          %w[users trending] => :monthly_stars_delta,
-          %w[users active] => :public_activity_count,
-          %w[repositories top] => :stargazers_count,
-          %w[repositories trending] => :monthly_stars_delta
-        }.fetch([kind, metric])
+        settings.ranking_catalog.descriptor(kind, metric).column
       end
 
       def ranking_metric_label(kind, metric)
-        return 'Zdarzeń' if kind == 'users' && metric == 'active'
-        return 'Nowe gwiazdki' if metric == 'trending'
-
-        'Gwiazdek'
+        t(settings.ranking_catalog.descriptor(kind, metric).label_key)
       end
 
       def scope_data(scope)

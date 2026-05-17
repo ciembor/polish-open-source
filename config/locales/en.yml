@@ -1,0 +1,122 @@
+en:
+  about:
+    author:
+      body: "Software developer and project author. I build tools, apps and open source projects that organize data and make valuable technical work easier to discover."
+      eyebrow: "Author"
+    hero:
+      eyebrow: "About"
+      lede: "The ranking shows public work by people connected with Poland across open source platforms."
+    mission:
+      body: "The project recognizes developers who contribute to open source and encourages creating free software. The ranking helps discover active people, repositories and local technical communities."
+      eyebrow: "Mission"
+      title: "Promote people who build free software"
+    platforms:
+      eyebrow: "Supported platforms"
+      title: "Public ranking sources"
+    rules:
+      activity:
+        body: "The activity ranking counts public events from the given month. Private activity, private commits and non-public projects are not included."
+        title: "Activity"
+      data_scope:
+        body: "Only public data exposed by the GitHub, GitLab and Codeberg APIs is used. The project does not read private repositories, private activity or data that is not publicly visible."
+        title: "Data scope"
+      eyebrow: "Rules"
+      snapshots:
+        body: "Data is refreshed monthly. The latest view switches only after a full crawl completes, while an explicit month URL may show data while recalculation is still running."
+        title: "Snapshots"
+      stars:
+        body: "The top ranking sorts users by the total number of stars in public repositories, and repositories by their current star count."
+        title: "Top by stars"
+      title: "How rankings are built"
+      trending:
+        body: "The trending ranking shows the star increase in a given month. For platforms that do not expose public star history in the needed form, the monthly increase is treated as unavailable."
+        title: "Trending"
+      users:
+        body: "People are found through public locations connected with Poland and Polish cities. Profiles enter the ranking when their public location matches a supported country or city."
+        title: "Users"
+    seo:
+      description: "Mission, ranking generation rules and supported platforms for Polish Open Source Rank."
+    title: "About Polish Open Source Rank"
+  editions:
+    action:
+      month_ranking: "Month ranking"
+    activity_suffix: "events"
+    empty:
+      body: "No completed monthly snapshots are available yet."
+      title: "No editions"
+    hero:
+      eyebrow: "Ranking archive"
+      lede: "Monthly snapshots of Poland rankings with leaders for projects, user stars and activity."
+    newer_year: "Newer year"
+    older_year: "Older year"
+    pagination_label: "Year selection"
+    period_prefix: "Year:"
+    seo:
+      description: "Archive of monthly rankings with top projects, users by stars and activity."
+    stars_suffix: "stars"
+    title: "Editions"
+    top_projects: "Top projects"
+    top_users_activity: "Top users: activity"
+    top_users_stars: "Top users: stars"
+  date:
+    months:
+      - "January"
+      - "February"
+      - "March"
+      - "April"
+      - "May"
+      - "June"
+      - "July"
+      - "August"
+      - "September"
+      - "October"
+      - "November"
+      - "December"
+  footer:
+    data_source: "Data comes from the public APIs of GitHub, GitLab and Codeberg and is refreshed monthly."
+  nav:
+    about: "About"
+    country: "Poland"
+    editions: "Editions"
+    language: "Language"
+    locations: "Location rankings"
+    more_cities: "More cities"
+  not_found:
+    body: "The selected location is not supported."
+    description: "No ranking was found for the selected location."
+    title: "Ranking not found"
+  rankings:
+    back: "Back to ranking"
+    empty:
+      body: "The first monthly snapshot has not been saved yet."
+      records: "No records."
+      title: "No ranking data"
+    hero:
+      lede: "Public users and repositories ordered by stars, monthly trend and activity."
+    metric:
+      events: "Events"
+      new_stars: "New stars"
+      stars: "Stars"
+    repositories: "Repositories"
+    repository: "Repository"
+    see_top_100: "See top 100"
+    seo:
+      description: "Top and trending public users and repositories on code platforms for %{scope}."
+    snapshot: "Snapshot:"
+    table:
+      city: "City"
+      user: "User"
+    title:
+      repositories:
+        top: "Top 100 repositories by stars"
+        trending: "Top 100 trending repositories"
+      users:
+        active: "Top 100 active users"
+        top: "Top 100 users by stars"
+        trending: "Top 100 trending users"
+    top_10_stars: "Top 10 by stars"
+    trending_10_month: "Trending 10 this month"
+    users: "Users"
+    users_activity_month: "Activity this month"
+  scope:
+    poland: "Poland"

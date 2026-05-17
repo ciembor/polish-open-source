@@ -4,7 +4,7 @@
     <thead>
       <tr>
         <th scope="col">#</th>
-        <th scope="col">Repozytorium</th>
+        <th scope="col"><%= h t('rankings.repository') %></th>
         <th scope="col">Owner</th>
         <th scope="col"><%= h metric_label %></th>
       </tr>
@@ -26,12 +26,12 @@
       <% end %>
       <% if rows.empty? %>
         <tr>
-          <td colspan="4">Brak rekordów.</td>
+          <td colspan="4"><%= h t('rankings.empty.records') %></td>
         </tr>
       <% end %>
     </tbody>
   </table>
   <% if defined?(top_path) && top_path %>
-    <a class="ranking-action" href="<%= h app_path(top_path) %>">Zobacz top 100</a>
+    <a class="ranking-action" href="<%= h app_path(top_path) %>"><%= h t('rankings.see_top_100') %></a>
   <% end %>
 </article>

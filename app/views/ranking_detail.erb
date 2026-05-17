@@ -2,16 +2,16 @@
   <div class="hero__inner">
     <p class="eyebrow">Open-source ranking</p>
     <h1><%= h ranking_title(@kind, @metric) %></h1>
-    <p class="lede"><%= h @scope.fetch(:name) %></p>
+    <p class="lede"><%= h scope_name(@scope) %></p>
     <% if @period %>
-      <p class="period">Snapshot: <time datetime="<%= h @period %>"><%= h @period %></time></p>
+      <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @period %>"><%= h @period %></time></p>
     <% end %>
   </div>
 </section>
 
 <section class="ranking-band">
   <div class="content">
-    <p><a class="muted-link muted-link--standalone" href="<%= h app_path(scope_path(@scope)) %>">Wróć do rankingu</a></p>
+    <p><a class="muted-link muted-link--standalone" href="<%= h app_path(scope_path(@scope)) %>"><%= h t('rankings.back') %></a></p>
     <% if @kind == "users" %>
       <%= erb :user_table, locals: { title: ranking_title(@kind, @metric), rows: @ranking, metric: ranking_metric_column(@kind, @metric), metric_label: ranking_metric_label(@kind, @metric) } %>
     <% else %>
