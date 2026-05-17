@@ -14,6 +14,7 @@
         <tr>
           <td><%= index + 1 %></td>
           <td>
+            <span class="platform-mark platform-mark--<%= h row.fetch(:platform, "github") %>"><%= h platform_mark(row.fetch(:platform, "github")) %></span>
             <a class="primary-link" href="<%= h row.fetch(:html_url) %>"><%= h row.fetch(:full_name) %></a>
             <% if row[:description] && !row[:description].empty? %>
               <span><%= h row[:description] %></span>
@@ -30,5 +31,7 @@
       <% end %>
     </tbody>
   </table>
+  <% if defined?(top_path) && top_path %>
+    <a class="ranking-action" href="<%= h app_path(top_path) %>">Zobacz top 100</a>
+  <% end %>
 </article>
-
