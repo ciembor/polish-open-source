@@ -146,6 +146,35 @@ a {
   color: var(--accent);
 }
 
+.language-switch {
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  display: inline-flex;
+  overflow: hidden;
+}
+
+.language-switch__link {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+  min-width: 36px;
+  padding: 9px 8px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.language-switch__link + .language-switch__link {
+  border-left: 1px solid var(--line);
+}
+
+.language-switch__link:hover,
+.language-switch__link.is-active {
+  background: var(--accent);
+  color: #ffffff;
+}
+
 .hero {
   border-bottom: 1px solid var(--line);
   background: linear-gradient(110deg, #ffffff 0%, #eef7f3 52%, #fff7ed 100%);

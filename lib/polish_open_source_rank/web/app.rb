@@ -9,6 +9,41 @@ module PolishOpenSourceRank
       set :views, PolishOpenSourceRank.root.join('app/views').to_s
 
       RANKING_DETAIL_SEGMENTS = '(users|repositories)/(top|trending|active)'
+      SUPPORTED_LOCALES = %w[en pl].freeze
+      DEFAULT_LOCALE = 'en'
+      TRANSLATIONS = {
+        'en' => {
+          'footer.data_source' => 'Data comes from the public APIs of GitHub, GitLab and Codeberg ' \
+                                  'and is refreshed monthly.',
+          'nav.about' => 'About',
+          'nav.country' => 'Poland',
+          'nav.editions' => 'Editions',
+          'nav.language' => 'Language',
+          'nav.locations' => 'Location rankings',
+          'nav.more_cities' => 'More cities'
+        },
+        'pl' => {
+          'footer.data_source' => 'Dane pochodzą z publicznych API GitHuba, GitLaba i Codeberga ' \
+                                  'i są odświeżane miesięcznie.',
+          'nav.about' => 'About',
+          'nav.country' => 'Polska',
+          'nav.editions' => 'Edycje',
+          'nav.language' => 'Język',
+          'nav.locations' => 'Rankingi lokalizacji',
+          'nav.more_cities' => 'Więcej miast'
+        }
+      }.freeze
+
+      before do
+        @locale = selected_locale
+        response.set_cookie(
+          'locale',
+          value: @locale,
+          path: locale_cookie_path,
+          max_age: 31_536_000,
+          same_site: :lax
+        )
+      end
 
       helpers do
         def h(value)
@@ -16,7 +51,26 @@ module PolishOpenSourceRank
         end
 
         def number(value)
-          value.to_i.to_s.reverse.gsub(/(\d{3})(?=\d)/, '\\1 ').reverse
+          value.to_i.to_s.reverse.gsub(/(\d{3})(?=\d)/, '\1 ').reverse
+        end
+
+        def t(key)
+          TRANSLATIONS.fetch(current_locale).fetch(key)
+        end
+
+        def current_locale
+          @locale || DEFAULT_LOCALE
+        end
+
+        def current_locale?(locale)
+          current_locale == locale
+        end
+
+        def locale_path(locale)
+          query = Rack::Utils.parse_nested_query(request.query_string)
+          query.delete('lang')
+          query['lang'] = locale
+          "#{app_path(request.path_info)}?#{Rack::Utils.build_query(query)}"
         end
 
         def platform_name(platform)
@@ -174,6 +228,31 @@ module PolishOpenSourceRank
       end
 
       private
+
+      def selected_locale
+        explicit_locale || cookie_locale || accepted_locale || DEFAULT_LOCALE
+      end
+
+      def explicit_locale
+        locale = params['lang']
+        SUPPORTED_LOCALES.include?(locale) ? locale : nil
+      end
+
+      def cookie_locale
+        locale = request.cookies['locale']
+        SUPPORTED_LOCALES.include?(locale) ? locale : nil
+      end
+
+      def accepted_locale
+        request.env.fetch('HTTP_ACCEPT_LANGUAGE', '').split(',').filter_map do |language|
+          locale = language.split(';', 2).first.to_s.strip.split('-', 2).first
+          locale if SUPPORTED_LOCALES.include?(locale)
+        end.first
+      end
+
+      def locale_cookie_path
+        configuration.app_base_path.empty? ? '/' : configuration.app_base_path
+      end
 
       def render_city(period_slug, slug)
         halt 404 unless Domain::LocationCatalog.city_slugs.include?(slug)
