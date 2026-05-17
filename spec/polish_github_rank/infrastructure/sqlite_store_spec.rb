@@ -49,6 +49,30 @@ RSpec.describe PolishGithubRank::Infrastructure::SQLiteStore do
     store.finish_run(run_id)
   end
 
+  it 'reports per-platform job progress for the current run' do
+    seed_progress_run
+    progress = store.job_progress(now: Time.now.utc + 60)
+
+    expect(progress.fetch(:run)).to include(period_start: '2026-04-01', status: 'running')
+    expect(progress.fetch(:platforms)).to include(
+      include(
+        platform: 'github',
+        crawled_records_count: 2,
+        checked_users_count: 1,
+        checked_repositories_count: 1,
+        last_checked_user: include(login: 'alice', status: 'processed'),
+        last_checked_repository: include(full_name: 'alice/app', owner_login: 'alice')
+      ),
+      include(
+        platform: 'gitlab',
+        crawled_records_count: 1,
+        last_checked_user: include(login: 'bob', status: 'missing'),
+        last_checked_repository: nil
+      ),
+      include(platform: 'codeberg', crawled_records_count: 0)
+    )
+  end
+
   it 'filters pending candidates by platform' do
     store.create_run(period)
     store.record_candidate(period, github_id: 10, login: 'alice', source_query: 'Poland')
@@ -182,6 +206,18 @@ RSpec.describe PolishGithubRank::Infrastructure::SQLiteStore do
       stargazers_count: stars,
       monthly_stars_delta: delta
     }
+  end
+
+  def seed_progress_run
+    store.create_run(period)
+    store.record_candidate(period, github_id: 10, login: 'alice', source_query: 'Poland')
+    store.record_candidate(period, source_id: 20, login: 'bob', source_query: 'Poland', platform: 'gitlab')
+    store.mark_candidate(period, 'github', 'alice', 'processed')
+    store.mark_candidate(period, 'gitlab', 'bob', 'missing')
+    store.upsert_user(user_attributes(10, 'alice', 'Kraków'))
+    store.record_user_stats(user_stats(10, 'alice', 'Kraków', total_stars: 30, delta: 4, activity: 9))
+    store.upsert_repository(repository_attributes(100, 10, 'alice', 'alice/app', 30))
+    store.record_repository_stats(repository_stats(100, 10, 'alice', 'Kraków', stars: 30, delta: 4))
   end
 
   def legacy_schema_sql

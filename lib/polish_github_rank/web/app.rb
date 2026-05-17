@@ -160,6 +160,12 @@ module PolishGithubRank
         'ok'
       end
 
+      get '/internal/jobs' do
+        headers 'Cache-Control' => 'no-store', 'X-Robots-Tag' => 'noindex'
+        content_type :json
+        JSON.pretty_generate(store.job_progress)
+      end
+
       not_found do
         status 404
         @title = 'Ranking nie znaleziony'
