@@ -136,11 +136,18 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
   it 'bounds ranking limits inside generated SQL' do
     unwired_store = described_class.allocate
     allow(unwired_store).to receive(:user_scope).with('poland').and_return(['stats.country = ?', ['Poland']])
-    allow(unwired_store).to receive_messages(trending_filter: '', fetch_all: [])
+    generated_sql = []
+    allow(unwired_store).to receive(:trending_filter).and_return('')
+    allow(unwired_store).to receive(:fetch_all) do |sql, _params|
+      generated_sql << sql
+      []
+    end
 
     unwired_store.send(:ranked_users, 'poland', '2026-04-01', 'total_stars', limit: '1000; DROP TABLE users')
+    unwired_store.send(:ranked_users, 'poland', '2026-04-01', 'total_stars', limit: 0)
 
-    expect(unwired_store).to have_received(:fetch_all).with(include('LIMIT 100'), %w[2026-04-01 Poland])
+    expect(generated_sql.first).to match(/LIMIT 100\n\z/)
+    expect(generated_sql.last).to match(/LIMIT 1\n\z/)
   end
 
   it 'binds recorded period checks as positional SQL parameters' do

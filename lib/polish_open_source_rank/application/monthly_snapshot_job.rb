@@ -19,7 +19,7 @@ module PolishOpenSourceRank
         run_id = store.create_run(period)
         return unless run_id
 
-        discover_candidates(period) unless store.retryable_candidates?(period)
+        discover_candidates(period)
         process_candidates(period)
 
         return store.fail_run(run_id, 'Retryable candidates remain') if store.retryable_candidates?(period)

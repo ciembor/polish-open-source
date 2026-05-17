@@ -392,15 +392,16 @@ RSpec.describe PolishOpenSourceRank::Application::MonthlySnapshotJob do
     end.to output(/\[github\] candidate discovery finished/).to_stdout
   end
 
-  it 'resumes retryable candidates without repeating discovery' do
+  it 'repeats idempotent discovery when resuming retryable candidates' do
     run_id = store.create_run(period)
     store.record_candidate(period, github_id: 1, login: 'alice', source_query: 'Poland')
     store.finish_run(run_id)
+    github.candidates = { 'Poland' => [{ source_id: 1, login: 'alice' }] }
     github.profiles = { 'alice' => profile(1, 'alice', 'Krakow, Poland') }
 
     job.call(period)
 
-    expect(github.searched_terms).to be_empty
+    expect(github.searched_terms).to eq(['Poland'])
     expect(fetch_candidate('alice')).to include(status: 'processed', error: nil)
   end
 
