@@ -245,6 +245,10 @@ module PolishGithubRank
         }
       end
 
+      def job_progress(now: Time.now.utc)
+        SQLiteJobProgress.new(database).call(now: now)
+      end
+
       private
 
       attr_reader :path

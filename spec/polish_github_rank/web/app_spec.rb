@@ -167,6 +167,19 @@ RSpec.describe PolishGithubRank::Web::App do
     expect(Rack::MockRequest.new(described_class).get('/2026-13').status).to eq(404)
   end
 
+  it 'serves internal job progress as noindex JSON' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_running_database}"
+
+    response = Rack::MockRequest.new(described_class).get('/internal/jobs')
+    body = JSON.parse(response.body)
+
+    expect(response.status).to eq(200)
+    expect(response.content_type).to include('application/json')
+    expect(response['X-Robots-Tag']).to eq('noindex')
+    expect(body.fetch('run')).to include('period_start' => '2026-04-01', 'status' => 'running')
+    expect(body.fetch('platforms')).to include(include('platform' => 'github', 'crawled_records_count' => 1))
+  end
+
   def seed_database
     path = empty_database
     store = PolishGithubRank::Infrastructure::SQLiteStore.new(path).migrate!
