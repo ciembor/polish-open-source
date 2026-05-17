@@ -473,14 +473,34 @@ td span {
 
 .platform-card {
   overflow: hidden;
+}
+
+.platform-card__link {
+  align-items: center;
+  display: flex;
+  gap: 18px;
   padding: 24px;
+  text-decoration: none;
+}
+
+.platform-card__link:hover .platform-card__name {
+  color: var(--accent);
 }
 
 .platform-logo {
   align-items: center;
   display: flex;
   height: 72px;
-  margin-bottom: 20px;
+  flex: 0 0 72px;
+  justify-content: center;
+}
+
+.platform-card__name {
+  color: var(--ink);
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.1;
 }
 
 .platform-logo__image {

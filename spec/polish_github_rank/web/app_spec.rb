@@ -129,6 +129,14 @@ RSpec.describe PolishGithubRank::Web::App do
     expect(response.body).not_to include('//locations')
   end
 
+  it 'links about platform cards to source platforms' do
+    response = Rack::MockRequest.new(described_class).get('/about')
+
+    expect(response.body).to include('href="https://github.com/"')
+    expect(response.body).to include('href="https://gitlab.com/"')
+    expect(response.body).to include('href="https://codeberg.org/"')
+  end
+
   it 'uses SVG platform icons instead of text markers' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
 
