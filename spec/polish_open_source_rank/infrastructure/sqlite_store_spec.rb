@@ -5,13 +5,26 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
   let(:path) { File.join(Dir.mktmpdir, 'rank.sqlite3') }
   let(:store) { described_class.new(path).migrate! }
 
+  it 'configures SQLite connections for store access patterns' do
+    pathname = Pathname(path)
+    connection = instance_double(SQLite3::Database)
+    allow(connection).to receive(:results_as_hash=)
+    allow(connection).to receive(:busy_timeout=)
+    allow(SQLite3::Database).to receive(:new).with(pathname.to_s).and_return(connection)
+
+    described_class.new(pathname).send(:database)
+
+    expect(connection).to have_received(:results_as_hash=).with(true)
+    expect(connection).to have_received(:busy_timeout=).with(30_000)
+  end
+
   it 'stores sync progress, snapshots, and scoped rankings' do
     run_id = store.create_run(period)
     store.record_candidate(period, github_id: 10, login: 'alice', source_query: 'Poland')
     store.record_candidate(period, github_id: 10, login: 'alice', source_query: 'Krakow')
     store.mark_candidate(period, 'alice', 'failed', 'temporary')
 
-    expect(store.pending_candidates(period)).to contain_exactly(include(login: 'alice', github_id: 10))
+    expect(store.pending_candidates(period)).to be_empty
 
     store.upsert_user(user_attributes(10, 'alice', 'Kraków'))
     store.record_user_stats(user_stats(10, 'alice', 'Kraków', total_stars: 30, delta: 4, activity: 9))
@@ -22,6 +35,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
 
     expect(store.processed_user?(period, 10)).to eq(1)
     expect(store.pending_candidates(period)).to be_empty
+    expect(store.retryable_candidates?(period)).to be(false)
     expect(store.latest_period).to eq('2026-04-01')
     expect(store.completed_periods).to contain_exactly(include(period_start: '2026-04-01'))
     expect(store.user_rankings('poland').fetch(:top).first).to include(login: 'alice', total_stars: 30)
@@ -32,44 +46,279 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
                                                                              stargazers_count: 30)
   end
 
+  it 'reports recorded periods and processed users through legacy and platform-aware calls' do
+    store.create_run(period)
+    store.upsert_user(user_attributes(10, 'alice', 'Kraków'))
+    store.record_user_stats(user_stats(10, 'alice', 'Kraków', total_stars: 30, delta: 4, activity: 9))
+
+    expect(store.processed_user?(period, 10)).to eq(1)
+    expect(store.processed_user?(period, 'github', 10)).to eq(1)
+    expect(store.recorded_period?('2026-04-01')).to be(true)
+    expect(store.recorded_period?('2026-05-01')).to be(false)
+    expect(store.retryable_candidates?(period)).to be(false)
+  end
+
+  it 'keeps city rankings scoped to the requested city' do
+    seed_city_scope_rankings
+
+    expect(store.user_rankings('poland').fetch(:top).map { |row| row.fetch(:login) }).to eq(%w[bob alice])
+    expect(store.user_rankings('krakow').fetch(:active).map { |row| row.fetch(:login) }).to eq(['alice'])
+    expect(store.repository_rankings('poland').fetch(:top).map { |row| row.fetch(:full_name) }).to eq(
+      ['bob/app', 'alice/app']
+    )
+    expect(store.repository_rankings('krakow').fetch(:top).map { |row| row.fetch(:full_name) }).to eq(['alice/app'])
+  end
+
   it 'returns monthly editions with top records once stats exist' do
     run_id = store.create_run(period)
     store.upsert_user(user_attributes(10, 'alice', 'Kraków'))
     store.record_user_stats(user_stats(10, 'alice', 'Kraków', total_stars: 30, delta: 4, activity: 9))
     store.upsert_repository(repository_attributes(100, 10, 'alice', 'alice/app', 30))
     store.record_repository_stats(repository_stats(100, 10, 'alice', 'Kraków', stars: 30, delta: 4))
+    3.times do |index|
+      id = index + 20
+      login = "extra#{index}"
+      store.upsert_user(user_attributes(id, login, 'Kraków'))
+      store.record_user_stats(user_stats(id, login, 'Kraków', total_stars: id, delta: id, activity: id))
+      store.upsert_repository(repository_attributes(id + 100, id, login, "#{login}/app", id))
+      store.record_repository_stats(repository_stats(id + 100, id, login, 'Kraków', stars: id, delta: id))
+    end
 
     expect(store.edition_years).to contain_exactly(include(year: '2026'))
-    expect(store.monthly_editions('2026').first).to include(
+    expect(store.monthly_editions(2026).first).to include(
       period_start: '2026-04-01',
-      repositories: [include(full_name: 'alice/app')],
-      users_by_stars: [include(login: 'alice', total_stars: 30)],
-      users_by_activity: [include(login: 'alice', public_activity_count: 9)]
+      repositories: [
+        include(full_name: 'alice/app'),
+        include(full_name: 'extra2/app'),
+        include(full_name: 'extra1/app')
+      ],
+      users_by_stars: [include(login: 'alice'), include(login: 'extra2'), include(login: 'extra1')],
+      users_by_activity: [include(login: 'extra2'), include(login: 'extra1'), include(login: 'extra0')]
     )
     store.finish_run(run_id)
   end
 
+  it 'binds monthly edition year as a positional SQL parameter' do
+    unwired_store = described_class.allocate
+    allow(unwired_store).to receive(:fetch_all).and_return([])
+
+    expect(unwired_store.monthly_editions(2026)).to eq([])
+    expect(unwired_store).to have_received(:fetch_all).with(include('substr(period_start, 1, 4)'), ['2026'])
+  end
+
+  it 'binds repository ranking scope params as a flat positional list' do
+    unwired_store = described_class.allocate
+    allow(unwired_store).to receive(:repository_scope).with('krakow').and_return(['stats.owner_city = ?', ['Kraków']])
+    allow(unwired_store).to receive_messages(trending_filter: '', fetch_all: [])
+
+    unwired_store.send(:ranked_repositories, 'krakow', '2026-04-01', 'stargazers_count')
+
+    expect(unwired_store).to have_received(:fetch_all).with(include('stats.owner_city = ?'), %w[2026-04-01 Kraków])
+  end
+
+  it 'returns repository scope bindings as arrays' do
+    unwired_store = described_class.allocate
+
+    expect(unwired_store.send(:repository_scope, 'poland')).to eq(['stats.owner_country = ?', ['Poland']])
+    expect(unwired_store.send(:repository_scope, 'krakow')).to eq(['stats.owner_city = ?', ['Kraków']])
+  end
+
+  it 'binds user ranking scope params as a flat positional list' do
+    unwired_store = described_class.allocate
+    allow(unwired_store).to receive(:user_scope).with('krakow').and_return(['stats.city = ?', ['Kraków']])
+    allow(unwired_store).to receive_messages(trending_filter: '', fetch_all: [])
+
+    unwired_store.send(:ranked_users, 'krakow', '2026-04-01', 'total_stars')
+
+    expect(unwired_store).to have_received(:fetch_all).with(include('stats.city = ?'), %w[2026-04-01 Kraków])
+  end
+
+  it 'bounds ranking limits inside generated SQL' do
+    unwired_store = described_class.allocate
+    allow(unwired_store).to receive(:user_scope).with('poland').and_return(['stats.country = ?', ['Poland']])
+    allow(unwired_store).to receive_messages(trending_filter: '', fetch_all: [])
+
+    unwired_store.send(:ranked_users, 'poland', '2026-04-01', 'total_stars', limit: '1000; DROP TABLE users')
+
+    expect(unwired_store).to have_received(:fetch_all).with(include('LIMIT 100'), %w[2026-04-01 Poland])
+  end
+
+  it 'binds recorded period checks as positional SQL parameters' do
+    unwired_store = described_class.allocate
+    allow(unwired_store).to receive(:fetch_value).and_return(1)
+
+    expect(unwired_store.recorded_period?('2026-04-01')).to be(true)
+    expect(unwired_store).to have_received(:fetch_value).with(include('period_start = ?'), ['2026-04-01'])
+  end
+
   it 'reports per-platform job progress for the current run' do
     seed_progress_run
-    progress = store.job_progress(now: Time.now.utc + 60)
+    set_current_run_times(started_at: '2026-04-01T10:00:00Z', finished_at: nil)
 
-    expect(progress.fetch(:run)).to include(period_start: '2026-04-01', status: 'running')
-    expect(progress.fetch(:platforms)).to include(
-      include(
-        platform: 'github',
-        crawled_records_count: 2,
-        checked_users_count: 1,
-        checked_repositories_count: 1,
-        last_checked_user: include(login: 'alice', status: 'processed'),
-        last_checked_repository: include(full_name: 'alice/app', owner_login: 'alice')
-      ),
-      include(
-        platform: 'gitlab',
-        crawled_records_count: 1,
-        last_checked_user: include(login: 'bob', status: 'missing'),
-        last_checked_repository: nil
-      ),
-      include(platform: 'codeberg', crawled_records_count: 0)
+    expect(store.job_progress(now: Time.utc(2026, 4, 1, 10, 1, 1))).to eq(expected_running_progress)
+  end
+
+  it 'reports an empty job progress snapshot when no run exists' do
+    now = Time.utc(2026, 4, 1, 10, 1, 1)
+
+    expect(store.job_progress(now: now)).to eq(
+      generated_at: '2026-04-01T10:01:01Z',
+      run: nil,
+      platforms: []
+    )
+  end
+
+  it 'generates job progress timestamps in UTC by default' do
+    allow(Time).to receive(:now) { Time.new(2026, 4, 1, 12, 1, 1, '+02:00') }
+
+    expect(store.job_progress.fetch(:generated_at)).to eq('2026-04-01T10:01:01Z')
+  end
+
+  it 'uses the finished run timestamp for completed progress duration' do
+    seed_progress_run
+    store.finish_run(1)
+    set_current_run_times(
+      started_at: '2026-04-01T10:00:00Z',
+      finished_at: '2026-04-01T10:02:03Z'
+    )
+
+    progress = store.job_progress(now: Time.utc(2026, 4, 1, 10, 10, 0))
+
+    expect(progress.fetch(:run)).to include(
+      status: 'finished',
+      started_at: '2026-04-01T10:00:00Z',
+      finished_at: '2026-04-01T10:02:03Z'
+    )
+    expect(progress.fetch(:platforms).map { |platform| platform.fetch(:run_duration_seconds) }).to eq([123, 123, 123])
+  end
+
+  it 'persists complete user records with platform-qualified keys' do
+    seed_complete_gitlab_records
+    expect(fetch_row('SELECT * FROM users WHERE platform = ? AND github_id = ?', ['gitlab', 10])).to include(
+      platform: 'gitlab',
+      github_id: 10,
+      login: 'alice',
+      name: 'Alice',
+      location_raw: 'Kraków, Poland',
+      city: 'Kraków',
+      country: 'Poland',
+      email: 'alice@example.com',
+      homepage: 'https://example.com/alice',
+      html_url: 'https://github.com/alice',
+      avatar_url: 'https://avatars.example/alice.png'
+    )
+  end
+
+  it 'persists complete repository records with platform-qualified keys' do
+    seed_complete_gitlab_records
+    expect(fetch_row(<<~SQL, ['gitlab', 100])).to include(
+      SELECT * FROM repositories WHERE platform = ? AND github_id = ?
+    SQL
+      platform: 'gitlab',
+      github_id: 100,
+      owner_github_id: 10,
+      owner_login: 'alice',
+      name: 'app',
+      full_name: 'alice/app',
+      description: 'Project with 30 stars',
+      html_url: 'https://github.com/alice/app',
+      homepage: 'https://app.example',
+      language: 'Ruby',
+      fork: 1,
+      archived: 1
+    )
+  end
+
+  it 'persists complete user stats with platform-qualified keys' do
+    seed_complete_gitlab_records
+    expect(fetch_row(<<~SQL, ['2026-04-01', 'gitlab', 10])).to include(
+      SELECT * FROM user_monthly_stats WHERE period_start = ? AND platform = ? AND user_github_id = ?
+    SQL
+      period_start: '2026-04-01',
+      platform: 'gitlab',
+      user_github_id: 10,
+      login: 'alice',
+      city: 'Kraków',
+      country: 'Poland',
+      public_repo_count: 1,
+      total_stars: 30,
+      monthly_stars_delta: 4,
+      public_activity_count: 9
+    )
+  end
+
+  it 'persists complete repository stats with platform-qualified keys' do
+    seed_complete_gitlab_records
+    expect(fetch_row(<<~SQL, ['2026-04-01', 'gitlab', 100])).to include(
+      SELECT * FROM repository_monthly_stats WHERE period_start = ? AND platform = ? AND repository_github_id = ?
+    SQL
+      period_start: '2026-04-01',
+      platform: 'gitlab',
+      repository_github_id: 100,
+      owner_github_id: 10,
+      owner_login: 'alice',
+      owner_city: 'Kraków',
+      owner_country: 'Poland',
+      stargazers_count: 30,
+      monthly_stars_delta: 4
+    )
+  end
+
+  it 'records repository stats timestamps in UTC' do
+    allow(Time).to receive(:now) { Time.new(2026, 4, 1, 12, 0, 0, '+02:00') }
+    store.upsert_user(user_attributes(10, 'alice', 'Kraków'))
+    store.upsert_repository(repository_attributes(100, 10, 'alice', 'alice/app', 30))
+
+    store.record_repository_stats(repository_stats(100, 10, 'alice', 'Kraków', stars: 30, delta: 4))
+
+    expect(fetch_row('SELECT updated_at FROM repository_monthly_stats WHERE repository_github_id = ?', [100]))
+      .to include(updated_at: '2026-04-01T10:00:00Z')
+  end
+
+  it 'keeps optional persisted fields nil when source data omits them' do
+    store.create_run(period)
+    store.upsert_user(minimal_user_attributes)
+    store.record_user_stats(minimal_user_stats)
+    store.upsert_repository(minimal_repository_attributes)
+    store.record_repository_stats(minimal_repository_stats)
+
+    expect(fetch_row('SELECT * FROM users WHERE platform = ? AND github_id = ?', ['github', 50])).to include(
+      name: nil,
+      location_raw: nil,
+      city: nil,
+      country: nil,
+      email: nil,
+      homepage: nil,
+      avatar_url: nil
+    )
+    expect(fetch_row('SELECT * FROM repositories WHERE platform = ? AND github_id = ?', ['github', 500])).to include(
+      description: nil,
+      homepage: nil,
+      language: nil,
+      fork: 0,
+      archived: 0
+    )
+  end
+
+  it 'excludes zero monthly deltas from trending rankings' do
+    run_id = store.create_run(period)
+    store.upsert_user(user_attributes(10, 'alice', 'Kraków'))
+    store.record_user_stats(user_stats(10, 'alice', 'Kraków', total_stars: 30, delta: 4, activity: 9))
+    store.upsert_repository(repository_attributes(100, 10, 'alice', 'alice/app', 30))
+    store.record_repository_stats(repository_stats(100, 10, 'alice', 'Kraków', stars: 30, delta: 4))
+    store.upsert_user(user_attributes(20, 'bob', 'Kraków'))
+    store.record_user_stats(user_stats(20, 'bob', 'Kraków', total_stars: 99, delta: 0, activity: 20))
+    store.upsert_repository(repository_attributes(200, 20, 'bob', 'bob/app', 99))
+    store.record_repository_stats(repository_stats(200, 20, 'bob', 'Kraków', stars: 99, delta: 0))
+    store.finish_run(run_id)
+
+    expect(store.user_rankings('poland').fetch(:top).map { |row| row.fetch(:login) }).to eq(%w[bob alice])
+    expect(store.user_rankings('poland').fetch(:trending).map { |row| row.fetch(:login) }).to eq(['alice'])
+    expect(store.repository_rankings('poland').fetch(:top).map { |row| row.fetch(:full_name) }).to eq(
+      ['bob/app', 'alice/app']
+    )
+    expect(store.repository_rankings('poland').fetch(:trending).map { |row| row.fetch(:full_name) }).to eq(
+      ['alice/app']
     )
   end
 
@@ -78,9 +327,46 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     store.record_candidate(period, github_id: 10, login: 'alice', source_query: 'Poland')
     store.record_candidate(period, source_id: 20, login: 'bob', source_query: 'Poland', platform: 'gitlab')
 
+    expect(store.pending_candidates(period)).to contain_exactly(
+      include(login: 'alice', source_id: 10),
+      include(login: 'bob', source_id: 20)
+    )
     expect(store.pending_candidates(period, platform: 'gitlab')).to contain_exactly(
       include(login: 'bob', source_id: 20)
     )
+  end
+
+  it 'returns pending candidates in batches of 100 by default' do
+    store.create_run(period)
+    101.times do |index|
+      store.record_candidate(period, github_id: index, login: format('user%03d', index), source_query: 'Poland')
+    end
+
+    expect(store.pending_candidates(period).size).to eq(100)
+  end
+
+  it 'records candidate timestamps in UTC' do
+    allow(Time).to receive(:now) { Time.new(2026, 4, 1, 12, 0, 0, '+02:00') }
+    store.create_run(period)
+
+    store.record_candidate(period, github_id: 10, login: 'alice', source_query: 'Poland')
+
+    expect(fetch_candidate('alice')).to include(updated_at: '2026-04-01T10:00:00Z')
+  end
+
+  it 'marks candidates with platform-aware and legacy GitHub arguments' do
+    allow(Time).to receive(:now) { Time.new(2026, 4, 1, 12, 0, 0, '+02:00') }
+    store.create_run(period)
+    store.record_candidate(period, github_id: 10, login: 'alice', source_query: 'Poland')
+    store.record_candidate(period, source_id: 20, login: 'cora', source_query: 'Poland', platform: 'codeberg')
+
+    store.mark_candidate(period, 'alice', 'failed', 'legacy error')
+    store.mark_candidate(period, 'codeberg', 'cora', 'failed', 'source error')
+
+    expect(fetch_candidate('alice')).to include(platform: 'github', status: 'failed', error: 'legacy error',
+                                                updated_at: '2026-04-01T10:00:00Z')
+    expect(fetch_candidate('cora', platform: 'codeberg')).to include(platform: 'codeberg', status: 'failed',
+                                                                     error: 'source error')
   end
 
   it 'records failed runs' do
@@ -88,6 +374,21 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
 
     expect { store.fail_run(run_id, 'boom') }.not_to raise_error
     expect(store.latest_period).to be_nil
+    expect(fetch_row('SELECT status, error FROM sync_runs WHERE id = ?', [run_id])).to include(
+      status: 'failed',
+      error: 'boom'
+    )
+  end
+
+  it 'creates parent directories and records the schema version' do
+    nested_path = File.join(Dir.mktmpdir, 'nested', 'rank.sqlite3')
+
+    nested_store = described_class.new(nested_path).migrate!
+
+    nested_database = SQLite3::Database.new(nested_path)
+    expect(nested_database.get_first_value('PRAGMA user_version')).to eq(described_class::SCHEMA_VERSION)
+    expect(nested_store.send(:database).get_first_value('PRAGMA foreign_keys')).to eq(1)
+    expect(nested_store.latest_period).to be_nil
   end
 
   it 'does not reopen a finished period for partial refreshes' do
@@ -99,6 +400,24 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     expect(refreshed_run_id).to be_nil
     expect(store.latest_period).to eq('2026-04-01')
     expect(store.completed_periods).to contain_exactly(include(period_start: '2026-04-01'))
+  end
+
+  it 'reopens a finished period when retryable candidates remain' do
+    run_id = store.create_run(period)
+    store.record_candidate(period, github_id: 10, login: 'alice', source_query: 'Poland')
+    store.mark_candidate(period, 'alice', 'failed', 'temporary')
+    store.finish_run(run_id)
+
+    expect(store.retryable_candidates?(period)).to be(true)
+
+    refreshed_run_id = store.create_run(period)
+
+    expect(refreshed_run_id).to eq(run_id)
+    expect(store.pending_candidates(period)).to contain_exactly(include(login: 'alice', source_id: 10))
+    expect(fetch_row('SELECT status, error FROM candidate_users WHERE login = ?', ['alice'])).to include(
+      status: 'pending',
+      error: nil
+    )
   end
 
   it 'rolls back ranking pruning failures' do
@@ -208,6 +527,63 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     }
   end
 
+  def minimal_user_attributes
+    {
+      github_id: 50,
+      login: 'optional',
+      html_url: 'https://github.com/optional'
+    }
+  end
+
+  def seed_city_scope_rankings
+    run_id = store.create_run(period)
+    store.upsert_user(user_attributes(10, 'alice', 'Kraków'))
+    store.record_user_stats(user_stats(10, 'alice', 'Kraków', total_stars: 30, delta: 4, activity: 9))
+    store.upsert_repository(repository_attributes(100, 10, 'alice', 'alice/app', 30))
+    store.record_repository_stats(repository_stats(100, 10, 'alice', 'Kraków', stars: 30, delta: 4))
+    store.upsert_user(user_attributes(20, 'bob', 'Wrocław'))
+    store.record_user_stats(user_stats(20, 'bob', 'Wrocław', total_stars: 99, delta: 9, activity: 19))
+    store.upsert_repository(repository_attributes(200, 20, 'bob', 'bob/app', 99))
+    store.record_repository_stats(repository_stats(200, 20, 'bob', 'Wrocław', stars: 99, delta: 9))
+    store.finish_run(run_id)
+  end
+
+  def minimal_user_stats
+    {
+      period_start: period.start_date.to_s,
+      user_github_id: 50,
+      login: 'optional',
+      public_repo_count: 0,
+      total_stars: 0,
+      monthly_stars_delta: 0,
+      public_activity_count: 0
+    }
+  end
+
+  def minimal_repository_attributes
+    {
+      github_id: 500,
+      owner_github_id: 50,
+      owner_login: 'optional',
+      name: 'tool',
+      full_name: 'optional/tool',
+      html_url: 'https://github.com/optional/tool',
+      fork: false,
+      archived: false
+    }
+  end
+
+  def minimal_repository_stats
+    {
+      period_start: period.start_date.to_s,
+      repository_github_id: 500,
+      owner_github_id: 50,
+      owner_login: 'optional',
+      stargazers_count: 0,
+      monthly_stars_delta: 0
+    }
+  end
+
   def seed_progress_run
     store.create_run(period)
     store.record_candidate(period, github_id: 10, login: 'alice', source_query: 'Poland')
@@ -218,6 +594,134 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     store.record_user_stats(user_stats(10, 'alice', 'Kraków', total_stars: 30, delta: 4, activity: 9))
     store.upsert_repository(repository_attributes(100, 10, 'alice', 'alice/app', 30))
     store.record_repository_stats(repository_stats(100, 10, 'alice', 'Kraków', stars: 30, delta: 4))
+    seed_progress_timestamps
+  end
+
+  def seed_progress_timestamps
+    database.execute(
+      'UPDATE candidate_users SET updated_at = ? WHERE platform = ? AND login = ?',
+      ['2026-04-01T10:00:20Z', 'github', 'alice']
+    )
+    database.execute(
+      'UPDATE candidate_users SET updated_at = ? WHERE platform = ? AND login = ?',
+      ['2026-04-01T10:00:10Z', 'gitlab', 'bob']
+    )
+    database.execute(
+      'UPDATE repository_monthly_stats SET updated_at = ? WHERE platform = ? AND repository_github_id = ?',
+      ['2026-04-01T10:00:30Z', 'github', 100]
+    )
+  end
+
+  def seed_complete_gitlab_records
+    store.create_run(period)
+    store.upsert_user(user_attributes(10, 'alice', 'Kraków').merge(platform: 'gitlab'))
+    store.record_user_stats(
+      user_stats(10, 'alice', 'Kraków', total_stars: 30, delta: 4, activity: 9).merge(platform: 'gitlab')
+    )
+    store.upsert_repository(gitlab_repository_record)
+    store.record_repository_stats(
+      repository_stats(100, 10, 'alice', 'Kraków', stars: 30, delta: 4).merge(platform: 'gitlab')
+    )
+  end
+
+  def gitlab_repository_record
+    repository_attributes(100, 10, 'alice', 'alice/app', 30).merge(
+      platform: 'gitlab',
+      homepage: 'https://app.example',
+      fork: true,
+      archived: true
+    )
+  end
+
+  def expected_running_progress
+    {
+      generated_at: '2026-04-01T10:01:01Z',
+      run: expected_running_progress_run,
+      platforms: expected_running_progress_platforms
+    }
+  end
+
+  def expected_running_progress_run
+    {
+      period_start: '2026-04-01',
+      period_end: '2026-05-01',
+      status: 'running',
+      started_at: '2026-04-01T10:00:00Z',
+      finished_at: nil,
+      error: nil
+    }
+  end
+
+  def expected_running_progress_platforms
+    [
+      expected_github_progress,
+      expected_gitlab_progress,
+      expected_codeberg_progress
+    ]
+  end
+
+  def expected_github_progress
+    {
+      platform: 'github',
+      run_duration_seconds: 61,
+      crawled_records_count: 2,
+      checked_users_count: 1,
+      checked_repositories_count: 1,
+      last_checked_user: { login: 'alice', status: 'processed', checked_at: '2026-04-01T10:00:20Z' },
+      last_checked_repository: { full_name: 'alice/app', owner_login: 'alice', checked_at: '2026-04-01T10:00:30Z' }
+    }
+  end
+
+  def expected_gitlab_progress
+    {
+      platform: 'gitlab',
+      run_duration_seconds: 61,
+      crawled_records_count: 1,
+      checked_users_count: 1,
+      checked_repositories_count: 0,
+      last_checked_user: { login: 'bob', status: 'missing', checked_at: '2026-04-01T10:00:10Z' },
+      last_checked_repository: nil
+    }
+  end
+
+  def expected_codeberg_progress
+    {
+      platform: 'codeberg',
+      run_duration_seconds: 61,
+      crawled_records_count: 0,
+      checked_users_count: 0,
+      checked_repositories_count: 0,
+      last_checked_user: nil,
+      last_checked_repository: nil
+    }
+  end
+
+  def set_current_run_times(started_at:, finished_at:)
+    status = finished_at ? 'finished' : 'running'
+    database.execute(
+      'UPDATE sync_runs SET started_at = ?, finished_at = ?, status = ? WHERE period_start = ?',
+      [started_at, finished_at, status, period.start_date.to_s]
+    )
+  end
+
+  def fetch_row(sql, params = [])
+    row = database.execute(sql, params).first
+    row.each_with_object({}) do |(key, value), result|
+      result[key.to_sym] = value unless key.is_a?(Integer)
+    end
+  end
+
+  def fetch_candidate(login, platform: 'github')
+    fetch_row(
+      'SELECT platform, login, status, error, updated_at FROM candidate_users WHERE platform = ? AND login = ?',
+      [platform, login]
+    )
+  end
+
+  def database
+    @database ||= SQLite3::Database.new(path).tap do |connection|
+      connection.results_as_hash = true
+    end
   end
 
   def legacy_schema_sql

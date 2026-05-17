@@ -36,15 +36,14 @@ module PolishOpenSourceRank
       end
 
       def repository_stars_delta(repository, period)
-        full_name = repository.fetch(:full_name)
-        owner, repo = full_name.split('/', 2)
+        owner, repo = repository_coordinates(repository)
         first_page = stargazers_page(owner, repo, 1)
         last_page = last_page_number(first_page.headers.fetch('link', nil)) || 1
         return count_stars(first_page.body, period) if last_page == 1
 
         count_stars_backwards(owner, repo, period, last_page)
       rescue GitHubClient::Error => e
-        raise unless e.status == 451
+        raise unless [403, 451].include?(e.status)
 
         0
       end
@@ -92,7 +91,7 @@ module PolishOpenSourceRank
           language: repository['language'],
           fork: repository.fetch('fork'),
           archived: repository.fetch('archived'),
-          stars: repository.fetch('stargazers_count').to_i
+          stars: Integer(repository.fetch('stargazers_count'))
         }
       end
 
@@ -104,7 +103,7 @@ module PolishOpenSourceRank
           response = client.get(path, params: params.merge(per_page: PER_PAGE, page: page))
           signal = yield response
           break unless next_page?(response.headers.fetch('link', nil))
-          break if limit && page >= limit
+          break if page == limit
           break if signal == :stop
 
           page += 1
@@ -117,6 +116,14 @@ module PolishOpenSourceRank
           params: { per_page: PER_PAGE, page: page },
           accept: STAR_ACCEPT
         )
+      end
+
+      def repository_coordinates(repository)
+        full_name = repository.fetch(:full_name)
+        match = full_name.match(%r{\A([^/]+)/([^/]+)\z})
+        raise ArgumentError, "Invalid GitHub repository full_name: #{full_name.inspect}" unless match
+
+        [match[1], match[2]]
       end
 
       def count_stars_backwards(owner, repo, period, last_page)
@@ -139,7 +146,7 @@ module PolishOpenSourceRank
 
       def last_page_number(link_header)
         match = link_header.to_s.match(/[?&]page=(\d+)>; rel="last"/)
-        match && match[1].to_i
+        match && Integer(match[1])
       end
     end
   end
