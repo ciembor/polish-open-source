@@ -6,6 +6,7 @@ RSpec.describe PolishGithubRank::Web::App do
     old_base_url = ENV.fetch('BASE_URL', nil)
     old_app_base_path = ENV.fetch('APP_BASE_PATH', nil)
     ENV['BASE_URL'] = 'https://rank.example'
+    ENV.delete('APP_BASE_PATH')
     example.run
   ensure
     ENV['DATABASE_URL'] = old_database_url
@@ -19,9 +20,11 @@ RSpec.describe PolishGithubRank::Web::App do
     response = Rack::MockRequest.new(described_class).get('/')
 
     expect(response.status).to eq(200)
-    expect(response.body).to include('<title>Polska GitHub ranking</title>')
-    expect(response.body).to include('rel="canonical" href="https://rank.example/"')
+    expect(response.body).to include('<title>Polska open-source ranking</title>')
+    expect(response.body).to include('rel="canonical" href="https://rank.example/latest"')
     expect(response.body).to include('alice/app')
+    expect(response.body).to include('href="/latest/users/top"')
+    expect(response.body).to include('Zobacz top 100')
     expect(response.body).to include('application/ld+json')
   end
 
@@ -33,18 +36,83 @@ RSpec.describe PolishGithubRank::Web::App do
     expect(response.status).to eq(200)
     expect(response.body).to include('Kraków')
     expect(response.body).to include('Brak danych rankingowych')
+    expect(response.body).to include('Więcej miast')
+  end
+
+  it 'renders rankings for completed month slugs' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+
+    latest_response = Rack::MockRequest.new(described_class).get('/latest')
+    latest_city_response = Rack::MockRequest.new(described_class).get('/latest/locations/krakow')
+    response = Rack::MockRequest.new(described_class).get('/2026-04/locations/krakow')
+    month_response = Rack::MockRequest.new(described_class).get('/2026-04')
+
+    expect(latest_response.status).to eq(200)
+    expect(latest_city_response.status).to eq(200)
+    expect(response.status).to eq(200)
+    expect(month_response.status).to eq(200)
+    expect(response.body).to include('alice/app')
+    expect(response.body).to include('rel="canonical" href="https://rank.example/2026-04/locations/krakow"')
+  end
+
+  it 'renders explicit month slugs while the snapshot is still running' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_running_database}"
+
+    latest_response = Rack::MockRequest.new(described_class).get('/latest')
+    month_response = Rack::MockRequest.new(described_class).get('/2026-04')
+
+    expect(latest_response.body).to include('Brak danych rankingowych')
+    expect(month_response.status).to eq(200)
+    expect(month_response.body).to include('alice/app')
+  end
+
+  it 'renders full top 100 pages for each ranking type' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+
+    user_response = Rack::MockRequest.new(described_class).get('/2026-04/locations/krakow/users/active')
+    repo_response = Rack::MockRequest.new(described_class).get('/2026-04/repositories/trending')
+    latest_user_response = Rack::MockRequest.new(described_class).get('/latest/users/top')
+    latest_city_response = Rack::MockRequest.new(described_class).get('/latest/locations/krakow/repositories/top')
+    invalid_response = Rack::MockRequest.new(described_class).get('/2026-04/repositories/active')
+
+    expect(user_response.status).to eq(200)
+    expect(user_response.body).to include('Top 100 aktywnych użytkowników')
+    expect(repo_response.status).to eq(200)
+    expect(repo_response.body).to include('Top 100 trendujących repozytoriów')
+    expect(latest_user_response.status).to eq(200)
+    expect(latest_user_response.body).to include('Gwiazdek')
+    expect(latest_city_response.status).to eq(200)
+    expect(latest_city_response.body).to include('Top 100 repozytoriów według gwiazdek')
+    expect(invalid_response.status).to eq(404)
+  end
+
+  it 'renders the about page' do
+    response = Rack::MockRequest.new(described_class).get('/about')
+
+    expect(response.status).to eq(200)
+    expect(response.body).to include('Misja')
+    expect(response.body).to include('wyłącznie dane publiczne')
+    expect(response.body).to include('GitHub')
+    expect(response.body).to include('GitLab')
+    expect(response.body).to include('Codeberg')
+    expect(response.body).to include('Maciej Ciemborowicz')
+    expect(response.body).to include('href="/latest/locations/krakow"')
+    expect(response.body).not_to include('//locations')
   end
 
   it 'renders links and assets under a configured app base path' do
-    ENV['DATABASE_URL'] = "sqlite://#{empty_database}"
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     ENV['BASE_URL'] = 'https://rank.example/polish-github-rank'
     ENV['APP_BASE_PATH'] = '/polish-github-rank'
 
     response = Rack::MockRequest.new(described_class).get('/')
 
-    expect(response.body).to include('rel="canonical" href="https://rank.example/polish-github-rank/"')
-    expect(response.body).to include('href="/polish-github-rank/css/application.css"')
-    expect(response.body).to include('href="/polish-github-rank/locations/krakow"')
+    expect(response.body).to include('rel="canonical" href="https://rank.example/polish-github-rank/latest"')
+    expect(response.body).to include('href="/polish-github-rank/css/application.css?v=20260517-about"')
+    expect(response.body).to include('src="/polish-github-rank/js/navigation.js?v=20260517-menu3"')
+    expect(response.body).to include('href="/polish-github-rank/latest/locations/krakow"')
+    expect(response.body).to include('href="/polish-github-rank/latest/users/top"')
+    expect(response.body).to include('href="/polish-github-rank/about"')
   end
 
   it 'serves health checks and 404 pages' do
@@ -52,12 +120,28 @@ RSpec.describe PolishGithubRank::Web::App do
 
     expect(Rack::MockRequest.new(described_class).get('/healthz').body).to eq('ok')
     expect(Rack::MockRequest.new(described_class).get('/locations/unknown').status).to eq(404)
+    expect(Rack::MockRequest.new(described_class).get('/2026-13').status).to eq(404)
   end
 
   def seed_database
     path = empty_database
     store = PolishGithubRank::Infrastructure::SQLiteStore.new(path).migrate!
     period = PolishGithubRank::Application::MonthPeriod.parse('2026-04')
+    run_id = store.create_run(period)
+
+    store.upsert_user(user_attributes)
+    store.record_user_stats(user_stats(period))
+    store.upsert_repository(repository_attributes)
+    store.record_repository_stats(repository_stats(period))
+    store.finish_run(run_id)
+    path
+  end
+
+  def seed_running_database
+    path = empty_database
+    store = PolishGithubRank::Infrastructure::SQLiteStore.new(path).migrate!
+    period = PolishGithubRank::Application::MonthPeriod.parse('2026-04')
+    store.create_run(period)
 
     store.upsert_user(user_attributes)
     store.record_user_stats(user_stats(period))

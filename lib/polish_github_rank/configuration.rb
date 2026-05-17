@@ -22,6 +22,14 @@ module PolishGithubRank
       ENV.fetch('GITHUB_TOKEN')
     end
 
+    def gitlab_token
+      ENV.fetch('GITLAB_TOKEN', nil)
+    end
+
+    def codeberg_token
+      ENV.fetch('CODEBERG_TOKEN', nil)
+    end
+
     def database_path
       database_url = ENV.fetch('DATABASE_URL', "sqlite://#{DEFAULT_DATABASE_PATH}")
       database_url.delete_prefix('sqlite://')
@@ -33,6 +41,14 @@ module PolishGithubRank
 
     def github_base_url
       ENV.fetch('GITHUB_BASE_URL', 'https://api.github.com')
+    end
+
+    def gitlab_base_url
+      ENV.fetch('GITLAB_BASE_URL', 'https://gitlab.com/api/v4')
+    end
+
+    def codeberg_base_url
+      ENV.fetch('CODEBERG_BASE_URL', 'https://codeberg.org/api/v1')
     end
 
     def public_base_url

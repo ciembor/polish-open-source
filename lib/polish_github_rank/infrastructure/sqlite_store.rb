@@ -6,6 +6,7 @@ module PolishGithubRank
   module Infrastructure
     class SQLiteStore
       SCHEMA_VERSION = 1
+      RANKING_LIMIT = 100
 
       def initialize(path)
         @path = Pathname(path)
@@ -14,11 +15,17 @@ module PolishGithubRank
       def migrate!
         FileUtils.mkdir_p(path.dirname)
         database.execute_batch('PRAGMA foreign_keys = ON;')
-        create_schema
+        migration = PlatformSchemaMigration.new(database, schema_sql)
+        migration.needed? ? migration.run : create_schema
         self
       end
 
       def create_run(period)
+        return if fetch_value(
+          'SELECT 1 FROM sync_runs WHERE period_start = ? AND status = ?',
+          [period.start_date.to_s, 'finished']
+        )
+
         execute(<<~SQL, [period.start_date.to_s, period.end_date.to_s, Time.now.utc.iso8601])
           INSERT INTO sync_runs(period_start, period_end, status, started_at)
           VALUES (?, ?, 'running', ?)
@@ -38,14 +45,18 @@ module PolishGithubRank
       end
 
       def fail_run(run_id, error)
-        execute("UPDATE sync_runs SET status = 'failed', error = ? WHERE id = ?", [error, run_id])
+        execute(
+          "UPDATE sync_runs SET status = 'failed', error = ? WHERE id = ?",
+          [error, run_id]
+        )
       end
 
-      def record_candidate(period, github_id:, login:, source_query:)
-        execute(<<~SQL, [period.start_date.to_s, github_id, login, source_query, Time.now.utc.iso8601])
-          INSERT INTO candidate_users(period_start, github_id, login, source_query, status, updated_at)
-          VALUES (?, ?, ?, ?, 'pending', ?)
-          ON CONFLICT(period_start, login) DO UPDATE SET
+      def record_candidate(period, login:, source_query:, platform: 'github', source_id: nil, github_id: nil)
+        source_id ||= github_id
+        execute(<<~SQL, [period.start_date.to_s, platform, source_id, login, source_query, Time.now.utc.iso8601])
+          INSERT INTO candidate_users(period_start, platform, github_id, login, source_query, status, updated_at)
+          VALUES (?, ?, ?, ?, ?, 'pending', ?)
+          ON CONFLICT(period_start, platform, login) DO UPDATE SET
             github_id = excluded.github_id,
             source_query = CASE
               WHEN instr(candidate_users.source_query, excluded.source_query) > 0
@@ -56,36 +67,50 @@ module PolishGithubRank
         SQL
       end
 
-      def pending_candidates(period, limit: 100)
-        fetch_all(<<~SQL, [period.start_date.to_s, limit])
-          SELECT github_id, login
+      def pending_candidates(period, limit: 100, platform: nil)
+        platform_sql = platform ? 'AND platform = ?' : ''
+        params = [period.start_date.to_s]
+        params << platform if platform
+        params << limit
+        fetch_all(<<~SQL, params)
+          SELECT platform, github_id, github_id AS source_id, login
           FROM candidate_users
-          WHERE period_start = ? AND status IN ('pending', 'failed')
-          ORDER BY login COLLATE NOCASE ASC
+          WHERE period_start = ? AND status IN ('pending', 'failed') #{platform_sql}
+          ORDER BY platform ASC, login COLLATE NOCASE ASC
           LIMIT ?
         SQL
       end
 
-      def mark_candidate(period, login, status, error = nil)
-        execute(<<~SQL, [status, error, Time.now.utc.iso8601, period.start_date.to_s, login])
+      def mark_candidate(period, platform, login = nil, status = nil, error = nil)
+        unless %w[github gitlab codeberg].include?(platform)
+          error = status
+          status = login
+          login = platform
+          platform = 'github'
+        end
+        execute(<<~SQL, [status, error, Time.now.utc.iso8601, period.start_date.to_s, platform, login])
           UPDATE candidate_users
           SET status = ?, error = ?, updated_at = ?
-          WHERE period_start = ? AND login = ?
+          WHERE period_start = ? AND platform = ? AND login = ?
         SQL
       end
 
-      def processed_user?(period, github_id)
+      def processed_user?(period, platform, github_id = nil)
+        unless github_id
+          github_id = platform
+          platform = 'github'
+        end
         fetch_value(
-          'SELECT 1 FROM user_monthly_stats WHERE period_start = ? AND user_github_id = ?',
-          [period.start_date.to_s, github_id]
+          'SELECT 1 FROM user_monthly_stats WHERE period_start = ? AND platform = ? AND user_github_id = ?',
+          [period.start_date.to_s, platform, github_id]
         )
       end
 
       def upsert_user(attributes)
         execute(<<~SQL, user_values(attributes))
-          INSERT INTO users(github_id, login, name, location_raw, city, country, email, homepage, html_url, avatar_url, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          ON CONFLICT(github_id) DO UPDATE SET
+          INSERT INTO users(platform, github_id, login, name, location_raw, city, country, email, homepage, html_url, avatar_url, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(platform, github_id) DO UPDATE SET
             login = excluded.login,
             name = excluded.name,
             location_raw = excluded.location_raw,
@@ -102,11 +127,11 @@ module PolishGithubRank
       def record_user_stats(attributes)
         execute(<<~SQL, user_stats_values(attributes))
           INSERT INTO user_monthly_stats(
-            period_start, user_github_id, login, city, country, public_repo_count,
+            period_start, platform, user_github_id, login, city, country, public_repo_count,
             total_stars, monthly_stars_delta, public_activity_count, updated_at
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          ON CONFLICT(period_start, user_github_id) DO UPDATE SET
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(period_start, platform, user_github_id) DO UPDATE SET
             login = excluded.login,
             city = excluded.city,
             country = excluded.country,
@@ -121,11 +146,11 @@ module PolishGithubRank
       def upsert_repository(attributes)
         execute(<<~SQL, repository_values(attributes))
           INSERT INTO repositories(
-            github_id, owner_github_id, owner_login, name, full_name, description,
+            platform, github_id, owner_github_id, owner_login, name, full_name, description,
             html_url, homepage, language, fork, archived, updated_at
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          ON CONFLICT(github_id) DO UPDATE SET
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(platform, github_id) DO UPDATE SET
             owner_github_id = excluded.owner_github_id,
             owner_login = excluded.owner_login,
             name = excluded.name,
@@ -143,11 +168,11 @@ module PolishGithubRank
       def record_repository_stats(attributes)
         execute(<<~SQL, repository_stats_values(attributes))
           INSERT INTO repository_monthly_stats(
-            period_start, repository_github_id, owner_github_id, owner_login, owner_city,
+            period_start, platform, repository_github_id, owner_github_id, owner_login, owner_city,
             owner_country, stargazers_count, monthly_stars_delta, updated_at
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-          ON CONFLICT(period_start, repository_github_id) DO UPDATE SET
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(period_start, platform, repository_github_id) DO UPDATE SET
             owner_github_id = excluded.owner_github_id,
             owner_login = excluded.owner_login,
             owner_city = excluded.owner_city,
@@ -158,8 +183,25 @@ module PolishGithubRank
         SQL
       end
 
+      def prune_rankings(period, catalog: Domain::LocationCatalog)
+        RankingPruner.new(database, catalog: catalog).prune(period)
+      end
+
       def latest_period
-        fetch_value('SELECT MAX(period_start) FROM user_monthly_stats')
+        fetch_value("SELECT MAX(period_start) FROM sync_runs WHERE status = 'finished'")
+      end
+
+      def completed_periods
+        fetch_all(<<~SQL)
+          SELECT period_start
+          FROM sync_runs
+          WHERE status = 'finished'
+          ORDER BY period_start DESC
+        SQL
+      end
+
+      def recorded_period?(period_start)
+        !fetch_value('SELECT 1 FROM sync_runs WHERE period_start = ?', [period_start]).nil?
       end
 
       def user_rankings(scope, period_start: latest_period)
@@ -184,6 +226,7 @@ module PolishGithubRank
       def database
         @database ||= SQLite3::Database.new(path.to_s).tap do |connection|
           connection.results_as_hash = true
+          connection.busy_timeout = 30_000
         end
       end
 
@@ -211,29 +254,33 @@ module PolishGithubRank
       def ranked_users(scope, period_start, order_column)
         sql_scope, params = user_scope(scope)
         fetch_all(<<~SQL, [period_start, *params])
-          SELECT users.login, users.name, users.email, users.homepage, users.html_url, users.avatar_url,
+          SELECT users.platform, users.login, users.name, users.email, users.homepage, users.html_url, users.avatar_url,
                  stats.city, stats.country, stats.public_repo_count, stats.total_stars,
                  stats.monthly_stars_delta, stats.public_activity_count
           FROM user_monthly_stats stats
-          INNER JOIN users ON users.github_id = stats.user_github_id
-          WHERE stats.period_start = ? AND #{sql_scope}
-          ORDER BY stats.#{order_column} DESC, users.login COLLATE NOCASE ASC
-          LIMIT 10
+          INNER JOIN users ON users.platform = stats.platform AND users.github_id = stats.user_github_id
+          WHERE stats.period_start = ? AND #{sql_scope} #{trending_filter(order_column, 'stats')}
+          ORDER BY stats.#{order_column} DESC, users.platform ASC, users.login COLLATE NOCASE ASC
+          LIMIT #{RANKING_LIMIT}
         SQL
       end
 
       def ranked_repositories(scope, period_start, order_column)
         sql_scope, params = repository_scope(scope)
         fetch_all(<<~SQL, [period_start, *params])
-          SELECT repositories.full_name, repositories.name, repositories.description, repositories.html_url,
+          SELECT repositories.platform, repositories.full_name, repositories.name, repositories.description, repositories.html_url,
                  repositories.homepage, repositories.language, stats.owner_login, stats.owner_city,
                  stats.owner_country, stats.stargazers_count, stats.monthly_stars_delta
           FROM repository_monthly_stats stats
-          INNER JOIN repositories ON repositories.github_id = stats.repository_github_id
-          WHERE stats.period_start = ? AND #{sql_scope}
-          ORDER BY stats.#{order_column} DESC, repositories.full_name COLLATE NOCASE ASC
-          LIMIT 10
+          INNER JOIN repositories ON repositories.platform = stats.platform AND repositories.github_id = stats.repository_github_id
+          WHERE stats.period_start = ? AND #{sql_scope} #{trending_filter(order_column, 'stats')}
+          ORDER BY stats.#{order_column} DESC, repositories.platform ASC, repositories.full_name COLLATE NOCASE ASC
+          LIMIT #{RANKING_LIMIT}
         SQL
+      end
+
+      def trending_filter(order_column, table_alias)
+        order_column == 'monthly_stars_delta' ? "AND #{table_alias}.monthly_stars_delta > 0" : ''
       end
 
       def user_scope(scope)
@@ -250,16 +297,16 @@ module PolishGithubRank
 
       def user_values(attributes)
         [
-          attributes.fetch(:github_id), attributes.fetch(:login), attributes[:name], attributes[:location_raw],
-          attributes[:city], attributes[:country], attributes[:email], attributes[:homepage],
-          attributes.fetch(:html_url), attributes[:avatar_url], Time.now.utc.iso8601
+          attributes.fetch(:platform, 'github'), attributes.fetch(:github_id), attributes.fetch(:login),
+          attributes[:name], attributes[:location_raw], attributes[:city], attributes[:country], attributes[:email],
+          attributes[:homepage], attributes.fetch(:html_url), attributes[:avatar_url], Time.now.utc.iso8601
         ]
       end
 
       def user_stats_values(attributes)
         [
-          attributes.fetch(:period_start), attributes.fetch(:user_github_id), attributes.fetch(:login),
-          attributes[:city], attributes[:country], attributes.fetch(:public_repo_count),
+          attributes.fetch(:period_start), attributes.fetch(:platform, 'github'), attributes.fetch(:user_github_id),
+          attributes.fetch(:login), attributes[:city], attributes[:country], attributes.fetch(:public_repo_count),
           attributes.fetch(:total_stars), attributes.fetch(:monthly_stars_delta),
           attributes.fetch(:public_activity_count), Time.now.utc.iso8601
         ]
@@ -267,16 +314,17 @@ module PolishGithubRank
 
       def repository_values(attributes)
         [
-          attributes.fetch(:github_id), attributes.fetch(:owner_github_id), attributes.fetch(:owner_login),
-          attributes.fetch(:name), attributes.fetch(:full_name), attributes[:description],
-          attributes.fetch(:html_url), attributes[:homepage], attributes[:language],
+          attributes.fetch(:platform, 'github'), attributes.fetch(:github_id), attributes.fetch(:owner_github_id),
+          attributes.fetch(:owner_login), attributes.fetch(:name), attributes.fetch(:full_name),
+          attributes[:description], attributes.fetch(:html_url), attributes[:homepage], attributes[:language],
           boolean_int(attributes.fetch(:fork)), boolean_int(attributes.fetch(:archived)), Time.now.utc.iso8601
         ]
       end
 
       def repository_stats_values(attributes)
         [
-          attributes.fetch(:period_start), attributes.fetch(:repository_github_id), attributes.fetch(:owner_github_id),
+          attributes.fetch(:period_start), attributes.fetch(:platform, 'github'),
+          attributes.fetch(:repository_github_id), attributes.fetch(:owner_github_id),
           attributes.fetch(:owner_login), attributes[:owner_city], attributes[:owner_country],
           attributes.fetch(:stargazers_count), attributes.fetch(:monthly_stars_delta), Time.now.utc.iso8601
         ]
@@ -293,98 +341,7 @@ module PolishGithubRank
       end
 
       def schema_sql
-        <<~SQL
-          CREATE TABLE IF NOT EXISTS sync_runs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            period_start TEXT NOT NULL UNIQUE,
-            period_end TEXT NOT NULL,
-            status TEXT NOT NULL,
-            started_at TEXT NOT NULL,
-            finished_at TEXT,
-            error TEXT
-          );
-
-          CREATE TABLE IF NOT EXISTS candidate_users (
-            period_start TEXT NOT NULL,
-            github_id INTEGER NOT NULL,
-            login TEXT NOT NULL,
-            source_query TEXT NOT NULL,
-            status TEXT NOT NULL DEFAULT 'pending',
-            error TEXT,
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT NOT NULL,
-            PRIMARY KEY(period_start, login)
-          );
-
-          CREATE TABLE IF NOT EXISTS users (
-            github_id INTEGER PRIMARY KEY,
-            login TEXT NOT NULL UNIQUE,
-            name TEXT,
-            location_raw TEXT,
-            city TEXT,
-            country TEXT,
-            email TEXT,
-            homepage TEXT,
-            html_url TEXT NOT NULL,
-            avatar_url TEXT,
-            updated_at TEXT NOT NULL
-          );
-
-          CREATE TABLE IF NOT EXISTS user_monthly_stats (
-            period_start TEXT NOT NULL,
-            user_github_id INTEGER NOT NULL,
-            login TEXT NOT NULL,
-            city TEXT,
-            country TEXT,
-            public_repo_count INTEGER NOT NULL,
-            total_stars INTEGER NOT NULL,
-            monthly_stars_delta INTEGER NOT NULL,
-            public_activity_count INTEGER NOT NULL,
-            updated_at TEXT NOT NULL,
-            PRIMARY KEY(period_start, user_github_id),
-            FOREIGN KEY(user_github_id) REFERENCES users(github_id)
-          );
-
-          CREATE TABLE IF NOT EXISTS repositories (
-            github_id INTEGER PRIMARY KEY,
-            owner_github_id INTEGER NOT NULL,
-            owner_login TEXT NOT NULL,
-            name TEXT NOT NULL,
-            full_name TEXT NOT NULL UNIQUE,
-            description TEXT,
-            html_url TEXT NOT NULL,
-            homepage TEXT,
-            language TEXT,
-            fork INTEGER NOT NULL,
-            archived INTEGER NOT NULL,
-            updated_at TEXT NOT NULL,
-            FOREIGN KEY(owner_github_id) REFERENCES users(github_id)
-          );
-
-          CREATE TABLE IF NOT EXISTS repository_monthly_stats (
-            period_start TEXT NOT NULL,
-            repository_github_id INTEGER NOT NULL,
-            owner_github_id INTEGER NOT NULL,
-            owner_login TEXT NOT NULL,
-            owner_city TEXT,
-            owner_country TEXT,
-            stargazers_count INTEGER NOT NULL,
-            monthly_stars_delta INTEGER NOT NULL,
-            updated_at TEXT NOT NULL,
-            PRIMARY KEY(period_start, repository_github_id),
-            FOREIGN KEY(repository_github_id) REFERENCES repositories(github_id),
-            FOREIGN KEY(owner_github_id) REFERENCES users(github_id)
-          );
-
-          CREATE INDEX IF NOT EXISTS idx_user_stats_period_country_total
-            ON user_monthly_stats(period_start, country, total_stars);
-          CREATE INDEX IF NOT EXISTS idx_user_stats_period_city_delta
-            ON user_monthly_stats(period_start, city, monthly_stars_delta);
-          CREATE INDEX IF NOT EXISTS idx_repo_stats_period_country_total
-            ON repository_monthly_stats(period_start, owner_country, stargazers_count);
-          CREATE INDEX IF NOT EXISTS idx_repo_stats_period_city_delta
-            ON repository_monthly_stats(period_start, owner_city, monthly_stars_delta);
-        SQL
+        SQLiteSchema.sql
       end
     end
   end
