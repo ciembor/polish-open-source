@@ -25,6 +25,7 @@ RSpec.describe PolishGithubRank::Web::App do
     expect(response.body).to include('alice/app')
     expect(response.body).to include('href="/latest/users/top"')
     expect(response.body).to include('Zobacz top 100')
+    expect(response.body).to include('href="/editions"')
     expect(response.body).to include('application/ld+json')
   end
 
@@ -86,6 +87,33 @@ RSpec.describe PolishGithubRank::Web::App do
     expect(invalid_response.status).to eq(404)
   end
 
+  it 'renders previous editions with year pagination' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+
+    response = Rack::MockRequest.new(described_class).get('/editions')
+
+    expect(response.status).to eq(200)
+    expect(response.body).to include('Poprzednie edycje')
+    expect(response.body).to include('kwiecień 2026')
+    expect(response.body).to include('Top projekty')
+    expect(response.body).to include('Top userzy: gwiazdki')
+    expect(response.body).to include('Top userzy: aktywność')
+    expect(response.body).to include('href="/2026-04"')
+    expect(response.body).to include('href="/editions/2025"')
+  end
+
+  it 'renders edition archive year pages and missing years' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+
+    year_response = Rack::MockRequest.new(described_class).get('/editions/2025')
+    invalid_response = Rack::MockRequest.new(described_class).get('/editions/2024')
+
+    expect(year_response.status).to eq(200)
+    expect(year_response.body).to include('grudzień 2025')
+    expect(year_response.body).to include('href="/editions/2026"')
+    expect(invalid_response.status).to eq(404)
+  end
+
   it 'renders the about page' do
     response = Rack::MockRequest.new(described_class).get('/about')
 
@@ -112,6 +140,7 @@ RSpec.describe PolishGithubRank::Web::App do
     expect(response.body).to include('src="/polish-github-rank/js/navigation.js?v=20260517-menu3"')
     expect(response.body).to include('href="/polish-github-rank/latest/locations/krakow"')
     expect(response.body).to include('href="/polish-github-rank/latest/users/top"')
+    expect(response.body).to include('href="/polish-github-rank/editions"')
     expect(response.body).to include('href="/polish-github-rank/about"')
   end
 
@@ -126,6 +155,14 @@ RSpec.describe PolishGithubRank::Web::App do
   def seed_database
     path = empty_database
     store = PolishGithubRank::Infrastructure::SQLiteStore.new(path).migrate!
+    older_period = PolishGithubRank::Application::MonthPeriod.parse('2025-12')
+    older_run_id = store.create_run(older_period)
+    store.upsert_user(user_attributes)
+    store.record_user_stats(user_stats(older_period))
+    store.upsert_repository(repository_attributes)
+    store.record_repository_stats(repository_stats(older_period))
+    store.finish_run(older_run_id)
+
     period = PolishGithubRank::Application::MonthPeriod.parse('2026-04')
     run_id = store.create_run(period)
 

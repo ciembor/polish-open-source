@@ -59,6 +59,16 @@ module PolishGithubRank
           "#{configuration.app_base_path}#{path}"
         end
 
+        def editions_path(year = nil)
+          year ? "/editions/#{year}" : '/editions'
+        end
+
+        def period_label(period_start)
+          date = Date.parse(period_start)
+          months = %w[styczeń luty marzec kwiecień maj czerwiec lipiec sierpień wrzesień październik listopad grudzień]
+          "#{months.fetch(date.month - 1)} #{date.year}"
+        end
+
         def canonical_url
           base_url = configuration.public_base_url.delete_suffix('/')
           "#{base_url}#{@canonical_path || request.path_info}"
@@ -92,6 +102,14 @@ module PolishGithubRank
         @description = 'Misja, zasady generowania rankingów i wspierane platformy Polish Open Source Rank.'
         @canonical_path = '/about'
         erb :about
+      end
+
+      get '/editions' do
+        render_editions
+      end
+
+      get %r{/editions/(\d{4})} do |year|
+        render_editions(year)
       end
 
       get '/latest/locations/:slug' do
@@ -162,6 +180,34 @@ module PolishGithubRank
                        "dla lokalizacji #{@scope.fetch(:name)}."
         @canonical_path = scope == 'poland' ? period_base_path(period_slug) : city_path(scope, period_slug: period_slug)
         erb :rankings
+      end
+
+      def render_editions(year = nil)
+        @years = store.edition_years.map { |row| row.fetch(:year) }
+        @year = selected_edition_year(year)
+        @editions = @year ? store.monthly_editions(@year) : []
+        @newer_year = adjacent_edition_year(@year, -1)
+        @older_year = adjacent_edition_year(@year, 1)
+        @title = @year ? "Poprzednie edycje #{@year}" : 'Poprzednie edycje'
+        @description = 'Archiwum miesięcznych rankingów z top projektami, użytkownikami według gwiazdek i aktywności.'
+        @canonical_path = year ? editions_path(year) : editions_path
+        erb :editions
+      end
+
+      def selected_edition_year(year)
+        halt 404 if year && !@years.include?(year)
+
+        year || @years.first
+      end
+
+      def adjacent_edition_year(year, offset)
+        index = @years.index(year)
+        return unless index
+
+        adjacent_index = index + offset
+        return if adjacent_index.negative?
+
+        @years[adjacent_index]
       end
 
       def render_ranking_detail(period_slug, scope, kind, metric)
