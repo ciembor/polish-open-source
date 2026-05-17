@@ -32,13 +32,12 @@ RSpec.describe PolishGithubRank::Infrastructure::SQLiteStore do
                                                                              stargazers_count: 30)
   end
 
-  it 'returns completed monthly editions with top records' do
+  it 'returns monthly editions with top records once stats exist' do
     run_id = store.create_run(period)
     store.upsert_user(user_attributes(10, 'alice', 'Kraków'))
     store.record_user_stats(user_stats(10, 'alice', 'Kraków', total_stars: 30, delta: 4, activity: 9))
     store.upsert_repository(repository_attributes(100, 10, 'alice', 'alice/app', 30))
     store.record_repository_stats(repository_stats(100, 10, 'alice', 'Kraków', stars: 30, delta: 4))
-    store.finish_run(run_id)
 
     expect(store.edition_years).to contain_exactly(include(year: '2026'))
     expect(store.monthly_editions('2026').first).to include(
@@ -47,6 +46,7 @@ RSpec.describe PolishGithubRank::Infrastructure::SQLiteStore do
       users_by_stars: [include(login: 'alice', total_stars: 30)],
       users_by_activity: [include(login: 'alice', public_activity_count: 9)]
     )
+    store.finish_run(run_id)
   end
 
   it 'filters pending candidates by platform' do

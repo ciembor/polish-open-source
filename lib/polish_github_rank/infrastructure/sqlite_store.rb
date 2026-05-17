@@ -204,7 +204,7 @@ module PolishGithubRank
         fetch_all(<<~SQL)
           SELECT DISTINCT substr(period_start, 1, 4) AS year
           FROM sync_runs
-          WHERE status = 'finished'
+          WHERE #{edition_period_condition}
           ORDER BY year DESC
         SQL
       end
@@ -213,7 +213,7 @@ module PolishGithubRank
         fetch_all(<<~SQL, [year.to_s]).map do |row|
           SELECT period_start
           FROM sync_runs
-          WHERE status = 'finished' AND substr(period_start, 1, 4) = ?
+          WHERE #{edition_period_condition} AND substr(period_start, 1, 4) = ?
           ORDER BY period_start DESC
         SQL
           period_start = row.fetch(:period_start)
@@ -302,6 +302,23 @@ module PolishGithubRank
           WHERE stats.period_start = ? AND #{sql_scope} #{trending_filter(order_column, 'stats')}
           ORDER BY stats.#{order_column} DESC, repositories.platform ASC, repositories.full_name COLLATE NOCASE ASC
           LIMIT #{bounded_limit(limit)}
+        SQL
+      end
+
+      def edition_period_condition
+        <<~SQL
+          (
+            EXISTS (
+              SELECT 1
+              FROM user_monthly_stats user_stats
+              WHERE user_stats.period_start = sync_runs.period_start
+            )
+            OR EXISTS (
+              SELECT 1
+              FROM repository_monthly_stats repository_stats
+              WHERE repository_stats.period_start = sync_runs.period_start
+            )
+          )
         SQL
       end
 

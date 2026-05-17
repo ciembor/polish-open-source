@@ -1,7 +1,7 @@
 <section class="hero">
   <div class="hero__inner">
     <p class="eyebrow">Archiwum rankingów</p>
-    <h1>Poprzednie edycje</h1>
+    <h1>Edycje</h1>
     <p class="lede">Miesięczne snapshoty rankingu Polski z liderami projektów, gwiazdek użytkowników i aktywności.</p>
     <% if @year %>
       <p class="period">Rok: <%= h @year %></p>
@@ -11,7 +11,7 @@
 
 <% if @editions.empty? %>
   <section class="empty-state" aria-live="polite">
-    <h2>Brak poprzednich edycji</h2>
+    <h2>Brak edycji</h2>
     <p>Nie ma jeszcze zakończonych miesięcznych snapshotów.</p>
   </section>
 <% else %>
