@@ -19,8 +19,20 @@ module PolishGithubRank
           value.to_i.to_s.reverse.gsub(/(\d{3})(?=\d)/, '\\1 ').reverse
         end
 
-        def platform_mark(platform)
-          { 'codeberg' => 'CB', 'gitlab' => 'GL' }.fetch(platform, 'GH')
+        def platform_name(platform)
+          {
+            'codeberg' => 'Codeberg',
+            'gitlab' => 'GitLab',
+            'github' => 'GitHub'
+          }.fetch(platform, 'GitHub')
+        end
+
+        def platform_icon_path(platform)
+          {
+            'codeberg' => '/icons/codeberg.svg',
+            'gitlab' => '/icons/gitlab.svg',
+            'github' => '/icons/github.svg'
+          }.fetch(platform, '/icons/github.svg')
         end
 
         def scopes

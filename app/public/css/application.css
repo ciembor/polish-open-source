@@ -263,33 +263,19 @@ tr:last-child td {
 }
 
 .platform-mark {
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  color: var(--muted);
   display: inline-block;
-  font-size: 0.68rem;
-  font-weight: 900;
+  height: 16px;
   line-height: 1;
   margin-right: 6px;
-  padding: 3px 4px;
-  vertical-align: 1px;
+  vertical-align: -2px;
+  width: 16px;
 }
 
-.platform-mark--github {
-  background: #f3f4f6;
-  color: #24292f;
-}
-
-.platform-mark--gitlab {
-  background: #fff7ed;
-  border-color: #fdba74;
-  color: #c2410c;
-}
-
-.platform-mark--codeberg {
-  background: #eff6ff;
-  border-color: #93c5fd;
-  color: #1d4ed8;
+.platform-mark__icon {
+  display: block;
+  height: 16px;
+  object-fit: contain;
+  width: 16px;
 }
 
 .muted-link {
@@ -497,33 +483,11 @@ td span {
   margin-bottom: 20px;
 }
 
-.platform-logo svg {
+.platform-logo__image {
   display: block;
   height: 64px;
+  object-fit: contain;
   width: 64px;
-}
-
-.platform-logo circle,
-.platform-logo path {
-  fill: currentColor;
-}
-
-.platform-logo text {
-  fill: #ffffff;
-  font-size: 16px;
-  font-weight: 900;
-}
-
-.platform-card--github .platform-logo {
-  color: #24292f;
-}
-
-.platform-card--gitlab .platform-logo {
-  color: #e24329;
-}
-
-.platform-card--codeberg .platform-logo {
-  color: #2185d0;
 }
 
 .about-author {

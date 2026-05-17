@@ -129,6 +129,19 @@ RSpec.describe PolishGithubRank::Web::App do
     expect(response.body).not_to include('//locations')
   end
 
+  it 'uses SVG platform icons instead of text markers' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+
+    ranking_response = Rack::MockRequest.new(described_class).get('/')
+    about_response = Rack::MockRequest.new(described_class).get('/about')
+
+    expect(ranking_response.body).to include('src="/icons/github.svg"')
+    expect(ranking_response.body).not_to include('>GH</span>')
+    expect(about_response.body).to include('src="/icons/gitlab.svg"')
+    expect(about_response.body).to include('src="/icons/codeberg.svg"')
+    expect(about_response.body).not_to include('Publiczne profile, projekty')
+  end
+
   it 'renders links and assets under a configured app base path' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     ENV['BASE_URL'] = 'https://rank.example/polish-github-rank'
@@ -139,6 +152,7 @@ RSpec.describe PolishGithubRank::Web::App do
     expect(response.body).to include('rel="canonical" href="https://rank.example/polish-github-rank/latest"')
     expect(response.body).to include('href="/polish-github-rank/css/application.css?v=20260517-about"')
     expect(response.body).to include('src="/polish-github-rank/js/navigation.js?v=20260517-menu3"')
+    expect(response.body).to include('src="/polish-github-rank/icons/github.svg"')
     expect(response.body).to include('href="/polish-github-rank/latest/locations/krakow"')
     expect(response.body).to include('href="/polish-github-rank/latest/users/top"')
     expect(response.body).to include('href="/polish-github-rank/editions"')

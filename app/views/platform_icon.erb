@@ -1,0 +1,4 @@
+<% platform = platform || "github" %>
+<span class="platform-mark platform-mark--<%= h platform %>">
+  <img class="platform-mark__icon" src="<%= h app_path(platform_icon_path(platform)) %>" alt="<%= h platform_name(platform) %>" width="16" height="16">
+</span>

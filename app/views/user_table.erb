@@ -14,7 +14,7 @@
         <tr>
           <td><%= index + 1 %></td>
           <td>
-            <span class="platform-mark platform-mark--<%= h row.fetch(:platform, "github") %>"><%= h platform_mark(row.fetch(:platform, "github")) %></span>
+            <%= erb :platform_icon, locals: { platform: row.fetch(:platform, "github") } %>
             <a class="primary-link" href="<%= h row.fetch(:html_url) %>"><%= h row.fetch(:login) %></a>
             <% if row[:name] && !row[:name].empty? %>
               <span><%= h row[:name] %></span>
