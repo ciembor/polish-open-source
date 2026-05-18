@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Gold medal">
+  <path fill="#d21f3c" d="M18 2h12l6 21H24z"/>
+  <path fill="#ffffff" d="M34 2h12l-6 21H28z"/>
+  <circle cx="32" cy="38" r="22" fill="#f4b400"/>
+  <circle cx="32" cy="38" r="16" fill="#ffd76a"/>
+  <path fill="#a86d00" d="M32 22a16 16 0 0 1 0 32 22 22 0 0 0 0-32z" opacity=".18"/>
+  <path fill="#ffffff" d="M24 31h16v4H24zm0 10h16v4H24z" opacity=".82"/>
+</svg>

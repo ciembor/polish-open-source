@@ -61,6 +61,18 @@ module PolishOpenSourceRank
         render_editions
       end
 
+      get '/users/:platform/:login' do
+        render_user_profile(params.fetch('platform'), params.fetch('login'))
+      end
+
+      get '/repositories/:platform/:owner/:name' do
+        render_repository_profile(params.fetch('platform'), params.fetch('owner'), params.fetch('name'))
+      end
+
+      get '/badges/repositories/:platform/:owner/:name.svg' do
+        render_repository_badge(params.fetch('platform'), params.fetch('owner'), params.fetch('name'))
+      end
+
       get %r{/editions/(\d{4})} do |year|
         render_editions(year)
       end
@@ -161,6 +173,47 @@ module PolishOpenSourceRank
         erb :editions
       end
 
+      def render_user_profile(platform, login)
+        @period_slug = 'latest'
+        @period = store.latest_period
+        @profile = store.user_profile(platform, login, period_start: @period)
+        halt 404 unless @profile
+
+        @repositories = @profile.fetch(:repositories)
+        display_name = @profile[:name].to_s.empty? ? @profile.fetch(:login) : @profile[:name]
+        source_name = platform_name(@profile.fetch(:platform))
+        @title = "#{display_name} - #{source_name} profile"
+        @description = t('users.seo.description', user: display_name, platform: source_name)
+        @canonical_path = user_profile_path(@profile)
+        erb :user_profile
+      end
+
+      def render_repository_profile(platform, owner, name)
+        @period_slug = 'latest'
+        @period = store.latest_period
+        @repository = store.repository_profile(platform, owner, name, period_start: @period)
+        halt 404 unless @repository
+
+        source_name = platform_name(@repository.fetch(:platform))
+        @title = "#{@repository.fetch(:full_name)} - #{source_name} project"
+        @description = t(
+          'repositories.seo.description',
+          repository: @repository.fetch(:full_name),
+          platform: source_name
+        )
+        @canonical_path = repository_profile_path(@repository)
+        erb :repository_profile
+      end
+
+      def render_repository_badge(platform, owner, name)
+        repository = store.repository_profile(platform, owner, name, period_start: store.latest_period)
+        halt 404 unless repository && repository[:elite_rank]
+
+        content_type 'image/svg+xml'
+        headers 'Cache-Control' => 'public, max-age=3600'
+        polish_elite_badge(repository.fetch(:elite_rank))
+      end
+
       def selected_edition_year(year)
         halt 404 if year && !@years.include?(year)
 
@@ -257,6 +310,62 @@ module PolishOpenSourceRank
           width: width,
           height: height
         }
+      end
+
+      def polish_elite_badge(rank)
+        labels = badge_labels(rank)
+        width = labels.fetch(:left_width) + labels.fetch(:right_width)
+        <<~SVG
+          <svg xmlns="http://www.w3.org/2000/svg" width="#{width}" height="20" role="img" aria-label="#{labels.fetch(:aria)}">
+            <title>#{Rack::Utils.escape_html(labels.fetch(:aria))}</title>
+            #{badge_defs(width)}
+            #{badge_background(labels.fetch(:left_width), labels.fetch(:right_width), width)}
+            #{badge_text(labels)}
+          </svg>
+        SVG
+      end
+
+      def badge_labels(rank)
+        left = 'Polish Elite'
+        right = "#{rank} place"
+        {
+          left: left,
+          right: right,
+          left_width: 82,
+          right_width: 58 + (rank.to_i >= 10 ? 7 : 0),
+          aria: "#{left} #{right}"
+        }
+      end
+
+      def badge_defs(width)
+        <<~SVG
+          <linearGradient id="s" x2="0" y2="100%">
+            <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+            <stop offset="1" stop-opacity=".1"/>
+          </linearGradient>
+          <clipPath id="r"><rect width="#{width}" height="20" rx="3" fill="#fff"/></clipPath>
+        SVG
+      end
+
+      def badge_background(left_width, right_width, width)
+        <<~SVG
+          <g clip-path="url(#r)">
+            <rect width="#{left_width}" height="20" fill="#fff"/>
+            <rect x="#{left_width}" width="#{right_width}" height="20" fill="#dc143c"/>
+            <rect width="#{width}" height="20" fill="url(#s)"/>
+          </g>
+        SVG
+      end
+
+      def badge_text(labels)
+        left_width = labels.fetch(:left_width)
+        right_width = labels.fetch(:right_width)
+        <<~SVG
+          <g font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11" text-anchor="middle">
+            <text x="#{left_width / 2}" y="15" fill="#222">#{labels.fetch(:left)}</text>
+            <text x="#{left_width + (right_width / 2)}" y="15" fill="#fff">#{labels.fetch(:right)}</text>
+          </g>
+        SVG
       end
 
       def chart_axis_values(context)
