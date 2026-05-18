@@ -28,7 +28,7 @@ module PolishOpenSourceRank
       attr_reader :argv, :configuration, :output
 
       def store
-        SQLiteStore.new(configuration.database_path).migrate!
+        @store ||= SQLiteStore.new(configuration.database_path).migrate!
       end
 
       def job
@@ -61,33 +61,33 @@ module PolishOpenSourceRank
       end
 
       def github_source
-        GitHubGateway.new(
-          GitHubClient.new(
-            token: configuration.github_token,
-            base_url: configuration.github_base_url,
-            requests_per_minute: configuration.requests_per_minute
-          )
+        client = GitHubClient.new(
+          token: configuration.github_token,
+          base_url: configuration.github_base_url,
+          requests_per_minute: configuration.requests_per_minute
         )
+        client.request_log = store
+        GitHubGateway.new(client)
       end
 
       def gitlab_source
-        GitLabGateway.new(
-          GitLabClient.new(
-            token: configuration.gitlab_token,
-            base_url: configuration.gitlab_base_url,
-            requests_per_minute: configuration.requests_per_minute
-          )
+        client = GitLabClient.new(
+          token: configuration.gitlab_token,
+          base_url: configuration.gitlab_base_url,
+          requests_per_minute: configuration.requests_per_minute
         )
+        client.request_log = store
+        GitLabGateway.new(client)
       end
 
       def codeberg_source
-        CodebergGateway.new(
-          CodebergClient.new(
-            token: configuration.codeberg_token,
-            base_url: configuration.codeberg_base_url,
-            requests_per_minute: configuration.requests_per_minute
-          )
+        client = CodebergClient.new(
+          token: configuration.codeberg_token,
+          base_url: configuration.codeberg_base_url,
+          requests_per_minute: configuration.requests_per_minute
         )
+        client.request_log = store
+        CodebergGateway.new(client)
       end
     end
   end

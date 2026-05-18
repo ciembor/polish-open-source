@@ -44,6 +44,7 @@ module PolishOpenSourceRank
         copy_user_stats
         copy_repositories
         copy_repository_stats
+        copy_repository_star_observations
       end
 
       def copy_candidates
@@ -101,6 +102,16 @@ module PolishOpenSourceRank
           SELECT period_start, 'github', repository_github_id, owner_github_id, owner_login, owner_city,
                  owner_country, stargazers_count, monthly_stars_delta, updated_at
           FROM repository_monthly_stats_old;
+        SQL
+      end
+
+      def copy_repository_star_observations
+        execute_batch(<<~SQL)
+          INSERT INTO repository_star_observations(
+            period_start, platform, repository_github_id, stargazers_count, observed_at
+          )
+          SELECT period_start, platform, repository_github_id, stargazers_count, updated_at
+          FROM repository_monthly_stats;
         SQL
       end
 

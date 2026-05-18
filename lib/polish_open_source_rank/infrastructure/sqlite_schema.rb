@@ -2,6 +2,7 @@
 
 module PolishOpenSourceRank
   module Infrastructure
+    # rubocop:disable Metrics/ModuleLength
     module SQLiteSchema
       module_function
 
@@ -98,6 +99,23 @@ module PolishOpenSourceRank
             FOREIGN KEY(platform, owner_github_id) REFERENCES users(platform, github_id)
           );
 
+          CREATE TABLE IF NOT EXISTS repository_star_observations (
+            period_start TEXT NOT NULL,
+            platform TEXT NOT NULL DEFAULT 'github',
+            repository_github_id INTEGER NOT NULL,
+            stargazers_count INTEGER NOT NULL,
+            observed_at TEXT NOT NULL,
+            PRIMARY KEY(period_start, platform, repository_github_id)
+          );
+
+          CREATE TABLE IF NOT EXISTS api_request_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            platform TEXT NOT NULL,
+            path TEXT NOT NULL,
+            status INTEGER NOT NULL,
+            recorded_at TEXT NOT NULL
+          );
+
           CREATE INDEX IF NOT EXISTS idx_user_stats_period_country_total
             ON user_monthly_stats(period_start, country, total_stars, platform);
           CREATE INDEX IF NOT EXISTS idx_user_stats_period_city_delta
@@ -106,8 +124,19 @@ module PolishOpenSourceRank
             ON repository_monthly_stats(period_start, owner_country, stargazers_count, platform);
           CREATE INDEX IF NOT EXISTS idx_repo_stats_period_city_delta
             ON repository_monthly_stats(period_start, owner_city, monthly_stars_delta, platform);
+          CREATE INDEX IF NOT EXISTS idx_repo_star_observations_repo_period
+            ON repository_star_observations(platform, repository_github_id, period_start);
+          CREATE INDEX IF NOT EXISTS idx_api_request_events_recorded_platform
+            ON api_request_events(recorded_at, platform);
+
+          INSERT OR IGNORE INTO repository_star_observations(
+            period_start, platform, repository_github_id, stargazers_count, observed_at
+          )
+          SELECT period_start, platform, repository_github_id, stargazers_count, updated_at
+          FROM repository_monthly_stats;
         SQL
       end
     end
+    # rubocop:enable Metrics/ModuleLength
   end
 end

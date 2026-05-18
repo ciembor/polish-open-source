@@ -4,9 +4,20 @@ require 'sqlite3'
 
 module PolishOpenSourceRank
   module Infrastructure
+    # rubocop:disable Metrics/ClassLength
     class SQLiteStore
       SCHEMA_VERSION = 1
       RANKING_LIMIT = 100
+      API_REQUEST_INSERT_SQL = 'INSERT INTO api_request_events(platform, path, status, recorded_at) VALUES (?, ?, ?, ?)'
+      REPOSITORY_STAR_OBSERVATION_SQL = <<~SQL
+        INSERT INTO repository_star_observations(
+          period_start, platform, repository_github_id, stargazers_count, observed_at
+        )
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(period_start, platform, repository_github_id) DO UPDATE SET
+          stargazers_count = excluded.stargazers_count,
+          observed_at = excluded.observed_at
+      SQL
       PROCESSED_USER_SQL = <<~SQL
         SELECT 1
         FROM user_monthly_stats user_stats
@@ -37,8 +48,8 @@ module PolishOpenSourceRank
         self
       end
 
-      def create_run(period)
-        run_lifecycle.create(period)
+      def create_run(period, refresh_platforms: [])
+        run_lifecycle.create(period, refresh_platforms: refresh_platforms)
       end
 
       def finish_run(run_id)
@@ -104,8 +115,8 @@ module PolishOpenSourceRank
         fetch_value(PROCESSED_USER_SQL, [period.start_date.to_s, platform, github_id])
       end
 
-      def retryable_candidates?(period)
-        run_lifecycle.retryable_candidates?(period)
+      def retryable_candidates?(period, platforms: nil)
+        run_lifecycle.retryable_candidates?(period, platforms: platforms)
       end
 
       def upsert_user(attributes)
@@ -168,7 +179,8 @@ module PolishOpenSourceRank
       end
 
       def record_repository_stats(attributes)
-        execute(<<~SQL, repository_stats_values(attributes))
+        now = Time.now.utc.iso8601
+        execute(<<~SQL, repository_stats_values(attributes, now))
           INSERT INTO repository_monthly_stats(
             period_start, platform, repository_github_id, owner_github_id, owner_login, owner_city,
             owner_country, stargazers_count, monthly_stars_delta, updated_at
@@ -182,6 +194,19 @@ module PolishOpenSourceRank
             stargazers_count = excluded.stargazers_count,
             monthly_stars_delta = excluded.monthly_stars_delta,
             updated_at = excluded.updated_at
+        SQL
+        record_repository_star_observation(attributes, now)
+      end
+
+      def previous_repository_stargazers_count(period, platform, repository_github_id)
+        fetch_value(<<~SQL, [platform, repository_github_id, period.start_date.to_s])
+          SELECT stargazers_count
+          FROM repository_star_observations
+          WHERE platform = ?
+            AND repository_github_id = ?
+            AND period_start < ?
+          ORDER BY period_start DESC
+          LIMIT 1
         SQL
       end
 
@@ -249,6 +274,10 @@ module PolishOpenSourceRank
 
       def job_progress(now: Time.now.utc)
         SQLiteJobProgress.new(database).call(now: now)
+      end
+
+      def record_api_request(platform:, path:, status:, recorded_at: Time.now.utc)
+        execute(API_REQUEST_INSERT_SQL, [platform, path, status, recorded_at.iso8601])
       end
 
       private
@@ -378,13 +407,23 @@ module PolishOpenSourceRank
         ]
       end
 
-      def repository_stats_values(attributes)
+      def repository_stats_values(attributes, updated_at = Time.now.utc.iso8601)
         [
           attributes.fetch(:period_start), attributes.fetch(:platform, 'github'),
           attributes.fetch(:repository_github_id), attributes.fetch(:owner_github_id),
           attributes.fetch(:owner_login), attributes[:owner_city], attributes[:owner_country],
-          attributes.fetch(:stargazers_count), attributes.fetch(:monthly_stars_delta), Time.now.utc.iso8601
+          attributes.fetch(:stargazers_count), attributes.fetch(:monthly_stars_delta), updated_at
         ]
+      end
+
+      def record_repository_star_observation(attributes, observed_at)
+        execute(
+          REPOSITORY_STAR_OBSERVATION_SQL,
+          [
+            attributes.fetch(:period_start), attributes.fetch(:platform, 'github'),
+            attributes.fetch(:repository_github_id), attributes.fetch(:stargazers_count), observed_at
+          ]
+        )
       end
 
       def boolean_int(value)
@@ -401,5 +440,6 @@ module PolishOpenSourceRank
         SQLiteSchema.sql
       end
     end
+    # rubocop:enable Metrics/ClassLength
   end
 end

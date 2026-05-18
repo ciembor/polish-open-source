@@ -37,7 +37,7 @@ GITHUB_TOKEN=...
 GITLAB_TOKEN=...
 CODEBERG_TOKEN=...
 DATABASE_URL=sqlite://db/polish_open_source_rank.sqlite3
-REQUESTS_PER_MINUTE=25
+REQUESTS_PER_MINUTE=60
 BASE_URL=https://maciej-ciemborowicz.eu/polish-open-source-rank
 APP_BASE_PATH=/polish-open-source-rank
 ```
@@ -62,7 +62,7 @@ The job intentionally favors stability over speed:
 
 - sleeps between requests via `REQUESTS_PER_MINUTE`;
 - honors `Retry-After`;
-- sleeps until `X-RateLimit-Reset` when the primary GitHub limit is exhausted;
+- sleeps until `X-RateLimit-Reset` before consuming the final primary GitHub request;
 - retries 403, 429, and 5xx responses with backoff;
 - stores candidate status in SQLite so failed runs can be resumed.
 

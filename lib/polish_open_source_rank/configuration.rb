@@ -3,7 +3,7 @@
 module PolishOpenSourceRank
   class Configuration
     DEFAULT_DATABASE_PATH = 'db/polish_open_source_rank.sqlite3'
-    DEFAULT_REQUESTS_PER_MINUTE = 25
+    DEFAULT_REQUESTS_PER_MINUTE = 60
 
     def self.load(path = PolishOpenSourceRank.root.join('.env.local'))
       new(path).load

@@ -180,6 +180,22 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     expect(store.job_progress(now: Time.utc(2026, 4, 1, 10, 1, 1))).to eq(expected_running_progress)
   end
 
+  it 'separates edition totals from records touched during the current run' do
+    seed_progress_run
+    database.execute(
+      'UPDATE user_monthly_stats SET updated_at = ? WHERE platform = ? AND user_github_id = ?',
+      ['2026-04-01T09:59:59Z', 'github', 10]
+    )
+    set_current_run_times(started_at: '2026-04-01T10:00:00Z', finished_at: nil)
+
+    progress = store.job_progress(now: Time.utc(2026, 4, 1, 10, 1, 1)).fetch(:platforms).first
+
+    expect(progress).to include(
+      accepted_users_count: 1,
+      current_run_accepted_users_count: 0
+    )
+  end
+
   it 'reports processed user progress from user stats timestamps instead of discovery timestamps' do
     seed_progress_run
     set_current_run_times(started_at: '2026-04-01T10:00:00Z', finished_at: nil)
@@ -194,6 +210,34 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
       login: 'alice',
       status: 'processed',
       checked_at: '2026-04-01T10:00:25Z'
+    )
+  end
+
+  it 'records API requests for job monitoring' do
+    seed_progress_run
+    set_current_run_times(started_at: '2026-04-01T10:00:00Z', finished_at: nil)
+
+    record_github_api_request(status: 200, second: 40)
+    record_github_api_request(status: 403, second: 50)
+    progress = store.job_progress(now: Time.utc(2026, 4, 1, 10, 1, 1))
+
+    expect(progress.fetch(:platforms).first.fetch(:last_api_request)).to eq(
+      path: '/search/users',
+      status: 403,
+      recorded_at: '2026-04-01T10:00:50Z'
+    )
+    expect(progress.fetch(:request_points)).to contain_exactly(
+      platform: 'github',
+      minute: '2026-04-01T10:00:00Z',
+      requests_count: 2,
+      error_count: 1
+    )
+    expect(progress.fetch(:recent_errors)).to contain_exactly(
+      platform: 'github',
+      source: 'api',
+      subject: '/search/users',
+      detail: 'HTTP 403',
+      recorded_at: '2026-04-01T10:00:50Z'
     )
   end
 
@@ -312,6 +356,26 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
 
     expect(fetch_row('SELECT updated_at FROM repository_monthly_stats WHERE repository_github_id = ?', [100]))
       .to include(updated_at: '2026-04-01T10:00:00Z')
+  end
+
+  it 'keeps repository star observations for future monthly deltas' do
+    previous_period = PolishOpenSourceRank::Application::MonthPeriod.parse('2026-03')
+    store.upsert_user(user_attributes(10, 'alice', 'Kraków'))
+    store.upsert_repository(repository_attributes(100, 10, 'alice', 'alice/app', 30))
+
+    store.record_repository_stats(
+      repository_stats(100, 10, 'alice', 'Kraków', stars: 27, delta: 0).merge(
+        period_start: previous_period.start_date.to_s
+      )
+    )
+    store.record_repository_stats(repository_stats(100, 10, 'alice', 'Kraków', stars: 30, delta: 3))
+
+    expect(store.previous_repository_stargazers_count(period, 'github', 100)).to eq(27)
+    expect(fetch_row(<<~SQL, ['2026-04-01', 'github', 100])).to include(stargazers_count: 30)
+      SELECT stargazers_count
+      FROM repository_star_observations
+      WHERE period_start = ? AND platform = ? AND repository_github_id = ?
+    SQL
   end
 
   it 'keeps optional persisted fields nil when source data omits them' do
@@ -456,6 +520,25 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     expect(store.completed_periods).to contain_exactly(include(period_start: '2026-04-01'))
   end
 
+  it 'reopens selected platform candidates for an explicit refresh' do
+    run_id = store.create_run(period)
+    store.record_candidate(period, github_id: 10, login: 'alice', source_query: 'Poland')
+    store.record_candidate(period, source_id: 20, login: 'bob', source_query: 'Poland', platform: 'gitlab')
+    store.upsert_user(user_attributes(10, 'alice', 'Kraków'))
+    store.record_user_stats(
+      user_stats(10, 'alice', 'Kraków', total_stars: 0, delta: 0, activity: 0).merge(public_repo_count: 0)
+    )
+    store.mark_candidate(period, 'github', 'alice', 'processed')
+    store.mark_candidate(period, 'gitlab', 'bob', 'processed')
+    store.finish_run(run_id)
+
+    refreshed_run_id = store.create_run(period, refresh_platforms: ['gitlab'])
+
+    expect(refreshed_run_id).to eq(run_id)
+    expect(store.pending_candidates(period, platform: 'gitlab')).to contain_exactly(include(login: 'bob'))
+    expect(store.pending_candidates(period, platform: 'github')).to be_empty
+  end
+
   it 'reopens a finished period when retryable candidates remain' do
     run_id = store.create_run(period)
     store.record_candidate(period, github_id: 10, login: 'alice', source_query: 'Poland')
@@ -471,6 +554,44 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     expect(fetch_row('SELECT status, error FROM candidate_users WHERE login = ?', ['alice'])).to include(
       status: 'pending',
       error: nil
+    )
+  end
+
+  it 'checks retryable candidates within selected platforms' do
+    store.create_run(period)
+    store.record_candidate(period, github_id: 10, login: 'alice', source_query: 'Poland')
+    store.record_candidate(period, source_id: 20, login: 'bob', source_query: 'Poland', platform: 'gitlab')
+    store.upsert_user(user_attributes(20, 'bob', 'Kraków').merge(platform: 'gitlab'))
+    store.record_user_stats(
+      user_stats(20, 'bob', 'Kraków', total_stars: 0, delta: 0, activity: 0).merge(
+        platform: 'gitlab',
+        public_repo_count: 0
+      )
+    )
+    store.mark_candidate(period, 'gitlab', 'bob', 'processed')
+
+    expect(store.retryable_candidates?(period, platforms: ['github'])).to be(true)
+    expect(store.retryable_candidates?(period, platforms: ['gitlab'])).to be(false)
+  end
+
+  it 'reopens processed candidates whose repository stats were not fully recorded' do
+    run_id = store.create_run(period)
+    store.record_candidate(period, platform: 'gitlab', source_id: 10, login: 'alice', source_query: 'Poland')
+    store.upsert_user(user_attributes(10, 'alice', 'Kraków').merge(platform: 'gitlab'))
+    store.record_user_stats(
+      user_stats(10, 'alice', 'Kraków', total_stars: 30, delta: 4, activity: 9).merge(platform: 'gitlab')
+    )
+    store.mark_candidate(period, 'gitlab', 'alice', 'processed')
+    store.finish_run(run_id)
+
+    expect(store.processed_user?(period, 'gitlab', 10)).to be_nil
+    expect(store.retryable_candidates?(period)).to be(true)
+
+    refreshed_run_id = store.create_run(period)
+
+    expect(refreshed_run_id).to eq(run_id)
+    expect(store.pending_candidates(period, platform: 'gitlab')).to contain_exactly(
+      include(login: 'alice', source_id: 10)
     )
   end
 
@@ -695,7 +816,40 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     {
       generated_at: '2026-04-01T10:01:01Z',
       run: expected_running_progress_run,
-      platforms: expected_running_progress_platforms
+      platforms: expected_running_progress_platforms,
+      progress_points: [
+        {
+          platform: 'github',
+          minute: '2026-04-01T10:00:00Z',
+          checked_users_count: 1,
+          checked_repositories_count: 1
+        }
+      ],
+      request_points: [],
+      recent_events: [
+        {
+          platform: 'github',
+          source: 'repository',
+          subject: 'alice/app',
+          detail: 'stored',
+          recorded_at: '2026-04-01T10:00:30Z'
+        },
+        {
+          platform: 'github',
+          source: 'candidate',
+          subject: 'alice',
+          detail: 'processed',
+          recorded_at: '2026-04-01T10:00:20Z'
+        },
+        {
+          platform: 'gitlab',
+          source: 'candidate',
+          subject: 'bob',
+          detail: 'missing',
+          recorded_at: '2026-04-01T10:00:10Z'
+        }
+      ],
+      recent_errors: []
     }
   end
 
@@ -723,10 +877,24 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
       platform: 'github',
       run_duration_seconds: 61,
       crawled_records_count: 2,
+      total_candidates_count: 1,
+      checked_candidates_count: 1,
       checked_users_count: 1,
+      accepted_users_count: 1,
       checked_repositories_count: 1,
+      repository_owners_count: 1,
+      zero_repository_users_count: 0,
+      pending_candidates_count: 0,
+      rejected_candidates_count: 0,
+      missing_candidates_count: 0,
+      failed_candidates_count: 0,
+      current_run_checked_candidates_count: 1,
+      current_run_accepted_users_count: 1,
+      current_run_repository_owners_count: 1,
+      current_run_repositories_count: 1,
       last_checked_user: { login: 'alice', status: 'processed', checked_at: '2026-04-01T10:00:25Z' },
-      last_checked_repository: { full_name: 'alice/app', owner_login: 'alice', checked_at: '2026-04-01T10:00:30Z' }
+      last_checked_repository: { full_name: 'alice/app', owner_login: 'alice', checked_at: '2026-04-01T10:00:30Z' },
+      last_api_request: nil
     }
   end
 
@@ -735,10 +903,24 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
       platform: 'gitlab',
       run_duration_seconds: 61,
       crawled_records_count: 1,
+      total_candidates_count: 1,
+      checked_candidates_count: 1,
       checked_users_count: 1,
+      accepted_users_count: 0,
       checked_repositories_count: 0,
+      repository_owners_count: 0,
+      zero_repository_users_count: 0,
+      pending_candidates_count: 0,
+      rejected_candidates_count: 0,
+      missing_candidates_count: 1,
+      failed_candidates_count: 0,
+      current_run_checked_candidates_count: 1,
+      current_run_accepted_users_count: 0,
+      current_run_repository_owners_count: 0,
+      current_run_repositories_count: 0,
       last_checked_user: { login: 'bob', status: 'missing', checked_at: '2026-04-01T10:00:10Z' },
-      last_checked_repository: nil
+      last_checked_repository: nil,
+      last_api_request: nil
     }
   end
 
@@ -747,10 +929,24 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
       platform: 'codeberg',
       run_duration_seconds: 61,
       crawled_records_count: 0,
+      total_candidates_count: 0,
+      checked_candidates_count: 0,
       checked_users_count: 0,
+      accepted_users_count: 0,
       checked_repositories_count: 0,
+      repository_owners_count: 0,
+      zero_repository_users_count: 0,
+      pending_candidates_count: 0,
+      rejected_candidates_count: 0,
+      missing_candidates_count: 0,
+      failed_candidates_count: 0,
+      current_run_checked_candidates_count: 0,
+      current_run_accepted_users_count: 0,
+      current_run_repository_owners_count: 0,
+      current_run_repositories_count: 0,
       last_checked_user: nil,
-      last_checked_repository: nil
+      last_checked_repository: nil,
+      last_api_request: nil
     }
   end
 
@@ -759,6 +955,15 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     database.execute(
       'UPDATE sync_runs SET started_at = ?, finished_at = ?, status = ? WHERE period_start = ?',
       [started_at, finished_at, status, period.start_date.to_s]
+    )
+  end
+
+  def record_github_api_request(status:, second:)
+    store.record_api_request(
+      platform: 'github',
+      path: '/search/users',
+      status: status,
+      recorded_at: Time.utc(2026, 4, 1, 10, 0, second)
     )
   end
 

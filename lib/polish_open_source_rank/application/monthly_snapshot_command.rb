@@ -19,7 +19,7 @@ module PolishOpenSourceRank
 
       def call
         period = MonthPeriod.parse(month_argument || MonthPeriod.previous_month.key)
-        with_interrupt_handling { job.call(period) }
+        with_interrupt_handling { job.call(period, refresh: refresh?) }
         output.puts "Finished monthly ranking run for #{period.key}"
       end
 
@@ -50,6 +50,10 @@ module PolishOpenSourceRank
       def month_argument
         index = argv.index('--month')
         argv[index + 1] if index
+      end
+
+      def refresh?
+        argv.include?('--refresh')
       end
     end
   end

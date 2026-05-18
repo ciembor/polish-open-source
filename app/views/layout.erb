@@ -3,10 +3,13 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="robots" content="index,follow">
+    <meta name="robots" content="<%= h(@robots || 'index,follow') %>">
     <meta name="description" content="<%= h @description %>">
     <link rel="canonical" href="<%= h canonical_url %>">
-    <link rel="stylesheet" href="<%= h app_path('/css/application.css?v=20260517-about') %>">
+    <link rel="stylesheet" href="<%= h app_path('/css/application.css?v=20260518-monitor') %>">
+    <% if @refresh_seconds %>
+      <meta http-equiv="refresh" content="<%= h @refresh_seconds %>">
+    <% end %>
     <title><%= h @title %></title>
     <script type="application/ld+json">
       <%= structured_data %>

@@ -186,6 +186,11 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubGateway do
     expect(client.accepts).to eq([described_class::STAR_ACCEPT])
   end
 
+  it 'does not request stargazer history for repositories without stars' do
+    expect(gateway.repository_stars_delta({ full_name: 'alice/empty', stars: 0 }, period)).to eq(0)
+    expect(client.paths).to be_empty
+  end
+
   it 'does not require pagination headers for single-page stargazers' do
     client.queue_without_link(body: [{ 'starred_at' => '2026-04-10T10:00:00Z' }])
 

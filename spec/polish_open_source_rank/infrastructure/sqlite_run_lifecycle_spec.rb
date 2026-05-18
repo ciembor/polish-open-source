@@ -22,17 +22,22 @@ end
 RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteRunLifecycle do
   let(:period) { PolishOpenSourceRank::Application::MonthPeriod.parse('2026-04') }
 
-  it 'creates runs with UTC timestamps and positional database params' do
+  it 'creates runs with UTC timestamps and positional database params', :aggregate_failures do
     database = FakeRunLifecycleDatabase.new(nil, 123)
     lifecycle = described_class.new(database)
     allow(Time).to receive(:now) { Time.new(2026, 4, 1, 12, 0, 0, '+02:00') }
 
     expect(lifecycle.create(period)).to eq(123)
-    expect(database.executions.size).to eq(2)
+    expect(database.executions.size).to eq(3)
     expect(database.executions.first.first).to include('INSERT INTO sync_runs')
     expect(database.executions.first.last).to eq(['2026-04-01', '2026-05-01', '2026-04-01T10:00:00Z'])
-    expect(database.executions.last.first).to include('UPDATE candidate_users')
-    expect(database.executions.last.last).to eq(['2026-04-01T10:00:00Z', '2026-04-01'])
+    expect(database.executions[1].first).to include('UPDATE candidate_users')
+    expect(database.executions[1].first).to include("status = 'failed'")
+    expect(database.executions[1].last).to eq(['2026-04-01T10:00:00Z', '2026-04-01'])
+    expect(database.executions[2].first).to include('UPDATE candidate_users')
+    expect(database.executions[2].first).to include("status = 'processed'")
+    expect(database.executions[2].first).to include('repository_monthly_stats')
+    expect(database.executions[2].last).to eq(['2026-04-01T10:00:00Z', '2026-04-01'])
     expect(database.values.last.first).to include('SELECT id FROM sync_runs')
     expect(database.values.last.last).to eq(['2026-04-01'])
   end
@@ -45,6 +50,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteRunLifecycle do
     expect(database.values.first.first).to include("status = 'finished'")
     expect(database.values.first.first).to include('NOT EXISTS')
     expect(database.values.first.first).to include("status IN ('pending', 'failed')")
+    expect(database.values.first.first).to include("status = 'processed'")
     expect(database.values.first.last).to eq(['2026-04-01'])
     expect(database.executions).to be_empty
   end
@@ -78,6 +84,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteRunLifecycle do
     expect(lifecycle.retryable_candidates?(period)).to be(true)
     expect(lifecycle.retryable_candidates?(period)).to be(false)
     expect(database.values.first.first).to include("status IN ('pending', 'failed')")
+    expect(database.values.first.first).to include("status = 'processed'")
     expect(database.values).to all(satisfy { |(_, params)| params == ['2026-04-01'] })
   end
 end

@@ -6,6 +6,8 @@ require 'uri'
 module PolishOpenSourceRank
   module Infrastructure
     class GitHubClient
+      attr_writer :request_log
+
       Response = Struct.new(:status, :headers, :body, keyword_init: true)
 
       class Error < StandardError
@@ -53,15 +55,19 @@ module PolishOpenSourceRank
 
       private
 
-      attr_reader :base_url, :logger, :max_retries, :request_interval, :sleeper, :token
+      attr_reader :base_url, :logger, :max_retries, :request_interval, :request_log, :sleeper, :token
 
       def perform_get(path, params, accept)
         throttle
         uri = build_uri(path, params)
         request = Net::HTTP::Get.new(uri, request_headers(accept))
         Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == 'https') do |http|
-          http.request(request)
+          http.request(request).tap { |response| record_request(path, response) }
         end
+      end
+
+      def record_request(path, response)
+        request_log&.record_api_request(platform: 'github', path: path, status: response.code.to_i)
       end
 
       def throttle
@@ -112,7 +118,8 @@ module PolishOpenSourceRank
       end
 
       def rate_limit_reset_wait(response)
-        return unless response['x-ratelimit-remaining'] == '0'
+        remaining = response['x-ratelimit-remaining']
+        return unless remaining && remaining.to_i <= 1
 
         [response['x-ratelimit-reset'].to_i - Time.now.to_i + 1, 1].max
       end

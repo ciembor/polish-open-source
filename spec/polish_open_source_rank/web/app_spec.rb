@@ -187,7 +187,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     response = Rack::MockRequest.new(described_class).get('/')
 
     expect(response.body).to include('rel="canonical" href="https://rank.example/polish-open-source-rank/latest"')
-    expect(response.body).to include('href="/polish-open-source-rank/css/application.css?v=20260517-about"')
+    expect(response.body).to include('href="/polish-open-source-rank/css/application.css?v=20260518-monitor"')
     expect(response.body).to include('src="/polish-open-source-rank/js/navigation.js?v=20260517-menu3"')
     expect(response.body).to include('src="/polish-open-source-rank/icons/github.svg"')
     expect(response.body).to include('href="/polish-open-source-rank/latest/locations/krakow"')
@@ -204,17 +204,30 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(Rack::MockRequest.new(described_class).get('/2026-13').status).to eq(404)
   end
 
-  it 'serves internal job progress as noindex JSON' do
+  it 'serves internal job progress as a noindex monitor page', :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_running_database}"
 
     response = Rack::MockRequest.new(described_class).get('/internal/jobs')
-    body = JSON.parse(response.body)
 
     expect(response.status).to eq(200)
-    expect(response.content_type).to include('application/json')
+    expect(response.content_type).to include('text/html')
     expect(response['X-Robots-Tag']).to eq('noindex')
-    expect(body.fetch('run')).to include('period_start' => '2026-04-01', 'status' => 'running')
-    expect(body.fetch('platforms')).to include(include('platform' => 'github', 'crawled_records_count' => 1))
+    expect(response.body).to include('<title>Job monitor</title>')
+    expect(response.body).to include('noindex,nofollow')
+    expect(response.body).to include('2026-04-01 to 2026-05-01')
+    expect(response.body).to include('CEST')
+    expect(response.body).to include('Candidate queue')
+    expect(response.body).to include('Total discovered candidates')
+    expect(response.body).to include('Stored snapshot')
+    expect(response.body).to include('Users stored for the month')
+    expect(response.body).to include('Changes since this run started')
+    expect(response.body).to include('Repositories stored in this run')
+    expect(response.body).to include('Last checked candidate')
+    expect(response.body).to include('Last stored repository')
+    expect(response.body).to include('API requests per minute')
+    expect(response.body).to include('Last monitor events')
+    expect(response.body).to include('Last error logs')
+    expect(response.body).to include('monitor-axis-label')
   end
 
   def seed_database
