@@ -8,8 +8,18 @@ RSpec.describe PolishOpenSourceRank::Application::MonthlySnapshotCommand do
 
     described_class.call(['--month', '2026-04'], job: job, output: output)
 
-    expect(job).to have_received(:call).with(have_attributes(key: '2026-04'))
+    expect(job).to have_received(:call).with(have_attributes(key: '2026-04'), refresh: false)
     expect(output.string).to include('Finished monthly ranking run for 2026-04')
+  end
+
+  it 'passes explicit refresh requests to the monthly job' do
+    output = StringIO.new
+    job = instance_double(PolishOpenSourceRank::Application::MonthlySnapshotJob)
+    allow(job).to receive(:call)
+
+    described_class.call(['--month', '2026-04', '--refresh'], job: job, output: output)
+
+    expect(job).to have_received(:call).with(have_attributes(key: '2026-04'), refresh: true)
   end
 
   it 'turns process stop signals into job-visible interruptions' do
@@ -32,7 +42,7 @@ RSpec.describe PolishOpenSourceRank::Application::MonthlySnapshotCommand do
       described_class.call(['--month', '2026-04'], job: job, output: output)
     end.to raise_error(PolishOpenSourceRank::Application::MonthlySnapshotInterrupted, 'Received SIGTERM')
 
-    expect(job).to have_received(:call).with(have_attributes(key: '2026-04'))
+    expect(job).to have_received(:call).with(have_attributes(key: '2026-04'), refresh: false)
     expect(output.string).to be_empty
     expect(Signal).to have_received(:trap).with('INT', 'DEFAULT')
     expect(Signal).to have_received(:trap).with('TERM', 'DEFAULT')

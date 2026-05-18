@@ -15,17 +15,14 @@ module PolishOpenSourceRank
         @store_mutex = Mutex.new
       end
 
-      def call(period)
-        run_id = store.create_run(period)
+      def call(period, refresh: false)
+        refresh_platforms = refresh ? sources.map(&:platform) : []
+        run_id = store.create_run(period, refresh_platforms: refresh_platforms)
         return unless run_id
 
-        discover_candidates(period)
-        process_candidates(period)
+        run_source_snapshots(period, refresh_platforms: refresh_platforms)
 
-        return store.fail_run(run_id, 'Retryable candidates remain') if store.retryable_candidates?(period)
-
-        store.prune_rankings(period)
-        store.finish_run(run_id)
+        complete_run(period, run_id)
       rescue StandardError => e
         store.fail_run(run_id, "#{e.class}: #{e.message}") if run_id
         raise
@@ -34,10 +31,6 @@ module PolishOpenSourceRank
       private
 
       attr_reader :catalog, :classifier, :logger, :sources, :store, :store_mutex
-
-      def discover_candidates(period)
-        run_sources_in_parallel('discover') { |source| discover_source_candidates(period, source) }
-      end
 
       def discover_source_candidates(period, source)
         catalog.search_terms.each do |term|
@@ -57,25 +50,21 @@ module PolishOpenSourceRank
         log(source, 'candidate discovery finished')
       end
 
-      def process_candidates(period)
-        run_sources_in_parallel('process') { |source| process_source_candidates(period, source) }
-      end
-
-      def process_source_candidates(period, source)
+      def process_source_candidates(period, source, refresh:)
         loop do
           candidates = with_store { store.pending_candidates(period, platform: source.platform, limit: BATCH_SIZE) }
           break if candidates.empty?
 
           log(source, "processing #{candidates.length} candidates")
-          candidates.each { |candidate| process_candidate(period, source, candidate) }
+          candidates.each { |candidate| process_candidate(period, source, candidate, refresh: refresh) }
         end
         log(source, 'candidate processing finished')
       end
 
-      def process_candidate(period, source, candidate)
+      def process_candidate(period, source, candidate, refresh:)
         platform = candidate.fetch(:platform)
         login = candidate.fetch(:login)
-        if with_store { store.processed_user?(period, platform, candidate.fetch(:source_id)) }
+        if !refresh && with_store { store.processed_user?(period, platform, candidate.fetch(:source_id)) }
           return with_store { store.mark_candidate(period, platform, login, 'processed') }
         end
 
@@ -108,8 +97,20 @@ module PolishOpenSourceRank
 
       def repository_deltas(source, repositories, period)
         repositories.to_h do |repository|
-          [repository.fetch(:source_id), source.repository_stars_delta(repository, period)]
+          [repository.fetch(:source_id), repository_delta(source, repository, period)]
         end
+      end
+
+      def repository_delta(source, repository, period)
+        current_stars = repository.fetch(:stars)
+        return 0 if current_stars.zero?
+
+        previous_stars = with_store do
+          store.previous_repository_stargazers_count(period, source.platform, repository.fetch(:source_id))
+        end
+        return [current_stars - previous_stars.to_i, 0].max if previous_stars
+
+        source.repository_stars_delta(repository, period)
       end
 
       def persist_repositories(period, source, profile, location, repositories, repository_deltas)
@@ -192,18 +193,41 @@ module PolishOpenSourceRank
         value if value.to_s.match?(/\S/)
       end
 
-      def run_sources_in_parallel(stage)
+      def run_source_snapshots(period, refresh_platforms:)
         threads = sources.map do |source|
-          Thread.new do
-            yield source
-          rescue StandardError => e
-            log(source, "#{stage} failed: #{e.class}: #{e.message}")
-            Thread.current[:error] = e
-          end
+          Thread.new { run_source_snapshot(period, source, refresh: refresh_platforms.include?(source.platform)) }
         end
         threads.each(&:join)
         errors = threads.filter_map { |thread| thread[:error] }
         raise errors.first if errors.length == sources.length
+      end
+
+      def complete_run(period, run_id)
+        return store.fail_run(run_id, 'Retryable candidates remain') if source_retryable_candidates?(period)
+        return if store.retryable_candidates?(period)
+
+        store.prune_rankings(period)
+        store.finish_run(run_id)
+      end
+
+      def source_retryable_candidates?(period)
+        store.retryable_candidates?(period, platforms: sources.map(&:platform))
+      end
+
+      def run_source_snapshot(period, source, refresh:)
+        discover_error = run_source_stage(source, 'discover') { discover_source_candidates(period, source) }
+        process_error = run_source_stage(source, 'process') do
+          process_source_candidates(period, source, refresh: refresh)
+        end
+        Thread.current[:error] = process_error || discover_error
+      end
+
+      def run_source_stage(source, stage)
+        yield
+        nil
+      rescue StandardError => e
+        log(source, "#{stage} failed: #{e.class}: #{e.message}")
+        e
       end
 
       def with_store(&)

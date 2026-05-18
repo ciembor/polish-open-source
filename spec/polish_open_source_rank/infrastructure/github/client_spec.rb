@@ -17,8 +17,8 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubClient do
     expect(response.headers).to include('x-ratelimit-remaining' => '1')
   end
 
-  it 'sleeps when a successful response exhausts the primary rate limit' do
-    stub_http(ok_response({}, 'x-ratelimit-remaining' => '0', 'x-ratelimit-reset' => Time.now.to_i.to_s))
+  it 'sleeps before consuming the final primary rate limit request' do
+    stub_http(ok_response({}, 'x-ratelimit-remaining' => '1', 'x-ratelimit-reset' => Time.now.to_i.to_s))
 
     client.get('/rate-limited')
 

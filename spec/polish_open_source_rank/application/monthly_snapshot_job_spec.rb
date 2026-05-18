@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'timeout'
+
 class FakeJobGitHub
   attr_accessor :activities, :candidates, :deltas, :fail_errors, :fail_logins, :missing_logins, :profiles,
                 :repositories
@@ -146,7 +148,7 @@ class DistinctToStringError < StandardError
 end
 
 class FailingCreateRunStore
-  def create_run(_period)
+  def create_run(...)
     raise 'database unavailable'
   end
 
@@ -264,11 +266,11 @@ class SinglePendingCandidateStore
     @pending_returned = false
   end
 
-  def create_run(_period)
+  def create_run(...)
     1
   end
 
-  def retryable_candidates?(_period)
+  def retryable_candidates?(*)
     false
   end
 
@@ -330,6 +332,29 @@ RSpec.describe PolishOpenSourceRank::Application::MonthlySnapshotJob do
     expect(github.activity_periods).to eq([['alice', period]])
   end
 
+  it 'uses previous repository observations and skips empty repositories when calculating star deltas' do
+    previous_period = PolishOpenSourceRank::Application::MonthPeriod.parse('2026-03')
+    seed_previous_repository_observation(previous_period)
+    github.candidates = { 'Poland' => [{ source_id: 1, login: 'alice' }] }
+    github.profiles = { 'alice' => profile(1, 'alice', 'Krakow, Poland') }
+    github.repositories = {
+      'alice' => [
+        repository(10, 'alice/app', 14),
+        repository(11, 'alice/new', 7),
+        repository(12, 'alice/empty', 0)
+      ]
+    }
+    github.deltas = { 'alice/new' => 2 }
+
+    job.call(period)
+
+    expect(fetch_user_stats('alice')).to include(monthly_stars_delta: 6)
+    expect(fetch_repository_stats('alice/app')).to include(monthly_stars_delta: 4)
+    expect(fetch_repository_stats('alice/new')).to include(monthly_stars_delta: 2)
+    expect(fetch_repository_stats('alice/empty')).to include(monthly_stars_delta: 0)
+    expect(github.delta_periods).to eq([['alice/new', period]])
+  end
+
   it 'marks an already snapshotted pending candidate as processed' do
     store.upsert_user(user_attributes(1, 'alice'))
     store.record_user_stats(user_stats(1, 'alice'))
@@ -372,6 +397,45 @@ RSpec.describe PolishOpenSourceRank::Application::MonthlySnapshotJob do
     expect(gitlab.user_calls).to be_empty
     expect(fetch_candidate('alice', platform: 'gitlab')).to include(status: 'processed', error: nil)
     expect_finished_run
+  end
+
+  it 'reprocesses already snapshotted candidates during an explicit refresh' do
+    gitlab = FakeJobGitLab.new
+    store.record_candidate(period, platform: 'gitlab', source_id: 1, login: 'alice', source_query: 'Poland')
+    store.upsert_user(user_attributes(1, 'alice').merge(platform: 'gitlab'))
+    store.record_user_stats(user_stats(1, 'alice').merge(platform: 'gitlab'))
+    store.mark_candidate(period, 'gitlab', 'alice', 'processed')
+    gitlab.profiles = { 'alice' => profile(1, 'alice', 'Krakow, Poland') }
+    gitlab.repositories = { 'alice' => [] }
+
+    described_class.new(
+      store: store,
+      sources: [gitlab],
+      catalog: double('catalog', search_terms: []),
+      logger: StringIO.new
+    ).call(period, refresh: true)
+
+    expect(gitlab.user_calls).to eq([['alice', 1]])
+    expect(fetch_candidate('alice', platform: 'gitlab')).to include(status: 'processed', error: nil)
+  end
+
+  it 'leaves the run open when other platforms still have retryable candidates' do
+    gitlab = FakeJobGitLab.new
+    store.record_candidate(period, platform: 'github', source_id: 1, login: 'alice', source_query: 'Poland')
+
+    described_class.new(
+      store: store,
+      sources: [gitlab],
+      catalog: double('catalog', search_terms: []),
+      logger: StringIO.new
+    ).call(period)
+
+    run = fetch_row('SELECT status, finished_at, error FROM sync_runs WHERE period_start = ?', ['2026-04-01'])
+    expect(run).to include(
+      status: 'running',
+      finished_at: nil,
+      error: nil
+    )
   end
 
   it 'skips candidate discovery when the period is already finished' do
@@ -477,6 +541,32 @@ RSpec.describe PolishOpenSourceRank::Application::MonthlySnapshotJob do
     )
   end
 
+  it 'reprocesses processed candidates when repository stats are missing from a previous run' do
+    run_id = store.create_run(period)
+    store.record_candidate(period, platform: 'gitlab', source_id: 2, login: 'bob', source_query: 'Poland')
+    store.upsert_user(user_attributes(2, 'bob').merge(platform: 'gitlab'))
+    store.record_user_stats(user_stats(2, 'bob').merge(platform: 'gitlab', public_repo_count: 1, total_stars: 4))
+    store.mark_candidate(period, 'gitlab', 'bob', 'processed')
+    store.finish_run(run_id)
+    gitlab = FakeJobGitLab.new
+    gitlab.profiles = { 'bob' => profile(2, 'bob', 'Warsaw, Poland') }
+    gitlab.repositories = { 'bob' => [repository(20, 'bob/tool', 4)] }
+
+    described_class.new(
+      store: store,
+      sources: [gitlab],
+      catalog: double('catalog', search_terms: []),
+      logger: StringIO.new
+    ).call(period)
+
+    expect(fetch_candidate('bob', platform: 'gitlab')).to include(status: 'processed', error: nil)
+    expect(fetch_repository_stats('bob/tool', platform: 'gitlab')).to include(
+      owner_login: 'bob',
+      stargazers_count: 4
+    )
+    expect_finished_run
+  end
+
   it 'accepts missing and blank optional source fields' do
     github.candidates = { 'Poland' => [{ source_id: 3, login: 'optional' }] }
     github.profiles = { 'optional' => optional_profile }
@@ -559,6 +649,29 @@ RSpec.describe PolishOpenSourceRank::Application::MonthlySnapshotJob do
 
     expect(logger.string).to include('[github] discovering users for location "Poland"')
     expect(logger.string).to include('[gitlab] discovering users for location "Poland"')
+  end
+
+  it 'processes a source without waiting for slower source discovery to finish' do
+    started = Queue.new
+    release = Queue.new
+    slow_github = BlockingDiscoverySource.new('github', started, release)
+    gitlab = FakeJobGitLab.new
+    gitlab.candidates = { 'Poland' => [{ source_id: 2, login: 'bob' }] }
+    gitlab.profiles = { 'bob' => profile(2, 'bob', 'Warsaw, Poland') }
+    gitlab.repositories = { 'bob' => [repository(20, 'bob/tool', 4)] }
+    thread = Thread.new do
+      described_class.new(store: store, sources: [slow_github, gitlab], catalog: catalog, logger: StringIO.new)
+                     .call(period)
+    end
+
+    expect(started.pop).to eq('github')
+    Timeout.timeout(2) do
+      sleep 0.01 until fetch_candidate('bob', platform: 'gitlab')&.fetch(:status) == 'processed'
+    end
+
+    expect(fetch_repository_stats('bob/tool', platform: 'gitlab')).to include(owner_login: 'bob')
+    release << true
+    thread.value
   end
 
   it 'flushes job logs as they are written' do
@@ -846,6 +959,22 @@ RSpec.describe PolishOpenSourceRank::Application::MonthlySnapshotJob do
     }
   end
 
+  def repository_attributes(id, full_name)
+    {
+      github_id: id,
+      owner_github_id: 1,
+      owner_login: 'alice',
+      name: full_name.split('/').last,
+      full_name: full_name,
+      description: "Repository #{full_name}",
+      html_url: "https://github.com/#{full_name}",
+      homepage: nil,
+      language: 'Ruby',
+      fork: false,
+      archived: false
+    }
+  end
+
   def user_stats(id, login)
     {
       period_start: period.start_date.to_s,
@@ -878,6 +1007,21 @@ RSpec.describe PolishOpenSourceRank::Application::MonthlySnapshotJob do
         repository(11, 'alice/lib', 5, homepage: '', fork: true, archived: true)
       ]
     }
+  end
+
+  def seed_previous_repository_observation(previous_period)
+    store.upsert_user(user_attributes(1, 'alice'))
+    store.upsert_repository(repository_attributes(10, 'alice/app'))
+    store.record_repository_stats(
+      period_start: previous_period.start_date.to_s,
+      repository_github_id: 10,
+      owner_github_id: 1,
+      owner_login: 'alice',
+      owner_city: 'Kraków',
+      owner_country: 'Poland',
+      stargazers_count: 10,
+      monthly_stars_delta: 0
+    )
   end
 
   def expect_finished_run
@@ -975,15 +1119,15 @@ RSpec.describe PolishOpenSourceRank::Application::MonthlySnapshotJob do
     SQL
   end
 
-  def fetch_repository_stats(full_name, platform: 'github')
-    fetch_row(<<~SQL, [platform, full_name])
+  def fetch_repository_stats(full_name, platform: 'github', period_start: period.start_date.to_s)
+    fetch_row(<<~SQL, [period_start, platform, full_name])
       SELECT stats.period_start, stats.platform, stats.repository_github_id, stats.owner_github_id,
              stats.owner_login, stats.owner_city, stats.owner_country, stats.stargazers_count,
              stats.monthly_stars_delta
       FROM repository_monthly_stats stats
       INNER JOIN repositories ON repositories.platform = stats.platform
        AND repositories.github_id = stats.repository_github_id
-      WHERE stats.platform = ? AND repositories.full_name = ?
+      WHERE stats.period_start = ? AND stats.platform = ? AND repositories.full_name = ?
     SQL
   end
 

@@ -6,6 +6,8 @@ require 'uri'
 module PolishOpenSourceRank
   module Infrastructure
     class CodebergClient
+      attr_writer :request_log
+
       Response = Struct.new(:status, :headers, :body, keyword_init: true)
 
       class Error < StandardError
@@ -50,14 +52,18 @@ module PolishOpenSourceRank
 
       private
 
-      attr_reader :base_url, :logger, :max_retries, :request_interval, :sleeper, :token
+      attr_reader :base_url, :logger, :max_retries, :request_interval, :request_log, :sleeper, :token
 
       def perform_get(path, params)
         throttle
         uri = build_uri(path, params)
         Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == 'https') do |http|
-          http.request(Net::HTTP::Get.new(uri, request_headers))
+          http.request(Net::HTTP::Get.new(uri, request_headers)).tap { |response| record_request(path, response) }
         end
+      end
+
+      def record_request(path, response)
+        request_log&.record_api_request(platform: 'codeberg', path: path, status: response.code.to_i)
       end
 
       def throttle

@@ -36,6 +36,8 @@ module PolishOpenSourceRank
       end
 
       def repository_stars_delta(repository, period)
+        return 0 if repository.key?(:stars) && repository.fetch(:stars).zero?
+
         owner, repo = repository_coordinates(repository)
         first_page = stargazers_page(owner, repo, 1)
         last_page = last_page_number(first_page.headers.fetch('link', nil)) || 1

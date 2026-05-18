@@ -67,7 +67,12 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::MonthlySnapshotComposition 
     allow(PolishOpenSourceRank::Infrastructure::GitHubClient).to receive(:new).and_return(clients.fetch(:github))
     allow(PolishOpenSourceRank::Infrastructure::GitLabClient).to receive(:new).and_return(clients.fetch(:gitlab))
     allow(PolishOpenSourceRank::Infrastructure::CodebergClient).to receive(:new).and_return(clients.fetch(:codeberg))
+    stub_request_logs(clients, store)
     clients
+  end
+
+  def stub_request_logs(clients, store)
+    clients.each_value { |client| allow(client).to receive(:request_log=).with(store) }
   end
 
   def stub_gateways(clients)

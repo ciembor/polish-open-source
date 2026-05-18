@@ -45,7 +45,7 @@ RSpec.describe PolishOpenSourceRank::Configuration do
     configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
 
     expect(configuration.database_path).to eq('db/polish_open_source_rank.sqlite3')
-    expect(configuration.requests_per_minute).to eq(25)
+    expect(configuration.requests_per_minute).to eq(60)
     expect(configuration.github_base_url).to eq('https://api.github.com')
     expect(configuration.gitlab_token).to be_nil
     expect(configuration.gitlab_base_url).to eq('https://gitlab.com/api/v4')
