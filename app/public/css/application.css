@@ -247,41 +247,87 @@ h3 {
   min-width: 0;
 }
 
-table {
+.ranking-list {
   width: 100%;
-  border-collapse: collapse;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
+  list-style: none;
+  margin: 0;
   overflow: hidden;
+  padding: 0;
 }
 
-th,
-td {
+.ranking-list__item {
+  align-items: start;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 34px minmax(0, 1fr) max-content;
   padding: 12px 10px;
   border-bottom: 1px solid var(--line);
-  text-align: left;
-  vertical-align: top;
 }
 
-th {
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 800;
-  text-transform: uppercase;
+.ranking-list__item:last-child {
+  border-bottom: 0;
 }
 
-td {
+.ranking-list__body,
+.ranking-list__title,
+.ranking-list__meta {
+  min-width: 0;
+}
+
+.ranking-list__title {
+  align-items: baseline;
+  display: flex;
+}
+
+.ranking-list__title .platform-mark {
+  flex: 0 0 auto;
+}
+
+.ranking-list__title .primary-link {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ranking-list__description,
+.ranking-list__meta,
+.ranking-list__empty {
   font-size: 0.94rem;
 }
 
-td:first-child,
-th:first-child {
-  width: 42px;
+.ranking-list__description {
+  color: var(--muted);
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-tr:last-child td {
-  border-bottom: 0;
+.ranking-list__meta {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
+}
+
+.ranking-list__meta span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ranking-list__empty {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  margin: 0;
+  padding: 12px 10px;
 }
 
 .primary-link,
@@ -330,12 +376,6 @@ tr:last-child td {
   color: var(--accent-strong);
 }
 
-td span {
-  display: block;
-  color: var(--muted);
-  overflow-wrap: anywhere;
-}
-
 .second_place {
   background: linear-gradient(130deg, #bbb 0%, #eee 50%);
 }
@@ -351,6 +391,7 @@ td span {
 .metric {
   color: var(--accent);
   font-weight: 900;
+  line-height: 1.5;
   white-space: nowrap;
 }
 
