@@ -61,6 +61,10 @@ module PolishOpenSourceRank
         render_editions
       end
 
+      get '/users/:platform/:login' do
+        render_user_profile(params.fetch('platform'), params.fetch('login'))
+      end
+
       get %r{/editions/(\d{4})} do |year|
         render_editions(year)
       end
@@ -159,6 +163,21 @@ module PolishOpenSourceRank
         @description = t('editions.seo.description')
         @canonical_path = year ? editions_path(year) : editions_path
         erb :editions
+      end
+
+      def render_user_profile(platform, login)
+        @period_slug = 'latest'
+        @period = store.latest_period
+        @profile = store.user_profile(platform, login, period_start: @period)
+        halt 404 unless @profile
+
+        @repositories = @profile.fetch(:repositories)
+        display_name = @profile[:name].to_s.empty? ? @profile.fetch(:login) : @profile[:name]
+        source_name = platform_name(@profile.fetch(:platform))
+        @title = "#{display_name} - #{source_name} profile"
+        @description = t('users.seo.description', user: display_name, platform: source_name)
+        @canonical_path = user_profile_path(@profile)
+        erb :user_profile
       end
 
       def selected_edition_year(year)

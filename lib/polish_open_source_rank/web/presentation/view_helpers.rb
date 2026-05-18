@@ -65,6 +65,12 @@ module PolishOpenSourceRank
           "#{scope_path({ slug: scope_slug }, period_slug: period_slug)}/#{kind}/#{metric}"
         end
 
+        def user_profile_path(user)
+          platform = Rack::Utils.escape_path(user.fetch(:platform, 'github'))
+          login = Rack::Utils.escape_path(user.fetch(:login))
+          "/users/#{platform}/#{login}"
+        end
+
         def period_base_path(period_slug)
           return '/latest' if period_slug.nil? || period_slug == 'latest'
 

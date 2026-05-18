@@ -15,10 +15,11 @@
           <td><%= index + 1 %></td>
           <td>
             <%= erb :platform_icon, locals: { platform: row.fetch(:platform, "github") } %>
-            <a class="primary-link" href="<%= h row.fetch(:html_url) %>"><%= h row.fetch(:login) %></a>
+            <a class="primary-link" href="<%= h app_path(user_profile_path(row)) %>"><%= h row.fetch(:login) %></a>
             <% if row[:name] && !row[:name].empty? %>
               <span><%= h row[:name] %></span>
             <% end %>
+            <a class="muted-link" href="<%= h row.fetch(:html_url) %>"><%= h platform_name(row.fetch(:platform, "github")) %></a>
             <% if row[:homepage] && !row[:homepage].empty? %>
               <a class="muted-link" href="<%= h row[:homepage] %>">www</a>
             <% end %>

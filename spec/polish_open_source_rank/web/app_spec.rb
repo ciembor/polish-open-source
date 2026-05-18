@@ -87,6 +87,26 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(invalid_response.status).to eq(404)
   end
 
+  it 'renders user profile pages from ranking users' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    request = Rack::MockRequest.new(described_class)
+
+    ranking_response = request.get('/latest/users/top')
+    profile_response = request.get('/users/github/alice')
+    missing_response = request.get('/users/github/missing')
+
+    expect(ranking_response.body).to include('href="/users/github/alice"')
+    expect(profile_response.status).to eq(200)
+    expect(profile_response.body).to include('<title>Alice - GitHub profile</title>')
+    expect(profile_response.body).to include('rel="canonical" href="https://rank.example/users/github/alice"')
+    expect(profile_response.body).to include('src="https://avatars.example/alice.png"')
+    expect(profile_response.body).to include('GitHub profile')
+    expect(profile_response.body).to include('Best projects')
+    expect(profile_response.body).to include('alice/app')
+    expect(profile_response.body).to include('12 345')
+    expect(missing_response.status).to eq(404)
+  end
+
   it 'renders editions with year pagination' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
 
@@ -187,7 +207,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     response = Rack::MockRequest.new(described_class).get('/')
 
     expect(response.body).to include('rel="canonical" href="https://rank.example/polish-open-source-rank/latest"')
-    expect(response.body).to include('href="/polish-open-source-rank/css/application.css?v=20260518-monitor"')
+    expect(response.body).to include('href="/polish-open-source-rank/css/application.css?v=20260518-profile"')
     expect(response.body).to include('src="/polish-open-source-rank/js/navigation.js?v=20260517-menu3"')
     expect(response.body).to include('src="/polish-open-source-rank/icons/github.svg"')
     expect(response.body).to include('href="/polish-open-source-rank/latest/locations/krakow"')
@@ -280,7 +300,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       email: 'alice@example.com',
       homepage: 'https://alice.example',
       html_url: 'https://github.com/alice',
-      avatar_url: nil
+      avatar_url: 'https://avatars.example/alice.png'
     }
   end
 

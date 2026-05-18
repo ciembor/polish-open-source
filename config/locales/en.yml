@@ -118,5 +118,24 @@ en:
     trending_10_month: "Trending 10 this month"
     users: "Users"
     users_activity_month: "Activity this month"
+  users:
+    avatar_alt: "%{user} profile photo"
+    links:
+      homepage: "Website"
+      source_profile: "%{platform} profile"
+    metrics:
+      title: "Ranking metrics"
+    repositories:
+      empty: "No public repositories were stored for this snapshot."
+      language: "Language"
+      title: "Best projects"
+    seo:
+      description: "%{user} public open-source profile on %{platform}, with ranking metrics and top projects."
+    summary:
+      city: "City"
+      location: "Location"
+      public_repositories: "Public repositories"
+      title: "Profile"
+      unknown: "Unknown"
   scope:
     poland: "Poland"

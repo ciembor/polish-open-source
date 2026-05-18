@@ -118,5 +118,24 @@ pl:
     trending_10_month: "Trending 10 w miesiącu"
     users: "Użytkownicy"
     users_activity_month: "Aktywność w miesiącu"
+  users:
+    avatar_alt: "Zdjęcie profilowe %{user}"
+    links:
+      homepage: "Strona"
+      source_profile: "Profil na %{platform}"
+    metrics:
+      title: "Metryki rankingu"
+    repositories:
+      empty: "Dla tego snapshotu nie zapisano publicznych repozytoriów."
+      language: "Język"
+      title: "Najlepsze projekty"
+    seo:
+      description: "Publiczny profil open source użytkownika %{user} na %{platform}, z metrykami rankingu i najlepszymi projektami."
+    summary:
+      city: "Miasto"
+      location: "Lokalizacja"
+      public_repositories: "Publiczne repozytoria"
+      title: "Profil"
+      unknown: "Brak danych"
   scope:
     poland: "Polska"

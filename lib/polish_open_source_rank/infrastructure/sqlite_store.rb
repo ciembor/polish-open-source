@@ -272,6 +272,19 @@ module PolishOpenSourceRank
         }
       end
 
+      def user_profile(platform, login, period_start: latest_period)
+        user = fetch_user_profile(platform, login, period_start)
+        return unless user
+
+        user.merge(
+          repositories: top_user_repositories(
+            user.fetch(:platform),
+            user.fetch(:github_id),
+            user[:period_start] || period_start
+          )
+        )
+      end
+
       def job_progress(now: Time.now.utc)
         SQLiteJobProgress.new(database).call(now: now)
       end
@@ -340,6 +353,38 @@ module PolishOpenSourceRank
           INNER JOIN repositories ON repositories.platform = stats.platform AND repositories.github_id = stats.repository_github_id
           WHERE stats.period_start = ? AND #{sql_scope} #{trending_filter(order_column, 'stats')}
           ORDER BY stats.#{order_column} DESC, repositories.platform ASC, repositories.full_name COLLATE NOCASE ASC
+          LIMIT #{bounded_limit(limit)}
+        SQL
+      end
+
+      def fetch_user_profile(platform, login, period_start)
+        fetch_all(<<~SQL, [period_start, platform, login]).first
+          SELECT users.platform, users.github_id, users.login, users.name, users.location_raw, users.city, users.country,
+                 users.email, users.homepage, users.html_url, users.avatar_url, stats.period_start,
+                 stats.public_repo_count, stats.total_stars, stats.monthly_stars_delta, stats.public_activity_count
+          FROM users
+          LEFT JOIN user_monthly_stats stats
+            ON stats.platform = users.platform
+           AND stats.user_github_id = users.github_id
+           AND stats.period_start = ?
+          WHERE users.platform = ? AND users.login = ?
+          LIMIT 1
+        SQL
+      end
+
+      def top_user_repositories(platform, user_id, period_start, limit: 6)
+        return [] unless period_start
+
+        fetch_all(<<~SQL, [period_start, platform, user_id])
+          SELECT repositories.platform, repositories.full_name, repositories.name, repositories.description,
+                 repositories.html_url, repositories.homepage, repositories.language,
+                 stats.stargazers_count, stats.monthly_stars_delta
+          FROM repository_monthly_stats stats
+          INNER JOIN repositories
+            ON repositories.platform = stats.platform
+           AND repositories.github_id = stats.repository_github_id
+          WHERE stats.period_start = ? AND stats.platform = ? AND stats.owner_github_id = ?
+          ORDER BY stats.stargazers_count DESC, repositories.full_name COLLATE NOCASE ASC
           LIMIT #{bounded_limit(limit)}
         SQL
       end
