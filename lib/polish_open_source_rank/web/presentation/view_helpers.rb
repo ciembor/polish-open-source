@@ -77,10 +77,6 @@ module PolishOpenSourceRank
           "/repositories/#{platform}/#{Rack::Utils.escape_path(owner)}/#{Rack::Utils.escape_path(name)}"
         end
 
-        def repository_badge_path(repository)
-          "#{repository_profile_path(repository).sub('/repositories/', '/badges/repositories/')}.svg"
-        end
-
         def elite_medal_path(rank)
           case rank.to_i
           when 1 then '/icons/medal-gold.svg'

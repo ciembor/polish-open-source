@@ -133,6 +133,53 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     expect(store.latest_period).to eq('2026-04-01')
   end
 
+  it 'classifies user badges as current elite, alumni, or aspiring' do
+    older_period = PolishOpenSourceRank::Application::MonthPeriod.parse('2026-03')
+    store.create_run(older_period)
+    store.upsert_user(user_attributes(11, 'alumni', 'Kraków'))
+    store.record_user_stats(
+      user_stats(11, 'alumni', 'Kraków', total_stars: 1_000, delta: 0, activity: 1)
+        .merge(period_start: older_period.start_date.to_s)
+    )
+    store.create_run(period)
+
+    12.times do |index|
+      id = index + 1
+      login = id == 11 ? 'alumni' : "user#{id}"
+      login = 'aspiring' if id == 12
+      store.upsert_user(user_attributes(id, login, 'Kraków'))
+      store.record_user_stats(user_stats(id, login, 'Kraków', total_stars: 100 - id, delta: 0, activity: 1))
+    end
+
+    expect(store.user_profile('github', 'user1').fetch(:elite_badge)).to include(value: '1 place', status: 'ranked')
+    expect(store.user_profile('github', 'alumni').fetch(:elite_badge)).to include(value: 'alumni', status: 'alumni')
+    expect(store.user_profile('github', 'aspiring').fetch(:elite_badge)).to include(value: 'aspiring',
+                                                                                    status: 'aspiring')
+  end
+
+  it 'only gives repository badges a visible rank inside the current top 100' do
+    store.create_run(period)
+    store.upsert_user(user_attributes(10, 'alice', 'Kraków'))
+
+    101.times do |index|
+      id = index + 1
+      full_name = id == 101 ? 'alice/outside' : "alice/project#{id}"
+      store.upsert_repository(repository_attributes(id, 10, 'alice', full_name, 200 - id))
+      store.record_repository_stats(repository_stats(id, 10, 'alice', 'Kraków', stars: 200 - id, delta: 0))
+    end
+
+    expect(store.repository_profile('github', 'alice', 'project1').fetch(:polish_repo_badge)).to include(
+      label: 'Polish Repo',
+      value: '1 place',
+      status: 'ranked'
+    )
+    expect(store.repository_profile('github', 'alice', 'outside').fetch(:polish_repo_badge)).to include(
+      label: 'Polish Repo',
+      value: nil,
+      status: 'outside_top_100'
+    )
+  end
+
   it 'binds monthly edition year as a positional SQL parameter' do
     unwired_store = described_class.allocate
     allow(unwired_store).to receive(:fetch_all).and_return([])

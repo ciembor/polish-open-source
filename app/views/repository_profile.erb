@@ -60,10 +60,10 @@
           <dt><%= h t('rankings.metric.new_stars') %></dt>
           <dd><%= number(@repository[:monthly_stars_delta]) %></dd>
         </div>
-        <% if @repository[:elite_rank] %>
+        <% if @repository[:polish_repo_badge] && @repository[:polish_repo_badge][:value] %>
           <div>
-            <dt><%= h t('elite.rank') %></dt>
-            <dd><%= h t('elite.place', rank: @repository[:elite_rank]) %></dd>
+            <dt><%= h @repository[:polish_repo_badge].fetch(:label) %></dt>
+            <dd><%= h @repository[:polish_repo_badge].fetch(:value) %></dd>
           </div>
         <% end %>
       </dl>
@@ -74,13 +74,11 @@
 <section class="profile-section profile-section--alt" aria-labelledby="repository-badge-heading">
   <div class="content">
     <h2 id="repository-badge-heading"><%= h t('repositories.badge.title') %></h2>
-    <% if @repository[:elite_rank] %>
-      <div class="badge-preview">
+    <div class="badge-preview">
+      <a href="<%= h app_path('/latest') %>">
         <img src="<%= h app_path(repository_badge_path(@repository)) %>" alt="<%= h t('repositories.badge.alt') %>">
-        <code><%= h "#{configuration.public_base_url.delete_suffix('/')}#{repository_badge_path(@repository)}" %></code>
-      </div>
-    <% else %>
-      <p class="profile-empty"><%= h t('repositories.badge.empty') %></p>
-    <% end %>
+      </a>
+      <code><%= h linked_badge_markdown(t('repositories.badge.alt'), repository_badge_path(@repository)) %></code>
+    </div>
   </div>
 </section>

@@ -124,8 +124,7 @@ en:
     users_activity_month: "Activity this month"
   repositories:
     badge:
-      alt: "Polish Elite badge"
-      empty: "This project is not in the Polish Elite ranking yet."
+      alt: "Polish Repo badge"
       title: "GitHub badge"
     links:
       source_project: "%{platform} project"
@@ -136,6 +135,9 @@ en:
       title: "Project"
   users:
     avatar_alt: "%{user} profile photo"
+    badge:
+      alt: "Polish Elite badge"
+      title: "GitHub badge"
     links:
       homepage: "Website"
       source_profile: "%{platform} profile"
