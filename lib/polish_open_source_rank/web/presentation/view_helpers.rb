@@ -65,6 +65,30 @@ module PolishOpenSourceRank
           "#{scope_path({ slug: scope_slug }, period_slug: period_slug)}/#{kind}/#{metric}"
         end
 
+        def user_profile_path(user)
+          platform = Rack::Utils.escape_path(user.fetch(:platform, 'github'))
+          login = Rack::Utils.escape_path(user.fetch(:login))
+          "/users/#{platform}/#{login}"
+        end
+
+        def repository_profile_path(repository)
+          platform = Rack::Utils.escape_path(repository.fetch(:platform, 'github'))
+          owner, name = repository.fetch(:full_name).split('/', 2)
+          "/repositories/#{platform}/#{Rack::Utils.escape_path(owner)}/#{Rack::Utils.escape_path(name)}"
+        end
+
+        def repository_badge_path(repository)
+          "#{repository_profile_path(repository).sub('/repositories/', '/badges/repositories/')}.svg"
+        end
+
+        def elite_medal_path(rank)
+          case rank.to_i
+          when 1 then '/icons/medal-gold.svg'
+          when 2 then '/icons/medal-silver.svg'
+          when 3 then '/icons/medal-bronze.svg'
+          end
+        end
+
         def period_base_path(period_slug)
           return '/latest' if period_slug.nil? || period_slug == 'latest'
 

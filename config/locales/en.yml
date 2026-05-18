@@ -58,6 +58,10 @@ en:
     top_projects: "Top projects"
     top_users_activity: "Top users: activity"
     top_users_stars: "Top users: stars"
+  elite:
+    medal_alt: "Polish Elite %{rank} place medal"
+    place: "%{rank} place"
+    rank: "Polish Elite"
   date:
     months:
       - "January"
@@ -118,5 +122,36 @@ en:
     trending_10_month: "Trending 10 this month"
     users: "Users"
     users_activity_month: "Activity this month"
+  repositories:
+    badge:
+      alt: "Polish Elite badge"
+      empty: "This project is not in the Polish Elite ranking yet."
+      title: "GitHub badge"
+    links:
+      source_project: "%{platform} project"
+    seo:
+      description: "%{repository} public open-source project on %{platform}, with ranking metrics and owner details."
+    summary:
+      owner: "Owner"
+      title: "Project"
+  users:
+    avatar_alt: "%{user} profile photo"
+    links:
+      homepage: "Website"
+      source_profile: "%{platform} profile"
+    metrics:
+      title: "Ranking metrics"
+    repositories:
+      empty: "No public repositories were stored for this snapshot."
+      language: "Language"
+      title: "Best projects"
+    seo:
+      description: "%{user} public open-source profile on %{platform}, with ranking metrics and top projects."
+    summary:
+      city: "City"
+      location: "Location"
+      public_repositories: "Public repositories"
+      title: "Profile"
+      unknown: "Unknown"
   scope:
     poland: "Poland"

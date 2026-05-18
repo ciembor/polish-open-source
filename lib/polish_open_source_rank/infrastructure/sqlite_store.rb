@@ -272,6 +272,37 @@ module PolishOpenSourceRank
         }
       end
 
+      def user_profile(platform, login, period_start: latest_period)
+        user = fetch_user_profile(platform, login, period_start)
+        return unless user
+
+        user.merge(
+          elite_rank: user_elite_rank(
+            user.fetch(:platform),
+            user.fetch(:github_id),
+            user[:period_start] || period_start
+          ),
+          repositories: top_user_repositories(
+            user.fetch(:platform),
+            user.fetch(:github_id),
+            user[:period_start] || period_start
+          )
+        )
+      end
+
+      def repository_profile(platform, owner, name, period_start: latest_period)
+        repository = fetch_repository_profile(platform, "#{owner}/#{name}", period_start)
+        return unless repository
+
+        repository.merge(
+          elite_rank: repository_elite_rank(
+            repository.fetch(:platform),
+            repository.fetch(:github_id),
+            repository[:period_start] || period_start
+          )
+        )
+      end
+
       def job_progress(now: Time.now.utc)
         SQLiteJobProgress.new(database).call(now: now)
       end
@@ -341,6 +372,95 @@ module PolishOpenSourceRank
           WHERE stats.period_start = ? AND #{sql_scope} #{trending_filter(order_column, 'stats')}
           ORDER BY stats.#{order_column} DESC, repositories.platform ASC, repositories.full_name COLLATE NOCASE ASC
           LIMIT #{bounded_limit(limit)}
+        SQL
+      end
+
+      def fetch_user_profile(platform, login, period_start)
+        fetch_all(<<~SQL, [period_start, platform, login]).first
+          SELECT users.platform, users.github_id, users.login, users.name, users.location_raw, users.city, users.country,
+                 users.email, users.homepage, users.html_url, users.avatar_url, stats.period_start,
+                 stats.public_repo_count, stats.total_stars, stats.monthly_stars_delta, stats.public_activity_count
+          FROM users
+          LEFT JOIN user_monthly_stats stats
+            ON stats.platform = users.platform
+           AND stats.user_github_id = users.github_id
+           AND stats.period_start = ?
+          WHERE users.platform = ? AND users.login = ?
+          LIMIT 1
+        SQL
+      end
+
+      def fetch_repository_profile(platform, full_name, period_start)
+        fetch_all(<<~SQL, [period_start, platform, full_name]).first
+          SELECT repositories.platform, repositories.github_id, repositories.full_name, repositories.name,
+                 repositories.description, repositories.html_url, repositories.homepage, repositories.language,
+                 repositories.owner_github_id, repositories.owner_login, users.name AS owner_name,
+                 users.html_url AS owner_html_url, users.avatar_url AS owner_avatar_url,
+                 stats.period_start, stats.owner_city, stats.owner_country,
+                 stats.stargazers_count, stats.monthly_stars_delta
+          FROM repositories
+          INNER JOIN users
+            ON users.platform = repositories.platform
+           AND users.github_id = repositories.owner_github_id
+          LEFT JOIN repository_monthly_stats stats
+            ON stats.platform = repositories.platform
+           AND stats.repository_github_id = repositories.github_id
+           AND stats.period_start = ?
+          WHERE repositories.platform = ? AND repositories.full_name = ?
+          LIMIT 1
+        SQL
+      end
+
+      def top_user_repositories(platform, user_id, period_start, limit: 6)
+        return [] unless period_start
+
+        fetch_all(<<~SQL, [period_start, platform, user_id])
+          SELECT repositories.platform, repositories.full_name, repositories.name, repositories.description,
+                 repositories.html_url, repositories.homepage, repositories.language,
+                 stats.stargazers_count, stats.monthly_stars_delta
+          FROM repository_monthly_stats stats
+          INNER JOIN repositories
+            ON repositories.platform = stats.platform
+           AND repositories.github_id = stats.repository_github_id
+          WHERE stats.period_start = ? AND stats.platform = ? AND stats.owner_github_id = ?
+          ORDER BY stats.stargazers_count DESC, repositories.full_name COLLATE NOCASE ASC
+          LIMIT #{bounded_limit(limit)}
+        SQL
+      end
+
+      def user_elite_rank(platform, user_id, period_start)
+        return unless period_start
+
+        fetch_value(<<~SQL, [period_start, platform, user_id])
+          SELECT elite_rank
+          FROM (
+            SELECT stats.platform, stats.user_github_id,
+                   RANK() OVER (ORDER BY stats.total_stars DESC, stats.platform ASC, stats.login COLLATE NOCASE ASC)
+                     AS elite_rank
+            FROM user_monthly_stats stats
+            WHERE stats.period_start = ? AND stats.country = 'Poland'
+          )
+          WHERE platform = ? AND user_github_id = ?
+        SQL
+      end
+
+      def repository_elite_rank(platform, repository_id, period_start)
+        return unless period_start
+
+        fetch_value(<<~SQL, [period_start, platform, repository_id])
+          SELECT elite_rank
+          FROM (
+            SELECT stats.platform, stats.repository_github_id,
+                   RANK() OVER (
+                     ORDER BY stats.stargazers_count DESC, stats.platform ASC, repositories.full_name COLLATE NOCASE ASC
+                   ) AS elite_rank
+            FROM repository_monthly_stats stats
+            INNER JOIN repositories
+              ON repositories.platform = stats.platform
+             AND repositories.github_id = stats.repository_github_id
+            WHERE stats.period_start = ? AND stats.owner_country = 'Poland'
+          )
+          WHERE platform = ? AND repository_github_id = ?
         SQL
       end
 

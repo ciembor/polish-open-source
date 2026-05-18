@@ -1,0 +1,86 @@
+<section class="profile-hero">
+  <div class="content profile-hero__inner">
+    <p class="eyebrow"><%= h platform_name(@repository.fetch(:platform)) %></p>
+    <div class="profile-identity profile-identity--project">
+      <div class="project-avatar" aria-hidden="true">
+        <%= erb :platform_icon, locals: { platform: @repository.fetch(:platform, "github") } %>
+      </div>
+      <div>
+        <div class="profile-title-row">
+          <h1><%= h @repository.fetch(:full_name) %></h1>
+          <%= erb :elite_medal, locals: { rank: @repository[:elite_rank], size: "large" } %>
+        </div>
+        <% if @repository[:description] && !@repository[:description].empty? %>
+          <p class="lede"><%= h @repository[:description] %></p>
+        <% end %>
+        <div class="profile-actions">
+          <a class="ranking-action" href="<%= h @repository.fetch(:html_url) %>"><%= h t('repositories.links.source_project', platform: platform_name(@repository.fetch(:platform))) %></a>
+          <% if @repository[:homepage] && !@repository[:homepage].empty? %>
+            <a class="ranking-action" href="<%= h @repository[:homepage] %>"><%= h t('users.links.homepage') %></a>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="profile-section" aria-labelledby="repository-summary-heading">
+  <div class="content profile-grid">
+    <article class="profile-summary">
+      <h2 id="repository-summary-heading"><%= h t('repositories.summary.title') %></h2>
+      <dl class="profile-facts">
+        <div>
+          <dt><%= h t('repositories.summary.owner') %></dt>
+          <dd><a class="primary-link" href="<%= h app_path(user_profile_path(platform: @repository.fetch(:platform), login: @repository.fetch(:owner_login))) %>"><%= h @repository.fetch(:owner_login) %></a></dd>
+        </div>
+        <div>
+          <dt><%= h t('users.summary.city') %></dt>
+          <dd><%= h(@repository[:owner_city] || t('users.summary.unknown')) %></dd>
+        </div>
+        <% if @repository[:language] && !@repository[:language].empty? %>
+          <div>
+            <dt><%= h t('users.repositories.language') %></dt>
+            <dd><%= h @repository[:language] %></dd>
+          </div>
+        <% end %>
+      </dl>
+    </article>
+
+    <article class="profile-summary">
+      <h2><%= h t('users.metrics.title') %></h2>
+      <% if @repository[:period_start] %>
+        <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @repository[:period_start] %>"><%= h @repository[:period_start] %></time></p>
+      <% end %>
+      <dl class="profile-metrics">
+        <div>
+          <dt><%= h t('rankings.metric.stars') %></dt>
+          <dd><%= number(@repository[:stargazers_count]) %></dd>
+        </div>
+        <div>
+          <dt><%= h t('rankings.metric.new_stars') %></dt>
+          <dd><%= number(@repository[:monthly_stars_delta]) %></dd>
+        </div>
+        <% if @repository[:elite_rank] %>
+          <div>
+            <dt><%= h t('elite.rank') %></dt>
+            <dd><%= h t('elite.place', rank: @repository[:elite_rank]) %></dd>
+          </div>
+        <% end %>
+      </dl>
+    </article>
+  </div>
+</section>
+
+<section class="profile-section profile-section--alt" aria-labelledby="repository-badge-heading">
+  <div class="content">
+    <h2 id="repository-badge-heading"><%= h t('repositories.badge.title') %></h2>
+    <% if @repository[:elite_rank] %>
+      <div class="badge-preview">
+        <img src="<%= h app_path(repository_badge_path(@repository)) %>" alt="<%= h t('repositories.badge.alt') %>">
+        <code><%= h "#{configuration.public_base_url.delete_suffix('/')}#{repository_badge_path(@repository)}" %></code>
+      </div>
+    <% else %>
+      <p class="profile-empty"><%= h t('repositories.badge.empty') %></p>
+    <% end %>
+  </div>
+</section>
