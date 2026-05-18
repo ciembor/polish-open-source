@@ -151,7 +151,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
       store.record_user_stats(user_stats(id, login, 'Kraków', total_stars: 100 - id, delta: 0, activity: 1))
     end
 
-    expect(store.user_profile('github', 'user1').fetch(:elite_badge)).to include(value: '1 place', status: 'ranked')
+    expect(store.user_profile('github', 'user1').fetch(:elite_badge)).to include(value: '1st place', status: 'ranked')
     expect(store.user_profile('github', 'alumni').fetch(:elite_badge)).to include(value: 'alumni', status: 'alumni')
     expect(store.user_profile('github', 'aspiring').fetch(:elite_badge)).to include(value: 'aspiring',
                                                                                     status: 'aspiring')
@@ -170,7 +170,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
 
     expect(store.repository_profile('github', 'alice', 'project1').fetch(:polish_repo_badge)).to include(
       label: 'Polish Repo',
-      value: '1 place',
+      value: '1st place',
       status: 'ranked'
     )
     expect(store.repository_profile('github', 'alice', 'outside').fetch(:polish_repo_badge)).to include(
@@ -178,6 +178,17 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
       value: nil,
       status: 'outside_top_100'
     )
+  end
+
+  it 'formats ranked badge positions with English ordinal suffixes' do
+    expect(store.send(:rank_place, 1)).to eq('1st place')
+    expect(store.send(:rank_place, 2)).to eq('2nd place')
+    expect(store.send(:rank_place, 3)).to eq('3rd place')
+    expect(store.send(:rank_place, 4)).to eq('4th place')
+    expect(store.send(:rank_place, 11)).to eq('11th place')
+    expect(store.send(:rank_place, 12)).to eq('12th place')
+    expect(store.send(:rank_place, 13)).to eq('13th place')
+    expect(store.send(:rank_place, 21)).to eq('21st place')
   end
 
   it 'binds monthly edition year as a positional SQL parameter' do
