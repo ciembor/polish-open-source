@@ -21,7 +21,8 @@ module PolishOpenSourceRank
           request = Net::HTTP::Post.new(uri, bot_headers)
           request.body = JSON.generate(max_age: 0, max_uses: 1, unique: true)
           invite = json_request(uri, request)
-          { code: invite.fetch('code'), url: invite.fetch('url') }
+          code = invite.fetch('code')
+          { code: code, url: invite.fetch('url', "https://discord.gg/#{code}") }
         end
 
         def invite_available?(code)

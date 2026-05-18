@@ -214,6 +214,30 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(logout.location).to eq('http://example.org/latest')
   end
 
+  it 'renders a Discord invite when Discord omits the invite URL' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    ENV['DISCORD_INVITE_CHANNEL_ID'] = 'invite-channel'
+    ENV['DISCORD_BOT_TOKEN'] = 'bot-token'
+    github_client = FakeGitHubOAuthClient.new('alice')
+    described_class.set :github_oauth_client, github_client
+    described_class.set :discord_gateway, PolishOpenSourceRank::Web::Auth::DiscordGateway.new(
+      PolishOpenSourceRank::Configuration.load
+    )
+    stub_discord_invite_response('{"code":"discord-code-only"}')
+    request = Rack::MockRequest.new(described_class)
+
+    github_start = request.get('/auth/github')
+    github_state = Rack::Utils.parse_query(URI(github_start.location).query).fetch('state')
+    github_callback = request.get(
+      "/auth/github/callback?code=github-code&state=#{github_state}",
+      'HTTP_COOKIE' => cookie_header(github_start)
+    )
+    profile = request.get('/users/github/alice', 'HTTP_COOKIE' => cookie_header(github_callback))
+
+    expect(profile.status).to eq(200)
+    expect(profile.body).to include('https://discord.gg/discord-code-only')
+  end
+
   it 'keeps podium medals on profile pages', :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     request = Rack::MockRequest.new(described_class)
@@ -509,6 +533,15 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   def cookie_header(response)
     Array(response['Set-Cookie']).map { |cookie| cookie.split(';').first }.join('; ')
+  end
+
+  def stub_discord_invite_response(body)
+    response = Net::HTTPOK.new('1.1', '200', 'OK')
+    response.body = body
+    response.instance_variable_set(:@read, true)
+    http = instance_double(Net::HTTP)
+    allow(http).to receive(:request).and_return(response)
+    allow(Net::HTTP).to receive(:start).and_yield(http)
   end
 
   # rubocop:disable Lint/ConstantDefinitionInBlock

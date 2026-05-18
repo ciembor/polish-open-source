@@ -83,6 +83,14 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
     expect(requests.fetch(3).body).to include('alice')
   end
 
+  it 'builds an invite URL when Discord only returns the invite code' do
+    configuration = PolishOpenSourceRank::Configuration.load
+    gateway = PolishOpenSourceRank::Web::Auth::DiscordGateway.new(configuration)
+    capture_http_requests([json_response('{"code":"abc"}')])
+
+    expect(gateway.create_invite(channel_id: 'channel-1')).to eq(code: 'abc', url: 'https://discord.gg/abc')
+  end
+
   it 'treats missing Discord invites as unavailable and raises typed errors' do
     configuration = PolishOpenSourceRank::Configuration.load
     gateway = PolishOpenSourceRank::Web::Auth::DiscordGateway.new(configuration)
