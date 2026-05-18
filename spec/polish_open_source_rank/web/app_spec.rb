@@ -2,16 +2,18 @@
 
 RSpec.describe PolishOpenSourceRank::Web::App do
   around do |example|
-    old_database_url = ENV.fetch('DATABASE_URL', nil)
-    old_base_url = ENV.fetch('BASE_URL', nil)
-    old_app_base_path = ENV.fetch('APP_BASE_PATH', nil)
+    old_env = ENV.to_h
+    old_github_oauth_client = described_class.github_oauth_client
+    old_discord_oauth_client = described_class.discord_oauth_client
+    old_discord_gateway = described_class.discord_gateway
     ENV['BASE_URL'] = 'https://rank.example'
     ENV.delete('APP_BASE_PATH')
     example.run
   ensure
-    ENV['DATABASE_URL'] = old_database_url
-    ENV['BASE_URL'] = old_base_url
-    ENV['APP_BASE_PATH'] = old_app_base_path
+    ENV.replace(old_env)
+    described_class.set :github_oauth_client, old_github_oauth_client
+    described_class.set :discord_oauth_client, old_discord_oauth_client
+    described_class.set :discord_gateway, old_discord_gateway
   end
 
   it 'renders the Poland ranking with SEO metadata' do
@@ -121,6 +123,95 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(badge_response.body).to include('1st')
     expect(badge_response.body).to include('href="https://rank.example/latest"')
     expect(missing_response.status).to eq(404)
+  end
+
+  # rubocop:disable RSpec/ExampleLength
+  it 'logs ranked GitHub users in and syncs their Discord account', :aggregate_failures do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    ENV['DISCORD_INVITE_CHANNEL_ID'] = 'invite-channel'
+    ENV['DISCORD_ROLE_TOP_10_PL'] = 'role-top-10'
+    ENV['DISCORD_ROLE_TOP_100_PL'] = 'role-top-100'
+    ENV['DISCORD_ROLE_TOP_100_CITY_KRAKOW'] = 'role-krakow'
+    ENV['DISCORD_ROLE_BADGE_TOP_1'] = 'role-gold'
+    github_client = FakeGitHubOAuthClient.new('alice')
+    discord_client = FakeDiscordOAuthClient.new
+    discord_gateway = FakeDiscordGateway.new
+    described_class.set :github_oauth_client, github_client
+    described_class.set :discord_oauth_client, discord_client
+    described_class.set :discord_gateway, discord_gateway
+    request = Rack::MockRequest.new(described_class)
+
+    github_start = request.get('/auth/github')
+    github_state = Rack::Utils.parse_query(URI(github_start.location).query).fetch('state')
+    github_callback = request.get(
+      "/auth/github/callback?code=github-code&state=#{github_state}",
+      'HTTP_COOKIE' => cookie_header(github_start)
+    )
+    profile = request.get('/users/github/alice', 'HTTP_COOKIE' => cookie_header(github_callback))
+
+    expect(github_callback.status).to eq(302)
+    expect(github_callback.location).to eq('http://example.org/users/github/alice')
+    expect(profile.body).to include('Discord access')
+    expect(profile.body).to include('https://discord.gg/invite-channel-once')
+
+    discord_start = request.get('/auth/discord', 'HTTP_COOKIE' => cookie_header(github_callback))
+    discord_state = Rack::Utils.parse_query(URI(discord_start.location).query).fetch('state')
+    discord_callback = request.get(
+      "/auth/discord/callback?code=discord-code&state=#{discord_state}",
+      'HTTP_COOKIE' => cookie_header(discord_start)
+    )
+
+    expect(discord_callback.status).to eq(302)
+    expect(discord_gateway.synced).to include(
+      discord_user_id: 'discord-1',
+      access_token: 'discord-access',
+      github_login: 'alice'
+    )
+    expect(discord_gateway.synced.fetch(:desired_role_ids)).to include('role-top-10', 'role-top-100', 'role-krakow')
+    expect(github_client.exchanged).to eq(['github-code'])
+    expect(discord_client.exchanged).to eq(['discord-code'])
+  end
+  # rubocop:enable RSpec/ExampleLength
+
+  it 'shows a clear page when GitHub login is outside the ranking' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    github_client = FakeGitHubOAuthClient.new('outsider')
+    described_class.set :github_oauth_client, github_client
+    request = Rack::MockRequest.new(described_class)
+
+    github_start = request.get('/auth/github')
+    github_state = Rack::Utils.parse_query(URI(github_start.location).query).fetch('state')
+    github_callback = request.get(
+      "/auth/github/callback?code=github-code&state=#{github_state}",
+      'HTTP_COOKIE' => cookie_header(github_start)
+    )
+    unranked = request.get('/auth/unranked', 'HTTP_COOKIE' => cookie_header(github_callback))
+
+    expect(github_callback.location).to eq('http://example.org/auth/unranked')
+    expect(unranked.body).to include('Ranking profile not found')
+    expect(unranked.body).to include('outsider')
+  end
+
+  it 'logs out and keeps the Discord panel useful when invite creation fails' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    ENV['DISCORD_INVITE_CHANNEL_ID'] = 'invite-channel'
+    github_client = FakeGitHubOAuthClient.new('alice')
+    described_class.set :github_oauth_client, github_client
+    described_class.set :discord_gateway, FailingDiscordGateway.new
+    request = Rack::MockRequest.new(described_class)
+
+    github_start = request.get('/auth/github')
+    github_state = Rack::Utils.parse_query(URI(github_start.location).query).fetch('state')
+    github_callback = request.get(
+      "/auth/github/callback?code=github-code&state=#{github_state}",
+      'HTTP_COOKIE' => cookie_header(github_start)
+    )
+    profile = request.get('/users/github/alice', 'HTTP_COOKIE' => cookie_header(github_callback))
+    logout = request.post('/logout', 'HTTP_COOKIE' => cookie_header(github_callback))
+
+    expect(profile.body).to include('Discord invite is temporarily unavailable.')
+    expect(logout.status).to eq(303)
+    expect(logout.location).to eq('http://example.org/latest')
   end
 
   it 'keeps podium medals on profile pages', :aggregate_failures do
@@ -415,4 +506,79 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       monthly_stars_delta: 5
     }
   end
+
+  def cookie_header(response)
+    Array(response['Set-Cookie']).map { |cookie| cookie.split(';').first }.join('; ')
+  end
+
+  # rubocop:disable Lint/ConstantDefinitionInBlock
+  class FakeGitHubOAuthClient
+    attr_reader :exchanged
+
+    def initialize(login)
+      @login = login
+      @exchanged = []
+    end
+
+    def authorize_url(state:, redirect_uri:)
+      "https://github.example/oauth?state=#{state}&redirect_uri=#{Rack::Utils.escape(redirect_uri)}"
+    end
+
+    def exchange_code(code:, redirect_uri:)
+      exchanged << code
+      "token-for-#{redirect_uri}"
+    end
+
+    def user(_access_token)
+      { 'id' => 1, 'login' => @login }
+    end
+  end
+
+  class FakeDiscordOAuthClient
+    attr_reader :exchanged
+
+    def initialize
+      @exchanged = []
+    end
+
+    def authorize_url(state:, redirect_uri:)
+      "https://discord.example/oauth?state=#{state}&redirect_uri=#{Rack::Utils.escape(redirect_uri)}"
+    end
+
+    def exchange_code(code:, redirect_uri:)
+      exchanged << code
+      { 'access_token' => 'discord-access', 'redirect_uri' => redirect_uri }
+    end
+
+    def user(_access_token)
+      { 'id' => 'discord-1', 'username' => 'alice-discord', 'global_name' => 'Alice Discord' }
+    end
+  end
+
+  class FakeDiscordGateway
+    attr_reader :synced
+
+    def invite_available?(_code)
+      false
+    end
+
+    def create_invite(channel_id:)
+      { code: "#{channel_id}-once", url: "https://discord.gg/#{channel_id}-once" }
+    end
+
+    def sync_member(**attributes)
+      @synced = attributes
+    end
+  end
+
+  class FailingDiscordGateway
+    def invite_available?(_code)
+      raise PolishOpenSourceRank::Web::Auth::DiscordGateway::Error
+    end
+
+    def create_invite(channel_id:)
+      raise PolishOpenSourceRank::Web::Auth::DiscordGateway::Error, channel_id
+    end
+  end
+  # rubocop:enable Lint/ConstantDefinitionInBlock
 end

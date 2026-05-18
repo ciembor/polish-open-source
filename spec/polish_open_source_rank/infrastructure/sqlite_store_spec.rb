@@ -133,7 +133,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     expect(store.latest_period).to eq('2026-04-01')
   end
 
-  it 'classifies user badges as current elite, alumni, or aspiring' do
+  it 'classifies user badges as current elite, alumni, or contender' do
     older_period = PolishOpenSourceRank::Application::MonthPeriod.parse('2026-03')
     store.create_run(older_period)
     store.upsert_user(user_attributes(11, 'alumni', 'Kraków'))
@@ -146,16 +146,63 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     12.times do |index|
       id = index + 1
       login = id == 11 ? 'alumni' : "user#{id}"
-      login = 'aspiring' if id == 12
+      login = 'contender' if id == 12
       store.upsert_user(user_attributes(id, login, 'Kraków'))
       store.record_user_stats(user_stats(id, login, 'Kraków', total_stars: 100 - id, delta: 0, activity: 1))
     end
 
     expect(store.user_profile('github', 'user1').fetch(:elite_badge)).to include(value: '1st', status: 'ranked')
     expect(store.user_profile('github', 'alumni').fetch(:elite_badge)).to include(value: 'alumni', status: 'alumni')
-    expect(store.user_profile('github', 'aspiring').fetch(:elite_badge)).to include(value: 'aspiring',
-                                                                                    status: 'aspiring')
+    expect(store.user_profile('github', 'contender').fetch(:elite_badge)).to include(
+      value: 'contender',
+      status: 'contender'
+    )
   end
+
+  # rubocop:disable RSpec/ExampleLength
+  it 'stores Discord links, one-time invites, and ranking role keys' do
+    store.upsert_user(user_attributes(1, 'alice', 'Kraków'))
+    store.record_user_stats(user_stats(1, 'alice', 'Kraków', total_stars: 100, delta: 0, activity: 1))
+    store.upsert_user(user_attributes(2, 'bob', 'Kraków'))
+    store.record_user_stats(user_stats(2, 'bob', 'Kraków', total_stars: 90, delta: 0, activity: 1))
+    store.upsert_user(user_attributes(3, 'carol', 'Kraków'))
+    store.record_user_stats(user_stats(3, 'carol', 'Kraków', total_stars: 80, delta: 0, activity: 1))
+    (4..11).each do |id|
+      login = "user#{id}"
+      store.upsert_user(user_attributes(id, login, 'Kraków'))
+      store.record_user_stats(user_stats(id, login, 'Kraków', total_stars: 70 - id, delta: 0, activity: 1))
+    end
+
+    store.upsert_discord_connection(
+      platform: 'github',
+      user_github_id: 1,
+      discord_user_id: 'discord-1',
+      discord_username: 'Alice D'
+    )
+    store.record_discord_invite(platform: 'github', user_github_id: 1, code: 'abc', url: 'https://discord.gg/abc')
+    store.record_discord_invite(platform: 'github', user_github_id: 1, code: 'def', url: 'https://discord.gg/def')
+
+    expect(store.discord_connection('github', 1)).to include(discord_user_id: 'discord-1',
+                                                             discord_username: 'Alice D')
+    expect(store.discord_invite('github', 1)).to include(code: 'def', url: 'https://discord.gg/def')
+    expect(store.discord_access('github', 1)).to include(
+      country_rank: 1,
+      city: 'Kraków',
+      city_slug: 'krakow',
+      city_rank: 1,
+      role_keys: contain_exactly(
+        'DISCORD_ROLE_TOP_10_PL',
+        'DISCORD_ROLE_TOP_100_PL',
+        'DISCORD_ROLE_TOP_100_CITY_KRAKOW',
+        'DISCORD_ROLE_BADGE_TOP_1'
+      )
+    )
+    expect(store.discord_access('github', 2).fetch(:badge_role_key)).to eq('DISCORD_ROLE_BADGE_TOP_2')
+    expect(store.discord_access('github', 3).fetch(:badge_role_key)).to eq('DISCORD_ROLE_BADGE_TOP_3')
+    expect(store.discord_access('github', 4).fetch(:badge_role_key)).to eq('DISCORD_ROLE_BADGE_TOP_10')
+    expect(store.discord_access('github', 11).fetch(:badge_role_key)).to eq('DISCORD_ROLE_BADGE_TOP_100')
+  end
+  # rubocop:enable RSpec/ExampleLength
 
   it 'only gives repository badges a visible rank inside the current top 100' do
     store.create_run(period)

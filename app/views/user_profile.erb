@@ -24,6 +24,48 @@
   </div>
 </section>
 
+<% if @discord_panel %>
+  <section class="profile-section" aria-labelledby="profile-discord-heading">
+    <div class="content">
+      <article class="profile-summary discord-panel">
+        <h2 id="profile-discord-heading"><%= h t('users.discord.title') %></h2>
+        <% if @discord_panel[:error] %>
+          <p class="profile-empty"><%= h t('users.discord.invite_unavailable') %></p>
+        <% elsif @discord_panel[:invite] %>
+          <p><%= h t('users.discord.invite_body') %></p>
+          <a class="ranking-action" href="<%= h @discord_panel.fetch(:invite).fetch(:url) %>"><%= h t('users.discord.invite_action') %></a>
+        <% end %>
+
+        <dl class="profile-facts discord-panel__facts">
+          <% access = @discord_panel.fetch(:access) %>
+          <div>
+            <dt><%= h t('users.discord.poland_rank') %></dt>
+            <dd><%= access[:country_rank] ? h("##{access.fetch(:country_rank)}") : h(t('users.summary.unknown')) %></dd>
+          </div>
+          <% if access[:city] %>
+            <div>
+              <dt><%= h t('users.discord.city_rank', city: access.fetch(:city)) %></dt>
+              <dd><%= access[:city_rank] ? h("##{access.fetch(:city_rank)}") : h(t('users.summary.unknown')) %></dd>
+            </div>
+          <% end %>
+          <div>
+            <dt><%= h t('users.discord.status') %></dt>
+            <dd>
+              <% if @discord_panel[:connection] %>
+                <%= h t('users.discord.connected', user: @discord_panel.fetch(:connection).fetch(:discord_username)) %>
+              <% else %>
+                <%= h t('users.discord.not_connected') %>
+              <% end %>
+            </dd>
+          </div>
+        </dl>
+
+        <a class="ranking-action" href="<%= h app_path('/auth/discord') %>"><%= h t('users.discord.connect_action') %></a>
+      </article>
+    </div>
+  </section>
+<% end %>
+
 <section class="profile-section" aria-labelledby="profile-summary-heading">
   <div class="content profile-grid">
     <article class="profile-summary">

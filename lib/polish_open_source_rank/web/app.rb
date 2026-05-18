@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'sinatra/base'
+require 'securerandom'
 
 require_relative 'localization/locale_selector'
 require_relative 'localization/translation_catalog'
@@ -12,6 +13,7 @@ require_relative 'presentation/view_helpers'
 
 module PolishOpenSourceRank
   module Web
+    # rubocop:disable Metrics/ClassLength
     class App < Sinatra::Base
       ENV['TZ'] = 'Europe/Warsaw'
 
@@ -28,6 +30,15 @@ module PolishOpenSourceRank
       set :badge_renderer, Presentation::BadgeRenderer.new
       set :platform_catalog, Presentation::PlatformCatalog.new
       set :ranking_catalog, Presentation::RankingCatalog.new
+      set :github_oauth_client, nil
+      set :discord_oauth_client, nil
+      set :discord_gateway, nil
+      set :discord_role_map, Auth::DiscordRoleMap.new
+      use Rack::Session::Cookie,
+          key: 'polish_open_source_rank.session',
+          path: '/',
+          same_site: :lax,
+          secret: Configuration.load.session_secret
       helpers Presentation::BadgeHelpers
       helpers Presentation::ViewHelpers
 
@@ -63,6 +74,72 @@ module PolishOpenSourceRank
 
       get '/editions' do
         render_editions
+      end
+
+      get '/auth/github' do
+        session[:github_oauth_state] = SecureRandom.hex(24)
+        redirect github_oauth_client.authorize_url(
+          state: session.fetch(:github_oauth_state),
+          redirect_uri: oauth_callback_url('/auth/github/callback')
+        )
+      end
+
+      get '/auth/github/callback' do
+        halt 400 unless secure_oauth_state?(:github_oauth_state)
+
+        access_token = github_oauth_client.exchange_code(
+          code: params.fetch('code'),
+          redirect_uri: oauth_callback_url('/auth/github/callback')
+        )
+        github_user = github_oauth_client.user(access_token)
+        profile = ranked_github_profile(github_user.fetch('login'))
+        unless profile
+          session[:current_user] = nil
+          session[:unranked_github_login] = github_user.fetch('login')
+          redirect app_path('/auth/unranked')
+        end
+
+        session[:current_user] = {
+          platform: 'github',
+          login: profile.fetch(:login),
+          github_id: profile.fetch(:github_id)
+        }
+        redirect app_path(user_profile_path(profile))
+      end
+
+      get '/auth/discord' do
+        redirect app_path('/auth/github') unless current_user
+
+        session[:discord_oauth_state] = SecureRandom.hex(24)
+        redirect discord_oauth_client.authorize_url(
+          state: session.fetch(:discord_oauth_state),
+          redirect_uri: oauth_callback_url('/auth/discord/callback')
+        )
+      end
+
+      get '/auth/discord/callback' do
+        redirect app_path('/auth/github') unless current_user
+        halt 400 unless secure_oauth_state?(:discord_oauth_state)
+
+        token = discord_oauth_client.exchange_code(
+          code: params.fetch('code'),
+          redirect_uri: oauth_callback_url('/auth/discord/callback')
+        )
+        discord_user = discord_oauth_client.user(token.fetch('access_token'))
+        sync_discord_member(discord_user, token.fetch('access_token'))
+        redirect app_path(user_profile_path(current_user))
+      end
+
+      get '/auth/unranked' do
+        @title = t('auth.unranked.title')
+        @description = t('auth.unranked.description')
+        @canonical_path = '/auth/unranked'
+        erb :auth_unranked
+      end
+
+      post '/logout' do
+        session.clear
+        redirect app_path('/latest')
       end
 
       get '/users/:platform/:login' do
@@ -197,6 +274,7 @@ module PolishOpenSourceRank
         @title = "#{display_name} - #{source_name} profile"
         @description = t('users.seo.description', user: display_name, platform: source_name)
         @canonical_path = user_profile_path(@profile)
+        @discord_panel = discord_panel(@profile) if own_profile?(@profile) && @profile[:period_start]
         erb :user_profile
       end
 
@@ -224,6 +302,101 @@ module PolishOpenSourceRank
         content_type 'image/svg+xml'
         headers 'Cache-Control' => 'public, max-age=3600'
         settings.badge_renderer.svg(repository.fetch(:polish_repo_badge), home_url: app_home_url)
+      end
+
+      def ranked_github_profile(login)
+        profile = store.user_profile('github', login, period_start: store.latest_period)
+        profile if profile && profile[:period_start]
+      end
+
+      def current_user
+        session[:current_user]&.transform_keys(&:to_sym)
+      end
+
+      def own_profile?(profile)
+        current_user &&
+          current_user.fetch(:platform) == profile.fetch(:platform) &&
+          current_user.fetch(:github_id).to_i == profile.fetch(:github_id).to_i
+      end
+
+      def discord_panel(profile)
+        invite = current_discord_invite(profile)
+        {
+          invite: invite,
+          connection: store.discord_connection(profile.fetch(:platform), profile.fetch(:github_id)),
+          access: store.discord_access(profile.fetch(:platform), profile.fetch(:github_id), period_start: @period)
+        }
+      rescue Auth::DiscordGateway::Error
+        {
+          invite: nil,
+          connection: store.discord_connection(profile.fetch(:platform), profile.fetch(:github_id)),
+          access: store.discord_access(profile.fetch(:platform), profile.fetch(:github_id), period_start: @period),
+          error: true
+        }
+      end
+
+      def current_discord_invite(profile)
+        existing = store.discord_invite(profile.fetch(:platform), profile.fetch(:github_id))
+        return existing if existing && discord_gateway.invite_available?(existing.fetch(:code))
+
+        invite = discord_gateway.create_invite(channel_id: configuration.discord_invite_channel_id)
+        store.record_discord_invite(
+          platform: profile.fetch(:platform),
+          user_github_id: profile.fetch(:github_id),
+          code: invite.fetch(:code),
+          url: invite.fetch(:url)
+        )
+        invite
+      end
+
+      def sync_discord_member(discord_user, access_token)
+        profile = ranked_github_profile(current_user.fetch(:login))
+        halt 404 unless profile
+
+        store.upsert_discord_connection(
+          platform: profile.fetch(:platform),
+          user_github_id: profile.fetch(:github_id),
+          discord_user_id: discord_user.fetch('id'),
+          discord_username: discord_user['global_name'] || discord_user.fetch('username')
+        )
+        access = store.discord_access(
+          profile.fetch(:platform),
+          profile.fetch(:github_id),
+          period_start: store.latest_period
+        )
+        discord_gateway.sync_member(
+          discord_user_id: discord_user.fetch('id'),
+          access_token: access_token,
+          github_login: profile.fetch(:login),
+          desired_role_ids: discord_role_map.role_ids(access.fetch(:role_keys)),
+          managed_role_ids: discord_role_map.managed_role_ids
+        )
+      end
+
+      def secure_oauth_state?(session_key)
+        expected = session.delete(session_key)
+        given = params.fetch('state', nil)
+        expected && given && expected.bytesize == given.bytesize && Rack::Utils.secure_compare(expected, given)
+      end
+
+      def oauth_callback_url(path)
+        "#{configuration.public_base_url.delete_suffix('/')}#{path}"
+      end
+
+      def github_oauth_client
+        settings.github_oauth_client || Auth::GitHubOAuthClient.new(configuration)
+      end
+
+      def discord_oauth_client
+        settings.discord_oauth_client || Auth::DiscordOAuthClient.new(configuration)
+      end
+
+      def discord_gateway
+        settings.discord_gateway || Auth::DiscordGateway.new(configuration)
+      end
+
+      def discord_role_map
+        settings.discord_role_map
       end
 
       def render_user_badge(platform, login)
@@ -387,5 +560,6 @@ module PolishOpenSourceRank
         Domain::LocationCatalog::CITY_BY_SLUG.fetch(scope)
       end
     end
+    # rubocop:enable Metrics/ClassLength
   end
 end

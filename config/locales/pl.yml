@@ -37,6 +37,15 @@ pl:
     seo:
       description: "Misja, zasady generowania rankingów i wspierane platformy Polish Open Source Rank."
     title: "O Polish Open Source Rank"
+  auth:
+    login:
+      github: "Zaloguj przez GitHub"
+    logout: "Wyloguj"
+    unranked:
+      body: "Przepraszamy, nie znaleźliśmy konta %{login} w aktualnym rankingu. Zaproszenie na Discorda jest dostępne tylko dla rankingowych profili GitHuba."
+      description: "Zalogowane konto GitHub nie znajduje się w aktualnym rankingu."
+      eyebrow: "Logowanie GitHub"
+      title: "Nie znaleziono profilu w rankingu"
   editions:
     action:
       month_ranking: "Ranking miesiąca"
@@ -138,6 +147,17 @@ pl:
     badge:
       alt: "Badge Polish Elite"
       title: "Badge na GitHub"
+    discord:
+      city_rank: "Ranking %{city}"
+      connect_action: "Połącz Discord i zsynchronizuj dostęp"
+      connected: "Połączono jako %{user}"
+      invite_action: "Otwórz jednorazowe zaproszenie Discord"
+      invite_body: "To osobiste zaproszenie można wykorzystać raz. Połącz Discorda, żeby automatycznie ustawić nick na serwerze i role rankingowe."
+      invite_unavailable: "Zaproszenie Discord jest chwilowo niedostępne."
+      not_connected: "Discord niepołączony"
+      poland_rank: "Ranking Polski"
+      status: "Discord"
+      title: "Dostęp do Discorda"
     links:
       homepage: "Strona"
       source_profile: "Profil na %{platform}"

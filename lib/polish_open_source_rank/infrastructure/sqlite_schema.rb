@@ -116,6 +116,28 @@ module PolishOpenSourceRank
             recorded_at TEXT NOT NULL
           );
 
+          CREATE TABLE IF NOT EXISTS discord_connections (
+            platform TEXT NOT NULL,
+            user_github_id INTEGER NOT NULL,
+            discord_user_id TEXT NOT NULL,
+            discord_username TEXT,
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY(platform, user_github_id),
+            UNIQUE(discord_user_id),
+            FOREIGN KEY(platform, user_github_id) REFERENCES users(platform, github_id)
+          );
+
+          CREATE TABLE IF NOT EXISTS discord_invites (
+            platform TEXT NOT NULL,
+            user_github_id INTEGER NOT NULL,
+            code TEXT NOT NULL,
+            url TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            PRIMARY KEY(platform, user_github_id),
+            UNIQUE(code),
+            FOREIGN KEY(platform, user_github_id) REFERENCES users(platform, github_id)
+          );
+
           CREATE INDEX IF NOT EXISTS idx_user_stats_period_country_total
             ON user_monthly_stats(period_start, country, total_stars, platform);
           CREATE INDEX IF NOT EXISTS idx_user_stats_period_city_delta
@@ -128,6 +150,8 @@ module PolishOpenSourceRank
             ON repository_star_observations(platform, repository_github_id, period_start);
           CREATE INDEX IF NOT EXISTS idx_api_request_events_recorded_platform
             ON api_request_events(recorded_at, platform);
+          CREATE INDEX IF NOT EXISTS idx_discord_connections_user
+            ON discord_connections(platform, user_github_id);
 
           INSERT OR IGNORE INTO repository_star_observations(
             period_start, platform, repository_github_id, stargazers_count, observed_at
