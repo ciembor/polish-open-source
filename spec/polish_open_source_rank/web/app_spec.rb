@@ -67,7 +67,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(month_response.body).to include('alice/app')
   end
 
-  it 'renders full top 100 pages for each ranking type' do
+  it 'renders full top 100 pages for each ranking type', :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
 
     user_response = Rack::MockRequest.new(described_class).get('/2026-04/locations/krakow/users/active')
@@ -82,7 +82,10 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(repo_response.body).to include('Top 100 trending repositories')
     expect(latest_user_response.status).to eq(200)
     expect(latest_user_response.body).to include('Stars')
-    expect(latest_user_response.body).to include('/icons/medal-gold.svg')
+    expect(latest_user_response.body).not_to include('/icons/medal-gold.svg')
+    expect(latest_user_response.body).to include('<tr class="first_place">')
+    expect(latest_user_response.body).to include('<tr class="second_place">')
+    expect(latest_user_response.body).to include('<tr class="third_place">')
     expect(latest_city_response.status).to eq(200)
     expect(latest_city_response.body).to include('Top 100 repositories by stars')
     expect(invalid_response.status).to eq(404)
@@ -116,6 +119,15 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(badge_response.body).to include('1st')
     expect(badge_response.body).to include('href="https://rank.example/latest"')
     expect(missing_response.status).to eq(404)
+  end
+
+  it 'keeps podium medals on profile pages', :aggregate_failures do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    request = Rack::MockRequest.new(described_class)
+
+    expect(request.get('/users/github/alice').body).to include('/icons/medal-gold.svg')
+    expect(request.get('/users/github/bob').body).to include('/icons/medal-silver.svg')
+    expect(request.get('/users/github/carol').body).to include('/icons/medal-bronze.svg')
   end
 
   it 'renders repository profile pages and GitHub badges from ranking projects', :aggregate_failures do
