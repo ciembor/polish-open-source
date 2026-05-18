@@ -457,7 +457,7 @@ module PolishOpenSourceRank
 
       def user_elite_badge(platform, user_id, period_start)
         rank = user_elite_rank(platform, user_id, period_start)
-        return { label: 'Polish Elite', value: "#{rank} place", status: 'ranked', rank: rank } if rank && rank <= 10
+        return { label: 'Polish Elite', value: rank_place(rank), status: 'ranked', rank: rank } if rank && rank <= 10
 
         value = historical_user_top_ten?(platform, user_id) ? 'alumni' : 'aspiring'
         { label: 'Polish Elite', value: value, status: value }
@@ -485,9 +485,24 @@ module PolishOpenSourceRank
 
       def repository_badge(platform, repository_id, period_start)
         rank = repository_elite_rank(platform, repository_id, period_start)
-        return { label: 'Polish Repo', value: "#{rank} place", status: 'ranked', rank: rank } if rank && rank <= 100
+        return { label: 'Polish Repo', value: rank_place(rank), status: 'ranked', rank: rank } if rank && rank <= 100
 
         { label: 'Polish Repo', value: nil, status: 'outside_top_100', rank: rank }
+      end
+
+      def rank_place(rank)
+        "#{rank}#{ordinal_suffix(rank)} place"
+      end
+
+      def ordinal_suffix(rank)
+        return 'th' if (11..13).cover?(rank.to_i % 100)
+
+        case rank.to_i % 10
+        when 1 then 'st'
+        when 2 then 'nd'
+        when 3 then 'rd'
+        else 'th'
+        end
       end
 
       def historical_user_top_ten?(platform, user_id)
