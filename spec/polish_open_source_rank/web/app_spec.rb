@@ -82,12 +82,13 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(repo_response.body).to include('Top 100 trending repositories')
     expect(latest_user_response.status).to eq(200)
     expect(latest_user_response.body).to include('Stars')
+    expect(latest_user_response.body).to include('/icons/medal-gold.svg')
     expect(latest_city_response.status).to eq(200)
     expect(latest_city_response.body).to include('Top 100 repositories by stars')
     expect(invalid_response.status).to eq(404)
   end
 
-  it 'renders user profile pages from ranking users' do
+  it 'renders user profile pages from ranking users', :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     request = Rack::MockRequest.new(described_class)
 
@@ -103,7 +104,33 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile_response.body).to include('GitHub profile')
     expect(profile_response.body).to include('Best projects')
     expect(profile_response.body).to include('alice/app')
+    expect(profile_response.body).to include('/icons/medal-gold.svg')
+    expect(profile_response.body).to include('href="/repositories/github/alice/app"')
     expect(profile_response.body).to include('12 345')
+    expect(missing_response.status).to eq(404)
+  end
+
+  it 'renders repository profile pages and GitHub badges from ranking projects', :aggregate_failures do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    request = Rack::MockRequest.new(described_class)
+
+    ranking_response = request.get('/latest/repositories/top')
+    profile_response = request.get('/repositories/github/alice/app')
+    badge_response = request.get('/badges/repositories/github/alice/app.svg')
+    missing_response = request.get('/repositories/github/alice/missing')
+
+    expect(ranking_response.body).to include('href="/repositories/github/alice/app"')
+    expect(profile_response.status).to eq(200)
+    expect(profile_response.body).to include('<title>alice/app - GitHub project</title>')
+    expect(profile_response.body).to include('rel="canonical" href="https://rank.example/repositories/github/alice/app"')
+    expect(profile_response.body).to include('/icons/medal-gold.svg')
+    expect(profile_response.body).to include('GitHub badge')
+    expect(profile_response.body).to include('/badges/repositories/github/alice/app.svg')
+    expect(badge_response.status).to eq(200)
+    expect(badge_response.content_type).to include('image/svg+xml')
+    expect(badge_response.body).to include('Polish Elite')
+    expect(badge_response.body).to include('1 place')
+    expect(badge_response.body).to include('#dc143c')
     expect(missing_response.status).to eq(404)
   end
 
@@ -207,7 +234,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     response = Rack::MockRequest.new(described_class).get('/')
 
     expect(response.body).to include('rel="canonical" href="https://rank.example/polish-open-source-rank/latest"')
-    expect(response.body).to include('href="/polish-open-source-rank/css/application.css?v=20260518-profile"')
+    expect(response.body).to include('href="/polish-open-source-rank/css/application.css?v=20260518-profile2"')
     expect(response.body).to include('src="/polish-open-source-rank/js/navigation.js?v=20260517-menu3"')
     expect(response.body).to include('src="/polish-open-source-rank/icons/github.svg"')
     expect(response.body).to include('href="/polish-open-source-rank/latest/locations/krakow"')
@@ -259,6 +286,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     store.record_user_stats(user_stats(older_period))
     store.upsert_repository(repository_attributes)
     store.record_repository_stats(repository_stats(older_period))
+    seed_extra_ranked_records(store, older_period)
     store.finish_run(older_run_id)
 
     period = PolishOpenSourceRank::Application::MonthPeriod.parse('2026-04')
@@ -268,8 +296,23 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     store.record_user_stats(user_stats(period))
     store.upsert_repository(repository_attributes)
     store.record_repository_stats(repository_stats(period))
+    seed_extra_ranked_records(store, period)
     store.finish_run(run_id)
     path
+  end
+
+  def seed_extra_ranked_records(store, period)
+    [
+      [2, 'bob', 'Bob', 7_000],
+      [3, 'carol', 'Carol', 3_000]
+    ].each do |id, login, name, stars|
+      store.upsert_user(user_attributes(id: id, login: login, name: name, avatar_url: nil))
+      store.record_user_stats(user_stats(period, user_id: id, login: login, total_stars: stars))
+      store.upsert_repository(repository_attributes(id: id + 10, owner_id: id, owner_login: login))
+      store.record_repository_stats(
+        repository_stats(period, repository_id: id + 10, owner_id: id, owner_login: login, stars: stars)
+      )
+    end
   end
 
   def seed_running_database
@@ -289,44 +332,44 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     File.join(Dir.mktmpdir, 'web.sqlite3')
   end
 
-  def user_attributes
+  def user_attributes(id: 1, login: 'alice', name: 'Alice', avatar_url: 'https://avatars.example/alice.png')
     {
-      github_id: 1,
-      login: 'alice',
-      name: 'Alice',
+      github_id: id,
+      login: login,
+      name: name,
       location_raw: 'Krakow, Poland',
       city: 'Kraków',
       country: 'Poland',
-      email: 'alice@example.com',
-      homepage: 'https://alice.example',
-      html_url: 'https://github.com/alice',
-      avatar_url: 'https://avatars.example/alice.png'
+      email: "#{login}@example.com",
+      homepage: "https://#{login}.example",
+      html_url: "https://github.com/#{login}",
+      avatar_url: avatar_url
     }
   end
 
-  def user_stats(period)
+  def user_stats(period, user_id: 1, login: 'alice', total_stars: 12_345)
     {
       period_start: period.start_date.to_s,
-      user_github_id: 1,
-      login: 'alice',
+      user_github_id: user_id,
+      login: login,
       city: 'Kraków',
       country: 'Poland',
       public_repo_count: 1,
-      total_stars: 12_345,
+      total_stars: total_stars,
       monthly_stars_delta: 5,
       public_activity_count: 8
     }
   end
 
-  def repository_attributes
+  def repository_attributes(id: 10, owner_id: 1, owner_login: 'alice')
     {
-      github_id: 10,
-      owner_github_id: 1,
-      owner_login: 'alice',
+      github_id: id,
+      owner_github_id: owner_id,
+      owner_login: owner_login,
       name: 'app',
-      full_name: 'alice/app',
+      full_name: "#{owner_login}/app",
       description: 'Nice Ruby app',
-      html_url: 'https://github.com/alice/app',
+      html_url: "https://github.com/#{owner_login}/app",
       homepage: nil,
       language: 'Ruby',
       fork: false,
@@ -334,15 +377,15 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     }
   end
 
-  def repository_stats(period)
+  def repository_stats(period, repository_id: 10, owner_id: 1, owner_login: 'alice', stars: 12_345)
     {
       period_start: period.start_date.to_s,
-      repository_github_id: 10,
-      owner_github_id: 1,
-      owner_login: 'alice',
+      repository_github_id: repository_id,
+      owner_github_id: owner_id,
+      owner_login: owner_login,
       owner_city: 'Kraków',
       owner_country: 'Poland',
-      stargazers_count: 12_345,
+      stargazers_count: stars,
       monthly_stars_delta: 5
     }
   end

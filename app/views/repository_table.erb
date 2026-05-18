@@ -12,15 +12,18 @@
     <tbody>
       <% rows.each_with_index do |row, index| %>
         <tr>
-          <td><%= index + 1 %></td>
+          <td class="rank-cell">
+            <%= erb :elite_medal, locals: { rank: index + 1 } %>
+            <%= index + 1 %>
+          </td>
           <td>
             <%= erb :platform_icon, locals: { platform: row.fetch(:platform, "github") } %>
-            <a class="primary-link" href="<%= h row.fetch(:html_url) %>"><%= h row.fetch(:full_name) %></a>
+            <a class="primary-link" href="<%= h app_path(repository_profile_path(row)) %>"><%= h row.fetch(:full_name) %></a>
             <% if row[:description] && !row[:description].empty? %>
               <span><%= h row[:description] %></span>
             <% end %>
           </td>
-          <td><%= h row.fetch(:owner_login) %></td>
+          <td><a class="muted-link muted-link--standalone" href="<%= h app_path(user_profile_path(row.merge(login: row.fetch(:owner_login)))) %>"><%= h row.fetch(:owner_login) %></a></td>
           <td class="metric"><%= number(row.fetch(metric)) %></td>
         </tr>
       <% end %>

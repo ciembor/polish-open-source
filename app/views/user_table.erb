@@ -12,7 +12,10 @@
     <tbody>
       <% rows.each_with_index do |row, index| %>
         <tr>
-          <td><%= index + 1 %></td>
+          <td class="rank-cell">
+            <%= erb :elite_medal, locals: { rank: index + 1 } %>
+            <%= index + 1 %>
+          </td>
           <td>
             <%= erb :platform_icon, locals: { platform: row.fetch(:platform, "github") } %>
             <a class="primary-link" href="<%= h app_path(user_profile_path(row)) %>"><%= h row.fetch(:login) %></a>

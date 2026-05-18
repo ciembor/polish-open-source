@@ -58,6 +58,10 @@ pl:
     top_projects: "Top projekty"
     top_users_activity: "Top userzy: aktywność"
     top_users_stars: "Top userzy: gwiazdki"
+  elite:
+    medal_alt: "Medal Polish Elite, miejsce %{rank}"
+    place: "%{rank}. miejsce"
+    rank: "Polish Elite"
   date:
     months:
       - "styczeń"
@@ -118,6 +122,18 @@ pl:
     trending_10_month: "Trending 10 w miesiącu"
     users: "Użytkownicy"
     users_activity_month: "Aktywność w miesiącu"
+  repositories:
+    badge:
+      alt: "Badge Polish Elite"
+      empty: "Ten projekt nie jest jeszcze w rankingu Polish Elite."
+      title: "Badge na GitHub"
+    links:
+      source_project: "Projekt na %{platform}"
+    seo:
+      description: "Publiczny projekt open source %{repository} na %{platform}, z metrykami rankingu i informacjami o właścicielu."
+    summary:
+      owner: "Właściciel"
+      title: "Projekt"
   users:
     avatar_alt: "Zdjęcie profilowe %{user}"
     links:

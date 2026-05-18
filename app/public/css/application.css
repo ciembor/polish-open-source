@@ -342,6 +342,25 @@ td span {
   white-space: nowrap;
 }
 
+.rank-cell {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+
+.elite-medal {
+  display: inline-block;
+  height: 22px;
+  object-fit: contain;
+  vertical-align: -5px;
+  width: 22px;
+}
+
+.elite-medal--large {
+  height: 54px;
+  width: 54px;
+}
+
 .empty-state {
   width: min(760px, calc(100% - 32px));
   margin: 48px auto;
@@ -569,6 +588,10 @@ td span {
   grid-template-columns: 132px minmax(0, 1fr);
 }
 
+.profile-identity--project {
+  grid-template-columns: 104px minmax(0, 1fr);
+}
+
 .profile-avatar {
   background: #eef7f3;
   border: 1px solid var(--line);
@@ -588,9 +611,38 @@ td span {
   justify-content: center;
 }
 
+.project-avatar {
+  align-items: center;
+  background: #eef7f3;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  height: 104px;
+  justify-content: center;
+  width: 104px;
+}
+
+.project-avatar .platform-mark,
+.project-avatar .platform-mark__icon {
+  height: 62px;
+  margin: 0;
+  width: 62px;
+}
+
 .profile-hero h1 {
   font-size: clamp(2.1rem, 5vw, 4.4rem);
   overflow-wrap: anywhere;
+}
+
+.profile-title-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.profile-title-row h1 {
+  margin-bottom: 0;
 }
 
 .profile-login {
@@ -694,6 +746,27 @@ td span {
 
 .project-card p {
   margin-bottom: 0;
+}
+
+.badge-preview {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.badge-preview img {
+  height: 20px;
+  width: auto;
+}
+
+.badge-preview code {
+  background: #fbfbf8;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  padding: 8px 10px;
 }
 
 .monitor-hero {
@@ -980,6 +1053,11 @@ td span {
   }
 
   .profile-avatar {
+    height: 96px;
+    width: 96px;
+  }
+
+  .project-avatar {
     height: 96px;
     width: 96px;
   }
