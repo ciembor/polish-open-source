@@ -310,7 +310,7 @@ tr:last-child td {
 .muted-link {
   color: var(--muted);
   font-size: 0.84rem;
-  margin-left: 8px;
+  margin-right: 8px;
 }
 
 .muted-link--standalone {
@@ -343,8 +343,12 @@ td span {
 }
 
 .rank-cell {
+  white-space: nowrap;
+}
+
+.rank-mark {
   align-items: center;
-  display: flex;
+  display: inline-flex;
   gap: 6px;
 }
 

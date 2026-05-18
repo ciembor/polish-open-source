@@ -491,7 +491,7 @@ module PolishOpenSourceRank
       end
 
       def rank_place(rank)
-        "#{rank}#{ordinal_suffix(rank)} place"
+        "#{rank}#{ordinal_suffix(rank)}"
       end
 
       def ordinal_suffix(rank)
