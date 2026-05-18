@@ -11,10 +11,10 @@
     </thead>
     <tbody>
       <% rows.each_with_index do |row, index| %>
-        <tr>
+        <% place_class = { 1 => "first_place", 2 => "second_place", 3 => "third_place" }[index + 1] %>
+        <tr<% if place_class %> class="<%= h place_class %>"<% end %>>
           <td class="rank-cell">
             <span class="rank-mark">
-              <%= erb :elite_medal, locals: { rank: index + 1 } %>
               <%= index + 1 %>
             </span>
           </td>
