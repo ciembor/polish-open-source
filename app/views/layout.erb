@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="<%= h(@robots || 'index,follow') %>">
     <meta name="description" content="<%= h @description %>">
+    <link rel="icon" type="image/png" href="<%= h app_path('/icons/favicon.png') %>">
     <link rel="canonical" href="<%= h canonical_url %>">
     <link rel="stylesheet" href="<%= h app_path('/css/application.css?v=20260518-monitor') %>">
     <% if @refresh_seconds %>
