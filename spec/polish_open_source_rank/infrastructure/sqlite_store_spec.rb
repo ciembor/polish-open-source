@@ -113,7 +113,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     store.finish_run(run_id)
   end
 
-  it 'uses the newest finished period with stored rankings as the latest public period' do
+  it 'uses the newest period with stored rankings as the latest public period' do
     ranked_run_id = store.create_run(period)
     store.upsert_user(user_attributes(10, 'alice', 'Kraków'))
     store.record_user_stats(user_stats(10, 'alice', 'Kraków', total_stars: 30, delta: 4, activity: 9))
@@ -121,6 +121,14 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
 
     empty_period = PolishOpenSourceRank::Application::MonthPeriod.parse('2026-05')
     store.finish_run(store.create_run(empty_period))
+
+    expect(store.latest_period).to eq('2026-04-01')
+  end
+
+  it 'uses a running period with stored rankings as the latest public period' do
+    store.create_run(period)
+    store.upsert_user(user_attributes(10, 'alice', 'Kraków'))
+    store.record_user_stats(user_stats(10, 'alice', 'Kraków', total_stars: 30, delta: 4, activity: 9))
 
     expect(store.latest_period).to eq('2026-04-01')
   end

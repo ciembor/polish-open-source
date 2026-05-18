@@ -56,13 +56,13 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('rel="canonical" href="https://rank.example/2026-04/locations/krakow"')
   end
 
-  it 'renders explicit month slugs while the snapshot is still running' do
+  it 'renders latest and explicit month slugs while the snapshot is still running with stored stats' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_running_database}"
 
     latest_response = Rack::MockRequest.new(described_class).get('/latest')
     month_response = Rack::MockRequest.new(described_class).get('/2026-04')
 
-    expect(latest_response.body).to include('No ranking data')
+    expect(latest_response.body).to include('alice/app')
     expect(month_response.status).to eq(200)
     expect(month_response.body).to include('alice/app')
   end
