@@ -215,7 +215,11 @@ module PolishOpenSourceRank
       end
 
       def latest_period
-        fetch_value("SELECT MAX(period_start) FROM sync_runs WHERE status = 'finished'")
+        fetch_value(<<~SQL)
+          SELECT MAX(period_start)
+          FROM sync_runs
+          WHERE status = 'finished' AND #{edition_period_condition}
+        SQL
       end
 
       def completed_periods
