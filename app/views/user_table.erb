@@ -17,10 +17,12 @@
             <% end %>
             <div class="ranking-list__meta">
               <span><%= h location %></span>
-              <a class="muted-link" href="<%= h row.fetch(:html_url) %>"><%= h platform_name(row.fetch(:platform, "github")) %></a>
-              <% if row[:homepage] && !row[:homepage].empty? %>
-                <a class="muted-link" href="<%= h row[:homepage] %>">www</a>
-              <% end %>
+              <span class="ranking-list__links">
+                <a class="muted-link" href="<%= h row.fetch(:html_url) %>"><%= h platform_name(row.fetch(:platform, "github")) %></a>
+                <% if row[:homepage] && !row[:homepage].empty? %>
+                  <a class="muted-link" href="<%= h row[:homepage] %>">www</a>
+                <% end %>
+              </span>
             </div>
           </div>
           <span class="metric" title="<%= h metric_label %>" aria-label="<%= h metric_label %>: <%= h number(row.fetch(metric)) %>"><%= number(row.fetch(metric)) %></span>

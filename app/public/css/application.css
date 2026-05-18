@@ -64,6 +64,18 @@ a {
   text-decoration: none;
 }
 
+.nav-form {
+  margin: 0;
+}
+
+.nav__button {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
 .nav-menu {
   display: inline-block;
   position: relative;
@@ -177,7 +189,7 @@ a {
 
 .hero {
   border-bottom: 1px solid var(--line);
-  background: linear-gradient(110deg, #ffffff 0%, #eef7f3 52%, #fff7ed 100%);
+  background: linear-gradient(110deg, #ffffff 0%, #f7eeee 52%, #ffeded 100%);
 }
 
 .hero__inner {
@@ -278,7 +290,7 @@ h3 {
 }
 
 .ranking-list__title {
-  align-items: baseline;
+  align-items: center;
   display: flex;
 }
 
@@ -310,15 +322,31 @@ h3 {
 .ranking-list__meta {
   align-items: center;
   color: var(--muted);
+  display: grid;
+  gap: 0 8px;
+  grid-template-columns: minmax(0, 1fr) max-content;
+}
+
+.ranking-list__links {
   display: flex;
   flex-wrap: wrap;
   gap: 0 8px;
+  justify-content: flex-end;
 }
 
 .ranking-list__meta span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.ranking-list__meta .ranking-list__links {
+  overflow: visible;
+  white-space: normal;
+}
+
+.ranking-list__links .muted-link {
+  margin-right: 0;
 }
 
 .ranking-list__empty {
@@ -737,6 +765,14 @@ h3 {
   border-radius: 8px;
   min-width: 0;
   padding: 20px;
+}
+
+.discord-panel {
+  max-width: 760px;
+}
+
+.discord-panel__facts {
+  margin-top: 16px;
 }
 
 .profile-facts,

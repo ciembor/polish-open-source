@@ -322,6 +322,67 @@ module PolishOpenSourceRank
         execute(API_REQUEST_INSERT_SQL, [platform, path, status, recorded_at.iso8601])
       end
 
+      def upsert_discord_connection(platform:, user_github_id:, discord_user_id:, discord_username:)
+        execute(<<~SQL, [platform, user_github_id, discord_user_id, discord_username, Time.now.utc.iso8601])
+          INSERT INTO discord_connections(
+            platform, user_github_id, discord_user_id, discord_username, updated_at
+          )
+          VALUES (?, ?, ?, ?, ?)
+          ON CONFLICT(platform, user_github_id) DO UPDATE SET
+            discord_user_id = excluded.discord_user_id,
+            discord_username = excluded.discord_username,
+            updated_at = excluded.updated_at
+        SQL
+      end
+
+      def discord_connection(platform, user_github_id)
+        fetch_all(<<~SQL, [platform, user_github_id]).first
+          SELECT discord_user_id, discord_username, updated_at
+          FROM discord_connections
+          WHERE platform = ? AND user_github_id = ?
+          LIMIT 1
+        SQL
+      end
+
+      def record_discord_invite(platform:, user_github_id:, code:, url:)
+        execute(<<~SQL, [platform, user_github_id, code, url, Time.now.utc.iso8601])
+          INSERT INTO discord_invites(platform, user_github_id, code, url, created_at)
+          VALUES (?, ?, ?, ?, ?)
+          ON CONFLICT(platform, user_github_id) DO UPDATE SET
+            code = excluded.code,
+            url = excluded.url,
+            created_at = excluded.created_at
+        SQL
+      end
+
+      def discord_invite(platform, user_github_id)
+        fetch_all(<<~SQL, [platform, user_github_id]).first
+          SELECT code, url, created_at
+          FROM discord_invites
+          WHERE platform = ? AND user_github_id = ?
+          LIMIT 1
+        SQL
+      end
+
+      def discord_access(platform, user_github_id, period_start: latest_period)
+        rank = user_country_rank(platform, user_github_id, period_start)
+        city = user_city(platform, user_github_id, period_start)
+        city_slug = city_slug_for(city)
+        city_rank = city && user_city_rank(platform, user_github_id, city, period_start)
+        role_keys = discord_access_role_keys(rank, city_slug, city_rank)
+        badge_role_key = discord_badge_role_key(rank)
+
+        {
+          country_rank: rank,
+          city: city,
+          city_slug: city_slug,
+          city_rank: city_rank,
+          role_keys: [*role_keys, badge_role_key].compact,
+          access_role_keys: role_keys,
+          badge_role_key: badge_role_key
+        }
+      end
+
       private
 
       attr_reader :path
@@ -440,26 +501,14 @@ module PolishOpenSourceRank
       end
 
       def user_elite_rank(platform, user_id, period_start)
-        return unless period_start
-
-        fetch_value(<<~SQL, [period_start, platform, user_id])
-          SELECT elite_rank
-          FROM (
-            SELECT stats.platform, stats.user_github_id,
-                   RANK() OVER (ORDER BY stats.total_stars DESC, stats.platform ASC, stats.login COLLATE NOCASE ASC)
-                     AS elite_rank
-            FROM user_monthly_stats stats
-            WHERE stats.period_start = ? AND stats.country = 'Poland'
-          )
-          WHERE platform = ? AND user_github_id = ?
-        SQL
+        user_country_rank(platform, user_id, period_start)
       end
 
       def user_elite_badge(platform, user_id, period_start)
         rank = user_elite_rank(platform, user_id, period_start)
         return { label: 'Polish Elite', value: rank_place(rank), status: 'ranked', rank: rank } if rank && rank <= 10
 
-        value = historical_user_top_ten?(platform, user_id) ? 'alumni' : 'aspiring'
+        value = historical_user_top_ten?(platform, user_id) ? 'alumni' : 'contender'
         { label: 'Polish Elite', value: value, status: value }
       end
 
@@ -520,6 +569,77 @@ module PolishOpenSourceRank
           WHERE platform = ? AND user_github_id = ? AND elite_rank <= 10
           LIMIT 1
         SQL
+      end
+
+      def user_country_rank(platform, user_id, period_start)
+        return unless period_start
+
+        fetch_value(<<~SQL, [period_start, platform, user_id])
+          SELECT country_rank
+          FROM (
+            SELECT stats.platform, stats.user_github_id,
+                   RANK() OVER (ORDER BY stats.total_stars DESC, stats.platform ASC, stats.login COLLATE NOCASE ASC)
+                     AS country_rank
+            FROM user_monthly_stats stats
+            WHERE stats.period_start = ? AND stats.country = 'Poland'
+          )
+          WHERE platform = ? AND user_github_id = ?
+        SQL
+      end
+
+      def user_city(platform, user_id, period_start)
+        return unless period_start
+
+        fetch_value(<<~SQL, [period_start, platform, user_id])
+          SELECT city
+          FROM user_monthly_stats
+          WHERE period_start = ? AND platform = ? AND user_github_id = ?
+          LIMIT 1
+        SQL
+      end
+
+      def user_city_rank(platform, user_id, city, period_start)
+        return unless city && period_start
+
+        fetch_value(<<~SQL, [period_start, city, platform, user_id])
+          SELECT city_rank
+          FROM (
+            SELECT stats.platform, stats.user_github_id,
+                   RANK() OVER (ORDER BY stats.total_stars DESC, stats.platform ASC, stats.login COLLATE NOCASE ASC)
+                     AS city_rank
+            FROM user_monthly_stats stats
+            WHERE stats.period_start = ? AND stats.city = ?
+          )
+          WHERE platform = ? AND user_github_id = ?
+        SQL
+      end
+
+      def city_slug_for(city)
+        Domain::LocationCatalog::CITIES.find { |candidate| candidate.fetch(:name) == city }&.fetch(:slug)
+      end
+
+      def discord_access_role_keys(country_rank, city_slug, city_rank)
+        [].tap do |keys|
+          add_discord_role_key(keys, 'DISCORD_ROLE_TOP_10_PL', country_rank, 10)
+          add_discord_role_key(keys, 'DISCORD_ROLE_TOP_100_PL', country_rank, 100)
+          if city_slug
+            add_discord_role_key(keys, "DISCORD_ROLE_TOP_100_CITY_#{city_slug.upcase.tr('-', '_')}", city_rank, 100)
+          end
+        end
+      end
+
+      def add_discord_role_key(keys, role_key, rank, limit)
+        keys << role_key if rank && rank <= limit
+      end
+
+      def discord_badge_role_key(country_rank)
+        case country_rank
+        when 1 then 'DISCORD_ROLE_BADGE_TOP_1'
+        when 2 then 'DISCORD_ROLE_BADGE_TOP_2'
+        when 3 then 'DISCORD_ROLE_BADGE_TOP_3'
+        when 4..10 then 'DISCORD_ROLE_BADGE_TOP_10'
+        when 11..100 then 'DISCORD_ROLE_BADGE_TOP_100'
+        end
       end
 
       def bounded_limit(limit)

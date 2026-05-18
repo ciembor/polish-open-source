@@ -43,6 +43,38 @@ module PolishOpenSourceRank
       ENV.fetch('GITHUB_BASE_URL', 'https://api.github.com')
     end
 
+    def github_oauth_client_id
+      ENV.fetch('GITHUB_OAUTH_CLIENT_ID')
+    end
+
+    def github_oauth_client_secret
+      ENV.fetch('GITHUB_OAUTH_CLIENT_SECRET')
+    end
+
+    def discord_oauth_client_id
+      ENV.fetch('DISCORD_OAUTH_CLIENT_ID')
+    end
+
+    def discord_oauth_client_secret
+      ENV.fetch('DISCORD_OAUTH_CLIENT_SECRET')
+    end
+
+    def discord_bot_token
+      ENV.fetch('DISCORD_BOT_TOKEN')
+    end
+
+    def discord_guild_id
+      ENV.fetch('DISCORD_GUILD_ID')
+    end
+
+    def discord_invite_channel_id
+      ENV.fetch('DISCORD_INVITE_CHANNEL_ID')
+    end
+
+    def session_secret
+      ENV.fetch('SESSION_SECRET', 'local-development-session-secret-for-polish-open-source-rank-auth-flows')
+    end
+
     def gitlab_base_url
       ENV.fetch('GITLAB_BASE_URL', 'https://gitlab.com/api/v4')
     end
