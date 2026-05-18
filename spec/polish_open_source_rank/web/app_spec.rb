@@ -94,6 +94,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     ranking_response = request.get('/latest/users/top')
     profile_response = request.get('/users/github/alice')
+    badge_response = request.get('/badges/users/github/alice.svg')
     missing_response = request.get('/users/github/missing')
 
     expect(ranking_response.body).to include('href="/users/github/alice"')
@@ -103,10 +104,17 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile_response.body).to include('src="https://avatars.example/alice.png"')
     expect(profile_response.body).to include('GitHub profile')
     expect(profile_response.body).to include('Best projects')
+    expect(profile_response.body).to include('/badges/users/github/alice.svg')
+    expect(profile_response.body).to include('[![Polish Elite badge](https://rank.example/badges/users/github/alice.svg)]')
     expect(profile_response.body).to include('alice/app')
     expect(profile_response.body).to include('/icons/medal-gold.svg')
     expect(profile_response.body).to include('href="/repositories/github/alice/app"')
     expect(profile_response.body).to include('12 345')
+    expect(badge_response.status).to eq(200)
+    expect(badge_response.content_type).to include('image/svg+xml')
+    expect(badge_response.body).to include('Polish Elite')
+    expect(badge_response.body).to include('1 place')
+    expect(badge_response.body).to include('href="https://rank.example/latest"')
     expect(missing_response.status).to eq(404)
   end
 
@@ -117,6 +125,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     ranking_response = request.get('/latest/repositories/top')
     profile_response = request.get('/repositories/github/alice/app')
     badge_response = request.get('/badges/repositories/github/alice/app.svg')
+    short_badge_response = request.get('/badges/repositories/alice/app.svg')
     missing_response = request.get('/repositories/github/alice/missing')
 
     expect(ranking_response.body).to include('href="/repositories/github/alice/app"')
@@ -126,11 +135,14 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile_response.body).to include('/icons/medal-gold.svg')
     expect(profile_response.body).to include('GitHub badge')
     expect(profile_response.body).to include('/badges/repositories/github/alice/app.svg')
+    expect(profile_response.body).to include('[![Polish Repo badge](https://rank.example/badges/repositories/github/alice/app.svg)]')
     expect(badge_response.status).to eq(200)
     expect(badge_response.content_type).to include('image/svg+xml')
-    expect(badge_response.body).to include('Polish Elite')
+    expect(badge_response.body).to include('Polish Repo')
     expect(badge_response.body).to include('1 place')
     expect(badge_response.body).to include('#dc143c')
+    expect(badge_response.body).to include('href="https://rank.example/latest"')
+    expect(short_badge_response.status).to eq(200)
     expect(missing_response.status).to eq(404)
   end
 

@@ -283,16 +283,18 @@ module PolishOpenSourceRank
         user = fetch_user_profile(platform, login, period_start)
         return unless user
 
+        public_period = user[:period_start] || period_start
         user.merge(
           elite_rank: user_elite_rank(
             user.fetch(:platform),
             user.fetch(:github_id),
-            user[:period_start] || period_start
+            public_period
           ),
+          elite_badge: user_elite_badge(user.fetch(:platform), user.fetch(:github_id), public_period),
           repositories: top_user_repositories(
             user.fetch(:platform),
             user.fetch(:github_id),
-            user[:period_start] || period_start
+            public_period
           )
         )
       end
@@ -301,12 +303,14 @@ module PolishOpenSourceRank
         repository = fetch_repository_profile(platform, "#{owner}/#{name}", period_start)
         return unless repository
 
+        public_period = repository[:period_start] || period_start
         repository.merge(
           elite_rank: repository_elite_rank(
             repository.fetch(:platform),
             repository.fetch(:github_id),
-            repository[:period_start] || period_start
-          )
+            public_period
+          ),
+          polish_repo_badge: repository_badge(repository.fetch(:platform), repository.fetch(:github_id), public_period)
         )
       end
 
@@ -451,6 +455,14 @@ module PolishOpenSourceRank
         SQL
       end
 
+      def user_elite_badge(platform, user_id, period_start)
+        rank = user_elite_rank(platform, user_id, period_start)
+        return { label: 'Polish Elite', value: "#{rank} place", status: 'ranked', rank: rank } if rank && rank <= 10
+
+        value = historical_user_top_ten?(platform, user_id) ? 'alumni' : 'aspiring'
+        { label: 'Polish Elite', value: value, status: value }
+      end
+
       def repository_elite_rank(platform, repository_id, period_start)
         return unless period_start
 
@@ -468,6 +480,30 @@ module PolishOpenSourceRank
             WHERE stats.period_start = ? AND stats.owner_country = 'Poland'
           )
           WHERE platform = ? AND repository_github_id = ?
+        SQL
+      end
+
+      def repository_badge(platform, repository_id, period_start)
+        rank = repository_elite_rank(platform, repository_id, period_start)
+        return { label: 'Polish Repo', value: "#{rank} place", status: 'ranked', rank: rank } if rank && rank <= 100
+
+        { label: 'Polish Repo', value: nil, status: 'outside_top_100', rank: rank }
+      end
+
+      def historical_user_top_ten?(platform, user_id)
+        !fetch_value(<<~SQL, [platform, user_id]).nil?
+          SELECT 1
+          FROM (
+            SELECT stats.period_start, stats.platform, stats.user_github_id,
+                   RANK() OVER (
+                     PARTITION BY stats.period_start
+                     ORDER BY stats.total_stars DESC, stats.platform ASC, stats.login COLLATE NOCASE ASC
+                   ) AS elite_rank
+            FROM user_monthly_stats stats
+            WHERE stats.country = 'Poland'
+          )
+          WHERE platform = ? AND user_github_id = ? AND elite_rank <= 10
+          LIMIT 1
         SQL
       end
 
