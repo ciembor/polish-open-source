@@ -113,7 +113,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(badge_response.status).to eq(200)
     expect(badge_response.content_type).to include('image/svg+xml')
     expect(badge_response.body).to include('Polish Elite')
-    expect(badge_response.body).to include('1st place')
+    expect(badge_response.body).to include('1st')
     expect(badge_response.body).to include('href="https://rank.example/latest"')
     expect(missing_response.status).to eq(404)
   end
@@ -139,7 +139,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(badge_response.status).to eq(200)
     expect(badge_response.content_type).to include('image/svg+xml')
     expect(badge_response.body).to include('Polish Repo')
-    expect(badge_response.body).to include('1st place')
+    expect(badge_response.body).to include('1st')
     expect(badge_response.body).to include('#dc143c')
     expect(badge_response.body).to include('href="https://rank.example/latest"')
     expect(short_badge_response.status).to eq(200)

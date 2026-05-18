@@ -13,8 +13,10 @@
       <% rows.each_with_index do |row, index| %>
         <tr>
           <td class="rank-cell">
-            <%= erb :elite_medal, locals: { rank: index + 1 } %>
-            <%= index + 1 %>
+            <span class="rank-mark">
+              <%= erb :elite_medal, locals: { rank: index + 1 } %>
+              <%= index + 1 %>
+            </span>
           </td>
           <td>
             <%= erb :platform_icon, locals: { platform: row.fetch(:platform, "github") } %>
