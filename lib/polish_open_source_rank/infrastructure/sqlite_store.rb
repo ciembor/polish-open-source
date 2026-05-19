@@ -401,9 +401,14 @@ module PolishOpenSourceRank
 
       def database
         @database ||= SQLite3::Database.new(path.to_s).tap do |connection|
-          connection.results_as_hash = true
-          connection.busy_timeout = 30_000
+          configure_connection(connection)
         end
+      end
+
+      def configure_connection(connection)
+        connection.results_as_hash = true
+        connection.busy_timeout = 120_000
+        connection.execute('PRAGMA foreign_keys = ON')
       end
 
       def create_schema

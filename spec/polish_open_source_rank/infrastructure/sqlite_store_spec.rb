@@ -10,12 +10,14 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     connection = instance_double(SQLite3::Database)
     allow(connection).to receive(:results_as_hash=)
     allow(connection).to receive(:busy_timeout=)
+    allow(connection).to receive(:execute)
     allow(SQLite3::Database).to receive(:new).with(pathname.to_s).and_return(connection)
 
     described_class.new(pathname).send(:database)
 
     expect(connection).to have_received(:results_as_hash=).with(true)
-    expect(connection).to have_received(:busy_timeout=).with(30_000)
+    expect(connection).to have_received(:busy_timeout=).with(120_000)
+    expect(connection).to have_received(:execute).with('PRAGMA foreign_keys = ON')
   end
 
   it 'stores sync progress, snapshots, and scoped rankings' do

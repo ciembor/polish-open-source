@@ -142,10 +142,14 @@ module PolishOpenSourceRank
             ON user_monthly_stats(period_start, country, total_stars, platform);
           CREATE INDEX IF NOT EXISTS idx_user_stats_period_city_delta
             ON user_monthly_stats(period_start, city, monthly_stars_delta, platform);
+          CREATE INDEX IF NOT EXISTS idx_candidate_users_period_platform_status_login
+            ON candidate_users(period_start, platform, status, login);
           CREATE INDEX IF NOT EXISTS idx_repo_stats_period_country_total
             ON repository_monthly_stats(period_start, owner_country, stargazers_count, platform);
           CREATE INDEX IF NOT EXISTS idx_repo_stats_period_city_delta
             ON repository_monthly_stats(period_start, owner_city, monthly_stars_delta, platform);
+          CREATE INDEX IF NOT EXISTS idx_repo_stats_period_platform_owner
+            ON repository_monthly_stats(period_start, platform, owner_github_id);
           CREATE INDEX IF NOT EXISTS idx_repo_star_observations_repo_period
             ON repository_star_observations(platform, repository_github_id, period_start);
           CREATE INDEX IF NOT EXISTS idx_api_request_events_recorded_platform
