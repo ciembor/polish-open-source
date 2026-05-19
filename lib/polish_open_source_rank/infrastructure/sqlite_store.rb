@@ -364,6 +364,18 @@ module PolishOpenSourceRank
         SQL
       end
 
+      def discord_invite_profile(code)
+        fetch_all(<<~SQL, [code]).first
+          SELECT users.platform, users.github_id, users.login
+          FROM discord_invites
+          JOIN users
+            ON users.platform = discord_invites.platform
+           AND users.github_id = discord_invites.user_github_id
+          WHERE discord_invites.code = ?
+          LIMIT 1
+        SQL
+      end
+
       def discord_access(platform, user_github_id, period_start: latest_period)
         rank = user_country_rank(platform, user_github_id, period_start)
         city = user_city(platform, user_github_id, period_start)

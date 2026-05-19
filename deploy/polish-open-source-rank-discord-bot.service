@@ -1,0 +1,17 @@
+[Unit]
+Description=Polish Open Source Rank Discord bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=10
+WorkingDirectory=/home/ciembor/polish-open-source-rank
+ExecStartPre=-/usr/bin/podman rm -f polish-open-source-rank-discord-bot
+ExecStart=/usr/bin/podman run --name=polish-open-source-rank-discord-bot --env-file /home/ciembor/polish-open-source-rank/.env.local -e RACK_ENV=production -e APP_BASE_PATH=/polish-open-source-rank -e BASE_URL=https://maciej-ciemborowicz.eu/polish-open-source-rank -v /home/ciembor/polish-open-source-rank/db:/app/db -v /home/ciembor/polish-open-source-rank/log:/app/log localhost/polish-open-source-rank:latest bundle exec ruby bin/discord_bot
+ExecStop=/usr/bin/podman stop --time 30 polish-open-source-rank-discord-bot
+ExecStopPost=-/usr/bin/podman rm -f polish-open-source-rank-discord-bot
+
+[Install]
+WantedBy=multi-user.target

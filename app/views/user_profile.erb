@@ -48,19 +48,7 @@
               <dd><%= access[:city_rank] ? h("##{access.fetch(:city_rank)}") : h(t('users.summary.unknown')) %></dd>
             </div>
           <% end %>
-          <div>
-            <dt><%= h t('users.discord.status') %></dt>
-            <dd>
-              <% if @discord_panel[:connection] %>
-                <%= h t('users.discord.connected', user: @discord_panel.fetch(:connection).fetch(:discord_username)) %>
-              <% else %>
-                <%= h t('users.discord.not_connected') %>
-              <% end %>
-            </dd>
-          </div>
         </dl>
-
-        <a class="ranking-action" href="<%= h app_path('/auth/discord') %>"><%= h t('users.discord.connect_action') %></a>
       </article>
     </div>
   </section>

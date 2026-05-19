@@ -185,6 +185,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     expect(store.discord_connection('github', 1)).to include(discord_user_id: 'discord-1',
                                                              discord_username: 'Alice D')
     expect(store.discord_invite('github', 1)).to include(code: 'def', url: 'https://discord.gg/def')
+    expect(store.discord_invite_profile('def')).to include(platform: 'github', github_id: 1, login: 'alice')
     expect(store.discord_access('github', 1)).to include(
       country_rank: 1,
       city: 'Kraków',
