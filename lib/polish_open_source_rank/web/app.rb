@@ -2,6 +2,7 @@
 
 require 'sinatra/base'
 require 'securerandom'
+require 'digest'
 
 require_relative 'localization/locale_selector'
 require_relative 'localization/translation_catalog'
@@ -30,6 +31,7 @@ module PolishOpenSourceRank
       set :badge_renderer, Presentation::BadgeRenderer.new
       set :platform_catalog, Presentation::PlatformCatalog.new
       set :ranking_catalog, Presentation::RankingCatalog.new
+      set :static_cache_control, [:public, :immutable, { max_age: 31_536_000 }]
       set :github_oauth_client, nil
       set :discord_oauth_client, nil
       set :discord_gateway, nil
@@ -43,6 +45,7 @@ module PolishOpenSourceRank
       helpers Presentation::ViewHelpers
 
       before do
+        no_store! if auth_path?
         @locale = settings.locale_selector.select(
           params: params,
           cookies: request.cookies,
@@ -69,6 +72,7 @@ module PolishOpenSourceRank
         @title = t('about.title')
         @description = t('about.seo.description')
         @canonical_path = '/about'
+        public_html_cache!('about')
         erb :about
       end
 
@@ -131,6 +135,7 @@ module PolishOpenSourceRank
       end
 
       get '/auth/unranked' do
+        no_store!
         @title = t('auth.unranked.title')
         @description = t('auth.unranked.description')
         @canonical_path = '/auth/unranked'
@@ -138,6 +143,7 @@ module PolishOpenSourceRank
       end
 
       post '/logout' do
+        no_store!
         session.clear
         redirect app_path('/latest')
       end
@@ -199,6 +205,7 @@ module PolishOpenSourceRank
       end
 
       get '/healthz' do
+        headers 'Cache-Control' => 'no-store'
         'ok'
       end
 
@@ -222,8 +229,105 @@ module PolishOpenSourceRank
 
       private
 
+      def auth_path?
+        request.path_info.start_with?('/auth/') || request.path_info == '/auth/github' ||
+          request.path_info == '/auth/discord' || request.path_info == '/logout'
+      end
+
+      def no_store!
+        headers 'Cache-Control' => 'no-store'
+      end
+
+      def public_html_cache!(*parts)
+        cache_response!(
+          public_cache_allowed? ? 'public, max-age=0, must-revalidate' : 'private, no-cache',
+          'html',
+          current_locale,
+          html_revision,
+          *parts
+        )
+      end
+
+      def profile_cache!(profile)
+        cache_control = own_profile?(profile) ? 'private, no-cache' : 'public, max-age=0, must-revalidate'
+        cache_response!(
+          cache_control,
+          'profile',
+          current_locale,
+          html_revision,
+          profile.fetch(:platform),
+          profile.fetch(:github_id),
+          @period,
+          public_cache_revision(@period)
+        )
+      end
+
+      def public_badge_cache!(*parts)
+        period = parts.last
+        cache_response!(
+          'public, max-age=300, stale-while-revalidate=3600',
+          'badge',
+          *parts,
+          public_cache_revision(period)
+        )
+      end
+
+      def cache_response!(cache_control, *etag_parts)
+        headers 'Cache-Control' => cache_control, 'ETag' => cache_etag(*etag_parts), 'Vary' => cache_vary_header
+        halt 304 if request.get? && etag_matches?(response.headers.fetch('ETag'))
+      end
+
+      def cache_etag(*parts)
+        %("#{Digest::SHA256.hexdigest(parts.compact.join('|'))}")
+      end
+
+      def etag_matches?(etag)
+        request.get_header('HTTP_IF_NONE_MATCH').to_s.split(',').map(&:strip).include?(etag)
+      end
+
+      def public_cache_allowed?
+        current_user.nil?
+      end
+
+      def cache_vary_header
+        'Accept-Language, Cookie'
+      end
+
+      def public_cache_revision(period)
+        store.public_cache_revision(period) || 'empty'
+      end
+
+      def latest_public_cache_key
+        period = store.latest_period
+        "#{period}:#{public_cache_revision(period)}"
+      end
+
+      def html_revision
+        files_revision(
+          'app/views/layout.erb',
+          'app/views/about.erb',
+          'app/views/editions.erb',
+          'app/views/ranking_detail.erb',
+          'app/views/rankings.erb',
+          'app/views/repository_profile.erb',
+          'app/views/user_profile.erb',
+          'app/public/css/application.css',
+          "config/locales/#{current_locale}.yml"
+        )
+      end
+
+      def files_revision(*relative_paths)
+        relative_paths.map { |path| PolishOpenSourceRank.root.join(path).mtime.to_i }.max
+      end
+
       def locale_cookie_path
         configuration.app_base_path.empty? ? '/' : configuration.app_base_path
+      end
+
+      def asset_path(path)
+        public_path = PolishOpenSourceRank.root.join('app/public', path.delete_prefix('/'))
+        version = public_path.file? ? public_path.mtime.to_i : Time.now.to_i
+        app_path("#{path}?v=#{version}")
       end
 
       def render_city(period_slug, slug)
@@ -242,6 +346,7 @@ module PolishOpenSourceRank
         @scope = scope_data(scope)
         @period_slug = period_slug
         @period = period_for(period_slug)
+        public_html_cache!('rankings', period_slug, scope, @period, public_cache_revision(@period))
         @user_rankings = rankings_or_empty(@period) { store.user_rankings(scope, period_start: @period) }
         @repository_rankings = rankings_or_empty(@period) { store.repository_rankings(scope, period_start: @period) }
         @title = "#{scope_name(@scope)} open-source ranking"
@@ -253,6 +358,7 @@ module PolishOpenSourceRank
       def render_editions(year = nil)
         @years = store.edition_years.map { |row| row.fetch(:year) }
         @year = selected_edition_year(year)
+        public_html_cache!('editions', @year || 'index', latest_public_cache_key)
         @editions = @year ? store.monthly_editions(@year) : []
         @newer_year = adjacent_edition_year(@year, -1)
         @older_year = adjacent_edition_year(@year, 1)
@@ -267,6 +373,7 @@ module PolishOpenSourceRank
         @period = store.latest_period
         @profile = store.user_profile(platform, login, period_start: @period)
         halt 404 unless @profile
+        profile_cache!(@profile)
 
         @repositories = @profile.fetch(:repositories)
         display_name = @profile[:name].to_s.empty? ? @profile.fetch(:login) : @profile[:name]
@@ -283,6 +390,13 @@ module PolishOpenSourceRank
         @period = store.latest_period
         @repository = store.repository_profile(platform, owner, name, period_start: @period)
         halt 404 unless @repository
+        public_html_cache!(
+          'repository-profile',
+          @repository.fetch(:platform),
+          @repository.fetch(:github_id),
+          @period,
+          public_cache_revision(@period)
+        )
 
         source_name = platform_name(@repository.fetch(:platform))
         @title = "#{@repository.fetch(:full_name)} - #{source_name} project"
@@ -300,7 +414,7 @@ module PolishOpenSourceRank
         halt 404 unless repository
 
         content_type 'image/svg+xml'
-        headers 'Cache-Control' => 'public, max-age=3600'
+        public_badge_cache!('repository-badge', platform, owner, name, store.latest_period)
         settings.badge_renderer.svg(repository.fetch(:polish_repo_badge), home_url: app_home_url)
       end
 
@@ -421,7 +535,7 @@ module PolishOpenSourceRank
         halt 404 unless user
 
         content_type 'image/svg+xml'
-        headers 'Cache-Control' => 'public, max-age=3600'
+        public_badge_cache!('user-badge', platform, login, store.latest_period)
         settings.badge_renderer.svg(user.fetch(:elite_badge), home_url: app_home_url)
       end
 
@@ -449,6 +563,7 @@ module PolishOpenSourceRank
         @period = period_for(period_slug)
         @kind = kind
         @metric = metric
+        public_html_cache!('ranking-detail', period_slug, scope, kind, metric, @period, public_cache_revision(@period))
         @ranking = ranking_for(scope, kind, metric, @period)
         @title = "#{scope_name(@scope)} #{ranking_title(kind, metric)}"
         @description = "#{ranking_title(kind, metric)} - #{scope_name(@scope)}."

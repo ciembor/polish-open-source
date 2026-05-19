@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="<%= h(@robots || 'index,follow') %>">
     <meta name="description" content="<%= h @description %>">
-    <link rel="icon" href="<%= h app_path('/icons/favicon.ico') %>" sizes="any">
-    <link rel="icon" type="image/png" sizes="32x32" href="<%= h app_path('/icons/favicon-32x32.png') %>">
-    <link rel="icon" type="image/png" sizes="16x16" href="<%= h app_path('/icons/favicon-16x16.png') %>">
-    <link rel="apple-touch-icon" sizes="180x180" href="<%= h app_path('/icons/apple-touch-icon.png') %>">
+    <link rel="icon" href="<%= h asset_path('/icons/favicon.ico') %>" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="<%= h asset_path('/icons/favicon-32x32.png') %>">
+    <link rel="icon" type="image/png" sizes="16x16" href="<%= h asset_path('/icons/favicon-16x16.png') %>">
+    <link rel="apple-touch-icon" sizes="180x180" href="<%= h asset_path('/icons/apple-touch-icon.png') %>">
     <link rel="canonical" href="<%= h canonical_url %>">
-    <link rel="stylesheet" href="<%= h app_path('/css/application.css?v=20260519-discord1') %>">
+    <link rel="stylesheet" href="<%= h asset_path('/css/application.css') %>">
     <% if @refresh_seconds %>
       <meta http-equiv="refresh" content="<%= h @refresh_seconds %>">
     <% end %>
@@ -18,7 +18,7 @@
     <script type="application/ld+json">
       <%= structured_data %>
     </script>
-    <script defer src="<%= h app_path('/js/navigation.js?v=20260517-menu3') %>"></script>
+    <script defer src="<%= h asset_path('/js/navigation.js') %>"></script>
   </head>
   <body>
     <header class="site-header">
