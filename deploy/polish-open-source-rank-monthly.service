@@ -7,4 +7,4 @@ After=network-online.target
 Type=oneshot
 WorkingDirectory=/home/ciembor/polish-open-source-rank
 EnvironmentFile=/home/ciembor/polish-open-source-rank/.env.local
-ExecStart=/usr/bin/podman run --rm --env-file /home/ciembor/polish-open-source-rank/.env.local -e RACK_ENV=production -e APP_BASE_PATH=/polish-open-source-rank -e BASE_URL=https://maciej-ciemborowicz.eu/polish-open-source-rank -v /home/ciembor/polish-open-source-rank/db:/app/db -v /home/ciembor/polish-open-source-rank/log:/app/log localhost/polish-open-source-rank:latest bundle exec ruby bin/monthly_rankings
+ExecStart=/usr/bin/podman run --rm --env-file /home/ciembor/polish-open-source-rank/.env.local -e RACK_ENV=production -e APP_BASE_PATH=/ -e BASE_URL=https://polish-open-source.pl -v /home/ciembor/polish-open-source-rank/db:/app/db -v /home/ciembor/polish-open-source-rank/log:/app/log localhost/polish-open-source-rank:latest bundle exec ruby bin/monthly_rankings

@@ -10,8 +10,6 @@ module PolishOpenSourceRank
           DISCORD_ROLE_BADGE_TOP_1
           DISCORD_ROLE_BADGE_TOP_2
           DISCORD_ROLE_BADGE_TOP_3
-          DISCORD_ROLE_BADGE_TOP_10
-          DISCORD_ROLE_BADGE_TOP_100
         ].freeze
 
         def role_ids(keys)

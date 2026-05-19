@@ -90,6 +90,49 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
     expect(gateway.create_invite(channel_id: 'channel-1')).to eq(code: 'abc', url: 'https://discord.gg/abc')
   end
 
+  it 'posts a GitHub-rich welcome message with role-enabled channels' do
+    configuration = PolishOpenSourceRank::Configuration.load
+    gateway = PolishOpenSourceRank::Web::Auth::DiscordGateway.new(configuration)
+    requests = capture_http_requests(welcome_responses)
+
+    gateway.post_welcome_message(
+      channel_id: 'welcome-channel',
+      discord_user_id: 'discord-1',
+      profile: welcome_profile,
+      access: { country_rank: 73, city: 'Krakow', city_rank: 11 },
+      role_ids: ['role-1']
+    )
+
+    body = JSON.parse(requests.fetch(2).body)
+    embed = body.fetch('embeds').first
+    expect(requests.map(&:method)).to eq(%w[GET GET POST])
+    expect(body.fetch('content')).to include('<@discord-1>', 'https://github.com/alice')
+    expect(embed.fetch('thumbnail')).to eq('url' => 'https://avatars.example/alice.png')
+    expect(embed.fetch('fields')).to include(
+      hash_including('name' => 'Role', 'value' => include('Top 100 PL')),
+      hash_including('name' => 'Kanaly do pisania', 'value' => include('<#channel-1>')),
+      hash_including('name' => 'Najlepsze projekty', 'value' => include('alice/app', '12 345 stars'))
+    )
+  end
+
+  it 'builds a neutral welcome message for users without ranking roles' do
+    message = PolishOpenSourceRank::Web::Auth::DiscordWelcomeMessage.new(
+      discord_user_id: 'discord-1',
+      profile: welcome_profile.merge(repositories: []),
+      access: {},
+      role_names: [],
+      writable_channels: []
+    ).payload
+
+    embed = message.fetch(:embeds).first
+    expect(embed.fetch(:color)).to eq(0)
+    expect(embed.fetch(:fields)).to include(
+      hash_including(name: 'Ranking', value: 'brak pozycji'),
+      hash_including(name: 'Role', value: 'brak rol rankingowych'),
+      hash_including(name: 'Kanaly do pisania', value: 'brak wykrytych kanalow')
+    )
+  end
+
   it 'treats missing Discord invites as unavailable and raises typed errors' do
     configuration = PolishOpenSourceRank::Configuration.load
     gateway = PolishOpenSourceRank::Web::Auth::DiscordGateway.new(configuration)
@@ -146,6 +189,33 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
 
   def json_response(body)
     response('200', 'OK', body)
+  end
+
+  def welcome_profile
+    {
+      login: 'alice',
+      name: 'Alice Example',
+      html_url: 'https://github.com/alice',
+      avatar_url: 'https://avatars.example/alice.png',
+      homepage: 'https://alice.example',
+      repositories: [
+        { full_name: 'alice/app', html_url: 'https://github.com/alice/app', stargazers_count: 12_345 }
+      ]
+    }
+  end
+
+  def welcome_responses
+    [
+      json_response('[{"id":"role-1","name":"Top 100 PL"},{"id":"other-role","name":"Other"}]'),
+      json_response(<<~JSON),
+        [
+          {"id":"category-1","type":4,"position":0,"name":"ranked","permission_overwrites":[{"id":"role-1","type":0,"allow":"2048","deny":"0"}]},
+          {"id":"channel-1","type":0,"position":1,"name":"top-100","parent_id":"category-1","permission_overwrites":[]},
+          {"id":"channel-2","type":0,"position":2,"name":"private","permission_overwrites":[{"id":"other-role","type":0,"allow":"2048","deny":"0"}]}
+        ]
+      JSON
+      json_response('{"id":"message-1"}')
+    ]
   end
 
   def empty_response

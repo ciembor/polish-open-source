@@ -649,8 +649,6 @@ module PolishOpenSourceRank
         when 1 then 'DISCORD_ROLE_BADGE_TOP_1'
         when 2 then 'DISCORD_ROLE_BADGE_TOP_2'
         when 3 then 'DISCORD_ROLE_BADGE_TOP_3'
-        when 4..10 then 'DISCORD_ROLE_BADGE_TOP_10'
-        when 11..100 then 'DISCORD_ROLE_BADGE_TOP_100'
         end
       end
 

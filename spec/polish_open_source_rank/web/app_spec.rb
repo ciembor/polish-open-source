@@ -153,7 +153,14 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(github_callback.status).to eq(302)
     expect(github_callback.location).to eq('http://example.org/users/github/alice')
     expect(profile.body).to include('Your Discord access')
-    expect(profile.body).to include('/auth/discord')
+    expect(profile.body).to include('Join Elite Discord')
+    expect(profile.body).to include('href="/auth/discord"')
+    expect(profile.body).to include('Writable channels')
+    expect(profile.body).to include('Top 10 PL')
+    expect(profile.body).to include('Top 100 PL')
+    expect(profile.body).to include('Top 100 Kraków')
+    expect(profile.body.index('Your Discord access')).to be < profile.body.index('GitHub badge')
+    expect(profile.body.index('GitHub badge')).to be < profile.body.index('Profile')
     expect(profile.body).not_to include('Discord not connected')
 
     discord_start = request.get('/auth/discord', 'HTTP_COOKIE' => cookie_header(github_callback))
@@ -170,6 +177,18 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       access_token: 'discord-access',
       github_login: 'alice'
     )
+    expect(discord_gateway.welcome).to include(channel_id: 'invite-channel', discord_user_id: 'discord-1')
+    expect(discord_gateway.welcome.fetch(:profile)).to include(
+      login: 'alice',
+      html_url: 'https://github.com/alice'
+    )
+    expect(discord_gateway.welcome.fetch(:profile).fetch(:repositories).first).to include(
+      full_name: 'alice/app',
+      html_url: 'https://github.com/alice/app',
+      stargazers_count: 12_345
+    )
+    expect(discord_gateway.welcome.fetch(:access)).to include(country_rank: 1, city_rank: 1)
+    expect(discord_gateway.welcome.fetch(:role_ids)).to include('role-top-10', 'role-top-100', 'role-krakow')
     expect(discord_gateway.synced.fetch(:desired_role_ids)).to include('role-top-10', 'role-top-100', 'role-krakow')
     expect(github_client.exchanged).to eq(['github-code'])
     expect(discord_client.exchanged).to eq(['discord-code'])
@@ -220,6 +239,30 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(discord_callback.location).to eq('http://example.org/users/github/alice')
   end
 
+  it 'does not fail Discord login when the welcome message cannot be posted' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    ENV['DISCORD_INVITE_CHANNEL_ID'] = 'invite-channel'
+    described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
+    described_class.set :discord_oauth_client, FakeDiscordOAuthClient.new
+    described_class.set :discord_gateway, FailingWelcomeDiscordGateway.new
+    request = Rack::MockRequest.new(described_class)
+
+    github_start = request.get('/auth/github')
+    github_state = Rack::Utils.parse_query(URI(github_start.location).query).fetch('state')
+    github_callback = request.get(
+      "/auth/github/callback?code=github-code&state=#{github_state}",
+      'HTTP_COOKIE' => cookie_header(github_start)
+    )
+    discord_start = request.get('/auth/discord', 'HTTP_COOKIE' => cookie_header(github_callback))
+    discord_state = Rack::Utils.parse_query(URI(discord_start.location).query).fetch('state')
+    discord_callback = request.get(
+      "/auth/discord/callback?code=discord-code&state=#{discord_state}",
+      'HTTP_COOKIE' => cookie_header(discord_start)
+    )
+
+    expect(discord_callback.status).to eq(302)
+  end
+
   it 'logs out and keeps the Discord panel useful without creating invites' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     github_client = FakeGitHubOAuthClient.new('alice')
@@ -235,7 +278,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     profile = request.get('/users/github/alice', 'HTTP_COOKIE' => cookie_header(github_callback))
     logout = request.post('/logout', 'HTTP_COOKIE' => cookie_header(github_callback))
 
-    expect(profile.body).to include('Connect your Discord account')
+    expect(profile.body).to include('Join Elite Discord')
+    expect(profile.body).to include('Writable channels')
     expect(profile.body).to include('/auth/discord')
     expect(logout.status).to eq(303)
     expect(logout.location).to eq('http://example.org/latest')
@@ -372,19 +416,19 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   it 'renders links and assets under a configured app base path' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
-    ENV['BASE_URL'] = 'https://rank.example/polish-open-source-rank'
-    ENV['APP_BASE_PATH'] = '/polish-open-source-rank'
+    ENV['BASE_URL'] = 'https://rank.example'
+    ENV['APP_BASE_PATH'] = '/'
 
     response = Rack::MockRequest.new(described_class).get('/')
 
-    expect(response.body).to include('rel="canonical" href="https://rank.example/polish-open-source-rank/latest"')
-    expect(response.body).to include('href="/polish-open-source-rank/css/application.css?v=20260519-discord1"')
-    expect(response.body).to include('src="/polish-open-source-rank/js/navigation.js?v=20260517-menu3"')
-    expect(response.body).to include('src="/polish-open-source-rank/icons/github.svg"')
-    expect(response.body).to include('href="/polish-open-source-rank/latest/locations/krakow"')
-    expect(response.body).to include('href="/polish-open-source-rank/latest/users/top"')
-    expect(response.body).to include('href="/polish-open-source-rank/editions"')
-    expect(response.body).to include('href="/polish-open-source-rank/about"')
+    expect(response.body).to include('rel="canonical" href="https://rank.example/latest"')
+    expect(response.body).to include('href="/css/application.css?v=20260519-discord1"')
+    expect(response.body).to include('src="/js/navigation.js?v=20260517-menu3"')
+    expect(response.body).to include('src="/icons/github.svg"')
+    expect(response.body).to include('href="/latest/locations/krakow"')
+    expect(response.body).to include('href="/latest/users/top"')
+    expect(response.body).to include('href="/editions"')
+    expect(response.body).to include('href="/about"')
   end
 
   it 'serves health checks and 404 pages' do
@@ -592,7 +636,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   end
 
   class FakeDiscordGateway
-    attr_reader :synced
+    attr_reader :synced, :welcome
 
     def invite_available?(_code)
       false
@@ -609,6 +653,10 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     def sync_joined_member(**attributes)
       @synced = attributes
     end
+
+    def post_welcome_message(**attributes)
+      @welcome = attributes
+    end
   end
 
   class FailingDiscordGateway
@@ -618,6 +666,12 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     def create_invite(channel_id:)
       raise PolishOpenSourceRank::Web::Auth::DiscordGateway::Error, channel_id
+    end
+  end
+
+  class FailingWelcomeDiscordGateway < FakeDiscordGateway
+    def post_welcome_message(**_attributes)
+      raise PolishOpenSourceRank::Web::Auth::DiscordGateway::Error
     end
   end
   # rubocop:enable Lint/ConstantDefinitionInBlock

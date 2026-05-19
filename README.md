@@ -38,8 +38,8 @@ GITLAB_TOKEN=...
 CODEBERG_TOKEN=...
 DATABASE_URL=sqlite://db/polish_open_source_rank.sqlite3
 REQUESTS_PER_MINUTE=60
-BASE_URL=https://maciej-ciemborowicz.eu/polish-open-source-rank
-APP_BASE_PATH=/polish-open-source-rank
+BASE_URL=https://polish-open-source.pl
+APP_BASE_PATH=/
 ```
 
 `GITLAB_TOKEN` and `CODEBERG_TOKEN` are optional for public API access, but recommended for more stable monthly runs.
@@ -84,9 +84,8 @@ The HTML uses semantic sections, tables, canonical URLs, meta descriptions, and 
 
 ## Deployment
 
-The app is deployed behind Nginx at `https://maciej-ciemborowicz.eu/polish-open-source-rank`. The server runs it as a Podman container via systemd:
+The app is deployed behind Nginx at `https://polish-open-source.pl`. Nginx is configured on the server. The application and jobs run as Podman containers via systemd:
 
-- [deploy/nginx-polish-open-source-rank.conf](deploy/nginx-polish-open-source-rank.conf)
 - [deploy/polish-open-source-rank.service](deploy/polish-open-source-rank.service)
 - [deploy/polish-open-source-rank-monthly.service](deploy/polish-open-source-rank-monthly.service)
 - [deploy/polish-open-source-rank-monthly.timer](deploy/polish-open-source-rank-monthly.timer)

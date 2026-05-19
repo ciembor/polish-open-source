@@ -32,8 +32,9 @@
         <% if @discord_panel[:connection] %>
           <p><%= h t('users.discord.connected', user: @discord_panel.fetch(:connection).fetch(:discord_username)) %></p>
         <% end %>
-        <p><%= h t('users.discord.connect_body') %></p>
-        <a class="ranking-action" href="<%= h app_path('/auth/discord') %>"><%= h t('users.discord.connect_action') %></a>
+        <div class="discord-panel__join">
+          <a class="discord-join-button" href="<%= h app_path('/auth/discord') %>"><%= h t('users.discord.connect_action') %></a>
+        </div>
 
         <dl class="profile-facts discord-panel__facts">
           <% access = @discord_panel.fetch(:access) %>
@@ -48,10 +49,34 @@
             </div>
           <% end %>
         </dl>
+        <div class="discord-access">
+          <h3><%= h t('users.discord.channels_title') %></h3>
+          <% if @discord_panel.fetch(:access_channels).empty? %>
+            <p class="profile-empty"><%= h t('users.discord.no_channels') %></p>
+          <% else %>
+            <ul>
+              <% @discord_panel.fetch(:access_channels).each do |channel| %>
+                <li><%= h channel %></li>
+              <% end %>
+            </ul>
+          <% end %>
+        </div>
       </article>
     </div>
   </section>
 <% end %>
+
+<section class="profile-section profile-section--alt" aria-labelledby="profile-badge-heading">
+  <div class="content">
+    <h2 id="profile-badge-heading"><%= h t('users.badge.title') %></h2>
+    <div class="badge-preview">
+      <a href="<%= h app_path('/latest') %>">
+        <img src="<%= h app_path(user_badge_path(@profile)) %>" alt="<%= h t('users.badge.alt') %>">
+      </a>
+      <code><%= h linked_badge_markdown(t('users.badge.alt'), user_badge_path(@profile)) %></code>
+    </div>
+  </div>
+</section>
 
 <section class="profile-section" aria-labelledby="profile-summary-heading">
   <div class="content profile-grid">
@@ -99,18 +124,6 @@
         <% end %>
       </dl>
     </article>
-  </div>
-</section>
-
-<section class="profile-section profile-section--alt" aria-labelledby="profile-badge-heading">
-  <div class="content">
-    <h2 id="profile-badge-heading"><%= h t('users.badge.title') %></h2>
-    <div class="badge-preview">
-      <a href="<%= h app_path('/latest') %>">
-        <img src="<%= h app_path(user_badge_path(@profile)) %>" alt="<%= h t('users.badge.alt') %>">
-      </a>
-      <code><%= h linked_badge_markdown(t('users.badge.alt'), user_badge_path(@profile)) %></code>
-    </div>
   </div>
 </section>
 
