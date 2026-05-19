@@ -323,13 +323,11 @@ module PolishOpenSourceRank
         invite = current_discord_invite(profile)
         {
           invite: invite,
-          connection: store.discord_connection(profile.fetch(:platform), profile.fetch(:github_id)),
           access: store.discord_access(profile.fetch(:platform), profile.fetch(:github_id), period_start: @period)
         }
       rescue Auth::DiscordGateway::Error
         {
           invite: nil,
-          connection: store.discord_connection(profile.fetch(:platform), profile.fetch(:github_id)),
           access: store.discord_access(profile.fetch(:platform), profile.fetch(:github_id), period_start: @period),
           error: true
         }

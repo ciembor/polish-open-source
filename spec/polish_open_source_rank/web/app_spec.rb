@@ -151,8 +151,10 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     expect(github_callback.status).to eq(302)
     expect(github_callback.location).to eq('http://example.org/users/github/alice')
-    expect(profile.body).to include('Discord access')
+    expect(profile.body).to include('Your Discord invite')
     expect(profile.body).to include('https://discord.gg/invite-channel-once')
+    expect(profile.body).not_to include('Discord not connected')
+    expect(profile.body).not_to include('Connect Discord and sync access')
 
     discord_start = request.get('/auth/discord', 'HTTP_COOKIE' => cookie_header(github_callback))
     discord_state = Rack::Utils.parse_query(URI(discord_start.location).query).fetch('state')
@@ -375,7 +377,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     response = Rack::MockRequest.new(described_class).get('/')
 
     expect(response.body).to include('rel="canonical" href="https://rank.example/polish-open-source-rank/latest"')
-    expect(response.body).to include('href="/polish-open-source-rank/css/application.css?v=20260518-profile2"')
+    expect(response.body).to include('href="/polish-open-source-rank/css/application.css?v=20260519-discord1"')
     expect(response.body).to include('src="/polish-open-source-rank/js/navigation.js?v=20260517-menu3"')
     expect(response.body).to include('src="/polish-open-source-rank/icons/github.svg"')
     expect(response.body).to include('href="/polish-open-source-rank/latest/locations/krakow"')
@@ -600,6 +602,10 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     end
 
     def sync_member(**attributes)
+      @synced = attributes
+    end
+
+    def sync_joined_member(**attributes)
       @synced = attributes
     end
   end

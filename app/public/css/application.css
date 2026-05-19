@@ -64,6 +64,34 @@ a {
   text-decoration: none;
 }
 
+.nav-pill,
+.nav-menu summary {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 800;
+  justify-content: center;
+  line-height: 1;
+  min-height: 32px;
+  padding: 9px 10px;
+  text-align: center;
+  text-decoration: none;
+  user-select: none;
+}
+
+.nav-pill:hover,
+.nav-menu summary:hover,
+.nav-menu[open] summary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
 .nav-form {
   margin: 0;
 }
@@ -82,19 +110,8 @@ a {
 }
 
 .nav-menu summary {
-  align-items: center;
-  background: var(--surface);
-  border: 1px solid #9bc8bd;
-  border-radius: 6px;
-  color: var(--accent);
-  cursor: pointer;
-  display: flex;
-  font-size: 0.95rem;
-  font-weight: 700;
   gap: 8px;
   list-style: none;
-  padding: 7px 12px;
-  user-select: none;
 }
 
 .nav-menu summary::-webkit-details-marker {
@@ -108,12 +125,6 @@ a {
   height: 6px;
   transform: translateY(-2px) rotate(45deg);
   width: 6px;
-}
-
-.nav-menu[open] summary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #ffffff;
 }
 
 .nav-menu[open] summary:hover {
@@ -152,7 +163,6 @@ a {
 }
 
 .nav__link:hover,
-.nav-menu summary:hover,
 .primary-link:hover,
 .muted-link:hover {
   color: var(--accent);
@@ -189,7 +199,7 @@ a {
 
 .hero {
   border-bottom: 1px solid var(--line);
-  background: linear-gradient(110deg, #ffffff 0%, #f7eeee 52%, #ffeded 100%);
+  background: linear-gradient(110deg, #ffffff 0%, #eef7f3 52%, #fff7ed 100%);
 }
 
 .hero__inner {

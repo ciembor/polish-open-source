@@ -37,6 +37,15 @@ module PolishOpenSourceRank
 
         def sync_member(discord_user_id:, access_token:, github_login:, desired_role_ids:, managed_role_ids:)
           join_guild(discord_user_id, access_token)
+          sync_joined_member(
+            discord_user_id: discord_user_id,
+            github_login: github_login,
+            desired_role_ids: desired_role_ids,
+            managed_role_ids: managed_role_ids
+          )
+        end
+
+        def sync_joined_member(discord_user_id:, github_login:, desired_role_ids:, managed_role_ids:)
           update_nickname(discord_user_id, github_login)
           sync_roles(discord_user_id, desired_role_ids, managed_role_ids)
         end

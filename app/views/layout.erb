@@ -7,7 +7,7 @@
     <meta name="description" content="<%= h @description %>">
     <link rel="icon" type="image/png" href="<%= h app_path('/icons/favicon.png') %>">
     <link rel="canonical" href="<%= h canonical_url %>">
-    <link rel="stylesheet" href="<%= h app_path('/css/application.css?v=20260518-profile2') %>">
+    <link rel="stylesheet" href="<%= h app_path('/css/application.css?v=20260519-discord1') %>">
     <% if @refresh_seconds %>
       <meta http-equiv="refresh" content="<%= h @refresh_seconds %>">
     <% end %>
@@ -39,10 +39,10 @@
           <% if current_user %>
             <a class="nav__link" href="<%= h app_path(user_profile_path(current_user)) %>">@<%= h current_user.fetch(:login) %></a>
             <form class="nav-form" method="post" action="<%= h app_path('/logout') %>">
-              <button class="nav__link nav__button" type="submit"><%= h t('auth.logout') %></button>
+              <button class="nav-pill nav__button" type="submit"><%= h t('auth.logout') %></button>
             </form>
           <% else %>
-            <a class="nav__link" href="<%= h app_path('/auth/github') %>"><%= h t('auth.login.github') %></a>
+            <a class="nav-pill" href="<%= h app_path('/auth/github') %>"><%= h t('auth.login.github') %></a>
           <% end %>
           <div class="language-switch" aria-label="<%= h t('nav.language') %>">
             <% SUPPORTED_LOCALES.each do |locale| %>
