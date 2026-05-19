@@ -149,6 +149,7 @@ pl:
       title: "Badge na GitHub"
     discord:
       city_rank: "Ranking %{city}"
+      connect_body: "Połącz konto Discord, żeby dołączyć do serwera oraz automatycznie zsynchronizować nick z GitHuba i role rankingowe."
       connect_action: "Połącz Discord i zsynchronizuj dostęp"
       connected: "Połączono jako %{user}"
       invite_action: "Dołącz do Discorda"
@@ -157,7 +158,7 @@ pl:
       not_connected: "Discord niepołączony"
       poland_rank: "Ranking Polski"
       status: "Discord"
-      title: "Twoje zaproszenie Discord"
+      title: "Twój dostęp Discord"
     links:
       homepage: "Strona"
       source_profile: "Profil na %{platform}"

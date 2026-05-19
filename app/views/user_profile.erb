@@ -29,12 +29,11 @@
     <div class="content">
       <article class="profile-summary discord-panel">
         <h2 id="profile-discord-heading"><%= h t('users.discord.title') %></h2>
-        <% if @discord_panel[:error] %>
-          <p class="profile-empty"><%= h t('users.discord.invite_unavailable') %></p>
-        <% elsif @discord_panel[:invite] %>
-          <p><%= h t('users.discord.invite_body') %></p>
-          <a class="ranking-action" href="<%= h @discord_panel.fetch(:invite).fetch(:url) %>"><%= h t('users.discord.invite_action') %></a>
+        <% if @discord_panel[:connection] %>
+          <p><%= h t('users.discord.connected', user: @discord_panel.fetch(:connection).fetch(:discord_username)) %></p>
         <% end %>
+        <p><%= h t('users.discord.connect_body') %></p>
+        <a class="ranking-action" href="<%= h app_path('/auth/discord') %>"><%= h t('users.discord.connect_action') %></a>
 
         <dl class="profile-facts discord-panel__facts">
           <% access = @discord_panel.fetch(:access) %>

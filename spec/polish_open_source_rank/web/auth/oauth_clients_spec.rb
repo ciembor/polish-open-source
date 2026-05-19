@@ -60,9 +60,7 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
       json_response('{"code":"abc","url":"https://discord.gg/abc"}'),
       json_response('{}'),
       empty_response,
-      empty_response,
-      empty_response,
-      empty_response,
+      json_response('{"roles":["role-3","unmanaged-role"]}'),
       empty_response
     ]
     requests = capture_http_requests(responses)
@@ -77,10 +75,11 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
       managed_role_ids: %w[role-1 role-2 role-3]
     )
 
-    expect(requests.map(&:method)).to eq(%w[POST GET PUT PATCH DELETE PUT PUT])
+    expect(requests.map(&:method)).to eq(%w[POST GET PUT GET PATCH])
     expect(requests.fetch(0).body).to include('"max_uses":1')
     expect(requests.fetch(2).body).to include('user-token')
-    expect(requests.fetch(3).body).to include('alice')
+    expect(requests.fetch(4).body).to include('alice', 'role-1', 'role-2', 'unmanaged-role')
+    expect(requests.fetch(4).body).not_to include('role-3')
   end
 
   it 'builds an invite URL when Discord only returns the invite code' do
@@ -106,6 +105,16 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
       gateway.sync_member(
         discord_user_id: 'discord-1',
         access_token: 'user-token',
+        github_login: 'alice',
+        desired_role_ids: [],
+        managed_role_ids: []
+      )
+    end.to raise_error(PolishOpenSourceRank::Web::Auth::DiscordGateway::Error)
+
+    capture_http_requests([response('500', 'Server Error', 'nope')])
+    expect do
+      gateway.sync_joined_member(
+        discord_user_id: 'discord-1',
         github_login: 'alice',
         desired_role_ids: [],
         managed_role_ids: []

@@ -8,7 +8,7 @@ module PolishOpenSourceRank
       def self.build(configuration:, store:, logger: $stdout)
         new(
           guild_id: configuration.discord_guild_id,
-          bot: Discordrb::Bot.new(token: configuration.discord_bot_token, intents: %i[server_members server_invites]),
+          bot: Discordrb::Bot.new(token: configuration.discord_bot_token, intents: %i[server_invites]),
           join_handler: Application::DiscordInviteJoin.new(
             store: store,
             discord_gateway: Web::Auth::DiscordGateway.new(configuration),

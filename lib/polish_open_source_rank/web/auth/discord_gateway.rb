@@ -46,8 +46,15 @@ module PolishOpenSourceRank
         end
 
         def sync_joined_member(discord_user_id:, github_login:, desired_role_ids:, managed_role_ids:)
-          update_nickname(discord_user_id, github_login)
-          sync_roles(discord_user_id, desired_role_ids, managed_role_ids)
+          sync_member_profile(
+            discord_user_id,
+            nick: github_login,
+            role_ids: synced_role_ids(
+              current_role_ids(discord_user_id),
+              desired_role_ids: desired_role_ids,
+              managed_role_ids: managed_role_ids
+            )
+          )
         end
 
         private
@@ -61,26 +68,25 @@ module PolishOpenSourceRank
           perform_plain(uri, request)
         end
 
-        def update_nickname(discord_user_id, github_login)
+        def current_role_ids(discord_user_id)
+          uri = URI("#{API_BASE}/guilds/#{configuration.discord_guild_id}/members/#{discord_user_id}")
+          request = Net::HTTP::Get.new(uri, bot_headers)
+          json_request(uri, request).fetch('roles', [])
+        end
+
+        def synced_role_ids(current_role_ids, desired_role_ids:, managed_role_ids:)
+          current = current_role_ids.uniq
+          desired = desired_role_ids.uniq
+          managed = managed_role_ids.uniq
+
+          (current - managed + desired).uniq
+        end
+
+        def sync_member_profile(discord_user_id, nick:, role_ids:)
           uri = URI("#{API_BASE}/guilds/#{configuration.discord_guild_id}/members/#{discord_user_id}")
           request = Net::HTTP::Patch.new(uri, bot_headers)
-          request.body = JSON.generate(nick: github_login)
+          request.body = JSON.generate(nick: nick, roles: role_ids)
           perform_plain(uri, request)
-        end
-
-        def sync_roles(discord_user_id, desired_role_ids, managed_role_ids)
-          (managed_role_ids - desired_role_ids).each { |role_id| remove_role(discord_user_id, role_id) }
-          desired_role_ids.each { |role_id| add_role(discord_user_id, role_id) }
-        end
-
-        def add_role(discord_user_id, role_id)
-          uri = URI("#{API_BASE}/guilds/#{configuration.discord_guild_id}/members/#{discord_user_id}/roles/#{role_id}")
-          perform_plain(uri, Net::HTTP::Put.new(uri, bot_headers))
-        end
-
-        def remove_role(discord_user_id, role_id)
-          uri = URI("#{API_BASE}/guilds/#{configuration.discord_guild_id}/members/#{discord_user_id}/roles/#{role_id}")
-          perform_plain(uri, Net::HTTP::Delete.new(uri, bot_headers))
         end
 
         def bot_headers
