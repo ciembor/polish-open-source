@@ -20,7 +20,7 @@
   <body>
     <header class="site-header">
       <div class="site-header__inner">
-        <a class="brand" href="<%= h app_path('/latest') %>">Polish Open Source Rank</a>
+        <a class="brand" href="<%= h app_path('/latest') %>"><img src="/icons/favicon.png">Polish Open Source</a>
         <nav class="nav" aria-label="<%= h t('nav.locations') %>">
           <a class="nav__link" href="<%= h app_path(scope_path(scopes.first)) %>"><%= h t('nav.country') %></a>
           <% primary_city_scopes.each do |scope| %>

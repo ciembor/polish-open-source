@@ -12,9 +12,11 @@
               <%= erb :platform_icon, locals: { platform: row.fetch(:platform, "github") } %>
               <a class="primary-link" href="<%= h app_path(user_profile_path(row)) %>"><%= h row.fetch(:login) %></a>
             </div>
-            <% if row[:name] && !row[:name].empty? %>
-              <span class="ranking-list__description"><%= h row[:name] %></span>
-            <% end %>
+            <span class="ranking-list__description">
+              <% if row[:name] && !row[:name].empty? %>
+                <%= h row[:name] %>
+              <% end %>
+            </span>
             <div class="ranking-list__meta">
               <span><%= h location %></span>
               <span class="ranking-list__links">
