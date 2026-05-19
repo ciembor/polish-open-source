@@ -422,13 +422,57 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     response = Rack::MockRequest.new(described_class).get('/')
 
     expect(response.body).to include('rel="canonical" href="https://rank.example/latest"')
-    expect(response.body).to include('href="/css/application.css?v=20260519-discord1"')
-    expect(response.body).to include('src="/js/navigation.js?v=20260517-menu3"')
+    expect(response.body).to match(%r{href="/css/application\.css\?v=\d+"})
+    expect(response.body).to match(%r{src="/js/navigation\.js\?v=\d+"})
     expect(response.body).to include('src="/icons/github.svg"')
     expect(response.body).to include('href="/latest/locations/krakow"')
     expect(response.body).to include('href="/latest/users/top"')
     expect(response.body).to include('href="/editions"')
     expect(response.body).to include('href="/about"')
+  end
+
+  it 'uses conditional cache headers for public pages and badges', :aggregate_failures do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    request = Rack::MockRequest.new(described_class)
+
+    response = request.get('/latest')
+    not_modified = request.get('/latest', 'HTTP_IF_NONE_MATCH' => response['ETag'])
+    badge_response = request.get('/badges/users/github/alice.svg')
+
+    expect(response['Cache-Control']).to eq('public, max-age=0, must-revalidate')
+    expect(response['ETag']).to match(/\A".+"\z/)
+    expect(response['Vary']).to include('Accept-Language')
+    expect(response['Vary']).to include('Cookie')
+    expect(not_modified.status).to eq(304)
+    expect(badge_response['Cache-Control']).to eq('public, max-age=300, stale-while-revalidate=3600')
+    expect(badge_response['ETag']).to match(/\A".+"\z/)
+  end
+
+  it 'serves static assets with immutable cache headers', :aggregate_failures do
+    response = Rack::MockRequest.new(described_class).get('/css/application.css')
+
+    expect(response.status).to eq(200)
+    expect(response['Cache-Control']).to include('max-age=31536000')
+    expect(response['Cache-Control']).to include('immutable')
+  end
+
+  it 'keeps session-specific and internal pages out of shared caches', :aggregate_failures do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    request = Rack::MockRequest.new(described_class)
+    described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
+
+    github_start = request.get('/auth/github')
+    github_state = Rack::Utils.parse_query(URI(github_start.location).query).fetch('state')
+    github_callback = request.get(
+      "/auth/github/callback?code=github-code&state=#{github_state}",
+      'HTTP_COOKIE' => cookie_header(github_start)
+    )
+    profile = request.get('/users/github/alice', 'HTTP_COOKIE' => cookie_header(github_callback))
+    internal = request.get('/internal/jobs')
+
+    expect(github_start['Cache-Control']).to eq('no-store')
+    expect(profile['Cache-Control']).to eq('private, no-cache')
+    expect(internal['Cache-Control']).to eq('no-store')
   end
 
   it 'serves health checks and 404 pages' do
