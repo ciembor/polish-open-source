@@ -39,7 +39,7 @@ pl:
     title: "O Polish Open Source Rank"
   auth:
     login:
-      github: "Zaloguj przez GitHub"
+      github: "Zaloguj"
     logout: "Wyloguj"
     unranked:
       body: "Przepraszamy, nie znaleźliśmy konta %{login} w aktualnym rankingu. Zaproszenie na Discorda jest dostępne tylko dla rankingowych profili GitHuba."
