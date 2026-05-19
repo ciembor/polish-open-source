@@ -105,14 +105,6 @@ a {
   margin: 0;
 }
 
-.nav__button {
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-  font: inherit;
-  padding: 0;
-}
-
 .nav-menu {
   display: inline-block;
   position: relative;

@@ -39,7 +39,7 @@
           <% if current_user %>
             <a class="nav__link" href="<%= h app_path(user_profile_path(current_user)) %>">@<%= h current_user.fetch(:login) %></a>
             <form class="nav-form" method="post" action="<%= h app_path('/logout') %>">
-              <button class="nav-pill nav__button" type="submit"><%= h t('auth.logout') %></button>
+              <button class="nav-pill" type="submit"><%= h t('auth.logout') %></button>
             </form>
           <% else %>
             <a class="nav-pill" href="<%= h app_path('/auth/github') %>"><%= h t('auth.login.github') %></a>
