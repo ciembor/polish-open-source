@@ -129,6 +129,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   it 'logs ranked GitHub users in and syncs their Discord account', :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     ENV['DISCORD_INVITE_CHANNEL_ID'] = 'invite-channel'
+    ENV['DISCORD_GUILD_ID'] = 'guild-1'
     ENV['DISCORD_ROLE_TOP_10_PL'] = 'role-top-10'
     ENV['DISCORD_ROLE_TOP_100_PL'] = 'role-top-100'
     ENV['DISCORD_ROLE_TOP_100_CITY_KRAKOW'] = 'role-krakow'
@@ -151,10 +152,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     expect(github_callback.status).to eq(302)
     expect(github_callback.location).to eq('http://example.org/users/github/alice')
-    expect(profile.body).to include('Your Discord invite')
-    expect(profile.body).to include('https://discord.gg/invite-channel-once')
+    expect(profile.body).to include('Your Discord access')
+    expect(profile.body).to include('/auth/discord')
     expect(profile.body).not_to include('Discord not connected')
-    expect(profile.body).not_to include('Connect Discord and sync access')
 
     discord_start = request.get('/auth/discord', 'HTTP_COOKIE' => cookie_header(github_callback))
     discord_state = Rack::Utils.parse_query(URI(discord_start.location).query).fetch('state')
@@ -164,6 +164,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     )
 
     expect(discord_callback.status).to eq(302)
+    expect(discord_callback.location).to eq('https://discord.com/channels/guild-1/invite-channel')
     expect(discord_gateway.synced).to include(
       discord_user_id: 'discord-1',
       access_token: 'discord-access',
@@ -194,12 +195,35 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(unranked.body).to include('outsider')
   end
 
-  it 'logs out and keeps the Discord panel useful when invite creation fails' do
+  it 'returns to the profile after Discord sync when the server channel is not configured' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
-    ENV['DISCORD_INVITE_CHANNEL_ID'] = 'invite-channel'
+    ENV['DISCORD_GUILD_ID'] = ''
+    ENV['DISCORD_INVITE_CHANNEL_ID'] = ''
+    described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
+    described_class.set :discord_oauth_client, FakeDiscordOAuthClient.new
+    described_class.set :discord_gateway, FakeDiscordGateway.new
+    request = Rack::MockRequest.new(described_class)
+
+    github_start = request.get('/auth/github')
+    github_state = Rack::Utils.parse_query(URI(github_start.location).query).fetch('state')
+    github_callback = request.get(
+      "/auth/github/callback?code=github-code&state=#{github_state}",
+      'HTTP_COOKIE' => cookie_header(github_start)
+    )
+    discord_start = request.get('/auth/discord', 'HTTP_COOKIE' => cookie_header(github_callback))
+    discord_state = Rack::Utils.parse_query(URI(discord_start.location).query).fetch('state')
+    discord_callback = request.get(
+      "/auth/discord/callback?code=discord-code&state=#{discord_state}",
+      'HTTP_COOKIE' => cookie_header(discord_start)
+    )
+
+    expect(discord_callback.location).to eq('http://example.org/users/github/alice')
+  end
+
+  it 'logs out and keeps the Discord panel useful without creating invites' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     github_client = FakeGitHubOAuthClient.new('alice')
     described_class.set :github_oauth_client, github_client
-    described_class.set :discord_gateway, FailingDiscordGateway.new
     request = Rack::MockRequest.new(described_class)
 
     github_start = request.get('/auth/github')
@@ -211,33 +235,10 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     profile = request.get('/users/github/alice', 'HTTP_COOKIE' => cookie_header(github_callback))
     logout = request.post('/logout', 'HTTP_COOKIE' => cookie_header(github_callback))
 
-    expect(profile.body).to include('Discord invite is temporarily unavailable.')
+    expect(profile.body).to include('Connect your Discord account')
+    expect(profile.body).to include('/auth/discord')
     expect(logout.status).to eq(303)
     expect(logout.location).to eq('http://example.org/latest')
-  end
-
-  it 'renders a Discord invite when Discord omits the invite URL' do
-    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
-    ENV['DISCORD_INVITE_CHANNEL_ID'] = 'invite-channel'
-    ENV['DISCORD_BOT_TOKEN'] = 'bot-token'
-    github_client = FakeGitHubOAuthClient.new('alice')
-    described_class.set :github_oauth_client, github_client
-    described_class.set :discord_gateway, PolishOpenSourceRank::Web::Auth::DiscordGateway.new(
-      PolishOpenSourceRank::Configuration.load
-    )
-    stub_discord_invite_response('{"code":"discord-code-only"}')
-    request = Rack::MockRequest.new(described_class)
-
-    github_start = request.get('/auth/github')
-    github_state = Rack::Utils.parse_query(URI(github_start.location).query).fetch('state')
-    github_callback = request.get(
-      "/auth/github/callback?code=github-code&state=#{github_state}",
-      'HTTP_COOKIE' => cookie_header(github_start)
-    )
-    profile = request.get('/users/github/alice', 'HTTP_COOKIE' => cookie_header(github_callback))
-
-    expect(profile.status).to eq(200)
-    expect(profile.body).to include('https://discord.gg/discord-code-only')
   end
 
   it 'keeps podium medals on profile pages', :aggregate_failures do

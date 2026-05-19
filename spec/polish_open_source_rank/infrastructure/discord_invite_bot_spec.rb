@@ -9,7 +9,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::DiscordInviteBot do
       discord_bot_token: 'token'
     )
     allow(Discordrb::Bot).to receive(:new)
-      .with(token: 'token', intents: %i[server_members server_invites])
+      .with(token: 'token', intents: %i[server_invites])
       .and_return(discord_bot)
 
     bot = described_class.build(

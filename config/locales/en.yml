@@ -149,6 +149,7 @@ en:
       title: "GitHub badge"
     discord:
       city_rank: "%{city} rank"
+      connect_body: "Connect your Discord account to join the server, sync your GitHub nickname, and receive ranking roles automatically."
       connect_action: "Connect Discord and sync access"
       connected: "Connected as %{user}"
       invite_action: "Join Discord"
@@ -157,7 +158,7 @@ en:
       not_connected: "Discord not connected"
       poland_rank: "Poland rank"
       status: "Discord"
-      title: "Your Discord invite"
+      title: "Your Discord access"
     links:
       homepage: "Website"
       source_profile: "%{platform} profile"

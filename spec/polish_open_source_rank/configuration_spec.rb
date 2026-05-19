@@ -5,6 +5,7 @@ RSpec.describe PolishOpenSourceRank::Configuration do
     keys = %w[
       GITHUB_TOKEN GITLAB_TOKEN CODEBERG_TOKEN DATABASE_URL REQUESTS_PER_MINUTE
       GITHUB_BASE_URL GITLAB_BASE_URL CODEBERG_BASE_URL BASE_URL
+      DISCORD_INVITE_CHANNEL_ID
     ]
     old_values = keys.to_h { |key| [key, ENV.fetch(key, nil)] }
     keys.each { |key| ENV.delete(key) }
@@ -39,6 +40,13 @@ RSpec.describe PolishOpenSourceRank::Configuration do
     expect(configuration.codeberg_base_url).to eq('https://codeberg.test/api/v1')
     expect(configuration.public_base_url).to eq('https://rank.test')
     expect(configuration.app_base_path).to eq('')
+  end
+
+  it 'exposes the configured Discord invite channel' do
+    ENV['DISCORD_INVITE_CHANNEL_ID'] = 'discord-channel'
+    configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
+
+    expect(configuration.discord_invite_channel_id).to eq('discord-channel')
   end
 
   it 'uses stable defaults without an env file' do

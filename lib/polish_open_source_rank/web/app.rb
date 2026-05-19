@@ -127,7 +127,7 @@ module PolishOpenSourceRank
         )
         discord_user = discord_oauth_client.user(token.fetch('access_token'))
         sync_discord_member(discord_user, token.fetch('access_token'))
-        redirect app_path(user_profile_path(current_user))
+        redirect discord_channel_url || app_path(user_profile_path(current_user))
       end
 
       get '/auth/unranked' do
@@ -320,31 +320,18 @@ module PolishOpenSourceRank
       end
 
       def discord_panel(profile)
-        invite = current_discord_invite(profile)
         {
-          invite: invite,
+          connection: store.discord_connection(profile.fetch(:platform), profile.fetch(:github_id)),
           access: store.discord_access(profile.fetch(:platform), profile.fetch(:github_id), period_start: @period)
-        }
-      rescue Auth::DiscordGateway::Error
-        {
-          invite: nil,
-          access: store.discord_access(profile.fetch(:platform), profile.fetch(:github_id), period_start: @period),
-          error: true
         }
       end
 
-      def current_discord_invite(profile)
-        existing = store.discord_invite(profile.fetch(:platform), profile.fetch(:github_id))
-        return existing if existing && discord_gateway.invite_available?(existing.fetch(:code))
+      def discord_channel_url
+        guild_id = ENV.fetch('DISCORD_GUILD_ID', '').strip
+        channel_id = ENV.fetch('DISCORD_INVITE_CHANNEL_ID', '').strip
+        return if guild_id.empty? || channel_id.empty?
 
-        invite = discord_gateway.create_invite(channel_id: configuration.discord_invite_channel_id)
-        store.record_discord_invite(
-          platform: profile.fetch(:platform),
-          user_github_id: profile.fetch(:github_id),
-          code: invite.fetch(:code),
-          url: invite.fetch(:url)
-        )
-        invite
+        "https://discord.com/channels/#{guild_id}/#{channel_id}"
       end
 
       def sync_discord_member(discord_user, access_token)
