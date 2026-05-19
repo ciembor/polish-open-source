@@ -64,6 +64,15 @@ a {
   text-decoration: none;
 }
 
+.session-button {
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+  padding: 9px 8px;
+  text-align: center;
+  text-decoration: none;
+}
+
 .nav-pill,
 .nav-menu summary {
   align-items: center;
@@ -781,8 +790,63 @@ h3 {
   max-width: 760px;
 }
 
+.discord-panel__join {
+  display: flex;
+  justify-content: center;
+  margin: 22px 0 20px;
+}
+
+.discord-join-button {
+  background: var(--accent);
+  border-radius: 8px;
+  color: #ffffff;
+  display: inline-flex;
+  font-size: 1rem;
+  font-weight: 900;
+  justify-content: center;
+  min-width: min(100%, 260px);
+  padding: 13px 22px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.discord-join-button:hover {
+  background: var(--accent-strong);
+  color: #ffffff;
+}
+
 .discord-panel__facts {
   margin-top: 16px;
+}
+
+.discord-access {
+  border-top: 1px solid var(--line);
+  margin-top: 18px;
+  padding-top: 18px;
+}
+
+.discord-access h3 {
+  font-size: 1rem;
+  margin-bottom: 10px;
+}
+
+.discord-access ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.discord-access li {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 800;
+  padding: 7px 10px;
 }
 
 .profile-facts,

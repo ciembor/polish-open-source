@@ -200,8 +200,8 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     )
     expect(store.discord_access('github', 2).fetch(:badge_role_key)).to eq('DISCORD_ROLE_BADGE_TOP_2')
     expect(store.discord_access('github', 3).fetch(:badge_role_key)).to eq('DISCORD_ROLE_BADGE_TOP_3')
-    expect(store.discord_access('github', 4).fetch(:badge_role_key)).to eq('DISCORD_ROLE_BADGE_TOP_10')
-    expect(store.discord_access('github', 11).fetch(:badge_role_key)).to eq('DISCORD_ROLE_BADGE_TOP_100')
+    expect(store.discord_access('github', 4).fetch(:badge_role_key)).to be_nil
+    expect(store.discord_access('github', 11).fetch(:badge_role_key)).to be_nil
   end
   # rubocop:enable RSpec/ExampleLength
 

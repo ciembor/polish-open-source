@@ -320,10 +320,28 @@ module PolishOpenSourceRank
       end
 
       def discord_panel(profile)
+        access = store.discord_access(profile.fetch(:platform), profile.fetch(:github_id), period_start: @period)
         {
           connection: store.discord_connection(profile.fetch(:platform), profile.fetch(:github_id)),
-          access: store.discord_access(profile.fetch(:platform), profile.fetch(:github_id), period_start: @period)
+          access: access,
+          access_channels: discord_access_channels(access.fetch(:role_keys))
         }
+      end
+
+      def discord_access_channels(role_keys)
+        role_keys.filter_map do |role_key|
+          case role_key
+          when 'DISCORD_ROLE_TOP_10_PL' then 'Top 10 PL'
+          when 'DISCORD_ROLE_TOP_100_PL' then 'Top 100 PL'
+          when /\ADISCORD_ROLE_TOP_100_CITY_(.+)\z/
+            "Top 100 #{discord_city_name(Regexp.last_match(1))}"
+          end
+        end
+      end
+
+      def discord_city_name(env_slug)
+        slug = env_slug.downcase.tr('_', '-')
+        Domain::LocationCatalog::CITIES.find { |city| city.fetch(:slug) == slug }&.fetch(:name) || env_slug
       end
 
       def discord_channel_url
@@ -349,13 +367,27 @@ module PolishOpenSourceRank
           profile.fetch(:github_id),
           period_start: store.latest_period
         )
+        desired_role_ids = discord_role_map.role_ids(access.fetch(:role_keys))
+        sync_discord_access(discord_user.fetch('id'), access_token, profile.fetch(:login), desired_role_ids)
+        post_discord_welcome(discord_user.fetch('id'), profile, access, desired_role_ids)
+      end
+
+      def sync_discord_access(discord_user_id, access_token, github_login, desired_role_ids)
         discord_gateway.sync_member(
-          discord_user_id: discord_user.fetch('id'),
+          discord_user_id: discord_user_id,
           access_token: access_token,
-          github_login: profile.fetch(:login),
-          desired_role_ids: discord_role_map.role_ids(access.fetch(:role_keys)),
+          github_login: github_login,
+          desired_role_ids: desired_role_ids,
           managed_role_ids: discord_role_map.managed_role_ids
         )
+      end
+
+      def post_discord_welcome(discord_user_id, profile, access, role_ids)
+        channel_id = ENV.fetch('DISCORD_WELCOME_CHANNEL_ID', configuration.discord_invite_channel_id)
+        welcome = { channel_id: channel_id, discord_user_id: discord_user_id, profile: profile, access: access }
+        discord_gateway.post_welcome_message(**welcome, role_ids: role_ids)
+      rescue Auth::DiscordGateway::Error
+        nil
       end
 
       def secure_oauth_state?(session_key)

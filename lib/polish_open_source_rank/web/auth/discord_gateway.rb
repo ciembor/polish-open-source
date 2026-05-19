@@ -11,6 +11,8 @@ module PolishOpenSourceRank
         class Error < StandardError; end
 
         API_BASE = 'https://discord.com/api/v10'
+        TEXT_CHANNEL_TYPES = [0, 5, 15].freeze
+        SEND_MESSAGES = 1 << 11
 
         def initialize(configuration)
           @configuration = configuration
@@ -43,6 +45,19 @@ module PolishOpenSourceRank
             desired_role_ids: desired_role_ids,
             managed_role_ids: managed_role_ids
           )
+        end
+
+        def post_welcome_message(channel_id:, discord_user_id:, profile:, access:, role_ids:)
+          roles = guild_roles
+          channels = guild_channels
+          payload = DiscordWelcomeMessage.new(
+            discord_user_id: discord_user_id,
+            profile: profile,
+            access: access,
+            role_names: role_names(roles, role_ids),
+            writable_channels: writable_channels(channels, role_ids)
+          ).payload
+          create_message(channel_id, payload)
         end
 
         def sync_joined_member(discord_user_id:, github_login:, desired_role_ids:, managed_role_ids:)
@@ -87,6 +102,60 @@ module PolishOpenSourceRank
           request = Net::HTTP::Patch.new(uri, bot_headers)
           request.body = JSON.generate(nick: nick, roles: role_ids)
           perform_plain(uri, request)
+        end
+
+        def guild_roles
+          uri = URI("#{API_BASE}/guilds/#{configuration.discord_guild_id}/roles")
+          request = Net::HTTP::Get.new(uri, bot_headers)
+          json_request(uri, request)
+        end
+
+        def guild_channels
+          uri = URI("#{API_BASE}/guilds/#{configuration.discord_guild_id}/channels")
+          request = Net::HTTP::Get.new(uri, bot_headers)
+          json_request(uri, request)
+        end
+
+        def create_message(channel_id, payload)
+          uri = URI("#{API_BASE}/channels/#{channel_id}/messages")
+          request = Net::HTTP::Post.new(uri, bot_headers)
+          request.body = JSON.generate(payload)
+          json_request(uri, request)
+        end
+
+        def role_names(roles, role_ids)
+          names_by_id = roles.to_h { |role| [role.fetch('id'), role.fetch('name')] }
+          role_ids.filter_map { |role_id| names_by_id[role_id] }
+        end
+
+        def writable_channels(channels, role_ids)
+          channels_by_id = channels.to_h { |channel| [channel.fetch('id'), channel] }
+          channels
+            .select { |channel| writable_text_channel?(channel, channels_by_id, role_ids) }
+            .sort_by { |channel| [channel.fetch('position', 0), channel.fetch('name')] }
+            .map { |channel| "<##{channel.fetch('id')}>" }
+        end
+
+        def writable_text_channel?(channel, channels_by_id, role_ids)
+          return false unless TEXT_CHANNEL_TYPES.include?(channel.fetch('type'))
+
+          effective_overwrites(channel, channels_by_id).any? do |overwrite|
+            overwrite.fetch('type').zero? &&
+              role_ids.include?(overwrite.fetch('id')) &&
+              permission_allowed?(overwrite, SEND_MESSAGES)
+          end
+        end
+
+        def effective_overwrites(channel, channels_by_id)
+          parent = channels_by_id[channel['parent_id']]
+          Array(parent&.fetch('permission_overwrites', [])) + Array(channel.fetch('permission_overwrites', []))
+        end
+
+        def permission_allowed?(overwrite, permission)
+          allow = overwrite.fetch('allow').to_i
+          deny = overwrite.fetch('deny').to_i
+
+          allow.anybits?(permission) && deny.nobits?(permission)
         end
 
         def bot_headers
