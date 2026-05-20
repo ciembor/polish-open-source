@@ -5,6 +5,9 @@ module PolishOpenSourceRank
     class CodebergGateway
       PER_PAGE = 50
       SEARCH_PAGE_LIMIT = 10
+      SourceCandidate = Contexts::Ranking::Domain::SourceCandidate
+      SourceContributor = Contexts::Ranking::Domain::SourceContributor
+      SourceRepository = Contexts::Ranking::Domain::SourceRepository
 
       def initialize(client)
         @client = client
@@ -53,11 +56,11 @@ module PolishOpenSourceRank
       attr_reader :client
 
       def candidate(user)
-        { source_id: user.fetch('id'), login: user.fetch('login') }
+        SourceCandidate.new(source_id: user.fetch('id'), login: user.fetch('login'))
       end
 
       def profile(user)
-        {
+        SourceContributor.new(
           source_id: user.fetch('id'),
           login: user.fetch('login'),
           name: user['full_name'],
@@ -66,11 +69,11 @@ module PolishOpenSourceRank
           homepage: user['website'],
           html_url: user.fetch('html_url'),
           avatar_url: user['avatar_url']
-        }
+        )
       end
 
       def repository(repository)
-        {
+        SourceRepository.new(
           source_id: repository.fetch('id'),
           name: repository.fetch('name'),
           full_name: repository.fetch('full_name'),
@@ -81,7 +84,7 @@ module PolishOpenSourceRank
           fork: repository.fetch('fork'),
           archived: repository.fetch('archived'),
           stars: repository.fetch('stars_count').to_i
-        }
+        )
       end
 
       def each_page(path, params, limit: nil)
