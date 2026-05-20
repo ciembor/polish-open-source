@@ -225,8 +225,9 @@ a {
 }
 
 .hero__image {
+  margin-top: -10px;
   display: block;
-  height: 200px;
+  max-height: 242px;
   max-width: 100%;
   border-radius: 40px;
 }
