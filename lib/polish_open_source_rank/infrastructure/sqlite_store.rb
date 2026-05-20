@@ -4,7 +4,6 @@ module PolishOpenSourceRank
   module Infrastructure
     class SQLiteStore
       SCHEMA_VERSION = 1
-      API_REQUEST_INSERT_SQL = 'INSERT INTO api_request_events(platform, path, status, recorded_at) VALUES (?, ?, ?, ?)'
       REPOSITORY_STAR_OBSERVATION_SQL = <<~SQL
         INSERT INTO repository_star_observations(
           period_start, platform, repository_github_id, stargazers_count, observed_at
@@ -210,7 +209,7 @@ module PolishOpenSourceRank
       end
 
       def record_api_request(platform:, path:, status:, recorded_at: Time.now.utc)
-        execute(API_REQUEST_INSERT_SQL, [platform, path, status, recorded_at.iso8601])
+        source_request_log.record_api_request(platform: platform, path: path, status: status, recorded_at: recorded_at)
       end
 
       def upsert_discord_connection(platform:, user_github_id:, discord_user_id:, discord_username:)
@@ -377,6 +376,10 @@ module PolishOpenSourceRank
 
       def candidate_queue
         @candidate_queue ||= Contexts::Ranking::Infrastructure::SQLite::SQLiteCandidateQueue.new(database)
+      end
+
+      def source_request_log
+        @source_request_log ||= Contexts::Ranking::Infrastructure::SQLite::SQLiteSourceRequestLog.new(database)
       end
     end
   end
