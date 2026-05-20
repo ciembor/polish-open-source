@@ -76,7 +76,7 @@ module PolishOpenSourceRank
       end
 
       def prune_rankings(period, catalog: Domain::LocationCatalog)
-        RankingPruner.new(database, catalog: catalog).prune(period)
+        Contexts::Ranking::Infrastructure::SQLite::SQLiteRankingRetention.new(database, catalog: catalog).prune(period)
       end
 
       def latest_period
