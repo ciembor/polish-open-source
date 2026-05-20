@@ -544,10 +544,7 @@ module PolishOpenSourceRank
 
       def user_elite_badge(platform, user_id, period_start)
         rank = user_elite_rank(platform, user_id, period_start)
-        return { label: 'Polish Elite', value: rank_place(rank), status: 'ranked', rank: rank } if rank && rank <= 10
-
-        value = historical_user_top_ten?(platform, user_id) ? 'alumni' : 'contender'
-        { label: 'Polish Elite', value: value, status: value }
+        badge_policy.user_badge(rank, historical_top_ten: historical_user_top_ten?(platform, user_id))
       end
 
       def repository_elite_rank(platform, repository_id, period_start)
@@ -572,24 +569,7 @@ module PolishOpenSourceRank
 
       def repository_badge(platform, repository_id, period_start)
         rank = repository_elite_rank(platform, repository_id, period_start)
-        return { label: 'Polish Repo', value: rank_place(rank), status: 'ranked', rank: rank } if rank && rank <= 100
-
-        { label: 'Polish Repo', value: nil, status: 'outside_top_100', rank: rank }
-      end
-
-      def rank_place(rank)
-        "#{rank}#{ordinal_suffix(rank)}"
-      end
-
-      def ordinal_suffix(rank)
-        return 'th' if (11..13).cover?(rank.to_i % 100)
-
-        case rank.to_i % 10
-        when 1 then 'st'
-        when 2 then 'nd'
-        when 3 then 'rd'
-        else 'th'
-        end
+        badge_policy.repository_badge(rank)
       end
 
       def historical_user_top_ten?(platform, user_id)
@@ -657,25 +637,11 @@ module PolishOpenSourceRank
       end
 
       def discord_access_role_keys(country_rank, city_slug, city_rank)
-        [].tap do |keys|
-          add_discord_role_key(keys, 'DISCORD_ROLE_TOP_10_PL', country_rank, 10)
-          add_discord_role_key(keys, 'DISCORD_ROLE_TOP_100_PL', country_rank, 100)
-          if city_slug
-            add_discord_role_key(keys, "DISCORD_ROLE_TOP_100_CITY_#{city_slug.upcase.tr('-', '_')}", city_rank, 100)
-          end
-        end
-      end
-
-      def add_discord_role_key(keys, role_key, rank, limit)
-        keys << role_key if rank && rank <= limit
+        discord_role_policy.role_keys(country_rank: country_rank, city_slug: city_slug, city_rank: city_rank)
       end
 
       def discord_badge_role_key(country_rank)
-        case country_rank
-        when 1 then 'DISCORD_ROLE_BADGE_TOP_1'
-        when 2 then 'DISCORD_ROLE_BADGE_TOP_2'
-        when 3 then 'DISCORD_ROLE_BADGE_TOP_3'
-        end
+        discord_role_policy.badge_role_key(country_rank)
       end
 
       def bounded_limit(limit)
@@ -772,6 +738,14 @@ module PolishOpenSourceRank
 
       def schema_sql
         SQLiteSchema.sql
+      end
+
+      def badge_policy
+        @badge_policy ||= Contexts::Publication::Domain::BadgePolicy.new
+      end
+
+      def discord_role_policy
+        @discord_role_policy ||= Contexts::Community::Domain::DiscordRolePolicy.new
       end
     end
     # rubocop:enable Metrics/ClassLength
