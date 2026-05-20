@@ -188,6 +188,14 @@ class ConcurrentWriteDetectingStore
     guarded_write { @store.record_candidate(...) }
   end
 
+  def record_contributor_snapshot(...)
+    guarded_write { @store.record_contributor_snapshot(...) }
+  end
+
+  def record_repository_snapshot(...)
+    guarded_write { @store.record_repository_snapshot(...) }
+  end
+
   def mark_candidate(...)
     guarded_write { @store.mark_candidate(...) }
   end
@@ -288,6 +296,10 @@ class SinglePendingCandidateStore
   end
 
   def upsert_user(*); end
+
+  def record_contributor_snapshot(*); end
+
+  def record_repository_snapshot(*); end
 
   def record_user_stats(*); end
 

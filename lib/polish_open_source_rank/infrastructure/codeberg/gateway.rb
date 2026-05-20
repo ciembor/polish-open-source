@@ -25,7 +25,7 @@ module PolishOpenSourceRank
       def user(login, _codeberg_id = nil)
         profile(client.get("/users/#{login}").body)
       rescue CodebergClient::NotFound
-        raise Application::SourceNotFound
+        raise Contexts::Ranking::Application::SourceNotFound
       end
 
       def repositories_for(profile)

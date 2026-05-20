@@ -59,8 +59,16 @@ module PolishOpenSourceRank
         snapshot_repository.upsert_user(attributes)
       end
 
+      def record_contributor_snapshot(snapshot)
+        snapshot_repository.record_contributor_snapshot(snapshot)
+      end
+
       def record_user_stats(attributes)
         snapshot_repository.record_user_stats(attributes)
+      end
+
+      def record_repository_snapshot(snapshot)
+        snapshot_repository.record_repository_snapshot(snapshot)
       end
 
       def upsert_repository(attributes)
@@ -75,7 +83,11 @@ module PolishOpenSourceRank
         snapshot_repository.previous_repository_stargazers_count(period, platform, repository_github_id)
       end
 
-      def prune_rankings(period, catalog: Domain::LocationCatalog)
+      def previous_repository_stars(period, platform, repository_source_id)
+        snapshot_repository.previous_repository_stars(period, platform, repository_source_id)
+      end
+
+      def prune_rankings(period, catalog: Contexts::Ranking::Domain::LocationCatalog)
         Contexts::Ranking::Infrastructure::SQLite::SQLiteRankingRetention.new(database, catalog: catalog).prune(period)
       end
 

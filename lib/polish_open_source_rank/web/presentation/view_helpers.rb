@@ -40,15 +40,15 @@ module PolishOpenSourceRank
         end
 
         def scopes
-          Domain::LocationCatalog.scopes
+          Contexts::Ranking::Domain::LocationCatalog.scopes
         end
 
         def primary_city_scopes
-          Domain::LocationCatalog.primary_city_scopes
+          Contexts::Ranking::Domain::LocationCatalog.primary_city_scopes
         end
 
         def secondary_city_scopes
-          Domain::LocationCatalog.secondary_city_scopes
+          Contexts::Ranking::Domain::LocationCatalog.secondary_city_scopes
         end
 
         def city_path(slug, period_slug: @period_slug)

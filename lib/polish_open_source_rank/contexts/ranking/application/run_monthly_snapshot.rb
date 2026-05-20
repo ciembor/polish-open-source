@@ -93,9 +93,8 @@ module PolishOpenSourceRank
             repositories = source.repositories_for(profile)
             repository_deltas = repository_deltas(source, repositories, period)
 
-            with_store { store.upsert_user(user_attributes(source, profile, location)) }
-            user_stats = user_stats_attributes(period, source, profile, location, repositories, repository_deltas)
-            with_store { store.record_user_stats(user_stats) }
+            snapshot = contributor_snapshot(period, source, profile, location, repositories, repository_deltas)
+            with_store { store.record_contributor_snapshot(snapshot) }
             persist_repositories(period, source, profile, location, repositories, repository_deltas)
           end
 
@@ -110,7 +109,7 @@ module PolishOpenSourceRank
             return 0 if current_stars.zero?
 
             previous_stars = with_store do
-              store.previous_repository_stargazers_count(period, source.platform, repository.fetch(:source_id))
+              store.previous_repository_stars(period, source.platform, repository.fetch(:source_id))
             end
             return [current_stars - previous_stars.to_i, 0].max if previous_stars
 
@@ -119,18 +118,19 @@ module PolishOpenSourceRank
 
           def persist_repositories(period, source, profile, location, repositories, repository_deltas)
             repositories.each do |repository|
-              with_store { store.upsert_repository(repository_attributes(source, profile, repository)) }
               with_store do
-                store.record_repository_stats(repository_stats_attributes(period, source, profile, location, repository,
-                                                                          repository_deltas))
+                store.record_repository_snapshot(
+                  repository_snapshot(period, source, profile, location, repository, repository_deltas)
+                )
               end
             end
           end
 
-          def user_attributes(source, profile, location)
-            {
+          def contributor_snapshot(period, source, profile, location, repositories, repository_deltas)
+            Domain::ContributorSnapshot.new(
+              period: period,
               platform: source.platform,
-              github_id: profile.fetch(:source_id),
+              source_id: profile.fetch(:source_id),
               login: profile.fetch(:login),
               name: profile[:name],
               location_raw: location.raw,
@@ -139,31 +139,23 @@ module PolishOpenSourceRank
               email: profile[:email],
               homepage: blank_to_nil(profile[:homepage]),
               html_url: profile.fetch(:html_url),
-              avatar_url: profile[:avatar_url]
-            }
-          end
-
-          def user_stats_attributes(period, source, profile, location, repositories, repository_deltas)
-            {
-              period_start: period.start_date.to_s,
-              platform: source.platform,
-              user_github_id: profile.fetch(:source_id),
-              login: profile.fetch(:login),
-              city: location.city,
-              country: location.country,
-              public_repo_count: repositories.length,
+              avatar_url: profile[:avatar_url],
+              public_repository_count: repositories.length,
               total_stars: repositories.sum { |repository| repository.fetch(:stars) },
               monthly_stars_delta: repository_deltas.values.sum,
               public_activity_count: source.public_activity_count(profile, period)
-            }
+            )
           end
 
-          def repository_attributes(source, profile, repository)
-            {
+          def repository_snapshot(period, source, profile, location, repository, repository_deltas)
+            Domain::RepositorySnapshot.new(
+              period: period,
               platform: source.platform,
-              github_id: repository.fetch(:source_id),
-              owner_github_id: profile.fetch(:source_id),
+              source_id: repository.fetch(:source_id),
+              owner_source_id: profile.fetch(:source_id),
               owner_login: profile.fetch(:login),
+              owner_city: location.city,
+              owner_country: location.country,
               name: repository.fetch(:name),
               full_name: repository.fetch(:full_name),
               description: repository[:description],
@@ -171,22 +163,10 @@ module PolishOpenSourceRank
               homepage: blank_to_nil(repository[:homepage]),
               language: repository[:language],
               fork: repository.fetch(:fork),
-              archived: repository.fetch(:archived)
-            }
-          end
-
-          def repository_stats_attributes(period, source, profile, location, repository, repository_deltas)
-            {
-              period_start: period.start_date.to_s,
-              platform: source.platform,
-              repository_github_id: repository.fetch(:source_id),
-              owner_github_id: profile.fetch(:source_id),
-              owner_login: profile.fetch(:login),
-              owner_city: location.city,
-              owner_country: location.country,
-              stargazers_count: repository.fetch(:stars),
+              archived: repository.fetch(:archived),
+              stars: repository.fetch(:stars),
               monthly_stars_delta: repository_deltas.fetch(repository.fetch(:source_id))
-            }
+            )
           end
 
           def candidate_login(candidate)
