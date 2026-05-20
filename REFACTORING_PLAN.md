@@ -276,7 +276,7 @@ Expected deletions from `SQLiteStore`:
 - [x] `discord_badge_role_key`,
 - [x] `rank_place`,
 - [x] `ordinal_suffix`,
-- [ ] scope/metric string knowledge except SQL translation.
+- [x] scope/metric string knowledge except SQL translation.
 
 ### Phase 3: Split `SQLiteStore` by Owned Port
 

@@ -37,6 +37,18 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     expect(read_model.ranked_users('poland', period, 'total_stars', limit: 0).length).to eq(1)
   end
 
+  it 'accepts ranking policy metric keys for callers outside SQL translation' do
+    seed_user(id: 1, login: 'alice', city: 'Kraków', total_stars: 30, delta: 0, activity: 10)
+    seed_repository(
+      id: 10, owner_id: 1, owner: 'alice', full_name: 'alice/app', city: 'Kraków', stars: 50, delta: 0
+    )
+
+    expect(read_model.ranked_user_metric('poland', period, :user_top).first).to include(login: 'alice')
+    expect(read_model.ranked_repository_metric('poland', period, :repository_top).first).to include(
+      full_name: 'alice/app'
+    )
+  end
+
   it 'binds scope params as flat positional SQL parameters' do
     capturing_database = new_capturing_database
     read_model = described_class.new(capturing_database)

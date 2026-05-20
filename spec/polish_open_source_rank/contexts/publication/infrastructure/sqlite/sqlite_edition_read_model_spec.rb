@@ -38,9 +38,9 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     )
     expect(ranking_read_model.calls).to eq(
       [
-        [:repositories, 'krakow', '2026-04-01', 'stargazers_count', 3],
-        [:users, 'krakow', '2026-04-01', 'total_stars', 3],
-        [:users, 'krakow', '2026-04-01', 'public_activity_count', 3]
+        [:repositories, 'krakow', '2026-04-01', :repository_top, 3],
+        [:users, 'krakow', '2026-04-01', :user_top, 3],
+        [:users, 'krakow', '2026-04-01', :user_active, 3]
       ]
     )
   end
@@ -73,14 +73,14 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
 
   def new_capturing_ranking_read_model
     Struct.new(:calls) do
-      def ranked_repositories(scope, period_start, order_column, limit:)
-        calls << [:repositories, scope, period_start, order_column, limit]
+      def ranked_repository_metric(scope, period_start, metric_key, limit:)
+        calls << [:repositories, scope, period_start, metric_key, limit]
         [:repository_rows]
       end
 
-      def ranked_users(scope, period_start, order_column, limit:)
-        calls << [:users, scope, period_start, order_column, limit]
-        order_column == 'total_stars' ? [:star_rows] : [:activity_rows]
+      def ranked_user_metric(scope, period_start, metric_key, limit:)
+        calls << [:users, scope, period_start, metric_key, limit]
+        metric_key == :user_top ? [:star_rows] : [:activity_rows]
       end
     end.new([])
   end

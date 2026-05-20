@@ -23,6 +23,14 @@ module PolishOpenSourceRank
               end
             end
 
+            def ranked_user_metric(scope, period_start, metric_key, limit: Domain::RankingPolicy::RANKING_LIMIT)
+              ranked_users(scope, period_start, Domain::RankingPolicy.column(metric_key), limit: limit)
+            end
+
+            def ranked_repository_metric(scope, period_start, metric_key, limit: Domain::RankingPolicy::RANKING_LIMIT)
+              ranked_repositories(scope, period_start, Domain::RankingPolicy.column(metric_key), limit: limit)
+            end
+
             def ranked_users(scope, period_start, order_column, limit: Domain::RankingPolicy::RANKING_LIMIT)
               sql_scope, params = user_scope(scope)
               database.fetch_all(<<~SQL, [period_start, *params])
