@@ -1,0 +1,43 @@
+# frozen_string_literal: true
+
+RSpec.describe PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database do
+  it 'creates parent directories and configures SQLite connection defaults' do
+    path = File.join(Dir.mktmpdir, 'nested', 'rank.sqlite3')
+    database = described_class.open(path)
+
+    database.execute('CREATE TABLE records(id INTEGER PRIMARY KEY, name TEXT)')
+    database.execute('INSERT INTO records(name) VALUES (?)', ['alice'])
+    row = database.fetch_all('SELECT name FROM records').first
+
+    expect(File.file?(path)).to be(true)
+    expect(row).to include(name: 'alice')
+    expect(database.fetch_value('PRAGMA foreign_keys')).to eq(1)
+    expect(database.fetch_value('PRAGMA busy_timeout')).to eq(120_000)
+  end
+
+  it 'rolls transactions back on failure' do
+    database = described_class.open(File.join(Dir.mktmpdir, 'rank.sqlite3'))
+    database.execute('CREATE TABLE records(name TEXT)')
+
+    expect do
+      database.transaction do
+        database.execute('INSERT INTO records(name) VALUES (?)', ['alice'])
+        raise 'stop'
+      end
+    end.to raise_error(RuntimeError, 'stop')
+
+    expect(database.get_first_value('SELECT COUNT(*) FROM records')).to eq(0)
+  end
+
+  it 'commits successful transactions and exposes table metadata' do
+    database = described_class.open(File.join(Dir.mktmpdir, 'rank.sqlite3'))
+    database.execute('CREATE TABLE records(name TEXT)')
+
+    database.transaction do
+      database.execute('INSERT INTO records(name) VALUES (?)', ['alice'])
+    end
+
+    expect(database.fetch_value('SELECT COUNT(*) FROM records')).to eq(1)
+    expect(database.table_info('records').map { |column| column.fetch('name') }).to include('name')
+  end
+end
