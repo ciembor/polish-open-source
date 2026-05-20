@@ -282,7 +282,7 @@ Expected deletions from `SQLiteStore`:
 
 Create one shared SQLite connection wrapper:
 
-- `Shared::Infrastructure::SQLite::Database`
+- [x] `Shared::Infrastructure::SQLite::Database`
   - owns path, connection, PRAGMA, busy timeout, transactions, row symbolization;
   - exposes `execute`, `fetch_all`, `fetch_value`, `transaction`;
   - does not expose domain decisions.

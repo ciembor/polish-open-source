@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'sqlite3'
-
 module PolishOpenSourceRank
   module Infrastructure
     # rubocop:disable Metrics/ClassLength
@@ -41,7 +39,6 @@ module PolishOpenSourceRank
       end
 
       def migrate!
-        FileUtils.mkdir_p(path.dirname)
         execute_batch('PRAGMA foreign_keys = ON;')
         migration = PlatformSchemaMigration.new(database, schema_sql)
         migration.needed? ? migration.run : create_schema
@@ -421,15 +418,7 @@ module PolishOpenSourceRank
       attr_reader :path
 
       def database
-        @database ||= SQLite3::Database.new(path.to_s).tap do |connection|
-          configure_connection(connection)
-        end
-      end
-
-      def configure_connection(connection)
-        connection.results_as_hash = true
-        connection.busy_timeout = 120_000
-        connection.execute('PRAGMA foreign_keys = ON')
+        @database ||= Shared::Infrastructure::SQLite::Database.open(path)
       end
 
       def create_schema
