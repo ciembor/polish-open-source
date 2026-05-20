@@ -229,29 +229,11 @@ module PolishOpenSourceRank
       end
 
       def edition_years
-        fetch_all(<<~SQL)
-          SELECT DISTINCT substr(period_start, 1, 4) AS year
-          FROM sync_runs
-          WHERE #{edition_period_condition}
-          ORDER BY year DESC
-        SQL
+        edition_read_model.years
       end
 
       def monthly_editions(year, scope: 'poland')
-        fetch_all(<<~SQL, [year.to_s]).map do |row|
-          SELECT period_start
-          FROM sync_runs
-          WHERE #{edition_period_condition} AND substr(period_start, 1, 4) = ?
-          ORDER BY period_start DESC
-        SQL
-          period_start = row.fetch(:period_start)
-          {
-            period_start: period_start,
-            repositories: ranking_read_model.ranked_repositories(scope, period_start, 'stargazers_count', limit: 3),
-            users_by_stars: ranking_read_model.ranked_users(scope, period_start, 'total_stars', limit: 3),
-            users_by_activity: ranking_read_model.ranked_users(scope, period_start, 'public_activity_count', limit: 3)
-          }
-        end
+        edition_read_model.monthly_editions(year, scope: scope)
       end
 
       def recorded_period?(period_start)
@@ -578,23 +560,6 @@ module PolishOpenSourceRank
         limit.to_i.clamp(1, RANKING_LIMIT)
       end
 
-      def edition_period_condition
-        <<~SQL
-          (
-            EXISTS (
-              SELECT 1
-              FROM user_monthly_stats user_stats
-              WHERE user_stats.period_start = sync_runs.period_start
-            )
-            OR EXISTS (
-              SELECT 1
-              FROM repository_monthly_stats repository_stats
-              WHERE repository_stats.period_start = sync_runs.period_start
-            )
-          )
-        SQL
-      end
-
       def user_values(attributes)
         [
           attributes.fetch(:platform, 'github'), attributes.fetch(:github_id), attributes.fetch(:login),
@@ -662,6 +627,13 @@ module PolishOpenSourceRank
 
       def ranking_read_model
         @ranking_read_model ||= Contexts::Ranking::Infrastructure::SQLite::SQLiteRankingReadModel.new(database)
+      end
+
+      def edition_read_model
+        @edition_read_model ||= Contexts::Publication::Infrastructure::SQLite::SQLiteEditionReadModel.new(
+          database,
+          ranking_read_model: ranking_read_model
+        )
       end
 
       def badge_policy
