@@ -294,7 +294,7 @@ Then extract adapters behind use-case-owned ports:
   - [x] `SQLiteCandidateQueue`
   - `SQLiteSnapshotRepository`
   - `SQLiteRankingRetention`
-  - `SQLiteSourceRequestLog`
+  - [x] `SQLiteSourceRequestLog`
 - Publication read side:
   - [x] `SQLiteRankingReadModel`
   - [x] `SQLiteProfileReadModel`
