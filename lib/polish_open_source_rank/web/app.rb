@@ -325,6 +325,7 @@ module PolishOpenSourceRank
         @description = t('users.seo.description', user: display_name, platform: source_name)
         @canonical_path = user_profile_path(@profile)
         @discord_panel = discord_panel(@profile) if own_profile?(@profile) && @profile[:period_start]
+        @show_profile_badges = own_profile?(@profile)
         erb :user_profile
       end
 
@@ -333,13 +334,7 @@ module PolishOpenSourceRank
         @period = store.latest_period
         @repository = store.repository_profile(platform, owner, name, period_start: @period)
         halt 404 unless @repository
-        public_html_cache!(
-          'repository-profile',
-          @repository.fetch(:platform),
-          @repository.fetch(:github_id),
-          @period,
-          public_cache_revision(@period)
-        )
+        repository_profile_cache!(@repository)
 
         source_name = platform_name(@repository.fetch(:platform))
         @title = "#{@repository.fetch(:full_name)} - #{source_name} project"
@@ -349,6 +344,7 @@ module PolishOpenSourceRank
           platform: source_name
         )
         @canonical_path = repository_profile_path(@repository)
+        @show_repository_badge = own_repository?(@repository)
         erb :repository_profile
       end
 
@@ -374,6 +370,12 @@ module PolishOpenSourceRank
         current_user &&
           current_user.fetch(:platform) == profile.fetch(:platform) &&
           current_user.fetch(:github_id).to_i == profile.fetch(:github_id).to_i
+      end
+
+      def own_repository?(repository)
+        current_user &&
+          current_user.fetch(:platform) == repository.fetch(:platform) &&
+          current_user.fetch(:github_id).to_i == repository.fetch(:owner_github_id).to_i
       end
 
       def discord_panel(profile)
@@ -476,10 +478,12 @@ module PolishOpenSourceRank
       def render_user_badge(platform, login)
         user = store.user_profile(platform, login, period_start: store.latest_period)
         halt 404 unless user
+        badge = user.fetch(:badges).first
+        halt 404 unless badge
 
         content_type 'image/svg+xml'
         public_badge_cache!('user-badge', platform, login, store.latest_period)
-        settings.badge_renderer.svg(user.fetch(:elite_badge), home_url: app_home_url)
+        settings.badge_renderer.svg(badge, home_url: app_home_url)
       end
 
       def selected_edition_year(year)

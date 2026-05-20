@@ -31,6 +31,20 @@ module PolishOpenSourceRank
         )
       end
 
+      def repository_profile_cache!(repository)
+        cache_control = own_repository?(repository) ? 'private, no-cache' : 'public, max-age=0, must-revalidate'
+        cache_response!(
+          cache_control,
+          'repository-profile',
+          current_locale,
+          html_revision,
+          repository.fetch(:platform),
+          repository.fetch(:github_id),
+          @period,
+          public_cache_revision(@period)
+        )
+      end
+
       def public_badge_cache!(*parts)
         period = parts.last
         cache_response!(

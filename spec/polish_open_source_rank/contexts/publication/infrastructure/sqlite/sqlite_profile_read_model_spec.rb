@@ -19,23 +19,40 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
 
     expect(profile).to include(login: 'alice', elite_rank: 1)
     expect(profile.fetch(:elite_badge)).to include(value: '1st', status: 'ranked')
-    expect(profile.fetch(:repositories)).to contain_exactly(include(full_name: 'alice/app', stargazers_count: 30))
+    expect(profile.fetch(:top_100_badge)).to include(value: '1st', status: 'ranked')
+    expect(profile.fetch(:repositories)).to contain_exactly(
+      include(full_name: 'alice/app', stargazers_count: 30, polish_repo_badge: include(value: '1st'))
+    )
   end
 
-  it 'returns historical and contender user badges' do
+  it 'returns top-100 badges without ex-elite badges while users are still ranked' do
     seed_user(id: 1, login: 'alumni', total_stars: 1_000, period_start: '2026-03-01')
+    seed_user(id: 1, login: 'alumni', total_stars: 1)
     11.times do |index|
       seed_user(id: index + 2, login: "user#{index}", total_stars: 100 - index)
     end
     seed_user(id: 20, login: 'contender', total_stars: 1)
 
-    expect(read_model.user_profile('github', 'alumni', period_start: period).fetch(:elite_badge)).to include(
-      value: 'alumni',
-      status: 'alumni'
+    expect(read_model.user_profile('github', 'alumni', period_start: period).fetch(:elite_badge)).to be_nil
+    expect(read_model.user_profile('github', 'alumni', period_start: period).fetch(:top_100_badge)).to include(
+      value: '12th',
+      status: 'ranked'
     )
-    expect(read_model.user_profile('github', 'contender', period_start: period).fetch(:elite_badge)).to include(
-      value: 'contender',
-      status: 'contender'
+    expect(read_model.user_profile('github', 'contender', period_start: period).fetch(:top_100_badge)).to include(
+      value: '13th',
+      status: 'ranked'
+    )
+  end
+
+  it 'returns ex badges for historical users outside the current top 100' do
+    seed_user(id: 1, login: 'alumni', total_stars: 1_000, period_start: '2026-03-01')
+    seed_user_record(id: 1, login: 'alumni')
+
+    badges = read_model.user_profile('github', 'alumni', period_start: period).fetch(:badges)
+
+    expect(badges).to contain_exactly(
+      include(label: 'Polish Elite', value: 'ex', status: 'ex'),
+      include(label: 'Polish Top 100', value: 'ex', status: 'ex')
     )
   end
 

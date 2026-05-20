@@ -66,17 +66,29 @@
   </section>
 <% end %>
 
-<section class="profile-section profile-section--alt" aria-labelledby="profile-badge-heading">
-  <div class="content">
-    <h2 id="profile-badge-heading"><%= h t('users.badge.title') %></h2>
-    <div class="badge-preview">
-      <a href="<%= h app_path('/latest') %>">
-        <img src="<%= h app_path(user_badge_path(@profile)) %>" alt="<%= h t('users.badge.alt') %>">
-      </a>
-      <code><%= h linked_badge_markdown(t('users.badge.alt'), user_badge_path(@profile)) %></code>
+<% if @show_profile_badges %>
+  <section class="profile-section profile-section--alt" aria-labelledby="profile-badge-heading">
+    <div class="content">
+      <h2 id="profile-badge-heading"><%= h t('users.badge.title') %></h2>
+      <% if @profile.fetch(:badges, []).any? %>
+        <div class="badge-preview">
+          <a href="<%= h app_path('/latest') %>">
+            <img src="<%= h app_path(user_badge_path(@profile)) %>" alt="<%= h t('users.badge.alt') %>">
+          </a>
+          <code><%= h linked_badge_markdown(t('users.badge.alt'), user_badge_path(@profile)) %></code>
+        </div>
+      <% end %>
+      <% @repositories.select { |repository| repository[:polish_repo_badge] && repository[:polish_repo_badge][:value] }.each do |repository| %>
+        <div class="badge-preview">
+          <a href="<%= h app_path('/latest') %>">
+            <img src="<%= h app_path(repository_badge_path(repository)) %>" alt="<%= h t('repositories.badge.alt') %>">
+          </a>
+          <code><%= h linked_badge_markdown(t('repositories.badge.alt'), repository_badge_path(repository)) %></code>
+        </div>
+      <% end %>
     </div>
-  </div>
-</section>
+  </section>
+<% end %>
 
 <section class="profile-section" aria-labelledby="profile-summary-heading">
   <div class="content profile-grid">
@@ -116,11 +128,13 @@
           <dt><%= h t('rankings.metric.events') %></dt>
           <dd><%= number(@profile[:public_activity_count]) %></dd>
         </div>
-        <% if @profile[:elite_badge] %>
-          <div>
-            <dt><%= h @profile[:elite_badge].fetch(:label) %></dt>
-            <dd><%= h @profile[:elite_badge].fetch(:value) %></dd>
-          </div>
+        <% if @show_profile_badges %>
+          <% @profile.fetch(:badges, []).each do |badge| %>
+            <div>
+              <dt><%= h badge.fetch(:label) %></dt>
+              <dd><%= h badge.fetch(:value) %></dd>
+            </div>
+          <% end %>
         <% end %>
       </dl>
     </article>

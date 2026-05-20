@@ -154,10 +154,11 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     end
 
     expect(store.user_profile('github', 'user1').fetch(:elite_badge)).to include(value: '1st', status: 'ranked')
-    expect(store.user_profile('github', 'alumni').fetch(:elite_badge)).to include(value: 'alumni', status: 'alumni')
-    expect(store.user_profile('github', 'contender').fetch(:elite_badge)).to include(
-      value: 'contender',
-      status: 'contender'
+    expect(store.user_profile('github', 'alumni').fetch(:elite_badge)).to be_nil
+    expect(store.user_profile('github', 'alumni').fetch(:top_100_badge)).to include(value: '11th', status: 'ranked')
+    expect(store.user_profile('github', 'contender').fetch(:top_100_badge)).to include(
+      value: '12th',
+      status: 'ranked'
     )
   end
 
@@ -207,7 +208,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
   end
   # rubocop:enable RSpec/ExampleLength
 
-  it 'only gives repository badges a visible rank inside the current top 100' do
+  it 'gives repository badges their current Polish rank' do
     store.create_run(period)
     store.upsert_user(user_attributes(10, 'alice', 'Kraków'))
 
@@ -225,8 +226,8 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     )
     expect(store.repository_profile('github', 'alice', 'outside').fetch(:polish_repo_badge)).to include(
       label: 'Polish Repo',
-      value: nil,
-      status: 'outside_top_100'
+      value: '101st',
+      status: 'ranked'
     )
   end
 

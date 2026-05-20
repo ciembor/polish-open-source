@@ -145,7 +145,7 @@ en:
   users:
     avatar_alt: "%{user} profile photo"
     badge:
-      alt: "Polish Elite badge"
+      alt: "Polish Open Source badge"
       title: "GitHub badge"
     discord:
       channels_title: "Writable channels"
