@@ -318,22 +318,7 @@ module PolishOpenSourceRank
       end
 
       def discord_access(platform, user_github_id, period_start: latest_period)
-        rank = user_country_rank(platform, user_github_id, period_start)
-        city = user_city(platform, user_github_id, period_start)
-        city_slug = city_slug_for(city)
-        city_rank = city && user_city_rank(platform, user_github_id, city, period_start)
-        role_keys = discord_access_role_keys(rank, city_slug, city_rank)
-        badge_role_key = discord_badge_role_key(rank)
-
-        {
-          country_rank: rank,
-          city: city,
-          city_slug: city_slug,
-          city_rank: city_rank,
-          role_keys: [*role_keys, badge_role_key].compact,
-          access_role_keys: role_keys,
-          badge_role_key: badge_role_key
-        }
+        contributor_access_read_model.access(platform, user_github_id, period_start: period_start)
       end
 
       private
@@ -367,61 +352,6 @@ module PolishOpenSourceRank
 
       def run_lifecycle
         @run_lifecycle ||= SQLiteRunLifecycle.new(database)
-      end
-
-      def user_country_rank(platform, user_id, period_start)
-        return unless period_start
-
-        fetch_value(<<~SQL, [period_start, platform, user_id])
-          SELECT country_rank
-          FROM (
-            SELECT stats.platform, stats.user_github_id,
-                   RANK() OVER (ORDER BY stats.total_stars DESC, stats.platform ASC, stats.login COLLATE NOCASE ASC)
-                     AS country_rank
-            FROM user_monthly_stats stats
-            WHERE stats.period_start = ? AND stats.country = 'Poland'
-          )
-          WHERE platform = ? AND user_github_id = ?
-        SQL
-      end
-
-      def user_city(platform, user_id, period_start)
-        return unless period_start
-
-        fetch_value(<<~SQL, [period_start, platform, user_id])
-          SELECT city
-          FROM user_monthly_stats
-          WHERE period_start = ? AND platform = ? AND user_github_id = ?
-          LIMIT 1
-        SQL
-      end
-
-      def user_city_rank(platform, user_id, city, period_start)
-        return unless city && period_start
-
-        fetch_value(<<~SQL, [period_start, city, platform, user_id])
-          SELECT city_rank
-          FROM (
-            SELECT stats.platform, stats.user_github_id,
-                   RANK() OVER (ORDER BY stats.total_stars DESC, stats.platform ASC, stats.login COLLATE NOCASE ASC)
-                     AS city_rank
-            FROM user_monthly_stats stats
-            WHERE stats.period_start = ? AND stats.city = ?
-          )
-          WHERE platform = ? AND user_github_id = ?
-        SQL
-      end
-
-      def city_slug_for(city)
-        Domain::LocationCatalog::CITIES.find { |candidate| candidate.fetch(:name) == city }&.fetch(:slug)
-      end
-
-      def discord_access_role_keys(country_rank, city_slug, city_rank)
-        discord_role_policy.role_keys(country_rank: country_rank, city_slug: city_slug, city_rank: city_rank)
-      end
-
-      def discord_badge_role_key(country_rank)
-        discord_role_policy.badge_role_key(country_rank)
       end
 
       def user_values(attributes)
@@ -504,8 +434,9 @@ module PolishOpenSourceRank
         @profile_read_model ||= Contexts::Publication::Infrastructure::SQLite::SQLiteProfileReadModel.new(database)
       end
 
-      def discord_role_policy
-        @discord_role_policy ||= Contexts::Community::Domain::DiscordRolePolicy.new
+      def contributor_access_read_model
+        @contributor_access_read_model ||=
+          Contexts::Community::Infrastructure::SQLite::SQLiteContributorAccessReadModel.new(database)
       end
     end
     # rubocop:enable Metrics/ClassLength

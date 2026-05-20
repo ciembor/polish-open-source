@@ -31,6 +31,7 @@ require_relative 'polish_open_source_rank/contexts/publication/infrastructure/sq
 require_relative 'polish_open_source_rank/contexts/publication/infrastructure/sqlite/sqlite_profile_read_model'
 require_relative 'polish_open_source_rank/contexts/community/domain/discord_role_policy'
 require_relative 'polish_open_source_rank/contexts/community/infrastructure/discord/discord_role_map'
+require_relative 'polish_open_source_rank/contexts/community/infrastructure/sqlite/sqlite_contributor_access_read_model'
 require_relative 'polish_open_source_rank/domain/location_catalog'
 require_relative 'polish_open_source_rank/domain/location_classifier'
 require_relative 'polish_open_source_rank/application/month_period'
