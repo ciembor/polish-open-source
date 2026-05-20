@@ -1,19 +1,22 @@
-<a href="https://polish-open-source.pl/">
-  <img src="app/public/images/polish_open_source_banner.webp" alt="Polish Open Source" width="100%">
-</a>
+<div align="center">
+  <a href="https://polish-open-source.pl/">
+    <img src="app/public/images/polish_open_source_banner.webp" alt="Polish Open Source" width="800">
+  </a>
+  <h1 align="center">Polish Open Source</h1>
 
-# Polish Open Source
+  <p align="center">
+    Public users and repositories from Poland ranked by stars, monthly trend and activity.
+  </p>
 
-Public users and repositories from Poland ranked by stars, monthly trend and activity.
-
-<p>
-  <a href="#get-badge-and-join-discord">Get Badge</a> ·
-  <a href="#polish-elite-top-10">Polish Elite</a> ·
-  <a href="#polish-repos-top-10">Repos</a> ·
-  <a href="#trending-users-top-10">Trending Users</a> ·
-  <a href="#trending-repos-top-10">Trending Repos</a> ·
-  <a href="#users-activity-top-10">Activity</a>
-</p>
+  <p align="center">
+    <a href="#get-badge-and-join-discord">Join Discord & Get Badge</a> ·
+    <a href="#polish-elite-top-10">Polish Elite</a> ·
+    <a href="#polish-repos-top-10">Repos</a> ·
+    <a href="#trending-users-top-10">Trending Users</a> ·
+    <a href="#trending-repos-top-10">Trending Repos</a> ·
+    <a href="#users-activity-top-10">Activity</a>
+  </p>
+</div>
 
 ## Get Badge and Join Discord
 
