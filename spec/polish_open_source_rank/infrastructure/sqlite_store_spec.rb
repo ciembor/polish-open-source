@@ -238,12 +238,16 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     )
   end
 
-  it 'binds monthly edition year as a positional SQL parameter' do
+  it 'delegates monthly editions to the publication read model' do
     unwired_store = described_class.allocate
-    allow(unwired_store).to receive(:fetch_all).and_return([])
+    edition_read_model = instance_double(
+      PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLite::SQLiteEditionReadModel,
+      monthly_editions: []
+    )
+    allow(unwired_store).to receive(:edition_read_model).and_return(edition_read_model)
 
-    expect(unwired_store.monthly_editions(2026)).to eq([])
-    expect(unwired_store).to have_received(:fetch_all).with(include('substr(period_start, 1, 4)'), ['2026'])
+    expect(unwired_store.monthly_editions(2026, scope: 'krakow')).to eq([])
+    expect(edition_read_model).to have_received(:monthly_editions).with(2026, scope: 'krakow')
   end
 
   it 'binds recorded period checks as positional SQL parameters' do
