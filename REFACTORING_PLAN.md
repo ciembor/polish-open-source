@@ -290,7 +290,7 @@ Create one shared SQLite connection wrapper:
 Then extract adapters behind use-case-owned ports:
 
 - Ranking write side:
-  - `SQLiteSnapshotRunRepository`
+  - [x] `SQLiteSnapshotRunRepository`
   - [x] `SQLiteCandidateQueue`
   - [x] `SQLiteSnapshotRepository`
   - [x] `SQLiteRankingRetention`
