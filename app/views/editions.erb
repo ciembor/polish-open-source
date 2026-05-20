@@ -1,11 +1,13 @@
 <section class="hero">
   <div class="hero__inner">
-    <p class="eyebrow"><%= h t('editions.hero.eyebrow') %></p>
-    <h1><%= h t('editions.title') %></h1>
-    <p class="lede"><%= h t('editions.hero.lede') %></p>
-    <% if @year %>
-      <p class="period"><%= h t('editions.period_prefix') %> <%= h @year %></p>
-    <% end %>
+    <div>
+      <p class="eyebrow"><%= h t('editions.hero.eyebrow') %></p>
+      <h1><%= h t('editions.title') %></h1>
+      <p class="lede"><%= h t('editions.hero.lede') %></p>
+      <% if @year %>
+        <p class="period"><%= h t('editions.period_prefix') %> <%= h @year %></p>
+      <% end %>
+    </div>
   </div>
 </section>
 
