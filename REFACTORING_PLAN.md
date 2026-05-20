@@ -301,8 +301,8 @@ Then extract adapters behind use-case-owned ports:
   - [x] `SQLiteEditionReadModel`
   - [x] `SQLiteCacheRevisionReadModel`
 - Community:
-  - `SQLiteDiscordConnectionRepository`
-  - `SQLiteDiscordInviteRepository`
+  - [x] `SQLiteDiscordConnectionRepository`
+  - [x] `SQLiteDiscordInviteRepository`
   - [x] `SQLiteContributorAccessReadModel`
 - Operations:
   - `SQLiteJobProgressReadModel`
