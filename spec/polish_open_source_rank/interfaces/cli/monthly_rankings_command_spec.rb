@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe PolishOpenSourceRank::Application::MonthlySnapshotCommand do
+RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
   it 'runs a monthly job with injected persistence and sources' do
     output = StringIO.new
     job = instance_double(PolishOpenSourceRank::Application::MonthlySnapshotJob)

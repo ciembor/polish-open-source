@@ -314,8 +314,8 @@ Keep a temporary `Infrastructure::SQLiteStore` facade only as an anti-corruption
 Rename and move:
 
 - [x] `Application::MonthlySnapshotJob` -> `Ranking::Application::RunMonthlySnapshot`.
-- [ ] `Application::MonthlySnapshotCommand` -> `Interfaces::CLI::MonthlyRankingsCommand` or `Ranking::Application::RunMonthlySnapshotCommand` if it remains framework-free.
-- [ ] `Infrastructure::MonthlySnapshotComposition` -> `Interfaces::Composition::RankingJobFactory`.
+- [x] `Application::MonthlySnapshotCommand` -> `Interfaces::CLI::MonthlyRankingsCommand` or `Ranking::Application::RunMonthlySnapshotCommand` if it remains framework-free.
+- [x] `Infrastructure::MonthlySnapshotComposition` -> `Interfaces::Composition::RankingJobFactory`.
 
 Introduce source DTOs in the ranking context:
 
