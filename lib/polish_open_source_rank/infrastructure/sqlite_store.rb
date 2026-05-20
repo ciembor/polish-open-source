@@ -2,7 +2,6 @@
 
 module PolishOpenSourceRank
   module Infrastructure
-    # rubocop:disable Metrics/ClassLength
     class SQLiteStore
       SCHEMA_VERSION = 1
       API_REQUEST_INSERT_SQL = 'INSERT INTO api_request_events(platform, path, status, recorded_at) VALUES (?, ?, ?, ?)'
@@ -14,23 +13,6 @@ module PolishOpenSourceRank
         ON CONFLICT(period_start, platform, repository_github_id) DO UPDATE SET
           stargazers_count = excluded.stargazers_count,
           observed_at = excluded.observed_at
-      SQL
-      PROCESSED_USER_SQL = <<~SQL
-        SELECT 1
-        FROM user_monthly_stats user_stats
-        WHERE user_stats.period_start = ?
-          AND user_stats.platform = ?
-          AND user_stats.user_github_id = ?
-          AND (
-            user_stats.public_repo_count = 0
-            OR EXISTS (
-              SELECT 1
-              FROM repository_monthly_stats repository_stats
-              WHERE repository_stats.period_start = user_stats.period_start
-                AND repository_stats.platform = user_stats.platform
-                AND repository_stats.owner_github_id = user_stats.user_github_id
-            )
-          )
       SQL
 
       def initialize(path)
@@ -57,58 +39,26 @@ module PolishOpenSourceRank
       end
 
       def record_candidate(period, login:, source_query:, platform: 'github', source_id: nil, github_id: nil)
-        source_id ||= github_id
-        execute(<<~SQL, [period.start_date.to_s, platform, source_id, login, source_query, Time.now.utc.iso8601])
-          INSERT INTO candidate_users(period_start, platform, github_id, login, source_query, status, updated_at)
-          VALUES (?, ?, ?, ?, ?, 'pending', ?)
-          ON CONFLICT(period_start, platform, login) DO UPDATE SET
-            github_id = excluded.github_id,
-            source_query = CASE
-              WHEN instr(candidate_users.source_query, excluded.source_query) > 0
-              THEN candidate_users.source_query
-              ELSE candidate_users.source_query || ', ' || excluded.source_query
-            END,
-            updated_at = CASE
-              WHEN candidate_users.status = 'pending' THEN excluded.updated_at
-              ELSE candidate_users.updated_at
-            END
-        SQL
+        candidate_queue.record(
+          period,
+          login: login,
+          source_query: source_query,
+          platform: platform,
+          source_id: source_id,
+          github_id: github_id
+        )
       end
 
       def pending_candidates(period, limit: 100, platform: nil)
-        platform_sql = 'AND platform = ?' if platform
-        params = [period.start_date.to_s]
-        params << platform if platform
-        params << limit
-        fetch_all(<<~SQL, params)
-          SELECT platform, github_id, github_id AS source_id, login
-          FROM candidate_users
-          WHERE period_start = ? AND status = 'pending' #{platform_sql}
-          ORDER BY platform ASC, login COLLATE NOCASE ASC
-          LIMIT ?
-        SQL
+        candidate_queue.pending(period, limit: limit, platform: platform)
       end
 
       def mark_candidate(period, platform, login, status = nil, error = nil)
-        unless %w[github gitlab codeberg].include?(platform)
-          error = status
-          status = login
-          login = platform
-          platform = 'github'
-        end
-        execute(<<~SQL, [status, error, Time.now.utc.iso8601, period.start_date.to_s, platform, login])
-          UPDATE candidate_users
-          SET status = ?, error = ?, updated_at = ?
-          WHERE period_start = ? AND platform = ? AND login = ?
-        SQL
+        candidate_queue.mark(period, platform, login, status, error)
       end
 
       def processed_user?(period, platform, github_id = nil)
-        unless github_id
-          github_id = platform
-          platform = 'github'
-        end
-        fetch_value(PROCESSED_USER_SQL, [period.start_date.to_s, platform, github_id])
+        candidate_queue.processed_user?(period, platform, github_id)
       end
 
       def retryable_candidates?(period, platforms: nil)
@@ -424,7 +374,10 @@ module PolishOpenSourceRank
         @job_progress_read_model ||=
           Contexts::Operations::Infrastructure::SQLite::SQLiteJobProgressReadModel.new(database)
       end
+
+      def candidate_queue
+        @candidate_queue ||= Contexts::Ranking::Infrastructure::SQLite::SQLiteCandidateQueue.new(database)
+      end
     end
-    # rubocop:enable Metrics/ClassLength
   end
 end
