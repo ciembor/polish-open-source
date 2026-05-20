@@ -23,6 +23,7 @@ require_relative 'polish_open_source_rank/contexts/ranking/domain/ranking_metric
 require_relative 'polish_open_source_rank/contexts/ranking/domain/ranking_scope'
 require_relative 'polish_open_source_rank/contexts/ranking/application/source_not_found'
 require_relative 'polish_open_source_rank/contexts/ranking/application/run_monthly_snapshot'
+require_relative 'polish_open_source_rank/contexts/ranking/infrastructure/sqlite/sqlite_ranking_read_model'
 require_relative 'polish_open_source_rank/contexts/publication/domain/rank'
 require_relative 'polish_open_source_rank/contexts/publication/domain/badge_policy'
 require_relative 'polish_open_source_rank/contexts/publication/infrastructure/sqlite/sqlite_cache_revision_read_model'
