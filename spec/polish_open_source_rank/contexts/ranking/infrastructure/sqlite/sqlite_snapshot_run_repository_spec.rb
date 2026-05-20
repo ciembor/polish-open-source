@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class FakeRunLifecycleDatabase
+class FakeSnapshotRunDatabase
   attr_reader :executions, :values
 
   def initialize(*results)
@@ -19,11 +19,11 @@ class FakeRunLifecycleDatabase
   end
 end
 
-RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteRunLifecycle do
+RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteSnapshotRunRepository do
   let(:period) { PolishOpenSourceRank::Application::MonthPeriod.parse('2026-04') }
 
   it 'creates runs with UTC timestamps and positional database params', :aggregate_failures do
-    database = FakeRunLifecycleDatabase.new(nil, 123)
+    database = FakeSnapshotRunDatabase.new(nil, 123)
     lifecycle = described_class.new(database)
     allow(Time).to receive(:now) { Time.new(2026, 4, 1, 12, 0, 0, '+02:00') }
 
@@ -43,7 +43,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteRunLifecycle do
   end
 
   it 'does not reopen finished runs without retryable candidates' do
-    database = FakeRunLifecycleDatabase.new(1)
+    database = FakeSnapshotRunDatabase.new(1)
     lifecycle = described_class.new(database)
 
     expect(lifecycle.create(period)).to be_nil
@@ -56,7 +56,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteRunLifecycle do
   end
 
   it 'marks runs as failed with the original error message' do
-    database = FakeRunLifecycleDatabase.new
+    database = FakeSnapshotRunDatabase.new
     lifecycle = described_class.new(database)
 
     lifecycle.fail(12, 'GitHubClient::Forbidden: blocked')
@@ -66,7 +66,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteRunLifecycle do
   end
 
   it 'marks runs as finished with a UTC timestamp' do
-    database = FakeRunLifecycleDatabase.new
+    database = FakeSnapshotRunDatabase.new
     lifecycle = described_class.new(database)
     allow(Time).to receive(:now) { Time.new(2026, 4, 1, 12, 0, 0, '+02:00') }
 
@@ -78,7 +78,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteRunLifecycle do
   end
 
   it 'reports retryable candidates through the lifecycle query' do
-    database = FakeRunLifecycleDatabase.new(1, nil)
+    database = FakeSnapshotRunDatabase.new(1, nil)
     lifecycle = described_class.new(database)
 
     expect(lifecycle.retryable_candidates?(period)).to be(true)

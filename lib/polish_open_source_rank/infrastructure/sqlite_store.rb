@@ -191,7 +191,7 @@ module PolishOpenSourceRank
       end
 
       def run_lifecycle
-        @run_lifecycle ||= SQLiteRunLifecycle.new(database)
+        @run_lifecycle ||= Contexts::Ranking::Infrastructure::SQLite::SQLiteSnapshotRunRepository.new(database)
       end
 
       def symbolize(row)
