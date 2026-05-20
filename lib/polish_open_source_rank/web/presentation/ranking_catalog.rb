@@ -5,30 +5,31 @@ module PolishOpenSourceRank
     module Presentation
       class RankingCatalog
         Descriptor = Struct.new(:column, :title_key, :label_key, keyword_init: true)
+        RankingPolicy = Contexts::Ranking::Domain::RankingPolicy
 
         RANKINGS = {
           %w[repositories top] => Descriptor.new(
-            column: :stargazers_count,
+            column: RankingPolicy.column(:repository_top).to_sym,
             title_key: 'rankings.title.repositories.top',
             label_key: 'rankings.metric.stars'
           ),
           %w[repositories trending] => Descriptor.new(
-            column: :monthly_stars_delta,
+            column: RankingPolicy.column(:repository_trending).to_sym,
             title_key: 'rankings.title.repositories.trending',
             label_key: 'rankings.metric.new_stars'
           ),
           %w[users active] => Descriptor.new(
-            column: :public_activity_count,
+            column: RankingPolicy.column(:user_active).to_sym,
             title_key: 'rankings.title.users.active',
             label_key: 'rankings.metric.events'
           ),
           %w[users top] => Descriptor.new(
-            column: :total_stars,
+            column: RankingPolicy.column(:user_top).to_sym,
             title_key: 'rankings.title.users.top',
             label_key: 'rankings.metric.stars'
           ),
           %w[users trending] => Descriptor.new(
-            column: :monthly_stars_delta,
+            column: RankingPolicy.column(:user_trending).to_sym,
             title_key: 'rankings.title.users.trending',
             label_key: 'rankings.metric.new_stars'
           )

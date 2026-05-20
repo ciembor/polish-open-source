@@ -42,14 +42,11 @@ module PolishOpenSourceRank
             def edition(period_start, scope)
               {
                 period_start: period_start,
-                repositories: ranking_read_model.ranked_repositories(scope, period_start, 'stargazers_count', limit: 3),
-                users_by_stars: ranking_read_model.ranked_users(scope, period_start, 'total_stars', limit: 3),
-                users_by_activity: ranking_read_model.ranked_users(
-                  scope,
-                  period_start,
-                  'public_activity_count',
-                  limit: 3
-                )
+                repositories: ranking_read_model.ranked_repository_metric(
+                  scope, period_start, :repository_top, limit: 3
+                ),
+                users_by_stars: ranking_read_model.ranked_user_metric(scope, period_start, :user_top, limit: 3),
+                users_by_activity: ranking_read_model.ranked_user_metric(scope, period_start, :user_active, limit: 3)
               }
             end
 
