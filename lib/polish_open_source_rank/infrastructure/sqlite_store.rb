@@ -212,35 +212,11 @@ module PolishOpenSourceRank
       end
 
       def latest_period
-        fetch_value(<<~SQL)
-          SELECT MAX(period_start)
-          FROM (
-            SELECT period_start FROM user_monthly_stats
-            UNION
-            SELECT period_start FROM repository_monthly_stats
-          )
-        SQL
+        cache_revision_read_model.latest_period
       end
 
       def public_cache_revision(period_start)
-        return unless period_start
-
-        fetch_value(<<~SQL, [period_start, period_start, period_start])
-          SELECT MAX(value)
-          FROM (
-            SELECT MAX(updated_at) AS value
-            FROM user_monthly_stats
-            WHERE period_start = ?
-            UNION ALL
-            SELECT MAX(updated_at) AS value
-            FROM repository_monthly_stats
-            WHERE period_start = ?
-            UNION ALL
-            SELECT MAX(COALESCE(finished_at, started_at)) AS value
-            FROM sync_runs
-            WHERE period_start = ?
-          )
-        SQL
+        cache_revision_read_model.public_cache_revision(period_start)
       end
 
       def completed_periods
@@ -727,6 +703,12 @@ module PolishOpenSourceRank
 
       def schema_sql
         SQLiteSchema.sql
+      end
+
+      def cache_revision_read_model
+        @cache_revision_read_model ||= Contexts::Publication::Infrastructure::SQLite::SQLiteCacheRevisionReadModel.new(
+          database
+        )
       end
 
       def badge_policy

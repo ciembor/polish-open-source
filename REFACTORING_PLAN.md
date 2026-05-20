@@ -299,7 +299,7 @@ Then extract adapters behind use-case-owned ports:
   - `SQLiteRankingReadModel`
   - `SQLiteProfileReadModel`
   - `SQLiteEditionReadModel`
-  - `SQLiteCacheRevisionReadModel`
+  - [x] `SQLiteCacheRevisionReadModel`
 - Community:
   - `SQLiteDiscordConnectionRepository`
   - `SQLiteDiscordInviteRepository`
