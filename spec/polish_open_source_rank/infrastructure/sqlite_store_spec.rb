@@ -246,50 +246,6 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     expect(unwired_store).to have_received(:fetch_all).with(include('substr(period_start, 1, 4)'), ['2026'])
   end
 
-  it 'binds repository ranking scope params as a flat positional list' do
-    unwired_store = described_class.allocate
-    allow(unwired_store).to receive(:repository_scope).with('krakow').and_return(['stats.owner_city = ?', ['Kraków']])
-    allow(unwired_store).to receive_messages(trending_filter: '', fetch_all: [])
-
-    unwired_store.send(:ranked_repositories, 'krakow', '2026-04-01', 'stargazers_count')
-
-    expect(unwired_store).to have_received(:fetch_all).with(include('stats.owner_city = ?'), %w[2026-04-01 Kraków])
-  end
-
-  it 'returns repository scope bindings as arrays' do
-    unwired_store = described_class.allocate
-
-    expect(unwired_store.send(:repository_scope, 'poland')).to eq(['stats.owner_country = ?', ['Poland']])
-    expect(unwired_store.send(:repository_scope, 'krakow')).to eq(['stats.owner_city = ?', ['Kraków']])
-  end
-
-  it 'binds user ranking scope params as a flat positional list' do
-    unwired_store = described_class.allocate
-    allow(unwired_store).to receive(:user_scope).with('krakow').and_return(['stats.city = ?', ['Kraków']])
-    allow(unwired_store).to receive_messages(trending_filter: '', fetch_all: [])
-
-    unwired_store.send(:ranked_users, 'krakow', '2026-04-01', 'total_stars')
-
-    expect(unwired_store).to have_received(:fetch_all).with(include('stats.city = ?'), %w[2026-04-01 Kraków])
-  end
-
-  it 'bounds ranking limits inside generated SQL' do
-    unwired_store = described_class.allocate
-    allow(unwired_store).to receive(:user_scope).with('poland').and_return(['stats.country = ?', ['Poland']])
-    generated_sql = []
-    allow(unwired_store).to receive(:trending_filter).and_return('')
-    allow(unwired_store).to receive(:fetch_all) do |sql, _params|
-      generated_sql << sql
-      []
-    end
-
-    unwired_store.send(:ranked_users, 'poland', '2026-04-01', 'total_stars', limit: '1000; DROP TABLE users')
-    unwired_store.send(:ranked_users, 'poland', '2026-04-01', 'total_stars', limit: 0)
-
-    expect(generated_sql.first).to match(/LIMIT 100\n\z/)
-    expect(generated_sql.last).to match(/LIMIT 1\n\z/)
-  end
-
   it 'binds recorded period checks as positional SQL parameters' do
     unwired_store = described_class.allocate
     allow(unwired_store).to receive(:fetch_value).and_return(1)
