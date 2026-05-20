@@ -213,11 +213,22 @@ a {
 
 .hero__inner {
   padding: 56px 0 44px;
+  display: grid;
   grid-template-columns: minmax(0, 1.08fr) minmax(320px, .92fr);
-    align-items: center;
-    gap: 34px;
-    margin-bottom: 44px;
-    display: grid;
+  align-items: center;
+  gap: 34px;
+}
+
+.hero__image,
+.hero__image-link {
+  justify-self: end;
+}
+
+.hero__image {
+  display: block;
+  height: 200px;
+  max-width: 100%;
+  border-radius: 40px;
 }
 
 .eyebrow,
@@ -1242,7 +1253,17 @@ h3 {
 
 @media (max-width: 680px) {
   .hero__inner {
+    grid-template-columns: 1fr;
     padding: 42px 0 34px;
+  }
+
+  .hero__image,
+  .hero__image-link {
+    justify-self: start;
+  }
+
+  .hero__image {
+    height: auto;
   }
 
   th,

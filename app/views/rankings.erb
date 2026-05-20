@@ -9,11 +9,13 @@
     <% end %>
   </div>
 
-    <% if current_user %>
-      <img src="images/pos.png" style="height: 210px; border-radius: 15px"/>
-    <% else %>
-      <a href="<%= h app_path('/auth/github') %>"><img src="images/pos.png" style="height: 210px; border-radius: 15px"/></a>
-    <% end %>
+  <% if current_user %>
+    <img class="hero__image" src="/images/pos.png" alt="Polish Open Source">
+  <% else %>
+    <a class="hero__image-link" href="<%= h app_path('/auth/github') %>">
+      <img class="hero__image" src="/images/pos.png" alt="Polish Open Source">
+    </a>
+  <% end %>
 
   </div>
 </section>
