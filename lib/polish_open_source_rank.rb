@@ -25,6 +25,7 @@ require_relative 'polish_open_source_rank/contexts/ranking/application/source_no
 require_relative 'polish_open_source_rank/contexts/ranking/application/run_monthly_snapshot'
 require_relative 'polish_open_source_rank/contexts/publication/domain/rank'
 require_relative 'polish_open_source_rank/contexts/publication/domain/badge_policy'
+require_relative 'polish_open_source_rank/contexts/publication/infrastructure/sqlite/sqlite_cache_revision_read_model'
 require_relative 'polish_open_source_rank/contexts/community/domain/discord_role_policy'
 require_relative 'polish_open_source_rank/contexts/community/infrastructure/discord/discord_role_map'
 require_relative 'polish_open_source_rank/domain/location_catalog'
