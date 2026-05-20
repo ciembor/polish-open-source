@@ -319,9 +319,9 @@ Rename and move:
 
 Introduce source DTOs in the ranking context:
 
-- [ ] `Ranking::Domain::SourceCandidate`
-- [ ] `Ranking::Domain::SourceContributor`
-- [ ] `Ranking::Domain::SourceRepository`
+- [x] `Ranking::Domain::SourceCandidate`
+- [x] `Ranking::Domain::SourceContributor`
+- [x] `Ranking::Domain::SourceRepository`
 
 The source gateways should return these DTOs, not generic hashes. The use case should stop constructing persistence hashes. It should pass domain snapshots to `SnapshotRepository`.
 

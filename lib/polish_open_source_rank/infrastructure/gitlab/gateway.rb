@@ -5,6 +5,9 @@ module PolishOpenSourceRank
     class GitLabGateway
       PER_PAGE = 100
       SEARCH_PAGE_LIMIT = 10
+      SourceCandidate = Contexts::Ranking::Domain::SourceCandidate
+      SourceContributor = Contexts::Ranking::Domain::SourceContributor
+      SourceRepository = Contexts::Ranking::Domain::SourceRepository
 
       def initialize(client)
         @client = client
@@ -53,11 +56,11 @@ module PolishOpenSourceRank
       attr_reader :client
 
       def candidate(user)
-        { source_id: user.fetch('id'), login: user.fetch('username') }
+        SourceCandidate.new(source_id: user.fetch('id'), login: user.fetch('username'))
       end
 
       def profile(user)
-        {
+        SourceContributor.new(
           source_id: user.fetch('id'),
           login: user.fetch('username'),
           name: user['name'],
@@ -66,11 +69,11 @@ module PolishOpenSourceRank
           homepage: user['website_url'],
           html_url: user.fetch('web_url'),
           avatar_url: user['avatar_url']
-        }
+        )
       end
 
       def repository(repository)
-        {
+        SourceRepository.new(
           source_id: repository.fetch('id'),
           name: repository.fetch('name'),
           full_name: repository.fetch('path_with_namespace'),
@@ -81,7 +84,7 @@ module PolishOpenSourceRank
           fork: !repository['forked_from_project'].nil?,
           archived: repository.fetch('archived', false),
           stars: repository.fetch('star_count').to_i
-        }
+        )
       end
 
       def each_page(path, params, limit: nil)
