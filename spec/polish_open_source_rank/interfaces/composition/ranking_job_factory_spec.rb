@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe PolishOpenSourceRank::Infrastructure::MonthlySnapshotComposition do
+RSpec.describe PolishOpenSourceRank::Interfaces::Composition::RankingJobFactory do
   it 'builds the command from configuration and infrastructure adapters' do
     configuration = command_configuration
     clients = stub_clients
@@ -8,7 +8,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::MonthlySnapshotComposition 
 
     command = described_class.build(['--month', '2026-04'], configuration: configuration, output: StringIO.new)
 
-    expect(command).to be_a(PolishOpenSourceRank::Application::MonthlySnapshotCommand)
+    expect(command).to be_a(PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand)
     expect(PolishOpenSourceRank::Infrastructure::GitHubGateway).to have_received(:new).with(clients.fetch(:github))
     expect(PolishOpenSourceRank::Infrastructure::GitLabGateway).to have_received(:new).with(clients.fetch(:gitlab))
     expect(PolishOpenSourceRank::Infrastructure::CodebergGateway).to have_received(:new).with(clients.fetch(:codeberg))
@@ -25,7 +25,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::MonthlySnapshotComposition 
       output: StringIO.new
     )
 
-    expect(command).to be_a(PolishOpenSourceRank::Application::MonthlySnapshotCommand)
+    expect(command).to be_a(PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand)
     expect(PolishOpenSourceRank::Infrastructure::GitHubGateway).not_to have_received(:new)
     expect(PolishOpenSourceRank::Infrastructure::GitLabGateway).to have_received(:new).with(clients.fetch(:gitlab))
     expect(PolishOpenSourceRank::Infrastructure::CodebergGateway).not_to have_received(:new)
