@@ -5,20 +5,12 @@ module PolishOpenSourceRank
     module Ranking
       module Domain
         class RankingMetric
-          DEFINITIONS = {
-            user_top: 'total_stars',
-            user_trending: 'monthly_stars_delta',
-            user_active: 'public_activity_count',
-            repository_top: 'stargazers_count',
-            repository_trending: 'monthly_stars_delta'
-          }.freeze
-
           def self.column(key)
-            DEFINITIONS.fetch(key)
+            RankingPolicy.column(key)
           end
 
           def self.trending?(column)
-            column == 'monthly_stars_delta'
+            RankingPolicy.trending?(column)
           end
         end
       end

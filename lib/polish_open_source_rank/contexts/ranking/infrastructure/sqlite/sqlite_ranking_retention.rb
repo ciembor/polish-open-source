@@ -6,8 +6,6 @@ module PolishOpenSourceRank
       module Infrastructure
         module SQLite
           class SQLiteRankingRetention
-            RANKING_LIMIT = 100
-
             def initialize(database, catalog: Domain::LocationCatalog)
               @database = database
               @catalog = catalog
@@ -38,8 +36,8 @@ module PolishOpenSourceRank
                 id_column: 'platform, user_github_id',
                 country_column: 'country',
                 city_column: 'city',
-                metrics: %w[total_stars monthly_stars_delta public_activity_count],
-                tie_breaker: 'login COLLATE NOCASE ASC'
+                metrics: Domain::RankingPolicy::USER_RANKINGS.values,
+                tie_breaker: Domain::RankingPolicy::USER_TIE_BREAKER
               )
               execute(<<~SQL, [period_start])
                 DELETE FROM user_monthly_stats
@@ -55,8 +53,8 @@ module PolishOpenSourceRank
                 id_column: 'platform, repository_github_id',
                 country_column: 'owner_country',
                 city_column: 'owner_city',
-                metrics: %w[stargazers_count monthly_stars_delta],
-                tie_breaker: 'owner_login COLLATE NOCASE ASC, repository_github_id ASC'
+                metrics: Domain::RankingPolicy::REPOSITORY_RANKINGS.values,
+                tie_breaker: Domain::RankingPolicy::REPOSITORY_TIE_BREAKER
               )
               execute(<<~SQL, [period_start])
                 DELETE FROM repository_monthly_stats
@@ -69,7 +67,9 @@ module PolishOpenSourceRank
               scopes = [[options.fetch(:country_column), catalog::COUNTRY]] +
                        catalog::CITIES.map { |city| [options.fetch(:city_column), city.fetch(:name)] }
               options.fetch(:metrics).product(scopes).map do |metric, (scope_column, scope_value)|
-                ranked_ids_sql(options.merge(metric: metric, scope_column: scope_column, scope_value: scope_value))
+                ranked_ids_sql(
+                  options.merge(metric: metric.column, scope_column: scope_column, scope_value: scope_value)
+                )
               end.join("\nUNION\n")
             end
 
@@ -85,7 +85,7 @@ module PolishOpenSourceRank
                   WHERE period_start = #{sql_string(options.fetch(:period_start))}
                     AND #{options.fetch(:scope_column)} = #{sql_string(options.fetch(:scope_value))}
                 )
-                WHERE ranking_position <= #{RANKING_LIMIT}
+                WHERE ranking_position <= #{Domain::RankingPolicy::RANKING_LIMIT}
               SQL
             end
 

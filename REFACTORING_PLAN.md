@@ -266,7 +266,7 @@ Rules:
 Move pure policy out of `SQLiteStore`:
 
 - [x] `Ranking::Domain::LocationCatalog` and `LocationClassifier` from current `Domain`.
-- [ ] `Ranking::Domain::RankingPolicy` for metric definitions, limits, tie-breakers, and trending filter.
+- [x] `Ranking::Domain::RankingPolicy` for metric definitions, limits, tie-breakers, and trending filter.
 - [x] `Publication::Domain::BadgePolicy` for user/repository badge status and ordinal label.
 - [x] `Community::Domain::DiscordRolePolicy` for top 10/top 100/city role keys.
 
