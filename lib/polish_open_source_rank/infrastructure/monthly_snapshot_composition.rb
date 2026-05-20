@@ -32,7 +32,7 @@ module PolishOpenSourceRank
       end
 
       def job
-        Application::MonthlySnapshotJob.new(store: store, sources: sources)
+        Contexts::Ranking::Application::RunMonthlySnapshot.new(store: store, sources: sources)
       end
 
       def sources

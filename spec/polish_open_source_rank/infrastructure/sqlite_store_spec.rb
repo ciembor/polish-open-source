@@ -231,14 +231,11 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
   end
 
   it 'formats ranked badge positions with English ordinal suffixes' do
-    expect(store.send(:rank_place, 1)).to eq('1st')
-    expect(store.send(:rank_place, 2)).to eq('2nd')
-    expect(store.send(:rank_place, 3)).to eq('3rd')
-    expect(store.send(:rank_place, 4)).to eq('4th')
-    expect(store.send(:rank_place, 11)).to eq('11th')
-    expect(store.send(:rank_place, 12)).to eq('12th')
-    expect(store.send(:rank_place, 13)).to eq('13th')
-    expect(store.send(:rank_place, 21)).to eq('21st')
+    rank = PolishOpenSourceRank::Contexts::Publication::Domain::Rank
+
+    expect([1, 2, 3, 4, 11, 12, 13, 21].map { |position| rank.place(position) }).to eq(
+      %w[1st 2nd 3rd 4th 11th 12th 13th 21st]
+    )
   end
 
   it 'binds monthly edition year as a positional SQL parameter' do

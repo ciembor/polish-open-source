@@ -2,6 +2,6 @@
 
 module PolishOpenSourceRank
   module Application
-    class SourceNotFound < StandardError; end
+    SourceNotFound = Contexts::Ranking::Application::SourceNotFound
   end
 end
