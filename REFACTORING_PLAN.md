@@ -305,7 +305,7 @@ Then extract adapters behind use-case-owned ports:
   - [x] `SQLiteDiscordInviteRepository`
   - [x] `SQLiteContributorAccessReadModel`
 - Operations:
-  - `SQLiteJobProgressReadModel`
+  - [x] `SQLiteJobProgressReadModel`
 
 Keep a temporary `Infrastructure::SQLiteStore` facade only as an anti-corruption layer for tests and old callers. Delete it after callers move to the new ports.
 

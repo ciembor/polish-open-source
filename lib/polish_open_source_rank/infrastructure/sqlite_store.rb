@@ -256,7 +256,7 @@ module PolishOpenSourceRank
       end
 
       def job_progress(now: Time.now.utc)
-        SQLiteJobProgress.new(database).call(now: now)
+        job_progress_read_model.call(now: now)
       end
 
       def record_api_request(platform:, path:, status:, recorded_at: Time.now.utc)
@@ -418,6 +418,11 @@ module PolishOpenSourceRank
       def discord_invite_repository
         @discord_invite_repository ||=
           Contexts::Community::Infrastructure::SQLite::SQLiteDiscordInviteRepository.new(database)
+      end
+
+      def job_progress_read_model
+        @job_progress_read_model ||=
+          Contexts::Operations::Infrastructure::SQLite::SQLiteJobProgressReadModel.new(database)
       end
     end
     # rubocop:enable Metrics/ClassLength
