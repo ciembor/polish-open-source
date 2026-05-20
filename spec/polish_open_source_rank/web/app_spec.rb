@@ -95,6 +95,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(invalid_response.status).to eq(404)
   end
 
+  # rubocop:disable RSpec/ExampleLength
   it 'renders user profile pages from ranking users', :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     request = Rack::MockRequest.new(described_class)
@@ -111,8 +112,10 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile_response.body).to include('src="https://avatars.example/alice.png"')
     expect(profile_response.body).to include('GitHub profile')
     expect(profile_response.body).to include('Best projects')
-    expect(profile_response.body).to include('/badges/users/github/alice.svg')
-    expect(profile_response.body).to include('[![Polish Elite badge](https://rank.example/badges/users/github/alice.svg)]')
+    expect(profile_response.body).not_to include('/badges/users/github/alice.svg')
+    expect(profile_response.body).not_to include(
+      '[![Polish Open Source badge](https://rank.example/badges/users/github/alice.svg)]'
+    )
     expect(profile_response.body).to include('alice/app')
     expect(profile_response.body).to include('/icons/medal-gold.svg')
     expect(profile_response.body).to include('href="/repositories/github/alice/app"')
@@ -124,6 +127,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(badge_response.body).to include('href="https://rank.example/latest"')
     expect(missing_response.status).to eq(404)
   end
+  # rubocop:enable RSpec/ExampleLength
 
   # rubocop:disable RSpec/ExampleLength
   it 'logs ranked GitHub users in and syncs their Discord account', :aggregate_failures do
@@ -159,6 +163,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile.body).to include('Top 10 PL')
     expect(profile.body).to include('Top 100 PL')
     expect(profile.body).to include('Top 100 Kraków')
+    expect(profile.body).to include('/badges/users/github/alice.svg')
+    expect(profile.body).to include('/badges/repositories/github/alice/app.svg')
+    expect(profile.body).to include('Polish Top 100')
     expect(profile.body.index('Your Discord access')).to be < profile.body.index('GitHub badge')
     expect(profile.body.index('GitHub badge')).to be < profile.body.index('Profile')
     expect(profile.body).not_to include('Discord not connected')
@@ -294,6 +301,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(request.get('/users/github/carol').body).to include('/icons/medal-bronze.svg')
   end
 
+  # rubocop:disable RSpec/ExampleLength
   it 'renders repository profile pages and GitHub badges from ranking projects', :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     request = Rack::MockRequest.new(described_class)
@@ -303,15 +311,30 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     badge_response = request.get('/badges/repositories/github/alice/app.svg')
     short_badge_response = request.get('/badges/repositories/alice/app.svg')
     missing_response = request.get('/repositories/github/alice/missing')
+    described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
+    github_start = request.get('/auth/github')
+    github_state = Rack::Utils.parse_query(URI(github_start.location).query).fetch('state')
+    github_callback = request.get(
+      "/auth/github/callback?code=github-code&state=#{github_state}",
+      'HTTP_COOKIE' => cookie_header(github_start)
+    )
+    owner_profile_response = request.get(
+      '/repositories/github/alice/app',
+      'HTTP_COOKIE' => cookie_header(github_callback)
+    )
 
     expect(ranking_response.body).to include('href="/repositories/github/alice/app"')
     expect(profile_response.status).to eq(200)
     expect(profile_response.body).to include('<title>alice/app - GitHub project</title>')
     expect(profile_response.body).to include('rel="canonical" href="https://rank.example/repositories/github/alice/app"')
     expect(profile_response.body).to include('/icons/medal-gold.svg')
-    expect(profile_response.body).to include('GitHub badge')
-    expect(profile_response.body).to include('/badges/repositories/github/alice/app.svg')
-    expect(profile_response.body).to include('[![Polish Repo badge](https://rank.example/badges/repositories/github/alice/app.svg)]')
+    expect(profile_response.body).not_to include('GitHub badge')
+    expect(profile_response.body).not_to include('/badges/repositories/github/alice/app.svg')
+    expect(owner_profile_response.body).to include('GitHub badge')
+    expect(owner_profile_response.body).to include('/badges/repositories/github/alice/app.svg')
+    expect(owner_profile_response.body).to include(
+      '[![Polish Repo badge](https://rank.example/badges/repositories/github/alice/app.svg)]'
+    )
     expect(badge_response.status).to eq(200)
     expect(badge_response.content_type).to include('image/svg+xml')
     expect(badge_response.body).to include('Polish Repo')
@@ -321,6 +344,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(short_badge_response.status).to eq(200)
     expect(missing_response.status).to eq(404)
   end
+  # rubocop:enable RSpec/ExampleLength
 
   it 'renders editions with year pagination' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
