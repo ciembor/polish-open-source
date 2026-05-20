@@ -264,57 +264,28 @@ module PolishOpenSourceRank
       end
 
       def upsert_discord_connection(platform:, user_github_id:, discord_user_id:, discord_username:)
-        execute(<<~SQL, [platform, user_github_id, discord_user_id, discord_username, Time.now.utc.iso8601])
-          INSERT INTO discord_connections(
-            platform, user_github_id, discord_user_id, discord_username, updated_at
-          )
-          VALUES (?, ?, ?, ?, ?)
-          ON CONFLICT(platform, user_github_id) DO UPDATE SET
-            discord_user_id = excluded.discord_user_id,
-            discord_username = excluded.discord_username,
-            updated_at = excluded.updated_at
-        SQL
+        discord_connection_repository.upsert(
+          platform: platform,
+          user_github_id: user_github_id,
+          discord_user_id: discord_user_id,
+          discord_username: discord_username
+        )
       end
 
       def discord_connection(platform, user_github_id)
-        fetch_all(<<~SQL, [platform, user_github_id]).first
-          SELECT discord_user_id, discord_username, updated_at
-          FROM discord_connections
-          WHERE platform = ? AND user_github_id = ?
-          LIMIT 1
-        SQL
+        discord_connection_repository.find(platform, user_github_id)
       end
 
       def record_discord_invite(platform:, user_github_id:, code:, url:)
-        execute(<<~SQL, [platform, user_github_id, code, url, Time.now.utc.iso8601])
-          INSERT INTO discord_invites(platform, user_github_id, code, url, created_at)
-          VALUES (?, ?, ?, ?, ?)
-          ON CONFLICT(platform, user_github_id) DO UPDATE SET
-            code = excluded.code,
-            url = excluded.url,
-            created_at = excluded.created_at
-        SQL
+        discord_invite_repository.record(platform: platform, user_github_id: user_github_id, code: code, url: url)
       end
 
       def discord_invite(platform, user_github_id)
-        fetch_all(<<~SQL, [platform, user_github_id]).first
-          SELECT code, url, created_at
-          FROM discord_invites
-          WHERE platform = ? AND user_github_id = ?
-          LIMIT 1
-        SQL
+        discord_invite_repository.find(platform, user_github_id)
       end
 
       def discord_invite_profile(code)
-        fetch_all(<<~SQL, [code]).first
-          SELECT users.platform, users.github_id, users.login
-          FROM discord_invites
-          JOIN users
-            ON users.platform = discord_invites.platform
-           AND users.github_id = discord_invites.user_github_id
-          WHERE discord_invites.code = ?
-          LIMIT 1
-        SQL
+        discord_invite_repository.profile_for_code(code)
       end
 
       def discord_access(platform, user_github_id, period_start: latest_period)
@@ -437,6 +408,16 @@ module PolishOpenSourceRank
       def contributor_access_read_model
         @contributor_access_read_model ||=
           Contexts::Community::Infrastructure::SQLite::SQLiteContributorAccessReadModel.new(database)
+      end
+
+      def discord_connection_repository
+        @discord_connection_repository ||=
+          Contexts::Community::Infrastructure::SQLite::SQLiteDiscordConnectionRepository.new(database)
+      end
+
+      def discord_invite_repository
+        @discord_invite_repository ||=
+          Contexts::Community::Infrastructure::SQLite::SQLiteDiscordInviteRepository.new(database)
       end
     end
     # rubocop:enable Metrics/ClassLength

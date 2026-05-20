@@ -1,0 +1,34 @@
+# frozen_string_literal: true
+
+RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite::SQLiteDiscordInviteRepository do
+  let(:database) do
+    PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(
+      File.join(Dir.mktmpdir, 'rank.sqlite3')
+    ).tap do |sqlite|
+      sqlite.execute_batch(PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql)
+    end
+  end
+  let(:clock) { -> { Time.utc(2026, 5, 1, 12, 0, 0) } }
+  let(:repository) { described_class.new(database, clock: clock) }
+
+  it 'records one active Discord invite per ranking identity' do
+    seed_user
+
+    repository.record(platform: 'github', user_github_id: 1, code: 'abc', url: 'https://discord.gg/abc')
+    repository.record(platform: 'github', user_github_id: 1, code: 'def', url: 'https://discord.gg/def')
+
+    expect(repository.find('github', 1)).to include(
+      code: 'def',
+      url: 'https://discord.gg/def',
+      created_at: '2026-05-01T12:00:00Z'
+    )
+    expect(repository.profile_for_code('def')).to include(platform: 'github', github_id: 1, login: 'alice')
+  end
+
+  def seed_user
+    database.execute(
+      'INSERT INTO users(platform, github_id, login, html_url, updated_at) VALUES (?, ?, ?, ?, ?)',
+      ['github', 1, 'alice', 'https://github.com/alice', '2026-05-01T00:01:00Z']
+    )
+  end
+end
