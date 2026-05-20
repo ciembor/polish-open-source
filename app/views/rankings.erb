@@ -1,11 +1,20 @@
 <section class="hero">
   <div class="hero__inner">
+  <div>
     <p class="eyebrow">Open-source ranking</p>
     <h1><%= h scope_name(@scope) %></h1>
     <p class="lede"><%= h t('rankings.hero.lede') %></p>
     <% if @period %>
       <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @period %>"><%= h @period %></time></p>
     <% end %>
+  </div>
+
+    <% if current_user %>
+      <img src="images/pos.png" style="height: 210px; border-radius: 15px"/>
+    <% else %>
+      <a href="<%= h app_path('/auth/github') %>"><img src="images/pos.png" style="height: 210px; border-radius: 15px"/></a>
+    <% end %>
+
   </div>
 </section>
 

@@ -208,10 +208,16 @@ a {
 .hero {
   border-bottom: 1px solid var(--line);
   background: linear-gradient(110deg, #ffffff 0%, #eef7f3 52%, #fff7ed 100%);
-}
+
+} 
 
 .hero__inner {
   padding: 56px 0 44px;
+  grid-template-columns: minmax(0, 1.08fr) minmax(320px, .92fr);
+    align-items: center;
+    gap: 34px;
+    margin-bottom: 44px;
+    display: grid;
 }
 
 .eyebrow,
