@@ -20,6 +20,10 @@ module PolishOpenSourceRank
               SQL
             end
 
+            def edition_years
+              years
+            end
+
             def monthly_editions(year, scope: 'poland')
               database.fetch_all(<<~SQL, [year.to_s]).map do |row|
                 SELECT period_start

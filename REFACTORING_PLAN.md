@@ -42,6 +42,22 @@ This plan describes a full architectural refactor toward DDD, Clean Architecture
 - `Web::Auth::DiscordGateway` lives under `web`, but it is an infrastructure adapter used by both web OAuth and the Discord bot.
 - The read side and write side have different needs but share one store interface. That amplifies changes: adding a profile field, changing ranking logic, or changing Discord access touches unrelated methods.
 
+## Remaining Review Findings
+
+- [x] Replace storage-shaped monthly snapshot writes in `Ranking::Application::RunMonthlySnapshot` with domain/application snapshot objects. The use case should say `source_id`, `contributor`, `repository`, and `stars`; SQLite adapters can keep mapping those concepts to legacy `github_id`, `user_github_id`, `repository_github_id`, and `stargazers_count` columns.
+- [ ] Replace direct `Infrastructure::SQLiteStore` callers with role-sized ports in web, CLI, and Discord bot composition. The facade may stay only while old tests and callers are migrated.
+- [ ] Split `Web::App` into thin route groups/controllers after publication/community use cases exist. It currently still combines routing, OAuth, session management, Discord sync, public rendering, cache, and internal job monitor behavior.
+- [ ] Move Discord member sync and welcome-message infrastructure out of `web/auth` into the Community context. Web OAuth may remain in the web interface, but Discord guild operations should be a Community adapter behind use cases.
+  - [x] Move profile-page Discord access panel composition into `Community::Application::ShowDiscordPanel`.
+  - [ ] Move Discord OAuth callback member synchronization into `Community::Application::ConnectDiscordAccount`.
+- [ ] Migrate remaining old namespace aliases (`Application::MonthPeriod`, `Application::MonthlySnapshotJob`, `Domain::LocationCatalog`, `Domain::LocationClassifier`) to the new `Shared`/`Contexts` names and then delete the compatibility files.
+  - [x] Move production call sites for period, source-not-found, and location aliases to the new namespaces where this can be done without breaking compatibility specs.
+  - [ ] Migrate specs and delete the compatibility files.
+- [ ] Strengthen architecture fitness checks so direct web-to-`SQLiteStore` and new old-namespace imports fail after their migration phases are complete.
+  - [x] Add checks preventing storage column names in ranking use cases.
+  - [x] Add checks preventing production code from reintroducing old application compatibility namespaces.
+  - [ ] Add direct web-to-`SQLiteStore` checks after publication/community use cases replace the facade.
+
 ## Target Architecture
 
 Use one process and one database, but organize the code as explicit contexts with inward dependencies.
@@ -346,24 +362,27 @@ The use case remains allowed to coordinate discovery, candidate processing, retr
 
 Create application queries:
 
-- `Publication::Application::ShowRankings`
-- `Publication::Application::ShowRankingDetail`
-- `Publication::Application::ShowUserProfile`
-- `Publication::Application::ShowRepositoryProfile`
-- `Publication::Application::ListEditions`
-- `Publication::Application::RenderBadge`
+- [x] `Publication::Application::ShowRankings`
+- [x] `Publication::Application::ShowRankingDetail`
+- [x] `Publication::Application::ShowUserProfile`
+- [x] `Publication::Application::ShowRepositoryProfile`
+- [x] `Publication::Application::ListEditions`
+- [x] `Publication::Application::RenderBadge`
 
 Each returns plain response models, for example:
 
-- `RankingsPage`
-- `ProfilePage`
-- `RepositoryPage`
-- `EditionIndex`
-- `BadgeView`
+- [x] `RankingsPage`
+- [ ] `ProfilePage`
+- [ ] `RepositoryPage`
+- [x] `EditionIndex`
+- [ ] `BadgeView`
 
-Move the current ranking/profile SQL into publication read model adapters. Keep SQL optimized and close to SQLite, but return explicit models rather than raw row hashes.
+- [x] Move the current ranking/profile SQL into publication read model adapters. Keep SQL optimized and close to SQLite, but return explicit models rather than raw row hashes.
 
-After this phase, web controllers should not call methods like `store.user_rankings`, `store.user_profile`, or `store.discord_access` directly.
+- [ ] After this phase, web controllers should not call methods like `store.user_rankings`, `store.user_profile`, or `store.discord_access` directly.
+  - [x] Stop bypassing publication queries for rankings, profiles, editions, and badges.
+  - [x] Move Discord access panel behind a Community application query.
+  - [ ] Move Discord account connection/sync behind a Community application use case.
 
 ### Phase 6: Split Sinatra App Into Thin Routes and Controllers
 

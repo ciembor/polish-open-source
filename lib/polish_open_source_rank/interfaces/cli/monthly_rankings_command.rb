@@ -17,7 +17,7 @@ module PolishOpenSourceRank
         end
 
         def call
-          period = Application::MonthPeriod.parse(month_argument || Application::MonthPeriod.previous_month.key)
+          period = Shared::Domain::Period.parse(month_argument || Shared::Domain::Period.previous_month.key)
           with_interrupt_handling { job.call(period, refresh: refresh?) }
           output.puts "Finished monthly ranking run for #{period.key}"
         end

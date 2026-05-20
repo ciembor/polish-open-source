@@ -27,7 +27,7 @@ module PolishOpenSourceRank
       def user(login, _github_id = nil)
         profile(client.get("/users/#{login}").body)
       rescue GitHubClient::NotFound
-        raise Application::SourceNotFound
+        raise Contexts::Ranking::Application::SourceNotFound
       end
 
       def repositories_for(profile)

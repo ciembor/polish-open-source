@@ -25,7 +25,7 @@ module PolishOpenSourceRank
       def user(_login, gitlab_id)
         profile(client.get("/users/#{gitlab_id}").body)
       rescue GitLabClient::NotFound
-        raise Application::SourceNotFound
+        raise Contexts::Ranking::Application::SourceNotFound
       end
 
       def repositories_for(profile)

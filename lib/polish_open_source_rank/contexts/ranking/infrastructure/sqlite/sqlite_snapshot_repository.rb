@@ -39,6 +39,11 @@ module PolishOpenSourceRank
               SQL
             end
 
+            def record_contributor_snapshot(snapshot)
+              upsert_user(contributor_attributes(snapshot))
+              record_user_stats(contributor_stats_attributes(snapshot))
+            end
+
             def record_user_stats(attributes)
               database.execute(<<~SQL, user_stats_values(attributes))
                 INSERT INTO user_monthly_stats(
@@ -56,6 +61,11 @@ module PolishOpenSourceRank
                   public_activity_count = excluded.public_activity_count,
                   updated_at = excluded.updated_at
               SQL
+            end
+
+            def record_repository_snapshot(snapshot)
+              upsert_repository(repository_attributes(snapshot))
+              record_repository_stats(repository_stats_attributes(snapshot))
             end
 
             def upsert_repository(attributes)
@@ -100,6 +110,10 @@ module PolishOpenSourceRank
               record_repository_star_observation(attributes, observed_at)
             end
 
+            def previous_repository_stars(period, platform, repository_source_id)
+              previous_repository_stargazers_count(period, platform, repository_source_id)
+            end
+
             def previous_repository_stargazers_count(period, platform, repository_github_id)
               database.fetch_value(<<~SQL, [platform, repository_github_id, period.start_date.to_s])
                 SELECT stargazers_count
@@ -115,6 +129,68 @@ module PolishOpenSourceRank
             private
 
             attr_reader :clock, :database
+
+            def contributor_attributes(snapshot)
+              {
+                platform: snapshot.platform,
+                github_id: snapshot.source_id,
+                login: snapshot.login,
+                name: snapshot.name,
+                location_raw: snapshot.location_raw,
+                city: snapshot.city,
+                country: snapshot.country,
+                email: snapshot.email,
+                homepage: snapshot.homepage,
+                html_url: snapshot.html_url,
+                avatar_url: snapshot.avatar_url
+              }
+            end
+
+            def contributor_stats_attributes(snapshot)
+              {
+                period_start: snapshot.period.start_date.to_s,
+                platform: snapshot.platform,
+                user_github_id: snapshot.source_id,
+                login: snapshot.login,
+                city: snapshot.city,
+                country: snapshot.country,
+                public_repo_count: snapshot.public_repository_count,
+                total_stars: snapshot.total_stars,
+                monthly_stars_delta: snapshot.monthly_stars_delta,
+                public_activity_count: snapshot.public_activity_count
+              }
+            end
+
+            def repository_attributes(snapshot)
+              {
+                platform: snapshot.platform,
+                github_id: snapshot.source_id,
+                owner_github_id: snapshot.owner_source_id,
+                owner_login: snapshot.owner_login,
+                name: snapshot.name,
+                full_name: snapshot.full_name,
+                description: snapshot.description,
+                html_url: snapshot.html_url,
+                homepage: snapshot.homepage,
+                language: snapshot.language,
+                fork: snapshot.fork,
+                archived: snapshot.archived
+              }
+            end
+
+            def repository_stats_attributes(snapshot)
+              {
+                period_start: snapshot.period.start_date.to_s,
+                platform: snapshot.platform,
+                repository_github_id: snapshot.source_id,
+                owner_github_id: snapshot.owner_source_id,
+                owner_login: snapshot.owner_login,
+                owner_city: snapshot.owner_city,
+                owner_country: snapshot.owner_country,
+                stargazers_count: snapshot.stars,
+                monthly_stars_delta: snapshot.monthly_stars_delta
+              }
+            end
 
             def user_values(attributes)
               [

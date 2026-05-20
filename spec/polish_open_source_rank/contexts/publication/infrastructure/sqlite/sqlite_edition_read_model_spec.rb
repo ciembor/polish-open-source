@@ -17,6 +17,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     seed_user_stats('2026-04-01')
 
     expect(read_model.years).to eq([{ year: '2026' }])
+    expect(read_model.edition_years).to eq([{ year: '2026' }])
   end
 
   it 'builds monthly editions from the ranking read model' do

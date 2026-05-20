@@ -274,13 +274,13 @@ module PolishOpenSourceRank
       end
 
       def render_city(period_slug, slug)
-        halt 404 unless Domain::LocationCatalog.city_slugs.include?(slug)
+        halt 404 unless Contexts::Ranking::Domain::LocationCatalog.city_slugs.include?(slug)
 
         render_rankings(period_slug, slug)
       end
 
       def render_city_ranking_detail(period_slug, slug, kind, metric)
-        halt 404 unless Domain::LocationCatalog.city_slugs.include?(slug)
+        halt 404 unless Contexts::Ranking::Domain::LocationCatalog.city_slugs.include?(slug)
 
         render_ranking_detail(period_slug, slug, kind, metric)
       end
@@ -290,8 +290,9 @@ module PolishOpenSourceRank
         @period_slug = period_slug
         @period = period_for(period_slug)
         public_html_cache!('rankings', period_slug, scope, @period, public_cache_revision(@period))
-        @user_rankings = rankings_or_empty(@period) { store.user_rankings(scope, period_start: @period) }
-        @repository_rankings = rankings_or_empty(@period) { store.repository_rankings(scope, period_start: @period) }
+        page = show_rankings.call(scope: scope, period_start: @period)
+        @user_rankings = page.user_rankings
+        @repository_rankings = page.repository_rankings
         @title = "#{scope_name(@scope)} open-source ranking"
         @description = t('rankings.seo.description', scope: scope_name(@scope))
         @canonical_path = scope == 'poland' ? period_base_path(period_slug) : city_path(scope, period_slug: period_slug)
@@ -299,12 +300,15 @@ module PolishOpenSourceRank
       end
 
       def render_editions(year = nil)
-        @years = store.edition_years.map { |row| row.fetch(:year) }
-        @year = selected_edition_year(year)
+        page = list_editions.call(year: year)
+        halt 404 unless page
+
+        @years = page.years
+        @year = page.year
         public_html_cache!('editions', @year || 'index', latest_public_cache_key)
-        @editions = @year ? store.monthly_editions(@year) : []
-        @newer_year = adjacent_edition_year(@year, -1)
-        @older_year = adjacent_edition_year(@year, 1)
+        @editions = page.editions
+        @newer_year = page.newer_year
+        @older_year = page.older_year
         @title = year ? "#{t('editions.title')} #{year}" : t('editions.title')
         @description = t('editions.seo.description')
         @canonical_path = year ? editions_path(year) : editions_path
@@ -314,7 +318,7 @@ module PolishOpenSourceRank
       def render_user_profile(platform, login)
         @period_slug = 'latest'
         @period = store.latest_period
-        @profile = store.user_profile(platform, login, period_start: @period)
+        @profile = show_user_profile.call(platform: platform, login: login, period_start: @period)
         halt 404 unless @profile
         profile_cache!(@profile)
 
@@ -324,7 +328,7 @@ module PolishOpenSourceRank
         @title = "#{display_name} - #{source_name} profile"
         @description = t('users.seo.description', user: display_name, platform: source_name)
         @canonical_path = user_profile_path(@profile)
-        @discord_panel = discord_panel(@profile) if own_profile?(@profile) && @profile[:period_start]
+        @discord_panel = show_discord_panel_for(@profile) if own_profile?(@profile) && @profile[:period_start]
         @show_profile_badges = own_profile?(@profile)
         erb :user_profile
       end
@@ -332,7 +336,7 @@ module PolishOpenSourceRank
       def render_repository_profile(platform, owner, name)
         @period_slug = 'latest'
         @period = store.latest_period
-        @repository = store.repository_profile(platform, owner, name, period_start: @period)
+        @repository = show_repository_profile.call(platform: platform, owner: owner, name: name, period_start: @period)
         halt 404 unless @repository
         repository_profile_cache!(@repository)
 
@@ -349,16 +353,16 @@ module PolishOpenSourceRank
       end
 
       def render_repository_badge(platform, owner, name)
-        repository = store.repository_profile(platform, owner, name, period_start: store.latest_period)
-        halt 404 unless repository
+        badge = render_badge.repository(platform: platform, owner: owner, name: name, period_start: store.latest_period)
+        halt 404 unless badge
 
         content_type 'image/svg+xml'
         public_badge_cache!('repository-badge', platform, owner, name, store.latest_period)
-        settings.badge_renderer.svg(repository.fetch(:polish_repo_badge), home_url: app_home_url)
+        settings.badge_renderer.svg(badge, home_url: app_home_url)
       end
 
       def ranked_github_profile(login)
-        profile = store.user_profile('github', login, period_start: store.latest_period)
+        profile = show_user_profile.call(platform: 'github', login: login, period_start: store.latest_period)
         profile if profile && profile[:period_start]
       end
 
@@ -378,29 +382,12 @@ module PolishOpenSourceRank
           current_user.fetch(:github_id).to_i == repository.fetch(:owner_github_id).to_i
       end
 
-      def discord_panel(profile)
-        access = store.discord_access(profile.fetch(:platform), profile.fetch(:github_id), period_start: @period)
-        {
-          connection: store.discord_connection(profile.fetch(:platform), profile.fetch(:github_id)),
-          access: access,
-          access_channels: discord_access_channels(access.fetch(:role_keys))
-        }
-      end
-
-      def discord_access_channels(role_keys)
-        role_keys.filter_map do |role_key|
-          case role_key
-          when 'DISCORD_ROLE_TOP_10_PL' then 'Top 10 PL'
-          when 'DISCORD_ROLE_TOP_100_PL' then 'Top 100 PL'
-          when /\ADISCORD_ROLE_TOP_100_CITY_(.+)\z/
-            "Top 100 #{discord_city_name(Regexp.last_match(1))}"
-          end
-        end
-      end
-
-      def discord_city_name(env_slug)
-        slug = env_slug.downcase.tr('_', '-')
-        Domain::LocationCatalog::CITIES.find { |city| city.fetch(:slug) == slug }&.fetch(:name) || env_slug
+      def show_discord_panel_for(profile)
+        show_discord_panel.call(
+          platform: profile.fetch(:platform),
+          source_id: profile.fetch(:github_id),
+          period_start: @period
+        )
       end
 
       def discord_channel_url
@@ -421,11 +408,11 @@ module PolishOpenSourceRank
           discord_user_id: discord_user.fetch('id'),
           discord_username: discord_user['global_name'] || discord_user.fetch('username')
         )
-        access = store.discord_access(
-          profile.fetch(:platform),
-          profile.fetch(:github_id),
+        access = show_discord_panel.call(
+          platform: profile.fetch(:platform),
+          source_id: profile.fetch(:github_id),
           period_start: store.latest_period
-        )
+        ).access
         desired_role_ids = discord_role_map.role_ids(access.fetch(:role_keys))
         sync_discord_access(discord_user.fetch('id'), access_token, profile.fetch(:login), desired_role_ids)
         post_discord_welcome(discord_user.fetch('id'), profile, access, desired_role_ids)
@@ -476,30 +463,12 @@ module PolishOpenSourceRank
       end
 
       def render_user_badge(platform, login)
-        user = store.user_profile(platform, login, period_start: store.latest_period)
-        halt 404 unless user
-        badge = user.fetch(:badges).first
+        badge = render_badge.user(platform: platform, login: login, period_start: store.latest_period)
         halt 404 unless badge
 
         content_type 'image/svg+xml'
         public_badge_cache!('user-badge', platform, login, store.latest_period)
         settings.badge_renderer.svg(badge, home_url: app_home_url)
-      end
-
-      def selected_edition_year(year)
-        halt 404 if year && !@years.include?(year)
-
-        year || @years.first
-      end
-
-      def adjacent_edition_year(year, offset)
-        index = @years.index(year)
-        return unless index
-
-        adjacent_index = index + offset
-        return if adjacent_index.negative?
-
-        @years[adjacent_index]
       end
 
       def render_ranking_detail(period_slug, scope, kind, metric)
@@ -511,7 +480,7 @@ module PolishOpenSourceRank
         @kind = kind
         @metric = metric
         public_html_cache!('ranking-detail', period_slug, scope, kind, metric, @period, public_cache_revision(@period))
-        @ranking = ranking_for(scope, kind, metric, @period)
+        @ranking = show_ranking_detail.call(scope: scope, kind: kind, metric: metric, period_start: @period)
         @title = "#{scope_name(@scope)} #{ranking_title(kind, metric)}"
         @description = "#{ranking_title(kind, metric)} - #{scope_name(@scope)}."
         @canonical_path = ranking_path(kind, metric, period_slug: period_slug, scope_slug: scope)
@@ -523,7 +492,7 @@ module PolishOpenSourceRank
 
         halt 404 unless period_slug.match?(/\A\d{4}-\d{2}\z/)
 
-        period_start = Application::MonthPeriod.parse(period_slug).start_date.to_s
+        period_start = Shared::Domain::Period.parse(period_slug).start_date.to_s
         store.recorded_period?(period_start) ? period_start : halt(404)
       rescue Date::Error
         halt 404
@@ -533,25 +502,36 @@ module PolishOpenSourceRank
         @store ||= Infrastructure::SQLiteStore.new(configuration.database_path).migrate!
       end
 
-      def rankings_or_empty(period)
-        return empty_rankings unless period
-
-        yield
+      def show_rankings
+        @show_rankings ||= Contexts::Publication::Application::ShowRankings.new(ranking_read_model: store)
       end
 
-      def empty_rankings
-        { top: [], trending: [], active: [] }
+      def show_ranking_detail
+        @show_ranking_detail ||= Contexts::Publication::Application::ShowRankingDetail.new(ranking_read_model: store)
       end
 
-      def ranking_for(scope, kind, metric, period)
-        return [] unless period
+      def list_editions
+        @list_editions ||= Contexts::Publication::Application::ListEditions.new(edition_read_model: store)
+      end
 
-        rankings = if kind == 'users'
-                     store.user_rankings(scope, period_start: period)
-                   else
-                     store.repository_rankings(scope, period_start: period)
-                   end
-        rankings.fetch(metric.to_sym)
+      def show_user_profile
+        @show_user_profile ||= Contexts::Publication::Application::ShowUserProfile.new(profile_read_model: store)
+      end
+
+      def show_repository_profile
+        @show_repository_profile ||=
+          Contexts::Publication::Application::ShowRepositoryProfile.new(profile_read_model: store)
+      end
+
+      def render_badge
+        @render_badge ||= Contexts::Publication::Application::RenderBadge.new(profile_read_model: store)
+      end
+
+      def show_discord_panel
+        @show_discord_panel ||= Contexts::Community::Application::ShowDiscordPanel.new(
+          connection_repository: store,
+          access_read_model: store
+        )
       end
 
       def ranking_metric?(kind, metric)
@@ -636,7 +616,7 @@ module PolishOpenSourceRank
       def scope_data(scope)
         return { slug: 'poland', name: 'Polska', type: :country } if scope == 'poland'
 
-        Domain::LocationCatalog::CITY_BY_SLUG.fetch(scope)
+        Contexts::Ranking::Domain::LocationCatalog::CITY_BY_SLUG.fetch(scope)
       end
     end
     # rubocop:enable Metrics/ClassLength
