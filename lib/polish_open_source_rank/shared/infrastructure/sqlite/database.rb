@@ -30,7 +30,7 @@ module PolishOpenSourceRank
           end
 
           def fetch_all(sql, params = [])
-            execute(sql, params).map { |row| symbolize(row) }
+            with_hash_results { execute(sql, params) }.map { |row| symbolize(row) }
           end
 
           def fetch_value(sql, params = [])
@@ -42,7 +42,7 @@ module PolishOpenSourceRank
           end
 
           def table_info(table_name)
-            raw_connection.table_info(table_name)
+            with_hash_results { raw_connection.table_info(table_name) }
           end
 
           def dataset(table_name)
@@ -75,9 +75,15 @@ module PolishOpenSourceRank
           end
 
           def configure_connection(connection)
-            connection.results_as_hash = true
             connection.busy_timeout = 120_000
             connection.execute('PRAGMA foreign_keys = ON')
+          end
+
+          def with_hash_results
+            raw_connection.results_as_hash = true
+            yield
+          ensure
+            raw_connection.results_as_hash = false
           end
 
           def symbolize(row)

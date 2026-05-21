@@ -107,7 +107,7 @@ Start with adapters where Sequel datasets clearly reduce boilerplate and query r
 
 Read models may keep raw SQL when that is the deeper interface. The migration target is safer execution and less repeated low-level handling, not SQL elimination.
 
-- [ ] Convert simple read models to Sequel datasets:
+- [x] Convert simple read models to Sequel datasets:
   - `SQLiteCacheRevisionReadModel`,
   - simple methods in `SQLiteContributorAccessReadModel`,
   - simple edition-year queries in `SQLiteEditionReadModel`.
