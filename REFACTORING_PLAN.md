@@ -115,7 +115,7 @@ Read models may keep raw SQL when that is the deeper interface. The migration ta
   - ranking window/tie-break queries,
   - profile badge/history queries,
   - job progress aggregation queries.
-- [ ] Execute raw SQL through Sequel with bound parameters.
+- [x] Execute raw SQL through Sequel with bound parameters.
 - [ ] Keep all public response shapes identical.
 
 ### 6. Convert ranking retention and dynamic SQL safely

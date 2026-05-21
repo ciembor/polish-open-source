@@ -30,11 +30,11 @@ module PolishOpenSourceRank
           end
 
           def fetch_all(sql, params = [])
-            with_hash_results { execute(sql, params) }.map { |row| symbolize(row) }
+            sequel_connection.fetch(sql, *params).all
           end
 
           def fetch_value(sql, params = [])
-            get_first_value(sql, params)
+            sequel_connection.fetch(sql, *params).single_value
           end
 
           def get_first_value(sql, params = [])
@@ -84,12 +84,6 @@ module PolishOpenSourceRank
             yield
           ensure
             raw_connection.results_as_hash = false
-          end
-
-          def symbolize(row)
-            row.each_with_object({}) do |(key, value), result|
-              result[key.to_sym] = value unless key.is_a?(Integer)
-            end
           end
         end
       end
