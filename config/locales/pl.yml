@@ -96,6 +96,7 @@ pl:
     locations: "Rankingi lokalizacji"
     menu: "Menu"
     more_cities: "Więcej miast"
+    profile: "Profil"
   not_found:
     body: "Wybrana lokalizacja nie jest obsługiwana."
     description: "Nie znaleziono rankingu dla podanej lokalizacji."

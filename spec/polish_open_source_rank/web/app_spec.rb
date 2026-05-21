@@ -167,7 +167,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile.body).to include('/badges/repositories/github/alice/app.svg')
     expect(profile.body).to include('Polish Top 100')
     expect(profile.body.index('Your Discord access')).to be < profile.body.index('GitHub badge')
-    expect(profile.body.index('GitHub badge')).to be < profile.body.index('Profile')
+    # "Profile" also appears in the navbar label for logged-in users. Assert using stable section markers
+    # instead of the translated heading text.
+    expect(profile.body.index('id="profile-badge-heading"')).to be < profile.body.index('id="profile-summary-heading"')
     expect(profile.body).not_to include('Discord not connected')
 
     discord_start = request.get('/auth/discord', 'HTTP_COOKIE' => cookie_header(github_callback))

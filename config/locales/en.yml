@@ -96,6 +96,7 @@ en:
     locations: "Location rankings"
     menu: "Menu"
     more_cities: "More cities"
+    profile: "Profile"
   not_found:
     body: "The selected location is not supported."
     description: "No ranking was found for the selected location."

@@ -53,7 +53,7 @@
             <div class="nav-menu__panel js-hamburger-panel"></div>
           </details>
           <% if current_user %>
-            <a class="nav__link js-secondary-link" href="<%= h app_path(user_profile_path(current_user)) %>">@<%= h current_user.fetch(:login) %></a>
+            <a class="nav__link js-secondary-link" href="<%= h app_path(user_profile_path(current_user)) %>"><%= h t('nav.profile') %></a>
             <form class="nav-form" method="post" action="<%= h app_path('/logout') %>">
               <button class="nav-pill" type="submit"><%= h t('auth.logout') %></button>
             </form>
