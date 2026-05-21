@@ -10,7 +10,8 @@ module PolishOpenSourceRank
           end
 
           def call(platform:, login:, period_start:)
-            profile_read_model.user_profile(platform, login, period_start: period_start)
+            profile = profile_read_model.user_profile(platform, login, period_start: period_start)
+            profile && ProfilePage.new(profile)
           end
 
           private

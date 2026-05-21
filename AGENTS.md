@@ -1,3 +1,6 @@
+DO NOT leave finished tasks uncommited
+DO NOT skip pre-commit hooks
+
 # OBEY A Philosophy of Software Design by John Ousterhout
 
 ## When to use

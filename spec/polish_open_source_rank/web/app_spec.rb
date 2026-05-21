@@ -270,6 +270,33 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(discord_callback.status).to eq(302)
   end
 
+  it 'rejects Discord sync when the logged-in GitHub profile is no longer ranked' do
+    database = seed_database
+    ENV['DATABASE_URL'] = "sqlite://#{database}"
+    described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
+    described_class.set :discord_oauth_client, FakeDiscordOAuthClient.new
+    described_class.set :discord_gateway, FakeDiscordGateway.new
+    request = Rack::MockRequest.new(described_class)
+
+    github_start = request.get('/auth/github')
+    github_state = Rack::Utils.parse_query(URI(github_start.location).query).fetch('state')
+    github_callback = request.get(
+      "/auth/github/callback?code=github-code&state=#{github_state}",
+      'HTTP_COOKIE' => cookie_header(github_start)
+    )
+    SQLite3::Database.new(database).execute(
+      "DELETE FROM user_monthly_stats WHERE platform = 'github' AND user_github_id = 1 AND period_start = '2026-04-01'"
+    )
+    discord_start = request.get('/auth/discord', 'HTTP_COOKIE' => cookie_header(github_callback))
+    discord_state = Rack::Utils.parse_query(URI(discord_start.location).query).fetch('state')
+    discord_callback = request.get(
+      "/auth/discord/callback?code=discord-code&state=#{discord_state}",
+      'HTTP_COOKIE' => cookie_header(discord_start)
+    )
+
+    expect(discord_callback.status).to eq(404)
+  end
+
   it 'logs out and keeps the Discord panel useful without creating invites' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     github_client = FakeGitHubOAuthClient.new('alice')
@@ -536,7 +563,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   def seed_database
     path = empty_database
     store = PolishOpenSourceRank::Infrastructure::SQLiteStore.new(path).migrate!
-    older_period = PolishOpenSourceRank::Application::MonthPeriod.parse('2025-12')
+    older_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2025-12')
     older_run_id = store.create_run(older_period)
     store.upsert_user(user_attributes)
     store.record_user_stats(user_stats(older_period))
@@ -545,7 +572,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     seed_extra_ranked_records(store, older_period)
     store.finish_run(older_run_id)
 
-    period = PolishOpenSourceRank::Application::MonthPeriod.parse('2026-04')
+    period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-04')
     run_id = store.create_run(period)
 
     store.upsert_user(user_attributes)
@@ -574,7 +601,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   def seed_running_database
     path = empty_database
     store = PolishOpenSourceRank::Infrastructure::SQLiteStore.new(path).migrate!
-    period = PolishOpenSourceRank::Application::MonthPeriod.parse('2026-04')
+    period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-04')
     store.create_run(period)
 
     store.upsert_user(user_attributes)

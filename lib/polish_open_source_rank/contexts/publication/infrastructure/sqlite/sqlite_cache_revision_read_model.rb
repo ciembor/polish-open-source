@@ -42,6 +42,12 @@ module PolishOpenSourceRank
               SQL
             end
 
+            def recorded_period?(period_start)
+              return false unless period_start
+
+              !database.fetch_value('SELECT 1 FROM sync_runs WHERE period_start = ?', [period_start]).nil?
+            end
+
             private
 
             attr_reader :database

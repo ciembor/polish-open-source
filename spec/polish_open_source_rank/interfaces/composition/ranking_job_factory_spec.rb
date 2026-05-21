@@ -3,8 +3,14 @@
 RSpec.describe PolishOpenSourceRank::Interfaces::Composition::RankingJobFactory do
   it 'builds the command from configuration and infrastructure adapters' do
     configuration = command_configuration
-    clients = stub_clients
+    database = instance_double(PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database)
+    source_request_log = instance_double(
+      PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteSourceRequestLog
+    )
+    clients = stub_clients(source_request_log)
     stub_gateways(clients)
+    stub_database(database)
+    stub_ranking_adapters(database, source_request_log)
 
     command = described_class.build(['--month', '2026-04'], configuration: configuration, output: StringIO.new)
 
@@ -16,8 +22,14 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::RankingJobFactory 
 
   it 'builds a command for one selected platform' do
     configuration = command_configuration
-    clients = stub_clients
+    database = instance_double(PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database)
+    source_request_log = instance_double(
+      PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteSourceRequestLog
+    )
+    clients = stub_clients(source_request_log)
     stub_gateways(clients)
+    stub_database(database)
+    stub_ranking_adapters(database, source_request_log)
 
     command = described_class.build(
       ['--month', '2026-04', '--platform', 'gitlab'],
@@ -33,8 +45,14 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::RankingJobFactory 
 
   it 'rejects unsupported selected platforms' do
     configuration = command_configuration
-    clients = stub_clients
+    database = instance_double(PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database)
+    source_request_log = instance_double(
+      PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteSourceRequestLog
+    )
+    clients = stub_clients(source_request_log)
     stub_gateways(clients)
+    stub_database(database)
+    stub_ranking_adapters(database, source_request_log)
 
     expect do
       described_class.build(['--platform', 'sourcehut'], configuration: configuration, output: StringIO.new)
@@ -55,24 +73,21 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::RankingJobFactory 
     )
   end
 
-  def stub_clients
-    store = instance_double(PolishOpenSourceRank::Infrastructure::SQLiteStore)
+  def stub_clients(source_request_log)
     clients = {
       github: instance_double(PolishOpenSourceRank::Infrastructure::GitHubClient),
       gitlab: instance_double(PolishOpenSourceRank::Infrastructure::GitLabClient),
       codeberg: instance_double(PolishOpenSourceRank::Infrastructure::CodebergClient)
     }
-    allow(PolishOpenSourceRank::Infrastructure::SQLiteStore).to receive(:new).and_return(store)
-    allow(store).to receive(:migrate!).and_return(store)
     allow(PolishOpenSourceRank::Infrastructure::GitHubClient).to receive(:new).and_return(clients.fetch(:github))
     allow(PolishOpenSourceRank::Infrastructure::GitLabClient).to receive(:new).and_return(clients.fetch(:gitlab))
     allow(PolishOpenSourceRank::Infrastructure::CodebergClient).to receive(:new).and_return(clients.fetch(:codeberg))
-    stub_request_logs(clients, store)
+    stub_request_logs(clients, source_request_log)
     clients
   end
 
-  def stub_request_logs(clients, store)
-    clients.each_value { |client| allow(client).to receive(:request_log=).with(store) }
+  def stub_request_logs(clients, source_request_log)
+    clients.each_value { |client| allow(client).to receive(:request_log=).with(source_request_log) }
   end
 
   def stub_gateways(clients)
@@ -80,4 +95,50 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::RankingJobFactory 
     allow(PolishOpenSourceRank::Infrastructure::GitLabGateway).to receive(:new).with(clients.fetch(:gitlab))
     allow(PolishOpenSourceRank::Infrastructure::CodebergGateway).to receive(:new).with(clients.fetch(:codeberg))
   end
+
+  def stub_database(database)
+    migration = instance_double(PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration, needed?: false)
+    allow(PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database)
+      .to receive(:open).with('db/test.sqlite3').and_return(database)
+    allow(PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration)
+      .to receive(:new)
+      .with(database, PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql)
+      .and_return(migration)
+    allow(database).to receive(:execute_batch).with(PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql)
+  end
+
+  # rubocop:disable Metrics/AbcSize
+  def stub_ranking_adapters(database, source_request_log)
+    snapshot_run_repository =
+      instance_double(PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteSnapshotRunRepository)
+    candidate_queue =
+      instance_double(PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteCandidateQueue)
+    snapshot_repository =
+      instance_double(PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteSnapshotRepository)
+    ranking_retention =
+      instance_double(PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteRankingRetention)
+    monthly_snapshot_store =
+      instance_double(PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::MonthlySnapshotStore)
+
+    allow(PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteSnapshotRunRepository)
+      .to receive(:new).with(database).and_return(snapshot_run_repository)
+    allow(PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteCandidateQueue)
+      .to receive(:new).with(database).and_return(candidate_queue)
+    allow(PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteSnapshotRepository)
+      .to receive(:new).with(database).and_return(snapshot_repository)
+    allow(PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteRankingRetention)
+      .to receive(:new).with(database).and_return(ranking_retention)
+    allow(PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteSourceRequestLog)
+      .to receive(:new).with(database).and_return(source_request_log)
+    allow(PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::MonthlySnapshotStore)
+      .to receive(:new)
+      .with(
+        run_repository: snapshot_run_repository,
+        candidate_queue: candidate_queue,
+        snapshot_repository: snapshot_repository,
+        ranking_retention: ranking_retention
+      )
+      .and_return(monthly_snapshot_store)
+  end
+  # rubocop:enable Metrics/AbcSize
 end

@@ -5,7 +5,7 @@ RSpec.describe PolishOpenSourceRank::Configuration do
     keys = %w[
       GITHUB_TOKEN GITLAB_TOKEN CODEBERG_TOKEN DATABASE_URL REQUESTS_PER_MINUTE
       GITHUB_BASE_URL GITLAB_BASE_URL CODEBERG_BASE_URL BASE_URL
-      DISCORD_INVITE_CHANNEL_ID
+      DISCORD_INVITE_CHANNEL_ID GITHUB_OAUTH_CLIENT_ID
     ]
     old_values = keys.to_h { |key| [key, ENV.fetch(key, nil)] }
     keys.each { |key| ENV.delete(key) }
@@ -68,5 +68,25 @@ RSpec.describe PolishOpenSourceRank::Configuration do
     configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
 
     expect(configuration.app_base_path).to eq('/polish-open-source-rank')
+  end
+
+  it 'keeps required env access lazy until the value is read' do
+    configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
+
+    expect { configuration.github_oauth_client_id }.to raise_error(KeyError)
+
+    ENV['GITHUB_OAUTH_CLIENT_ID'] = 'github-client-id'
+
+    expect(configuration.github_oauth_client_id).to eq('github-client-id')
+  end
+
+  it 'does not mutate the class-level config while loading an instance' do
+    path = Pathname(File.join(Dir.mktmpdir, '.env.local'))
+    path.write("BASE_URL=https://rank.test\n")
+
+    configuration = described_class.load(path)
+
+    expect(configuration.public_base_url).to eq('https://rank.test')
+    expect(described_class.config.public_base_url).to eq('http://localhost:9292')
   end
 end

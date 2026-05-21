@@ -11,10 +11,6 @@ RSpec.describe 'architecture dependency rules' do
     File.read(path, encoding: 'UTF-8')
   end
 
-  def relative_path(path)
-    path.delete_prefix("#{PolishOpenSourceRank.root}/")
-  end
-
   it 'keeps new domain code independent from outer layers', :aggregate_failures do
     forbidden = /\b(Infrastructure::|Web::|Sinatra|SQLite3|Net::HTTP|Discordrb|ENV\b)/
     domain_files = files_under('lib/polish_open_source_rank/shared/domain') +
@@ -50,17 +46,16 @@ RSpec.describe 'architecture dependency rules' do
       \bApplication::MonthlySnapshotJob\b|
       (?<!Ranking::)\bApplication::SourceNotFound\b|
       \bPolishOpenSourceRank::Domain::LocationCatalog\b|
-      \bPolishOpenSourceRank::Domain::LocationClassifier\b
+      \bPolishOpenSourceRank::Domain::LocationClassifier\b|
+      \bWeb::Auth::DiscordGateway\b|
+      \bWeb::Auth::DiscordWelcomeMessage\b
     /x
     compatibility_files = %w[
-      lib/polish_open_source_rank/application/month_period.rb
-      lib/polish_open_source_rank/application/monthly_snapshot_job.rb
-      lib/polish_open_source_rank/application/source_not_found.rb
-      lib/polish_open_source_rank/domain/location_catalog.rb
-      lib/polish_open_source_rank/domain/location_classifier.rb
+      lib/polish_open_source_rank/web/auth/discord_gateway.rb
+      lib/polish_open_source_rank/web/auth/discord_welcome_message.rb
     ]
     production_files = files_under('lib/polish_open_source_rank').reject do |path|
-      compatibility_files.include?(relative_path(path))
+      compatibility_files.include?(path.delete_prefix("#{PolishOpenSourceRank.root}/"))
     end
 
     production_files.each do |path|
@@ -74,12 +69,27 @@ RSpec.describe 'architecture dependency rules' do
       (
         user_rankings|repository_rankings|user_profile|repository_profile|
         edition_years|monthly_editions|discord_access|discord_connection
-      )\b
+      )\b|
+      \bSQLiteStore\b
     /x
     web_files = files_under('lib/polish_open_source_rank/web')
 
     web_files.each do |path|
       expect(file_body(path)).not_to match(forbidden), "#{path} bypasses publication application queries"
+    end
+  end
+
+  it 'keeps production composition off the SQLiteStore facade', :aggregate_failures do
+    forbidden = /\bSQLiteStore\b/
+    compatibility_files = %w[
+      lib/polish_open_source_rank/infrastructure/sqlite_store.rb
+    ]
+    production_files = (files_under('lib/polish_open_source_rank') + files_under('bin')).reject do |path|
+      compatibility_files.include?(path.delete_prefix("#{PolishOpenSourceRank.root}/"))
+    end
+
+    production_files.each do |path|
+      expect(file_body(path)).not_to match(forbidden), "#{path} references the SQLiteStore facade"
     end
   end
 end

@@ -186,6 +186,7 @@ PLATFORMS
 
 DEPENDENCIES
   discordrb (~> 3.7)
+  dry-configurable (~> 1.4)
   puma (~> 7.0)
   rackup (~> 2.2)
   reek (~> 6.5)

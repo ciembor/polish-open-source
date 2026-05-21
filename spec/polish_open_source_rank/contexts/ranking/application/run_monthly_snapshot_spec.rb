@@ -57,7 +57,7 @@ class FakeJobGitHub
   private
 
   def missing_error
-    PolishOpenSourceRank::Application::SourceNotFound.new('missing')
+    PolishOpenSourceRank::Contexts::Ranking::Application::SourceNotFound.new('missing')
   end
 end
 
@@ -69,7 +69,7 @@ class FakeJobGitLab < FakeJobGitHub
   private
 
   def missing_error
-    PolishOpenSourceRank::Application::SourceNotFound.new('missing')
+    PolishOpenSourceRank::Contexts::Ranking::Application::SourceNotFound.new('missing')
   end
 end
 
@@ -81,7 +81,7 @@ class FakeJobCodeberg < FakeJobGitHub
   private
 
   def missing_error
-    PolishOpenSourceRank::Application::SourceNotFound.new('missing')
+    PolishOpenSourceRank::Contexts::Ranking::Application::SourceNotFound.new('missing')
   end
 end
 
@@ -312,8 +312,8 @@ class SinglePendingCandidateStore
   def finish_run(_run_id); end
 end
 
-RSpec.describe PolishOpenSourceRank::Application::MonthlySnapshotJob do
-  let(:period) { PolishOpenSourceRank::Application::MonthPeriod.parse('2026-04') }
+RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlySnapshot do
+  let(:period) { PolishOpenSourceRank::Shared::Domain::Period.parse('2026-04') }
   let(:path) { File.join(Dir.mktmpdir, 'job.sqlite3') }
   let(:store) { PolishOpenSourceRank::Infrastructure::SQLiteStore.new(path).migrate! }
   let(:catalog) { double('catalog', search_terms: ['Poland']) }
@@ -345,7 +345,7 @@ RSpec.describe PolishOpenSourceRank::Application::MonthlySnapshotJob do
   end
 
   it 'uses previous repository observations and skips empty repositories when calculating star deltas' do
-    previous_period = PolishOpenSourceRank::Application::MonthPeriod.parse('2026-03')
+    previous_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-03')
     seed_previous_repository_observation(previous_period)
     github.candidates = { 'Poland' => [{ source_id: 1, login: 'alice' }] }
     github.profiles = { 'alice' => profile(1, 'alice', 'Krakow, Poland') }

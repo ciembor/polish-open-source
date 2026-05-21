@@ -3,7 +3,7 @@
 RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
   it 'runs a monthly job with injected persistence and sources' do
     output = StringIO.new
-    job = instance_double(PolishOpenSourceRank::Application::MonthlySnapshotJob)
+    job = instance_double(PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlySnapshot)
     allow(job).to receive(:call)
 
     described_class.call(['--month', '2026-04'], job: job, output: output)
@@ -14,7 +14,7 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
 
   it 'passes explicit refresh requests to the monthly job' do
     output = StringIO.new
-    job = instance_double(PolishOpenSourceRank::Application::MonthlySnapshotJob)
+    job = instance_double(PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlySnapshot)
     allow(job).to receive(:call)
 
     described_class.call(['--month', '2026-04', '--refresh'], job: job, output: output)
@@ -26,7 +26,7 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
     output = StringIO.new
     term_handler = nil
     previous_handlers = []
-    job = instance_double(PolishOpenSourceRank::Application::MonthlySnapshotJob)
+    job = instance_double(PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlySnapshot)
     allow(Signal).to receive(:trap).and_wrap_original do |original, signal, handler = nil, &block|
       if block
         term_handler = block if signal == 'TERM'

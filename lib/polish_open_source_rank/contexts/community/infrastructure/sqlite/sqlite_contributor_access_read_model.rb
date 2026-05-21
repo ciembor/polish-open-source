@@ -17,6 +17,7 @@ module PolishOpenSourceRank
             end
 
             def access(platform, user_github_id, period_start:)
+              period_start = effective_period_start(period_start)
               rank = user_country_rank(platform, user_github_id, period_start)
               city = user_city(platform, user_github_id, period_start)
               city_slug = city_slug_for(city)
@@ -35,9 +36,24 @@ module PolishOpenSourceRank
               }
             end
 
+            def discord_access(platform, user_github_id, period_start:)
+              access(platform, user_github_id, period_start: period_start)
+            end
+
             private
 
             attr_reader :catalog, :database, :role_policy
+
+            def effective_period_start(period_start)
+              period_start || latest_public_period
+            end
+
+            def latest_public_period
+              database.fetch_value(<<~SQL)
+                SELECT MAX(period_start)
+                FROM user_monthly_stats
+              SQL
+            end
 
             def user_country_rank(platform, user_id, period_start)
               return unless period_start
