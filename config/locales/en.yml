@@ -93,6 +93,7 @@ en:
     editions: "Editions"
     language: "Language"
     locations: "Location rankings"
+    menu: "Menu"
     more_cities: "More cities"
   not_found:
     body: "The selected location is not supported."

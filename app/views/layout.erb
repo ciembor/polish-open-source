@@ -24,29 +24,38 @@
     <header class="site-header">
       <div class="site-header__inner">
         <a class="brand" href="<%= h app_path('/latest') %>"><img src="/icons/polish-open-source.png">Polish Open Source</a>
-        <nav class="nav" aria-label="<%= h t('nav.locations') %>">
+        <nav class="nav js-nav" aria-label="<%= h t('nav.locations') %>">
           <a class="nav__link" href="<%= h app_path(scope_path(scopes.first)) %>"><%= h t('nav.country') %></a>
-          <% primary_city_scopes.each do |scope| %>
-            <a class="nav__link" href="<%= h app_path(scope_path(scope)) %>"><%= h scope.fetch(:name) %></a>
-          <% end %>
-          <details class="nav-menu">
+          <span class="nav-slot js-primary-city-slot">
+            <% primary_city_scopes.each do |scope| %>
+              <a class="nav__link js-primary-city" href="<%= h app_path(scope_path(scope)) %>"><%= h scope.fetch(:name) %></a>
+            <% end %>
+          </span>
+          <details class="nav-menu js-more-cities">
             <summary><%= h t('nav.more_cities') %></summary>
-            <div class="nav-menu__panel">
+            <div class="nav-menu__panel js-more-cities-panel">
+              <span class="nav-slot js-secondary-city-slot"></span>
               <% secondary_city_scopes.each do |scope| %>
-                <a class="nav__link" href="<%= h app_path(scope_path(scope)) %>"><%= h scope.fetch(:name) %></a>
+                <a class="nav__link js-secondary-city" href="<%= h app_path(scope_path(scope)) %>"><%= h scope.fetch(:name) %></a>
               <% end %>
             </div>
           </details>
-          <a class="nav__link" href="<%= h app_path(editions_path) %>"><%= h t('nav.editions') %></a>
-          <a class="nav__link" href="<%= h app_path('/about') %>"><%= h t('nav.about') %></a>
+          <span class="nav-slot js-secondary-links-slot">
+            <a class="nav__link js-secondary-link" href="<%= h app_path(editions_path) %>"><%= h t('nav.editions') %></a>
+            <a class="nav__link js-secondary-link" href="<%= h app_path('/about') %>"><%= h t('nav.about') %></a>
+          </span>
           <% if current_user %>
-            <a class="nav__link" href="<%= h app_path(user_profile_path(current_user)) %>">@<%= h current_user.fetch(:login) %></a>
+            <a class="nav__link js-secondary-link" href="<%= h app_path(user_profile_path(current_user)) %>">@<%= h current_user.fetch(:login) %></a>
             <form class="nav-form" method="post" action="<%= h app_path('/logout') %>">
               <button class="nav-pill" type="submit"><%= h t('auth.logout') %></button>
             </form>
           <% else %>
             <a class="nav-pill" href="<%= h app_path('/auth/github') %>"><%= h t('auth.login.github') %></a>
           <% end %>
+          <details class="nav-menu nav-menu--hamburger js-hamburger" hidden>
+            <summary class="nav-hamburger" aria-label="<%= h t('nav.menu') %>"></summary>
+            <div class="nav-menu__panel js-hamburger-panel"></div>
+          </details>
           <div class="language-switch" aria-label="<%= h t('nav.language') %>">
             <% SUPPORTED_LOCALES.each do |locale| %>
               <a class="language-switch__link <%= 'is-active' if current_locale?(locale) %>" href="<%= h locale_path(locale) %>" hreflang="<%= h locale %>" lang="<%= h locale %>"><%= h locale.upcase %></a>

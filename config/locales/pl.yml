@@ -93,6 +93,7 @@ pl:
     editions: "Edycje"
     language: "Język"
     locations: "Rankingi lokalizacji"
+    menu: "Menu"
     more_cities: "Więcej miast"
   not_found:
     body: "Wybrana lokalizacja nie jest obsługiwana."
