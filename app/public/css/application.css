@@ -64,7 +64,8 @@ a {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px 14px;
-  flex: 1 1 520px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .nav__link {
@@ -1290,6 +1291,16 @@ h3 {
 
   .profile-avatar--fallback {
     font-size: 2.6rem;
+  }
+}
+
+@media (max-width: 820px) {
+  .site-header__inner {
+    gap: 12px;
+  }
+
+  .nav {
+    gap: 8px 10px;
   }
 }
 
