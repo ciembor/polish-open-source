@@ -32,44 +32,44 @@ module PolishOpenSourceRank
 
             def record(period, login:, source_query:, platform: 'github', source_id: nil, github_id: nil)
               source_id ||= github_id
-              database.execute(<<~SQL, [period.start_date.to_s, platform, source_id, login, source_query, timestamp])
-                INSERT INTO candidate_users(period_start, platform, github_id, login, source_query, status, updated_at)
-                VALUES (?, ?, ?, ?, ?, 'pending', ?)
-                ON CONFLICT(period_start, platform, login) DO UPDATE SET
-                  github_id = excluded.github_id,
-                  source_query = CASE
-                    WHEN instr(candidate_users.source_query, excluded.source_query) > 0
-                    THEN candidate_users.source_query
-                    ELSE candidate_users.source_query || ', ' || excluded.source_query
-                  END,
-                  updated_at = CASE
-                    WHEN candidate_users.status = 'pending' THEN excluded.updated_at
-                    ELSE candidate_users.updated_at
-                  END
-              SQL
+              candidate_users_dataset
+                .insert_conflict(
+                  target: %i[period_start platform login],
+                  update: {
+                    github_id: Sequel[:excluded][:github_id],
+                    source_query: merged_source_query,
+                    updated_at: pending_updated_at
+                  }
+                )
+                .insert(
+                  period_start: period.start_date.to_s,
+                  platform: platform,
+                  github_id: source_id,
+                  login: login,
+                  source_query: source_query,
+                  status: 'pending',
+                  updated_at: timestamp
+                )
             end
 
             def pending(period, limit: 100, platform: nil)
-              platform_sql = 'AND platform = ?' if platform
-              params = [period.start_date.to_s]
-              params << platform if platform
-              params << limit
-              database.fetch_all(<<~SQL, params)
-                SELECT platform, github_id, github_id AS source_id, login
-                FROM candidate_users
-                WHERE period_start = ? AND status = 'pending' #{platform_sql}
-                ORDER BY platform ASC, login COLLATE NOCASE ASC
-                LIMIT ?
-              SQL
+              pending_candidates(period, platform)
+                .select(
+                  :platform,
+                  :github_id,
+                  Sequel.as(:github_id, :source_id),
+                  :login
+                )
+                .order(Sequel.lit('platform ASC, login COLLATE NOCASE ASC'))
+                .limit(limit)
+                .all
             end
 
             def mark(period, platform, login, status = nil, error = nil)
               platform, login, status, error = normalized_mark_arguments(platform, login, status, error)
-              database.execute(<<~SQL, [status, error, timestamp, period.start_date.to_s, platform, login])
-                UPDATE candidate_users
-                SET status = ?, error = ?, updated_at = ?
-                WHERE period_start = ? AND platform = ? AND login = ?
-              SQL
+              candidate_users_dataset
+                .where(period_start: period.start_date.to_s, platform: platform, login: login)
+                .update(status: status, error: error, updated_at: timestamp)
             end
 
             def processed_user?(period, platform, github_id = nil)
@@ -80,6 +80,38 @@ module PolishOpenSourceRank
             private
 
             attr_reader :clock, :database
+
+            def candidate_users_dataset
+              database.dataset(:candidate_users)
+            end
+
+            def pending_candidates(period, platform)
+              candidates = candidate_users_dataset.where(period_start: period.start_date.to_s, status: 'pending')
+              platform ? candidates.where(platform: platform) : candidates
+            end
+
+            def merged_source_query
+              Sequel.lit(
+                <<~SQL
+                  CASE
+                    WHEN instr(candidate_users.source_query, excluded.source_query) > 0
+                    THEN candidate_users.source_query
+                    ELSE candidate_users.source_query || ', ' || excluded.source_query
+                  END
+                SQL
+              )
+            end
+
+            def pending_updated_at
+              Sequel.lit(
+                <<~SQL
+                  CASE
+                    WHEN candidate_users.status = 'pending' THEN excluded.updated_at
+                    ELSE candidate_users.updated_at
+                  END
+                SQL
+              )
+            end
 
             def normalized_mark_arguments(platform, login, status, error)
               return [platform, login, status, error] if SUPPORTED_PLATFORMS.include?(platform)
