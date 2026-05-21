@@ -32,7 +32,11 @@
             <% end %>
           </span>
           <details class="nav-menu js-more-cities">
-            <summary><%= h t('nav.more_cities') %></summary>
+            <summary
+              class="js-more-cities-summary"
+              data-label-wide="<%= h t('nav.more_cities') %>"
+              data-label-narrow="<%= h t('nav.cities') %>"
+            ><%= h t('nav.more_cities') %></summary>
             <div class="nav-menu__panel js-more-cities-panel">
               <span class="nav-slot js-secondary-city-slot"></span>
               <% secondary_city_scopes.each do |scope| %>
