@@ -14,6 +14,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     described_class.set :github_oauth_client, old_github_oauth_client
     described_class.set :discord_oauth_client, old_discord_oauth_client
     described_class.set :discord_gateway, old_discord_gateway
+    reset_app_memoized_dependencies
   end
 
   it 'renders the Poland ranking with SEO metadata' do
@@ -684,6 +685,31 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   def cookie_header(response)
     Array(response['Set-Cookie']).map { |cookie| cookie.split(';').first }.join('; ')
+  end
+
+  def reset_app_memoized_dependencies
+    %i[
+      @database
+      @show_rankings
+      @show_ranking_detail
+      @list_editions
+      @show_user_profile
+      @show_repository_profile
+      @render_badge
+      @resolve_period
+      @show_job_progress
+      @show_discord_panel
+      @connect_discord_account
+      @cache_revision_read_model
+      @ranking_read_model
+      @edition_read_model
+      @profile_read_model
+      @contributor_access_read_model
+      @discord_connection_repository
+      @job_progress_read_model
+    ].each do |ivar|
+      described_class.remove_instance_variable(ivar) if described_class.instance_variable_defined?(ivar)
+    end
   end
 
   def stub_discord_invite_response(body)
