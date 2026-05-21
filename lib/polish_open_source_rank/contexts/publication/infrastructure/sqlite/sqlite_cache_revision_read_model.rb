@@ -11,14 +11,9 @@ module PolishOpenSourceRank
             end
 
             def latest_period
-              database.fetch_value(<<~SQL)
-                SELECT MAX(period_start)
-                FROM (
-                  SELECT period_start FROM user_monthly_stats
-                  UNION
-                  SELECT period_start FROM repository_monthly_stats
-                )
-              SQL
+              periods = database.dataset(:user_monthly_stats).select_map(:period_start) +
+                        database.dataset(:repository_monthly_stats).select_map(:period_start)
+              periods.max
             end
 
             def public_cache_revision(period_start)
@@ -45,7 +40,7 @@ module PolishOpenSourceRank
             def recorded_period?(period_start)
               return false unless period_start
 
-              !database.fetch_value('SELECT 1 FROM sync_runs WHERE period_start = ?', [period_start]).nil?
+              database.dataset(:sync_runs).where(period_start: period_start).any?
             end
 
             private

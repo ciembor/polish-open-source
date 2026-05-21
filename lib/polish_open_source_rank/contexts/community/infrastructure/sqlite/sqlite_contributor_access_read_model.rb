@@ -49,10 +49,7 @@ module PolishOpenSourceRank
             end
 
             def latest_public_period
-              database.fetch_value(<<~SQL)
-                SELECT MAX(period_start)
-                FROM user_monthly_stats
-              SQL
+              database.dataset(:user_monthly_stats).select_map(:period_start).max
             end
 
             def user_country_rank(platform, user_id, period_start)
@@ -75,12 +72,10 @@ module PolishOpenSourceRank
             def user_city(platform, user_id, period_start)
               return unless period_start
 
-              database.fetch_value(<<~SQL, [period_start, platform, user_id])
-                SELECT city
-                FROM user_monthly_stats
-                WHERE period_start = ? AND platform = ? AND user_github_id = ?
-                LIMIT 1
-              SQL
+              database.dataset(:user_monthly_stats)
+                      .where(period_start: period_start, platform: platform, user_github_id: user_id)
+                      .select_map(:city)
+                      .first
             end
 
             def user_city_rank(platform, user_id, city, period_start)

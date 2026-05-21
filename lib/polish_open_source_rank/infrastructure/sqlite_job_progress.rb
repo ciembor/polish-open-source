@@ -344,17 +344,11 @@ module PolishOpenSourceRank
       end
 
       def fetch_all(sql, params = [])
-        database.execute(sql, params).map { |row| symbolize(row) }
+        database.fetch_all(sql, params)
       end
 
       def fetch_value(sql, params = [])
-        database.get_first_value(sql, params)
-      end
-
-      def symbolize(row)
-        row.each_with_object({}) do |(key, value), result|
-          result[key.to_sym] = value unless key.is_a?(Integer)
-        end
+        database.fetch_value(sql, params)
       end
     end
   end

@@ -12,12 +12,9 @@ module PolishOpenSourceRank
             end
 
             def years
-              database.fetch_all(<<~SQL)
-                SELECT DISTINCT substr(period_start, 1, 4) AS year
-                FROM sync_runs
-                WHERE #{edition_period_condition}
-                ORDER BY year DESC
-              SQL
+              edition_period_starts
+                .map { |period_start| { year: period_start[0, 4] } }
+                .uniq
             end
 
             def edition_years
@@ -25,14 +22,9 @@ module PolishOpenSourceRank
             end
 
             def monthly_editions(year, scope: 'poland')
-              database.fetch_all(<<~SQL, [year.to_s]).map do |row|
-                SELECT period_start
-                FROM sync_runs
-                WHERE #{edition_period_condition} AND substr(period_start, 1, 4) = ?
-                ORDER BY period_start DESC
-              SQL
-                edition(row.fetch(:period_start), scope)
-              end
+              edition_period_starts
+                .select { |period_start| period_start.start_with?(year.to_s) }
+                .map { |period_start| edition(period_start, scope) }
             end
 
             private
@@ -69,6 +61,16 @@ module PolishOpenSourceRank
                   )
                 )
               SQL
+            end
+
+            def edition_period_starts
+              database.fetch_all(<<~SQL)
+                SELECT period_start
+                FROM sync_runs
+                WHERE #{edition_period_condition}
+                ORDER BY period_start DESC
+              SQL
+                      .map { |row| row.fetch(:period_start) }
             end
           end
         end

@@ -40,4 +40,12 @@ RSpec.describe PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database do
     expect(database.fetch_value('SELECT COUNT(*) FROM records')).to eq(1)
     expect(database.table_info('records').map { |column| column.fetch('name') }).to include('name')
   end
+
+  it 'keeps Sequel dataset reads working for text columns' do
+    database = described_class.open(File.join(Dir.mktmpdir, 'rank.sqlite3'))
+    database.execute('CREATE TABLE records(name TEXT)')
+    database.execute('INSERT INTO records(name) VALUES (?)', ['alice'])
+
+    expect(database.dataset(:records).select_map(:name)).to eq(['alice'])
+  end
 end
