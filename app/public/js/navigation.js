@@ -33,8 +33,11 @@ function ensureNavLayout() {
   if (secondaryLinksSlot) moveChildren(secondaryLinks, secondaryLinksSlot);
   hamburger.hidden = true;
   hamburger.removeAttribute("open");
+  hamburgerPanel.replaceChildren();
 
   const isNarrow = window.matchMedia("(max-width: 1212px)").matches;
+
+  if (!isNarrow) return;
 
   if (isNarrow) {
     if (primaryCitySlot) {
