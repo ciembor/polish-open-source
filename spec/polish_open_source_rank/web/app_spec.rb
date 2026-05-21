@@ -285,11 +285,13 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     allow(failing_connect).to receive(:call).and_raise(
       PolishOpenSourceRank::Contexts::Community::Application::ConnectDiscordAccount::ProfileNotFound
     )
-    with_overridden_app_method(:connect_discord_account, -> { failing_connect }) do
-      github_callback = sign_in_with_github(request)
+    # rubocop:disable RSpec/AnyInstance
+    allow_any_instance_of(described_class).to receive(:connect_discord_account).and_return(failing_connect)
+    # rubocop:enable RSpec/AnyInstance
 
-      expect(finish_discord_auth(request, github_callback).status).to eq(404)
-    end
+    github_callback = sign_in_with_github(request)
+
+    expect(finish_discord_auth(request, github_callback).status).to eq(404)
   end
 
   it 'logs out and keeps the Discord panel useful without creating invites' do
@@ -713,16 +715,6 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     ].each do |ivar|
       described_class.remove_instance_variable(ivar) if described_class.instance_variable_defined?(ivar)
     end
-  end
-
-  def with_overridden_app_method(method_name, implementation)
-    original_method = described_class.instance_method(method_name)
-    described_class.send(:define_method, method_name, implementation)
-    described_class.send(:private, method_name)
-    yield
-  ensure
-    described_class.send(:define_method, method_name, original_method)
-    described_class.send(:private, method_name)
   end
 
   def stub_discord_invite_response(body)
