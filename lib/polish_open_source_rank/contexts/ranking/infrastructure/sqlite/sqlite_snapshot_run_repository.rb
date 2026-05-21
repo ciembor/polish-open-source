@@ -5,7 +5,39 @@ module PolishOpenSourceRank
     module Ranking
       module Infrastructure
         module SQLite
+          # Owns sync-run lifecycle writes while hiding the retryable-candidate reset rules.
           class SQLiteSnapshotRunRepository
+            # Internal value object carrying the reopened run state across one transaction.
+            RunContext = Struct.new(:period_start, :period_end, :started_at, :existing_run, keyword_init: true)
+            # Applies one reopen-or-create transition to the sync_runs table.
+            class RunContext
+              def upsert_into(sync_runs)
+                run_scope = sync_runs.where(period_start: period_start)
+
+                if existing_run
+                  run_scope.update(
+                    period_end: period_end,
+                    status: 'running',
+                    started_at: reopened_started_at,
+                    finished_at: nil,
+                    error: nil
+                  )
+                else
+                  sync_runs.insert(
+                    period_start: period_start,
+                    period_end: period_end,
+                    status: 'running',
+                    started_at: started_at
+                  )
+                end
+              end
+
+              private
+
+              def reopened_started_at
+                existing_run.fetch(:status) == 'running' ? existing_run.fetch(:started_at) : started_at
+              end
+            end
             INCOMPLETE_PROCESSED_CANDIDATE_CONDITION = <<~SQL
               status = 'processed'
               AND NOT EXISTS (
@@ -42,35 +74,20 @@ module PolishOpenSourceRank
             end
 
             def create(period, refresh_platforms: [])
-              return if refresh_platforms.empty? && finished_without_retryable_candidates?(period)
+              period_start = period.start_date.to_s
+              return if refresh_platforms.empty? && finished_without_retryable_candidates?(period_start)
 
-              started_at = Time.now.utc.iso8601
-              execute(<<~SQL, [period.start_date.to_s, period.end_date.to_s, started_at])
-                INSERT INTO sync_runs(period_start, period_end, status, started_at)
-                VALUES (?, ?, 'running', ?)
-                ON CONFLICT(period_start) DO UPDATE SET
-                  period_end = excluded.period_end,
-                  status = 'running',
-                  started_at = CASE
-                    WHEN sync_runs.status = 'running' THEN sync_runs.started_at
-                    ELSE excluded.started_at
-                  END,
-                  finished_at = NULL,
-                  error = NULL
-              SQL
-              reset_failed_candidates(period, started_at)
-              reset_incomplete_processed_candidates(period, started_at)
-              reset_refresh_candidates(period, started_at, refresh_platforms)
-              value('SELECT id FROM sync_runs WHERE period_start = ?', [period.start_date.to_s])
+              context = run_context(period_start, period.end_date.to_s)
+              reopen_run(context, refresh_platforms)
+              sync_run_id(period_start)
             end
 
             def finish(run_id)
-              execute("UPDATE sync_runs SET status = 'finished', finished_at = ? WHERE id = ?",
-                      [Time.now.utc.iso8601, run_id])
+              database.dataset(:sync_runs).where(id: run_id).update(status: 'finished', finished_at: timestamp)
             end
 
             def fail(run_id, error)
-              execute("UPDATE sync_runs SET status = 'failed', error = ? WHERE id = ?", [error, run_id])
+              database.dataset(:sync_runs).where(id: run_id).update(status: 'failed', error: error)
             end
 
             def retryable_candidates?(period, platforms: nil)
@@ -81,15 +98,41 @@ module PolishOpenSourceRank
                 sql = sql.sub('WHERE period_start = ?', "WHERE period_start = ? AND platform IN (#{placeholders})")
                 params.concat(platforms)
               end
-              !value(sql, params).nil?
+              value(sql, params) == 1
             end
 
             private
 
             attr_reader :database
 
-            def finished_without_retryable_candidates?(period)
-              !value(<<~SQL, [period.start_date.to_s]).nil?
+            def run_context(period_start, period_end)
+              started_at = timestamp
+
+              RunContext.new(
+                period_start: period_start,
+                period_end: period_end,
+                started_at: started_at,
+                existing_run: sync_run_for(period_start)
+              )
+            end
+
+            def reopen_run(context, refresh_platforms)
+              database.transaction do
+                context.upsert_into(database.dataset(:sync_runs))
+                reset_retryable_candidates(context.period_start, context.started_at, refresh_platforms)
+              end
+            end
+
+            def sync_run_for(period_start)
+              database.fetch_all('SELECT * FROM sync_runs WHERE period_start = ?', [period_start]).first
+            end
+
+            def sync_run_id(period_start)
+              value('SELECT id FROM sync_runs WHERE period_start = ?', [period_start])
+            end
+
+            def finished_without_retryable_candidates?(period_start)
+              value(<<~SQL, [period_start]) == 1
                 SELECT 1
                 FROM sync_runs
                 WHERE period_start = ? AND status = 'finished'
@@ -105,39 +148,30 @@ module PolishOpenSourceRank
               SQL
             end
 
-            def reset_failed_candidates(period, updated_at)
-              execute(<<~SQL, [updated_at, period.start_date.to_s])
-                UPDATE candidate_users
-                SET status = 'pending', error = NULL, updated_at = ?
-                WHERE period_start = ? AND status = 'failed'
-              SQL
+            def reset_retryable_candidates(period_start, updated_at, refresh_platforms)
+              period_candidates = database.dataset(:candidate_users).where(period_start: period_start)
+              period_candidates.where(status: 'failed').update(status: 'pending', error: nil, updated_at: updated_at)
+              period_candidates
+                .where(Sequel.lit(INCOMPLETE_PROCESSED_CANDIDATE_CONDITION))
+                .update(status: 'pending', error: nil, updated_at: updated_at)
+              reset_refresh_candidates(period_candidates, updated_at, refresh_platforms)
             end
 
-            def reset_incomplete_processed_candidates(period, updated_at)
-              execute(<<~SQL, [updated_at, period.start_date.to_s])
-                UPDATE candidate_users
-                SET status = 'pending', error = NULL, updated_at = ?
-                WHERE period_start = ?
-                  AND #{INCOMPLETE_PROCESSED_CANDIDATE_CONDITION}
-              SQL
-            end
-
-            def reset_refresh_candidates(period, updated_at, platforms)
+            def reset_refresh_candidates(period_candidates, updated_at, platforms)
               platforms.each do |platform|
-                execute(<<~SQL, [updated_at, period.start_date.to_s, platform])
-                  UPDATE candidate_users
-                  SET status = 'pending', error = NULL, updated_at = ?
-                  WHERE period_start = ? AND platform = ? AND status != 'pending'
-                SQL
+                period_candidates
+                  .where(platform: platform)
+                  .exclude(status: 'pending')
+                  .update(status: 'pending', error: nil, updated_at: updated_at)
               end
             end
 
-            def execute(sql, params)
-              database.execute(sql, params)
+            def value(sql, params)
+              database.fetch_value(sql, params)
             end
 
-            def value(sql, params)
-              database.get_first_value(sql, params)
+            def timestamp
+              Time.now.utc.iso8601
             end
           end
         end
