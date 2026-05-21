@@ -396,7 +396,13 @@ h3 {
 }
 
 .ranking-list__body {
+  grid-column: 2;
   grid-row: 1 / span 2;
+}
+
+.ranking-list__metrics {
+  grid-column: 3;
+  grid-row: 1;
 }
 
 .ranking-list__title {
