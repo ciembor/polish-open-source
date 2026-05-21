@@ -14,6 +14,16 @@ module PolishOpenSourceRank
           private
 
           def register_static_pages(app)
+            app.get '/robots.txt' do
+              content_type 'text/plain'
+              render_robots_txt
+            end
+
+            app.get '/sitemap.xml' do
+              content_type 'application/xml'
+              render_sitemap
+            end
+
             app.get('/') { render_rankings('latest', 'poland') }
             app.get('/latest') { render_rankings('latest', 'poland') }
 

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe PolishOpenSourceRank::Web::Localization::LocaleSelector do
-  subject(:selector) { described_class.new(supported: %w[en pl], default: 'en') }
+  subject(:selector) { described_class.new(supported: %w[en pl], default: 'pl') }
 
   it 'prefers an explicit locale over cookies and accepted languages' do
     locale = selector.select(
@@ -21,6 +21,6 @@ RSpec.describe PolishOpenSourceRank::Web::Localization::LocaleSelector do
       cookies: { 'locale' => 'de' },
       accept_language: 'de'
     )
-    expect(unsupported_locale).to eq('en')
+    expect(unsupported_locale).to eq('pl')
   end
 end
