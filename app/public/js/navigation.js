@@ -34,11 +34,7 @@ function ensureNavLayout() {
   hamburger.hidden = true;
   hamburger.removeAttribute("open");
 
-  const navItems = Array.from(
-    nav.querySelectorAll("a, details, form, button, .language-switch")
-  ).filter((node) => !node.hidden);
-  const firstRowTop = navItems.length ? navItems[0].offsetTop : nav.offsetTop;
-  const isNarrow = navItems.some((node) => node.offsetTop > firstRowTop + 1);
+  const isNarrow = window.matchMedia("(max-width: 1212px)").matches;
 
   if (isNarrow) {
     if (primaryCitySlot) {
