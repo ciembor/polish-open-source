@@ -284,9 +284,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       "/auth/github/callback?code=github-code&state=#{github_state}",
       'HTTP_COOKIE' => cookie_header(github_start)
     )
-    SQLite3::Database.new(database).execute(
-      "DELETE FROM user_monthly_stats WHERE platform = 'github' AND user_github_id = 1 AND period_start = '2026-04-01'"
-    )
+    remove_alice_from_current_ranking(database)
     discord_start = request.get('/auth/discord', 'HTTP_COOKIE' => cookie_header(github_callback))
     discord_state = Rack::Utils.parse_query(URI(discord_start.location).query).fetch('state')
     discord_callback = request.get(
@@ -609,6 +607,15 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     store.upsert_repository(repository_attributes)
     store.record_repository_stats(repository_stats(period))
     path
+  end
+
+  def remove_alice_from_current_ranking(path)
+    database = SQLite3::Database.new(path)
+    database.execute(
+      "DELETE FROM user_monthly_stats WHERE platform = 'github' AND user_github_id = 1 AND period_start = '2026-04-01'"
+    )
+  ensure
+    database&.close
   end
 
   def empty_database

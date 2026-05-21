@@ -1,5 +1,7 @@
 DO NOT leave finished tasks uncommited
 DO NOT skip pre-commit hooks
+DO NOT introduce Reek code smells in the code
+AVOID generating code with code smells
 
 # OBEY A Philosophy of Software Design by John Ousterhout
 

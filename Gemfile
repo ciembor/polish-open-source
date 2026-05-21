@@ -9,6 +9,7 @@ gem 'puma', '~> 7.0'
 gem 'rackup', '~> 2.2'
 gem 'sinatra', '~> 4.1'
 gem 'sqlite3', '~> 2.7'
+gem 'zeitwerk', '~> 2.7'
 
 group :development, :test do
   gem 'reek', '~> 6.5', require: false

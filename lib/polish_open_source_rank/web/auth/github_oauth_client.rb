@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative 'oauth_http'
-
 module PolishOpenSourceRank
   module Web
     module Auth
