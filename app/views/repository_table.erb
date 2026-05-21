@@ -20,10 +20,13 @@
           </div>
           <div class="ranking-list__metrics">
             <span class="metric" title="<%= h metric_label %>" aria-label="<%= h metric_label %>: <%= h number(row.fetch(metric)) %>"><%= number(row.fetch(metric)) %></span>
-            <% if row[:homepage] && !row[:homepage].empty? %>
-              <a class="metric-link" href="<%= h row[:homepage] %>">www</a>
-            <% end %>
           </div>
+          <span class="ranking-list__links ranking-list__links--edge">
+            <a class="muted-link" href="<%= h row.fetch(:html_url) %>"><%= h platform_name(row.fetch(:platform, "github")) %></a>
+            <% if row[:homepage] && !row[:homepage].empty? %>
+              <a class="muted-link" href="<%= h row[:homepage] %>">website</a>
+            <% end %>
+          </span>
         </li>
       <% end %>
     </ol>

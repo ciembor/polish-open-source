@@ -380,6 +380,7 @@ h3 {
   display: grid;
   gap: 10px;
   grid-template-columns: 34px minmax(0, 1fr) max-content;
+  grid-template-rows: auto auto;
   padding: 12px 10px;
   border-bottom: 1px solid var(--line);
 }
@@ -392,6 +393,10 @@ h3 {
 .ranking-list__title,
 .ranking-list__meta {
   min-width: 0;
+}
+
+.ranking-list__body {
+  grid-row: 1 / span 2;
 }
 
 .ranking-list__title {
@@ -453,6 +458,12 @@ h3 {
 
 .ranking-list__links .muted-link {
   margin-right: 0;
+}
+
+.ranking-list__links--edge {
+  align-self: end;
+  grid-column: 3;
+  grid-row: 2;
 }
 
 .ranking-list__empty {
@@ -534,19 +545,6 @@ h3 {
   flex-direction: column;
   align-items: flex-end;
   gap: 2px;
-}
-
-.metric-link {
-  color: var(--muted);
-  font-size: 0.84rem;
-  font-weight: 800;
-  line-height: 1.2;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.metric-link:hover {
-  color: var(--accent-strong);
 }
 
 .rank-cell {
