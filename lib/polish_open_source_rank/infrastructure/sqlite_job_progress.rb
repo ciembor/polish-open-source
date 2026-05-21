@@ -78,22 +78,16 @@ module PolishOpenSourceRank
       attr_reader :database
 
       def current_run
-        fetch_all(<<~SQL).first
-          SELECT period_start, period_end, status, started_at, finished_at, error
-          FROM sync_runs
-          ORDER BY datetime(started_at) DESC, period_start DESC
-          LIMIT 1
-        SQL
+        sync_runs_dataset
+          .select(:period_start, :period_end, :status, :started_at, :finished_at, :error)
+          .order(Sequel.desc(Sequel.function(:datetime, :started_at)), Sequel.desc(:period_start))
+          .first
       end
 
       def progress_platforms(period_start)
-        discovered = fetch_all(<<~SQL, [period_start, period_start, period_start]).map { |row| row.fetch(:platform) }
-          SELECT platform FROM candidate_users WHERE period_start = ?
-          UNION
-          SELECT platform FROM user_monthly_stats WHERE period_start = ?
-          UNION
-          SELECT platform FROM repository_monthly_stats WHERE period_start = ?
-        SQL
+        discovered = candidate_users_dataset.where(period_start: period_start).select_map(:platform) +
+                     user_monthly_stats_dataset.where(period_start: period_start).select_map(:platform) +
+                     repository_monthly_stats_dataset.where(period_start: period_start).select_map(:platform)
         PLATFORM_ORDER | discovered
       end
 
@@ -139,51 +133,33 @@ module PolishOpenSourceRank
       end
 
       def checked_candidates_count(period_start, platform)
-        fetch_value(<<~SQL, [period_start, platform]).to_i
-          SELECT COUNT(*)
-          FROM candidate_users
-          WHERE period_start = ? AND platform = ? AND status != 'pending'
-        SQL
+        candidate_users_dataset
+          .where(period_start: period_start, platform: platform)
+          .exclude(status: 'pending')
+          .count
       end
 
       def total_candidates_count(period_start, platform)
-        fetch_value(<<~SQL, [period_start, platform]).to_i
-          SELECT COUNT(*)
-          FROM candidate_users
-          WHERE period_start = ? AND platform = ?
-        SQL
+        candidate_users_dataset.where(period_start: period_start, platform: platform).count
       end
 
       def accepted_users_count(period_start, platform)
-        fetch_value(<<~SQL, [period_start, platform]).to_i
-          SELECT COUNT(*)
-          FROM user_monthly_stats
-          WHERE period_start = ? AND platform = ?
-        SQL
+        user_monthly_stats_dataset.where(period_start: period_start, platform: platform).count
       end
 
       def checked_repositories_count(period_start, platform)
-        fetch_value(<<~SQL, [period_start, platform]).to_i
-          SELECT COUNT(*)
-          FROM repository_monthly_stats
-          WHERE period_start = ? AND platform = ?
-        SQL
+        repository_monthly_stats_dataset.where(period_start: period_start, platform: platform).count
       end
 
       def repository_owners_count(period_start, platform)
-        fetch_value(<<~SQL, [period_start, platform]).to_i
-          SELECT COUNT(DISTINCT owner_github_id)
-          FROM repository_monthly_stats
-          WHERE period_start = ? AND platform = ?
-        SQL
+        repository_monthly_stats_dataset
+          .where(period_start: period_start, platform: platform)
+          .distinct
+          .count(:owner_github_id)
       end
 
       def candidates_count(period_start, platform, status)
-        fetch_value(<<~SQL, [period_start, platform, status]).to_i
-          SELECT COUNT(*)
-          FROM candidate_users
-          WHERE period_start = ? AND platform = ? AND status = ?
-        SQL
+        candidate_users_dataset.where(period_start: period_start, platform: platform, status: status).count
       end
 
       def current_run_candidates_count(run, platform)
@@ -265,13 +241,12 @@ module PolishOpenSourceRank
       end
 
       def last_api_request(run, platform)
-        fetch_all(<<~SQL, [platform, run.fetch(:started_at)]).first
-          SELECT path, status, recorded_at
-          FROM api_request_events
-          WHERE platform = ? AND recorded_at >= ?
-          ORDER BY datetime(recorded_at) DESC, id DESC
-          LIMIT 1
-        SQL
+        api_request_events_dataset
+          .where(platform: platform)
+          .where(Sequel.lit('recorded_at >= ?', run.fetch(:started_at)))
+          .select(:path, :status, :recorded_at)
+          .order(Sequel.desc(Sequel.function(:datetime, :recorded_at)), Sequel.desc(:id))
+          .first
       end
 
       def progress_points(run, now)
@@ -349,6 +324,26 @@ module PolishOpenSourceRank
 
       def fetch_value(sql, params = [])
         database.fetch_value(sql, params)
+      end
+
+      def sync_runs_dataset
+        database.dataset(:sync_runs)
+      end
+
+      def candidate_users_dataset
+        database.dataset(:candidate_users)
+      end
+
+      def user_monthly_stats_dataset
+        database.dataset(:user_monthly_stats)
+      end
+
+      def repository_monthly_stats_dataset
+        database.dataset(:repository_monthly_stats)
+      end
+
+      def api_request_events_dataset
+        database.dataset(:api_request_events)
       end
     end
   end
