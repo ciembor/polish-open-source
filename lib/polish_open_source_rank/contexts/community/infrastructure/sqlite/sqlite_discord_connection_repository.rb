@@ -12,16 +12,22 @@ module PolishOpenSourceRank
             end
 
             def upsert(platform:, user_github_id:, discord_user_id:, discord_username:)
-              database.execute(<<~SQL, [platform, user_github_id, discord_user_id, discord_username, timestamp])
-                INSERT INTO discord_connections(
-                  platform, user_github_id, discord_user_id, discord_username, updated_at
-                )
-                VALUES (?, ?, ?, ?, ?)
-                ON CONFLICT(platform, user_github_id) DO UPDATE SET
-                  discord_user_id = excluded.discord_user_id,
-                  discord_username = excluded.discord_username,
-                  updated_at = excluded.updated_at
-              SQL
+              attributes = {
+                platform: platform,
+                user_github_id: user_github_id,
+                discord_user_id: discord_user_id,
+                discord_username: discord_username,
+                updated_at: timestamp
+              }
+              scoped = connections_dataset.where(platform: platform, user_github_id: user_github_id)
+
+              database.transaction do
+                next unless scoped.update(update_attributes(attributes)).zero?
+
+                connections_dataset.insert(attributes)
+              end
+            rescue Sequel::UniqueConstraintViolation
+              scoped.update(update_attributes(attributes))
             end
 
             def upsert_discord_connection(platform:, user_github_id:, discord_user_id:, discord_username:)
@@ -49,6 +55,14 @@ module PolishOpenSourceRank
             private
 
             attr_reader :clock, :database
+
+            def connections_dataset
+              database.dataset(:discord_connections)
+            end
+
+            def update_attributes(attributes)
+              attributes.except(:platform, :user_github_id)
+            end
 
             def timestamp
               clock.call.iso8601

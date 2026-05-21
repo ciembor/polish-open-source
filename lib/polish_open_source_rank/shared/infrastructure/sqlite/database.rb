@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'sqlite3'
+require 'sequel'
 
 module PolishOpenSourceRank
   module Shared
@@ -17,16 +17,16 @@ module PolishOpenSourceRank
 
           def open
             FileUtils.mkdir_p(path.dirname)
-            configure_connection
+            connect
             self
           end
 
           def execute(sql, params = [])
-            connection.execute(sql, params)
+            raw_connection.execute(sql, params)
           end
 
           def execute_batch(sql)
-            connection.execute_batch(sql)
+            raw_connection.execute_batch(sql)
           end
 
           def fetch_all(sql, params = [])
@@ -38,31 +38,43 @@ module PolishOpenSourceRank
           end
 
           def get_first_value(sql, params = [])
-            connection.get_first_value(sql, params)
+            raw_connection.get_first_value(sql, params)
           end
 
           def table_info(table_name)
-            connection.table_info(table_name)
+            raw_connection.table_info(table_name)
           end
 
-          def transaction
-            execute('BEGIN IMMEDIATE')
-            yield
-            execute('COMMIT')
-          rescue StandardError
-            execute('ROLLBACK')
-            raise
+          def dataset(table_name)
+            sequel_connection[table_name.to_sym]
+          end
+
+          def transaction(&)
+            sequel_connection.transaction(mode: :immediate, &)
           end
 
           private
 
           attr_reader :path
 
-          def connection
-            @connection ||= SQLite3::Database.new(path.to_s)
+          def connect
+            sequel_connection
           end
 
-          def configure_connection
+          def raw_connection
+            sequel_connection.synchronize do |connection|
+              return connection
+            end
+          end
+
+          def sequel_connection
+            @sequel_connection ||= Sequel.connect(
+              "sqlite://#{path}",
+              after_connect: method(:configure_connection)
+            )
+          end
+
+          def configure_connection(connection)
             connection.results_as_hash = true
             connection.busy_timeout = 120_000
             connection.execute('PRAGMA foreign_keys = ON')

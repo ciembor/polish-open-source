@@ -6,18 +6,10 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
   let(:store) { described_class.new(path).migrate! }
 
   it 'configures SQLite connections for store access patterns' do
-    pathname = Pathname(path)
-    connection = instance_double(SQLite3::Database)
-    allow(connection).to receive(:results_as_hash=)
-    allow(connection).to receive(:busy_timeout=)
-    allow(connection).to receive(:execute)
-    allow(SQLite3::Database).to receive(:new).with(pathname.to_s).and_return(connection)
+    database = described_class.new(path).send(:database)
 
-    described_class.new(pathname).send(:database)
-
-    expect(connection).to have_received(:results_as_hash=).with(true)
-    expect(connection).to have_received(:busy_timeout=).with(120_000)
-    expect(connection).to have_received(:execute).with('PRAGMA foreign_keys = ON')
+    expect(database.fetch_value('PRAGMA foreign_keys')).to eq(1)
+    expect(database.fetch_value('PRAGMA busy_timeout')).to eq(120_000)
   end
 
   # rubocop:disable RSpec/MultipleExpectations

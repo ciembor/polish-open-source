@@ -25,6 +25,35 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
     expect(repository.profile_for_code('def')).to include(platform: 'github', github_id: 1, login: 'alice')
   end
 
+  it 'retries as an update when the invite insert races with another writer' do
+    initial_scope = double('initial scope')
+    dataset = double('dataset')
+    database = double('database')
+    repository = described_class.new(database, clock: clock)
+
+    allow(database).to receive(:dataset).with(:discord_invites).and_return(dataset)
+    allow(database).to receive(:transaction).and_yield
+    allow(dataset).to receive(:where).with(platform: 'github', user_github_id: 1).and_return(initial_scope)
+    allow(initial_scope).to receive(:update).with(
+      {
+        code: 'def',
+        url: 'https://discord.gg/def',
+        created_at: '2026-05-01T12:00:00Z'
+      }
+    ).and_return(0, 1)
+    allow(dataset).to receive(:insert).and_raise(Sequel::UniqueConstraintViolation, 'race')
+
+    repository.record(platform: 'github', user_github_id: 1, code: 'def', url: 'https://discord.gg/def')
+
+    expect(initial_scope).to have_received(:update).with(
+      {
+        code: 'def',
+        url: 'https://discord.gg/def',
+        created_at: '2026-05-01T12:00:00Z'
+      }
+    ).twice
+  end
+
   def seed_user
     database.execute(
       'INSERT INTO users(platform, github_id, login, html_url, updated_at) VALUES (?, ?, ?, ?, ?)',

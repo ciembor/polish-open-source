@@ -12,14 +12,22 @@ module PolishOpenSourceRank
             end
 
             def record(platform:, user_github_id:, code:, url:)
-              database.execute(<<~SQL, [platform, user_github_id, code, url, timestamp])
-                INSERT INTO discord_invites(platform, user_github_id, code, url, created_at)
-                VALUES (?, ?, ?, ?, ?)
-                ON CONFLICT(platform, user_github_id) DO UPDATE SET
-                  code = excluded.code,
-                  url = excluded.url,
-                  created_at = excluded.created_at
-              SQL
+              attributes = {
+                platform: platform,
+                user_github_id: user_github_id,
+                code: code,
+                url: url,
+                created_at: timestamp
+              }
+              scoped = invites_dataset.where(platform: platform, user_github_id: user_github_id)
+
+              database.transaction do
+                next unless scoped.update(update_attributes(attributes)).zero?
+
+                invites_dataset.insert(attributes)
+              end
+            rescue Sequel::UniqueConstraintViolation
+              scoped.update(update_attributes(attributes))
             end
 
             def find(platform, user_github_id)
@@ -46,6 +54,14 @@ module PolishOpenSourceRank
             private
 
             attr_reader :clock, :database
+
+            def invites_dataset
+              database.dataset(:discord_invites)
+            end
+
+            def update_attributes(attributes)
+              attributes.except(:platform, :user_github_id)
+            end
 
             def timestamp
               clock.call.iso8601

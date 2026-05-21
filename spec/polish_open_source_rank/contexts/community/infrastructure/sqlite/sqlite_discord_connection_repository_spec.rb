@@ -34,6 +34,42 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
     )
   end
 
+  # rubocop:disable RSpec/ExampleLength
+  it 'retries as an update when the insert races with another writer' do
+    initial_scope = double('initial scope')
+    dataset = double('dataset')
+    database = double('database')
+    repository = described_class.new(database, clock: clock)
+
+    allow(database).to receive(:dataset).with(:discord_connections).and_return(dataset)
+    allow(database).to receive(:transaction).and_yield
+    allow(dataset).to receive(:where).with(platform: 'github', user_github_id: 1).and_return(initial_scope)
+    allow(initial_scope).to receive(:update).with(
+      {
+        discord_user_id: 'discord-2',
+        discord_username: 'Alice D',
+        updated_at: '2026-05-01T12:00:00Z'
+      }
+    ).and_return(0, 1)
+    allow(dataset).to receive(:insert).and_raise(Sequel::UniqueConstraintViolation, 'race')
+
+    repository.upsert(
+      platform: 'github',
+      user_github_id: 1,
+      discord_user_id: 'discord-2',
+      discord_username: 'Alice D'
+    )
+
+    expect(initial_scope).to have_received(:update).with(
+      {
+        discord_user_id: 'discord-2',
+        discord_username: 'Alice D',
+        updated_at: '2026-05-01T12:00:00Z'
+      }
+    ).twice
+  end
+  # rubocop:enable RSpec/ExampleLength
+
   def seed_user
     database.execute(
       'INSERT INTO users(platform, github_id, login, html_url, updated_at) VALUES (?, ?, ?, ?, ?)',
