@@ -4,6 +4,5 @@
 require_relative '../lib/polish_open_source_rank'
 
 configuration = PolishOpenSourceRank::Configuration.load
-store = PolishOpenSourceRank::Infrastructure::SQLiteStore.new(configuration.database_path).migrate!
 
-PolishOpenSourceRank::Infrastructure::DiscordInviteBot.build(configuration: configuration, store: store).run
+PolishOpenSourceRank::Infrastructure::DiscordInviteBot.build(configuration: configuration).run

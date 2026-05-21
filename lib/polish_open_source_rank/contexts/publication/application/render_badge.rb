@@ -11,13 +11,15 @@ module PolishOpenSourceRank
 
           def user(platform:, login:, period_start:)
             profile = profile_read_model.user_profile(platform, login, period_start: period_start)
-            profile&.fetch(:badges, [])&.first
+            badge = profile&.fetch(:badges, [])&.first
+            badge && BadgeView.new(badge)
           end
 
           def repository(platform:, owner:, name:, period_start:)
-            profile_read_model
-              .repository_profile(platform, owner, name, period_start: period_start)
-              &.fetch(:polish_repo_badge, nil)
+            badge = profile_read_model
+                    .repository_profile(platform, owner, name, period_start: period_start)
+                    &.fetch(:polish_repo_badge, nil)
+            badge && BadgeView.new(badge)
           end
 
           private

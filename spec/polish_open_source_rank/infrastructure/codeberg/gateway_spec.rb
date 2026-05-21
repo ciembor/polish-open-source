@@ -34,7 +34,7 @@ end
 RSpec.describe PolishOpenSourceRank::Infrastructure::CodebergGateway do
   let(:client) { FakeCodebergClient.new }
   let(:gateway) { described_class.new(client) }
-  let(:period) { PolishOpenSourceRank::Application::MonthPeriod.parse('2026-04') }
+  let(:period) { PolishOpenSourceRank::Shared::Domain::Period.parse('2026-04') }
 
   it 'identifies its platform' do
     expect(gateway.platform).to eq('codeberg')
@@ -74,7 +74,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::CodebergGateway do
       PolishOpenSourceRank::Infrastructure::CodebergClient::NotFound.new('missing', status: 404, body: '{}')
     )
 
-    expect { gateway.user('missing', 404) }.to raise_error(PolishOpenSourceRank::Application::SourceNotFound)
+    expect { gateway.user('missing', 404) }.to raise_error(PolishOpenSourceRank::Contexts::Ranking::Application::SourceNotFound)
   end
 
   it 'stops activity pagination after a full page older than the ranking period' do

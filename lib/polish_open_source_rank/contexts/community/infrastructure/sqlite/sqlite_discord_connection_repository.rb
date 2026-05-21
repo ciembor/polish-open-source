@@ -24,6 +24,15 @@ module PolishOpenSourceRank
               SQL
             end
 
+            def upsert_discord_connection(platform:, user_github_id:, discord_user_id:, discord_username:)
+              upsert(
+                platform: platform,
+                user_github_id: user_github_id,
+                discord_user_id: discord_user_id,
+                discord_username: discord_username
+              )
+            end
+
             def find(platform, user_github_id)
               database.fetch_all(<<~SQL, [platform, user_github_id]).first
                 SELECT discord_user_id, discord_username, updated_at
@@ -31,6 +40,10 @@ module PolishOpenSourceRank
                 WHERE platform = ? AND user_github_id = ?
                 LIMIT 1
               SQL
+            end
+
+            def discord_connection(platform, user_github_id)
+              find(platform, user_github_id)
             end
 
             private

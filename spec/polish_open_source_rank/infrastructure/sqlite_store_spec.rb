@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
-  let(:period) { PolishOpenSourceRank::Application::MonthPeriod.parse('2026-04') }
+  let(:period) { PolishOpenSourceRank::Shared::Domain::Period.parse('2026-04') }
   let(:path) { File.join(Dir.mktmpdir, 'rank.sqlite3') }
   let(:store) { described_class.new(path).migrate! }
 
@@ -20,6 +20,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     expect(connection).to have_received(:execute).with('PRAGMA foreign_keys = ON')
   end
 
+  # rubocop:disable RSpec/MultipleExpectations
   it 'stores sync progress, snapshots, and scoped rankings' do
     run_id = store.create_run(period)
     store.record_candidate(period, github_id: 10, login: 'alice', source_query: 'Poland')
@@ -39,6 +40,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     expect(store.pending_candidates(period)).to be_empty
     expect(store.retryable_candidates?(period)).to be(false)
     expect(store.latest_period).to eq('2026-04-01')
+    expect(store.public_cache_revision('2026-04-01')).to match(/\A\d{4}-\d{2}-\d{2}T/)
     expect(store.completed_periods).to contain_exactly(include(period_start: '2026-04-01'))
     expect(store.user_rankings('poland').fetch(:top).first).to include(login: 'alice', total_stars: 30)
     expect(store.user_rankings('krakow').fetch(:active).first).to include(public_activity_count: 9)
@@ -47,6 +49,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     expect(store.repository_rankings('krakow').fetch(:top).first).to include(full_name: 'alice/app',
                                                                              stargazers_count: 30)
   end
+  # rubocop:enable RSpec/MultipleExpectations
 
   it 'reports recorded periods and processed users through legacy and platform-aware calls' do
     store.create_run(period)
@@ -121,7 +124,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     store.record_user_stats(user_stats(10, 'alice', 'Kraków', total_stars: 30, delta: 4, activity: 9))
     store.finish_run(ranked_run_id)
 
-    empty_period = PolishOpenSourceRank::Application::MonthPeriod.parse('2026-05')
+    empty_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-05')
     store.finish_run(store.create_run(empty_period))
 
     expect(store.latest_period).to eq('2026-04-01')
@@ -136,7 +139,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
   end
 
   it 'classifies user badges as current elite, alumni, or contender' do
-    older_period = PolishOpenSourceRank::Application::MonthPeriod.parse('2026-03')
+    older_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-03')
     store.create_run(older_period)
     store.upsert_user(user_attributes(11, 'alumni', 'Kraków'))
     store.record_user_stats(
@@ -445,7 +448,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
   end
 
   it 'keeps repository star observations for future monthly deltas' do
-    previous_period = PolishOpenSourceRank::Application::MonthPeriod.parse('2026-03')
+    previous_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-03')
     store.upsert_user(user_attributes(10, 'alice', 'Kraków'))
     store.upsert_repository(repository_attributes(100, 10, 'alice', 'alice/app', 30))
 

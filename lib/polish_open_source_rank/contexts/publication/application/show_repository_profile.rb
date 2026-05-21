@@ -10,7 +10,8 @@ module PolishOpenSourceRank
           end
 
           def call(platform:, owner:, name:, period_start:)
-            profile_read_model.repository_profile(platform, owner, name, period_start: period_start)
+            profile = profile_read_model.repository_profile(platform, owner, name, period_start: period_start)
+            profile && RepositoryPage.new(profile)
           end
 
           private

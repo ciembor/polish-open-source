@@ -6,6 +6,9 @@ module PolishOpenSourceRank
       module Infrastructure
         module SQLite
           class SQLiteJobProgressReadModel < PolishOpenSourceRank::Infrastructure::SQLiteJobProgress
+            def job_progress(now: Time.now.utc)
+              call(now: now)
+            end
           end
         end
       end

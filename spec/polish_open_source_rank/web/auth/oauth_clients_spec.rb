@@ -55,7 +55,7 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
 
   it 'creates one-use invites and syncs Discord guild members' do
     configuration = PolishOpenSourceRank::Configuration.load
-    gateway = PolishOpenSourceRank::Web::Auth::DiscordGateway.new(configuration)
+    gateway = PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway.new(configuration)
     responses = [
       json_response('{"code":"abc","url":"https://discord.gg/abc"}'),
       json_response('{}'),
@@ -84,7 +84,7 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
 
   it 'builds an invite URL when Discord only returns the invite code' do
     configuration = PolishOpenSourceRank::Configuration.load
-    gateway = PolishOpenSourceRank::Web::Auth::DiscordGateway.new(configuration)
+    gateway = PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway.new(configuration)
     capture_http_requests([json_response('{"code":"abc"}')])
 
     expect(gateway.create_invite(channel_id: 'channel-1')).to eq(code: 'abc', url: 'https://discord.gg/abc')
@@ -92,7 +92,7 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
 
   it 'posts a GitHub-rich welcome message with role-enabled channels' do
     configuration = PolishOpenSourceRank::Configuration.load
-    gateway = PolishOpenSourceRank::Web::Auth::DiscordGateway.new(configuration)
+    gateway = PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway.new(configuration)
     requests = capture_http_requests(welcome_responses)
 
     gateway.post_welcome_message(
@@ -116,7 +116,7 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
   end
 
   it 'builds a neutral welcome message for users without ranking roles' do
-    message = PolishOpenSourceRank::Web::Auth::DiscordWelcomeMessage.new(
+    message = PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordWelcomeMessage.new(
       discord_user_id: 'discord-1',
       profile: welcome_profile.merge(repositories: []),
       access: {},
@@ -133,15 +133,18 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
     )
   end
 
+  # rubocop:disable RSpec/ExampleLength
   it 'treats missing Discord invites as unavailable and raises typed errors' do
     configuration = PolishOpenSourceRank::Configuration.load
-    gateway = PolishOpenSourceRank::Web::Auth::DiscordGateway.new(configuration)
+    gateway = PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway.new(configuration)
     capture_http_requests([response('404', 'Not Found', '{}')])
 
     expect(gateway.invite_available?('used')).to be(false)
 
     capture_http_requests([response('500', 'Server Error', 'nope')])
-    expect { gateway.invite_available?('broken') }.to raise_error(PolishOpenSourceRank::Web::Auth::DiscordGateway::Error)
+    expect { gateway.invite_available?('broken') }.to raise_error(
+      PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway::Error
+    )
 
     capture_http_requests([response('500', 'Server Error', 'nope')])
     expect do
@@ -152,7 +155,7 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
         desired_role_ids: [],
         managed_role_ids: []
       )
-    end.to raise_error(PolishOpenSourceRank::Web::Auth::DiscordGateway::Error)
+    end.to raise_error(PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway::Error)
 
     capture_http_requests([response('500', 'Server Error', 'nope')])
     expect do
@@ -162,8 +165,9 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
         desired_role_ids: [],
         managed_role_ids: []
       )
-    end.to raise_error(PolishOpenSourceRank::Web::Auth::DiscordGateway::Error)
+    end.to raise_error(PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway::Error)
   end
+  # rubocop:enable RSpec/ExampleLength
 
   it 'maps configured Discord role keys to role IDs' do
     ENV['DISCORD_ROLE_TOP_10_PL'] = 'top-10-role'

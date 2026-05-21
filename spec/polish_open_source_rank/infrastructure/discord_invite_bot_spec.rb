@@ -1,7 +1,49 @@
 # frozen_string_literal: true
 
-RSpec.describe PolishOpenSourceRank::Infrastructure::DiscordInviteBot do
+RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordInviteBot do
+  # rubocop:disable RSpec/ExampleLength
   it 'builds production collaborators from configuration' do
+    discord_bot = FakeDiscordBot.new
+    database = instance_double(PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database)
+    invite_repository =
+      instance_double(PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite::SQLiteDiscordInviteRepository)
+    connection_repository = instance_double(
+      PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite::SQLiteDiscordConnectionRepository
+    )
+    access_read_model = instance_double(
+      PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite::SQLiteContributorAccessReadModel
+    )
+    configuration = instance_double(
+      PolishOpenSourceRank::Configuration,
+      discord_guild_id: '1505949566229286972',
+      discord_bot_token: 'token',
+      database_path: 'db/test.sqlite3'
+    )
+    allow(Discordrb::Bot).to receive(:new)
+      .with(token: 'token', intents: %i[server_invites])
+      .and_return(discord_bot)
+    migration = instance_double(PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration, needed?: false)
+    allow(PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database)
+      .to receive(:open).with('db/test.sqlite3').and_return(database)
+    allow(PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration)
+      .to receive(:new)
+      .with(database, PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql)
+      .and_return(migration)
+    allow(database).to receive(:execute_batch).with(PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql)
+    allow(PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite::SQLiteDiscordInviteRepository)
+      .to receive(:new).with(database).and_return(invite_repository)
+    allow(PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite::SQLiteDiscordConnectionRepository)
+      .to receive(:new).with(database).and_return(connection_repository)
+    allow(PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite::SQLiteContributorAccessReadModel)
+      .to receive(:new).with(database).and_return(access_read_model)
+
+    bot = described_class.build(configuration: configuration)
+
+    expect(bot).to be_a(described_class)
+  end
+  # rubocop:enable RSpec/ExampleLength
+
+  it 'keeps compatibility with the legacy store-shaped bot composition' do
     discord_bot = FakeDiscordBot.new
     configuration = instance_double(
       PolishOpenSourceRank::Configuration,

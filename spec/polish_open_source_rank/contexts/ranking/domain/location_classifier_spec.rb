@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe PolishOpenSourceRank::Domain::LocationClassifier do
+RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Domain::LocationClassifier do
   subject(:classifier) { described_class.new }
 
   it 'classifies country variants and city variants as Polish locations' do
@@ -20,7 +20,7 @@ RSpec.describe PolishOpenSourceRank::Domain::LocationClassifier do
   end
 
   it 'exposes stable scopes and search terms' do
-    catalog = PolishOpenSourceRank::Domain::LocationCatalog
+    catalog = PolishOpenSourceRank::Contexts::Ranking::Domain::LocationCatalog
 
     expect(catalog.city_slugs).to include('krakow', 'wroclaw', 'warszawa', 'lodz')
     expect(catalog.city_name('poznan')).to eq('Poznań')

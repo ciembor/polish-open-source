@@ -20,7 +20,7 @@ class FakeSnapshotRunDatabase
 end
 
 RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteSnapshotRunRepository do
-  let(:period) { PolishOpenSourceRank::Application::MonthPeriod.parse('2026-04') }
+  let(:period) { PolishOpenSourceRank::Shared::Domain::Period.parse('2026-04') }
 
   it 'creates runs with UTC timestamps and positional database params', :aggregate_failures do
     database = FakeSnapshotRunDatabase.new(nil, 123)
