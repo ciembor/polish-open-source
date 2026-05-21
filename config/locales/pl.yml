@@ -89,6 +89,7 @@ pl:
     data_source: "Dane pochodzą z publicznych API GitHuba, GitLaba i Codeberga i są odświeżane miesięcznie."
   nav:
     about: "O projekcie"
+    cities: "Miasta"
     country: "Polska"
     editions: "Edycje"
     language: "Język"

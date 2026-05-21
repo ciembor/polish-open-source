@@ -89,6 +89,7 @@ en:
     data_source: "Data comes from the public APIs of GitHub, GitLab and Codeberg and is refreshed monthly."
   nav:
     about: "About"
+    cities: "Cities"
     country: "Poland"
     editions: "Editions"
     language: "Language"

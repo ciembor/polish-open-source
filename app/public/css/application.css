@@ -201,11 +201,13 @@ a {
   grid-template-columns: 1fr;
   left: 0;
   max-height: calc(100vh - 104px);
+  max-width: min(92vw, 520px);
+  min-width: max-content;
   overflow-y: auto;
   padding: 8px;
   position: absolute;
   top: calc(100% + 8px);
-  width: 100%;
+  width: max-content;
   z-index: 10;
 }
 
@@ -215,6 +217,7 @@ a {
   display: block;
   padding: 8px 10px;
   overflow-wrap: anywhere;
+  white-space: nowrap;
 }
 
 .nav-menu__panel .nav__link:hover {

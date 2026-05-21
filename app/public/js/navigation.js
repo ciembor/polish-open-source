@@ -22,6 +22,7 @@ function ensureNavLayout() {
   const secondaryLinks = Array.from(nav.querySelectorAll(".js-secondary-link"));
   const primaryCitySlot = nav.querySelector(".js-primary-city-slot");
   const secondaryLinksSlot = nav.querySelector(".js-secondary-links-slot");
+  const moreCitiesSummary = nav.querySelector(".js-more-cities-summary");
 
   const moreCitiesPanel = nav.querySelector(".js-more-cities-panel");
   const hamburger = nav.querySelector(".js-hamburger");
@@ -37,9 +38,17 @@ function ensureNavLayout() {
 
   const isNarrow = window.matchMedia("(max-width: 1212px)").matches;
 
-  if (!isNarrow) return;
+  if (!isNarrow) {
+    if (moreCitiesSummary) {
+      moreCitiesSummary.textContent = moreCitiesSummary.dataset.labelWide;
+    }
+    return;
+  }
 
   if (isNarrow) {
+    if (moreCitiesSummary) {
+      moreCitiesSummary.textContent = moreCitiesSummary.dataset.labelNarrow;
+    }
     if (primaryCitySlot) {
       const firstSecondaryCity = moreCitiesPanel.querySelector(".js-secondary-city");
       if (firstSecondaryCity) {
