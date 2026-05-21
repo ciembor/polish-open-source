@@ -89,7 +89,7 @@ Start with adapters where Sequel datasets clearly reduce boilerplate and query r
 - [x] Convert `SQLiteDiscordConnectionRepository`.
 - [x] Convert `SQLiteDiscordInviteRepository`.
 - [x] Convert `SQLiteSourceRequestLog`.
-- [ ] Convert candidate status update paths in `SQLiteCandidateQueue` where they are simple inserts/updates.
+- [x] Convert candidate status update paths in `SQLiteCandidateQueue` where they are simple inserts/updates.
 - [ ] Keep method contracts unchanged.
 - [ ] Add or preserve tests around upserts, timestamps, and one-active-invite behavior.
 
