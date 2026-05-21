@@ -57,11 +57,10 @@ module PolishOpenSourceRank
 
               def repositories_from_database(configuration)
                 database = Shared::Infrastructure::SQLite::Database.open(configuration.database_path)
-                migration = PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration.new(
+                PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration.new(
                   database,
                   PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql
-                )
-                migration.needed? ? migration.run : database.execute_batch(PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql)
+                ).bootstrap!
                 [
                   Contexts::Community::Infrastructure::SQLite::SQLiteDiscordInviteRepository.new(database),
                   Contexts::Community::Infrastructure::SQLite::SQLiteDiscordConnectionRepository.new(database),

@@ -73,11 +73,11 @@ Sequel belongs in infrastructure adapters and shared SQLite infrastructure only.
 
 ### 2. Move schema bootstrapping and migrations onto Sequel
 
-- [ ] Update `PlatformSchemaMigration` to depend on the Sequel-backed database gateway, not raw `SQLite3::Database`.
-- [ ] Keep `SQLiteSchema.sql` as the initial schema source.
+- [x] Update `PlatformSchemaMigration` to depend on the Sequel-backed database gateway, not raw `SQLite3::Database`.
+- [x] Keep `SQLiteSchema.sql` as the initial schema source.
 - [ ] Use Sequel transactions for migration steps that mutate schema/data.
-- [ ] Preserve current `PRAGMA user_version` behavior.
-- [ ] Add regression tests for:
+- [x] Preserve current `PRAGMA user_version` behavior.
+- [x] Add regression tests for:
   - fresh database creation,
   - legacy GitHub-only migration,
   - idempotent migration when schema is current.

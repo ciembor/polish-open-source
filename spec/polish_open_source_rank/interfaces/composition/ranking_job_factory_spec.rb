@@ -97,14 +97,13 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::RankingJobFactory 
   end
 
   def stub_database(database)
-    migration = instance_double(PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration, needed?: false)
+    migration = instance_double(PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration, bootstrap!: nil)
     allow(PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database)
       .to receive(:open).with('db/test.sqlite3').and_return(database)
     allow(PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration)
       .to receive(:new)
       .with(database, PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql)
       .and_return(migration)
-    allow(database).to receive(:execute_batch).with(PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql)
   end
 
   # rubocop:disable Metrics/AbcSize

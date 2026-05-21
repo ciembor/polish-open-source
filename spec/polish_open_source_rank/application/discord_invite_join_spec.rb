@@ -142,11 +142,10 @@ RSpec.describe PolishOpenSourceRank::Application::DiscordInviteJoin do
   def migrated_database
     path = File.join(Dir.mktmpdir, 'rank.sqlite3')
     database = PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(path)
-    migration = PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration.new(
+    PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration.new(
       database,
       PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql
-    )
-    migration.needed? ? migration.run : database.execute_batch(PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql)
+    ).bootstrap!
     { path: path, database: database }
   end
 
