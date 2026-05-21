@@ -288,6 +288,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'HTTP_COOKIE' => cookie_header(github_start)
     )
     remove_alice_from_current_ranking(database)
+    reset_app_memoized_dependencies
     discord_start = request.get('/auth/discord', 'HTTP_COOKIE' => cookie_header(github_callback))
     discord_state = Rack::Utils.parse_query(URI(discord_start.location).query).fetch('state')
     discord_callback = request.get(
