@@ -120,10 +120,10 @@ Read models may keep raw SQL when that is the deeper interface. The migration ta
 
 ### 6. Convert ranking retention and dynamic SQL safely
 
-- [ ] Replace `SQLite3::Database.quote` usage in `SQLiteRankingRetention`.
+- [x] Replace `SQLite3::Database.quote` usage in `SQLiteRankingRetention`.
 - [ ] Prefer Sequel dataset construction for dynamic `IN` values.
-- [ ] If raw SQL remains, centralize quoting/binding in one infrastructure helper.
-- [ ] Add tests that prove city scope, metric columns, and retention limits cannot produce malformed SQL.
+- [x] If raw SQL remains, centralize quoting/binding in one infrastructure helper.
+- [x] Add tests that prove city scope, metric columns, and retention limits cannot produce malformed SQL.
 
 ### 7. Convert operations job progress
 

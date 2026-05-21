@@ -5,6 +5,7 @@ module PolishOpenSourceRank
     module Ranking
       module Infrastructure
         module SQLite
+          # Keeps only rows needed to render top rankings and removes orphaned snapshot records.
           class SQLiteRankingRetention
             def initialize(database, catalog: Domain::LocationCatalog)
               @database = database
@@ -30,7 +31,7 @@ module PolishOpenSourceRank
             end
 
             def prune_user_stats(period_start)
-              keep_sql = ranking_union_sql(
+              keep_sql, keep_params = ranking_union_sql(
                 period_start: period_start,
                 table: 'user_monthly_stats',
                 id_column: 'platform, user_github_id',
@@ -39,7 +40,7 @@ module PolishOpenSourceRank
                 metrics: Domain::RankingPolicy::USER_RANKINGS.values,
                 tie_breaker: Domain::RankingPolicy::USER_TIE_BREAKER
               )
-              execute(<<~SQL, [period_start])
+              execute(<<~SQL, [period_start, *keep_params])
                 DELETE FROM user_monthly_stats
                 WHERE period_start = ?
                   AND (platform, user_github_id) NOT IN (#{keep_sql})
@@ -47,7 +48,7 @@ module PolishOpenSourceRank
             end
 
             def prune_repository_stats(period_start)
-              keep_sql = ranking_union_sql(
+              keep_sql, keep_params = ranking_union_sql(
                 period_start: period_start,
                 table: 'repository_monthly_stats',
                 id_column: 'platform, repository_github_id',
@@ -56,7 +57,7 @@ module PolishOpenSourceRank
                 metrics: Domain::RankingPolicy::REPOSITORY_RANKINGS.values,
                 tie_breaker: Domain::RankingPolicy::REPOSITORY_TIE_BREAKER
               )
-              execute(<<~SQL, [period_start])
+              execute(<<~SQL, [period_start, *keep_params])
                 DELETE FROM repository_monthly_stats
                 WHERE period_start = ?
                   AND (platform, repository_github_id) NOT IN (#{keep_sql})
@@ -64,33 +65,32 @@ module PolishOpenSourceRank
             end
 
             def ranking_union_sql(options)
-              scopes = [[options.fetch(:country_column), catalog::COUNTRY]] +
-                       catalog::CITIES.map { |city| [options.fetch(:city_column), city.fetch(:name)] }
-              options.fetch(:metrics).product(scopes).map do |metric, (scope_column, scope_value)|
-                ranked_ids_sql(
-                  options.merge(metric: metric.column, scope_column: scope_column, scope_value: scope_value)
-                )
-              end.join("\nUNION\n")
+              country_column = options.fetch(:country_column)
+              city_column = options.fetch(:city_column)
+              scopes = [[country_column, catalog::COUNTRY]] +
+                       catalog::CITIES.map { |city| [city_column, city.fetch(:name)] }
+              fragments = options.fetch(:metrics).product(scopes).map do |metric, scope|
+                ranked_ids_sql(options, metric.column, scope)
+              end
+              [fragments.map(&:first).join("\nUNION\n"), fragments.flat_map(&:last)]
             end
 
-            def ranked_ids_sql(options)
-              <<~SQL
-                SELECT #{options.fetch(:id_column)}
+            def ranked_ids_sql(options, metric, scope)
+              id_column = options.fetch(:id_column)
+              scope_column, scope_value = scope
+              [<<~SQL, [options.fetch(:period_start), scope_value]]
+                SELECT #{id_column}
                 FROM (
-                  SELECT #{options.fetch(:id_column)},
+                  SELECT #{id_column},
                          ROW_NUMBER() OVER (
-                           ORDER BY #{options.fetch(:metric)} DESC, #{options.fetch(:tie_breaker)}
+                           ORDER BY #{metric} DESC, #{options.fetch(:tie_breaker)}
                          ) AS ranking_position
                   FROM #{options.fetch(:table)}
-                  WHERE period_start = #{sql_string(options.fetch(:period_start))}
-                    AND #{options.fetch(:scope_column)} = #{sql_string(options.fetch(:scope_value))}
+                  WHERE period_start = ?
+                    AND #{scope_column} = ?
                 )
                 WHERE ranking_position <= #{Domain::RankingPolicy::RANKING_LIMIT}
               SQL
-            end
-
-            def sql_string(value)
-              "'#{SQLite3::Database.quote(value.to_s)}'"
             end
 
             def delete_orphaned_records
