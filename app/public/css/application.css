@@ -1245,10 +1245,6 @@ h3 {
     padding: 18px 0;
   }
 
-  .nav {
-    justify-content: flex-start;
-  }
-
   .ranking-grid,
   .ranking-grid--two,
   .edition-card__grid,
