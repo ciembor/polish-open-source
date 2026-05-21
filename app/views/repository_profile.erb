@@ -54,11 +54,11 @@
       <dl class="profile-metrics">
         <div>
           <dt><%= h t('rankings.metric.stars') %></dt>
-          <dd><%= number(@repository[:stargazers_count]) %></dd>
+          <dd>⭐ <%= number(@repository[:stargazers_count]) %></dd>
         </div>
         <div>
           <dt><%= h t('rankings.metric.new_stars') %></dt>
-          <dd><%= number(@repository[:monthly_stars_delta]) %></dd>
+          <dd>⭐ <%= number(@repository[:monthly_stars_delta]) %></dd>
         </div>
         <% if @show_repository_badge && @repository[:polish_repo_badge] && @repository[:polish_repo_badge][:value] %>
           <div>

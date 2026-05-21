@@ -19,7 +19,9 @@
             </div>
           </div>
           <div class="ranking-list__metrics">
-            <span class="metric" title="<%= h metric_label %>" aria-label="<%= h metric_label %>: <%= h number(row.fetch(metric)) %>"><%= number(row.fetch(metric)) %></span>
+            <span class="metric" title="<%= h metric_label %>" aria-label="<%= h metric_label %>: <%= h number(row.fetch(metric)) %>">
+              <% if [:stargazers_count, :monthly_stars_delta].include?(metric) %>⭐ <% end %><%= number(row.fetch(metric)) %>
+            </span>
           </div>
           <span class="ranking-list__links ranking-list__links--edge">
             <a class="muted-link" href="<%= h row.fetch(:html_url) %>"><%= h platform_name(row.fetch(:platform, "github")) %></a>
