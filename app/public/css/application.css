@@ -131,7 +131,15 @@ a {
 }
 
 .nav-menu--hamburger summary::after {
-  content: none;
+  content: none !important;
+}
+
+.nav-menu--hamburger summary::-webkit-details-marker {
+  display: none;
+}
+
+.nav-menu--hamburger summary::marker {
+  content: "";
 }
 
 .nav-hamburger::before {
