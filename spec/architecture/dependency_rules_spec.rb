@@ -92,6 +92,21 @@ RSpec.describe 'architecture dependency rules' do
       expect(file_body(path)).not_to match(forbidden), "#{path} references the SQLiteStore facade"
     end
   end
+
+  it 'keeps low-level SQLite gateway details behind infrastructure seams', :aggregate_failures do
+    forbidden = /\bSQLite3::Database\b|\bget_first_value\b|\bexecute_batch\b/
+    compatibility_files = %w[
+      lib/polish_open_source_rank/shared/infrastructure/sqlite/database.rb
+      lib/polish_open_source_rank/infrastructure/platform_schema_migration.rb
+    ]
+    production_files = files_under('lib/polish_open_source_rank').reject do |path|
+      compatibility_files.include?(path.delete_prefix("#{PolishOpenSourceRank.root}/"))
+    end
+
+    production_files.each do |path|
+      expect(file_body(path)).not_to match(forbidden), "#{path} reaches through the SQLite infrastructure seam"
+    end
+  end
 end
 
 # rubocop:enable RSpec/DescribeClass

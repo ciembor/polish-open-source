@@ -140,7 +140,7 @@ Read models may keep raw SQL when that is the deeper interface. The migration ta
 - [ ] Decide whether `Infrastructure::SQLiteStore` is still useful as a compatibility facade.
 - [ ] If no production code needs it, delete it and migrate remaining specs to context adapters.
 - [ ] If a short-lived facade remains, make it delegate to Sequel-backed adapters only.
-- [ ] Add an architecture rule forbidding new production references to:
+- [x] Add an architecture rule forbidding new production references to:
   - `SQLite3::Database`,
   - `get_first_value`,
   - direct `execute_batch` outside schema/migration/database gateway,
