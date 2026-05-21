@@ -1260,7 +1260,7 @@ h3 {
 
   .hero__image,
   .hero__image-link {
-    justify-self: start;
+    display: none;
   }
 
   .hero__image {
