@@ -23,11 +23,13 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     response = Rack::MockRequest.new(described_class).get('/')
 
     expect(response.status).to eq(200)
-    expect(response.body).to include('<title>Poland open-source ranking</title>')
+    expect(response.body).to include('<title>Polska open-source ranking</title>')
     expect(response.body).to include('rel="canonical" href="https://rank.example/latest"')
+    expect(response.body).to include('rel="alternate" hreflang="en" href="https://rank.example/en/latest"')
+    expect(response.body).to include('property="og:title" content="Polska open-source ranking"')
     expect(response.body).to include('alice/app')
     expect(response.body).to include('href="/latest/users/top"')
-    expect(response.body).to include('See top 100')
+    expect(response.body).to include('Zobacz top 100')
     expect(response.body).to include('href="/editions"')
     expect(response.body).to include('application/ld+json')
   end
@@ -39,8 +41,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     expect(response.status).to eq(200)
     expect(response.body).to include('Kraków')
-    expect(response.body).to include('No ranking data')
-    expect(response.body).to include('More cities')
+    expect(response.body).to include('Brak danych rankingowych')
+    expect(response.body).to include('Więcej miast')
   end
 
   it 'renders rankings for completed month slugs' do
@@ -80,11 +82,11 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     invalid_response = Rack::MockRequest.new(described_class).get('/2026-04/repositories/active')
 
     expect(user_response.status).to eq(200)
-    expect(user_response.body).to include('Top 100 active users')
+    expect(user_response.body).to include('Top 100 aktywnych użytkowników')
     expect(repo_response.status).to eq(200)
-    expect(repo_response.body).to include('Top 100 trending repositories')
+    expect(repo_response.body).to include('Top 100 trendujących repozytoriów')
     expect(latest_user_response.status).to eq(200)
-    expect(latest_user_response.body).to include('Stars')
+    expect(latest_user_response.body).to include('Gwiazdek')
     expect(latest_user_response.body).not_to include('/icons/medal-gold.svg')
     expect(latest_user_response.body).to include('<ol class="ranking-list">')
     expect(latest_user_response.body).to include('<li class="ranking-list__item first_place">')
@@ -92,7 +94,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(latest_user_response.body).to include('<li class="ranking-list__item third_place">')
     expect(latest_user_response.body).not_to include('<table>')
     expect(latest_city_response.status).to eq(200)
-    expect(latest_city_response.body).to include('Top 100 repositories by stars')
+    expect(latest_city_response.body).to include('Top 100 repozytoriów według gwiazdek')
     expect(invalid_response.status).to eq(404)
   end
 
@@ -112,7 +114,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile_response.body).to include('rel="canonical" href="https://rank.example/users/github/alice"')
     expect(profile_response.body).to include('src="https://avatars.example/alice.png"')
     expect(profile_response.body).to include('GitHub profile')
-    expect(profile_response.body).to include('Best projects')
+    expect(profile_response.body).to include('Najlepsze projekty')
     expect(profile_response.body).not_to include('/badges/users/github/alice.svg')
     expect(profile_response.body).not_to include(
       '[![Polish Open Source badge](https://rank.example/badges/users/github/alice.svg)]'
@@ -157,21 +159,21 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     expect(github_callback.status).to eq(302)
     expect(github_callback.location).to eq('http://example.org/users/github/alice')
-    expect(profile.body).to include('Your Discord access')
+    expect(profile.body).to include('Twój dostęp Discord')
     expect(profile.body).to include('Join Elite Discord')
     expect(profile.body).to include('href="/auth/discord"')
-    expect(profile.body).to include('Writable channels')
+    expect(profile.body).to include('Kanały do pisania')
     expect(profile.body).to include('Top 10 PL')
     expect(profile.body).to include('Top 100 PL')
     expect(profile.body).to include('Top 100 Kraków')
     expect(profile.body).to include('/badges/users/github/alice.svg')
     expect(profile.body).to include('/badges/repositories/github/alice/app.svg')
     expect(profile.body).to include('Polish Top 100')
-    expect(profile.body.index('Your Discord access')).to be < profile.body.index('GitHub badge')
+    expect(profile.body.index('id="profile-discord-heading"')).to be < profile.body.index('id="profile-badge-heading"')
     # "Profile" also appears in the navbar label for logged-in users. Assert using stable section markers
     # instead of the translated heading text.
     expect(profile.body.index('id="profile-badge-heading"')).to be < profile.body.index('id="profile-summary-heading"')
-    expect(profile.body).not_to include('Discord not connected')
+    expect(profile.body).not_to include('Discord niepołączony')
 
     discord_start = request.get('/auth/discord', 'HTTP_COOKIE' => cookie_header(github_callback))
     discord_state = Rack::Utils.parse_query(URI(discord_start.location).query).fetch('state')
@@ -220,7 +222,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     unranked = request.get('/auth/unranked', 'HTTP_COOKIE' => cookie_header(github_callback))
 
     expect(github_callback.location).to eq('http://example.org/auth/unranked')
-    expect(unranked.body).to include('Ranking profile not found')
+    expect(unranked.body).to include('Nie znaleziono profilu w rankingu')
     expect(unranked.body).to include('outsider')
   end
 
@@ -305,7 +307,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     logout = request.post('/logout', 'HTTP_COOKIE' => cookie_header(github_callback))
 
     expect(profile.body).to include('Join Elite Discord')
-    expect(profile.body).to include('Writable channels')
+    expect(profile.body).to include('Kanały do pisania')
     expect(profile.body).to include('/auth/discord')
     expect(logout.status).to eq(303)
     expect(logout.location).to eq('http://example.org/latest')
@@ -347,12 +349,12 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile_response.body).to include('<title>alice/app - GitHub project</title>')
     expect(profile_response.body).to include('rel="canonical" href="https://rank.example/repositories/github/alice/app"')
     expect(profile_response.body).to include('/icons/medal-gold.svg')
-    expect(profile_response.body).not_to include('GitHub badge')
+    expect(profile_response.body).not_to include('Badge na GitHub')
     expect(profile_response.body).not_to include('/badges/repositories/github/alice/app.svg')
-    expect(owner_profile_response.body).to include('GitHub badge')
+    expect(owner_profile_response.body).to include('Badge na GitHub')
     expect(owner_profile_response.body).to include('/badges/repositories/github/alice/app.svg')
     expect(owner_profile_response.body).to include(
-      '[![Polish Repo badge](https://rank.example/badges/repositories/github/alice/app.svg)]'
+      '[![Badge Polish Repo](https://rank.example/badges/repositories/github/alice/app.svg)]'
     )
     expect(badge_response.status).to eq(200)
     expect(badge_response.content_type).to include('image/svg+xml')
@@ -371,12 +373,12 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     response = Rack::MockRequest.new(described_class).get('/editions')
 
     expect(response.status).to eq(200)
-    expect(response.body).to include('<title>Editions</title>')
-    expect(response.body).to include('>Editions</h1>')
-    expect(response.body).to include('April 2026')
-    expect(response.body).to include('Top projects')
-    expect(response.body).to include('Top users: stars')
-    expect(response.body).to include('Top users: activity')
+    expect(response.body).to include('<title>Edycje</title>')
+    expect(response.body).to include('>Edycje</h1>')
+    expect(response.body).to include('kwiecień 2026')
+    expect(response.body).to include('Top projekty')
+    expect(response.body).to include('Top userzy: gwiazdki')
+    expect(response.body).to include('Top userzy: aktywność')
     expect(response.body).to include('href="/2026-04"')
     expect(response.body).to include('href="/editions/2025"')
   end
@@ -388,7 +390,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     invalid_response = Rack::MockRequest.new(described_class).get('/editions/2024')
 
     expect(year_response.status).to eq(200)
-    expect(year_response.body).to include('December 2025')
+    expect(year_response.body).to include('grudzień 2025')
     expect(year_response.body).to include('href="/editions/2026"')
     expect(invalid_response.status).to eq(404)
   end
@@ -397,8 +399,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     response = Rack::MockRequest.new(described_class).get('/about')
 
     expect(response.status).to eq(200)
-    expect(response.body).to include('Mission')
-    expect(response.body).to include('Only public data')
+    expect(response.body).to include('Misja')
+    expect(response.body).to include('Zakres danych')
     expect(response.body).to include('GitHub')
     expect(response.body).to include('GitLab')
     expect(response.body).to include('Codeberg')
@@ -438,14 +440,14 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(polish_response.body).to include('aria-label="Język"')
     expect(polish_response.body).to include('Użytkownicy')
     expect(polish_response.body).to include('Zobacz top 100')
-    expect(polish_response.body).to include('href="/?lang=en"')
+    expect(polish_response.body).to include('href="/en"')
   end
 
   it 'renders English content by explicit locale and cookie' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     request = Rack::MockRequest.new(described_class)
 
-    english_response = request.get('/latest?lang=en')
+    english_response = request.get('/en/latest')
     cookie_response = request.get('/latest', 'HTTP_COOKIE' => 'locale=en')
 
     expect(english_response.body).to include('<html lang="en">')
@@ -453,8 +455,26 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(english_response.body).to include('>More cities</summary>')
     expect(english_response.body).to include('Top 10 by stars')
     expect(english_response.body).to include('Repositories')
+    expect(english_response.body).to include('rel="canonical" href="https://rank.example/en/latest"')
     expect(english_response['Set-Cookie']).to include('locale=en')
-    expect(cookie_response.body).to include('<html lang="en">')
+    expect(cookie_response.status).to eq(302)
+    expect(cookie_response.location).to eq('http://example.org/en/latest')
+  end
+
+  it 'redirects legacy locale query params to stable localized URLs' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    request = Rack::MockRequest.new(described_class)
+
+    english_redirect = request.get('/latest?lang=en')
+    polish_redirect = request.get('/en/latest?lang=pl')
+    prefixed_polish_redirect = request.get('/pl/latest')
+
+    expect(english_redirect.status).to eq(301)
+    expect(english_redirect.location).to eq('http://example.org/en/latest')
+    expect(polish_redirect.status).to eq(301)
+    expect(polish_redirect.location).to eq('http://example.org/latest')
+    expect(prefixed_polish_redirect.status).to eq(301)
+    expect(prefixed_polish_redirect.location).to eq('http://example.org/latest')
   end
 
   it 'renders links and assets under a configured app base path' do
@@ -524,6 +544,24 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(Rack::MockRequest.new(described_class).get('/healthz').body).to eq('ok')
     expect(Rack::MockRequest.new(described_class).get('/locations/unknown').status).to eq(404)
     expect(Rack::MockRequest.new(described_class).get('/2026-13').status).to eq(404)
+  end
+
+  it 'serves robots.txt and sitemap.xml for crawlers', :aggregate_failures do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    request = Rack::MockRequest.new(described_class)
+
+    robots = request.get('/robots.txt')
+    sitemap = request.get('/sitemap.xml')
+
+    expect(robots.status).to eq(200)
+    expect(robots.content_type).to include('text/plain')
+    expect(robots.body).to include('Sitemap: https://rank.example/sitemap.xml')
+    expect(sitemap.status).to eq(200)
+    expect(sitemap.content_type).to include('application/xml')
+    expect(sitemap.body).to include('<loc>https://rank.example/latest</loc>')
+    expect(sitemap.body).to include('<loc>https://rank.example/en/latest</loc>')
+    expect(sitemap.body).to include('<loc>https://rank.example/about</loc>')
+    expect(sitemap.body).to include('<loc>https://rank.example/en/users/github/alice</loc>')
   end
 
   it 'serves internal job progress as a noindex monitor page', :aggregate_failures do

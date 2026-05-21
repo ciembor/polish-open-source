@@ -9,8 +9,12 @@ module PolishOpenSourceRank
           @default = default
         end
 
-        def select(params:, cookies:, accept_language:)
-          supported(params['lang']) || supported(cookies['locale']) || accepted(accept_language) || @default
+        def select(params:, cookies:, accept_language:, path_locale: nil)
+          supported(path_locale) ||
+            supported(params['lang']) ||
+            supported(cookies['locale']) ||
+            accepted(accept_language) ||
+            @default
         end
 
         private

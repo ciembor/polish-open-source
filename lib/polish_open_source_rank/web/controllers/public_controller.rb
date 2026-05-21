@@ -4,6 +4,8 @@ module PolishOpenSourceRank
   module Web
     module Controllers
       module PublicController
+        include SitemapSupport
+
         private
 
         def render_city(period_slug, slug)

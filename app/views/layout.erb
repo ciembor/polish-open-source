@@ -5,11 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="<%= h(@robots || 'index,follow') %>">
     <meta name="description" content="<%= h @description %>">
+    <meta property="og:title" content="<%= h @title %>">
+    <meta property="og:description" content="<%= h @description %>">
+    <meta property="og:url" content="<%= h canonical_url %>">
+    <meta property="og:type" content="<%= h open_graph_type %>">
+    <meta property="og:image" content="<%= h social_image_url %>">
+    <meta property="og:site_name" content="Polish Open Source">
+    <meta property="og:locale" content="<%= h og_locale %>">
+    <% if localized_page? %>
+      <% og_alternate_locales.each do |locale| %>
+        <meta property="og:locale:alternate" content="<%= h locale %>">
+      <% end %>
+    <% end %>
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<%= h @title %>">
+    <meta name="twitter:description" content="<%= h @description %>">
+    <meta name="twitter:image" content="<%= h social_image_url %>">
     <link rel="icon" href="<%= h asset_path('/icons/favicon.ico') %>" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="<%= h asset_path('/icons/favicon-32x32.png') %>">
     <link rel="icon" type="image/png" sizes="16x16" href="<%= h asset_path('/icons/favicon-16x16.png') %>">
     <link rel="apple-touch-icon" sizes="180x180" href="<%= h asset_path('/icons/apple-touch-icon.png') %>">
     <link rel="canonical" href="<%= h canonical_url %>">
+    <% if localized_page? %>
+      <% alternate_locale_urls.each do |locale, url| %>
+        <link rel="alternate" hreflang="<%= h locale %>" href="<%= h url %>">
+      <% end %>
+      <link rel="alternate" hreflang="x-default" href="<%= h alternate_locale_urls.fetch('pl') %>">
+    <% end %>
     <link rel="stylesheet" href="<%= h asset_path('/css/application.css') %>">
     <% if @refresh_seconds %>
       <meta http-equiv="refresh" content="<%= h @refresh_seconds %>">
@@ -23,7 +45,7 @@
   <body>
     <header class="site-header">
       <div class="site-header__inner">
-        <a class="brand" href="<%= h app_path('/latest') %>"><img src="/icons/polish-open-source.png">Polish Open Source</a>
+        <a class="brand" href="<%= h period_base_path('latest') %>"><img src="/icons/polish-open-source.png" alt="">Polish Open Source</a>
         <nav class="nav js-nav" aria-label="<%= h t('nav.locations') %>">
           <a class="nav__link" href="<%= h app_path(scope_path(scopes.first)) %>"><%= h t('nav.country') %></a>
           <span class="nav-slot js-primary-city-slot">

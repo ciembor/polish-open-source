@@ -20,7 +20,7 @@ module PolishOpenSourceRank
 
       RANKING_DETAIL_SEGMENTS = '(users|repositories)/(top|trending|active)'
       SUPPORTED_LOCALES = %w[en pl].freeze
-      DEFAULT_LOCALE = 'en'
+      DEFAULT_LOCALE = 'pl'
       set :default_locale, DEFAULT_LOCALE
       set :localized_text,
           Localization::TranslationCatalog.load(root: PolishOpenSourceRank.root, locales: SUPPORTED_LOCALES)
@@ -38,6 +38,7 @@ module PolishOpenSourceRank
           path: '/',
           same_site: :lax,
           secret: Configuration.load.session_secret
+      helpers Presentation::RoutingHelpers
       helpers Presentation::BadgeHelpers
       helpers Presentation::ViewHelpers
       helpers HttpCache
@@ -48,12 +49,16 @@ module PolishOpenSourceRank
       register Routes::InternalRoutes
 
       before do
+        redirect_param_locale! if request.get?
+        rewrite_locale_path!
         no_store! if auth_path?
         @locale = settings.locale_selector.select(
+          path_locale: env.fetch('polish_open_source_rank.path_locale', nil),
           params: params,
           cookies: request.cookies,
           accept_language: request.env.fetch('HTTP_ACCEPT_LANGUAGE', nil)
         )
+        redirect_to_locale_variant! if request.get?
         response.set_cookie(
           'locale',
           value: @locale,
@@ -228,6 +233,72 @@ module PolishOpenSourceRank
         return { slug: 'poland', name: 'Polska', type: :country } if scope == 'poland'
 
         Contexts::Ranking::Domain::LocationCatalog::CITY_BY_SLUG.fetch(scope)
+      end
+
+      def redirect_param_locale!
+        locale = params['lang']
+        return unless SUPPORTED_LOCALES.include?(locale)
+
+        path = strip_locale_prefix(request.path_info)
+        return unless localizable_public_path?(path)
+
+        redirect localized_public_path(path, locale: locale, query: locale_query_without_lang), 301
+      end
+
+      def rewrite_locale_path!
+        env['polish_open_source_rank.original_path'] ||= request.path_info
+        locale = locale_prefix(request.path_info)
+        return unless locale
+
+        path = strip_locale_prefix(request.path_info)
+        if locale == DEFAULT_LOCALE
+          redirect localized_public_path(path, locale: DEFAULT_LOCALE, query: current_query), 301
+        end
+
+        env['polish_open_source_rank.path_locale'] = locale
+        env['polish_open_source_rank.unlocalized_path'] = path
+        env['PATH_INFO'] = path
+      end
+
+      def redirect_to_locale_variant!
+        path = env.fetch('polish_open_source_rank.unlocalized_path', request.path_info)
+        return unless localizable_public_path?(path)
+        return if env.key?('polish_open_source_rank.path_locale')
+        return if @locale == DEFAULT_LOCALE
+
+        redirect localized_public_path(path, locale: @locale, query: current_query), 302
+      end
+
+      def locale_prefix(path)
+        Localization::PublicPathPolicy.locale_prefix(path)
+      end
+
+      def strip_locale_prefix(path)
+        Localization::PublicPathPolicy.strip_locale_prefix(path)
+      end
+
+      def localizable_public_path?(path)
+        Localization::PublicPathPolicy.localizable?(path)
+      end
+
+      def localized_public_path(path, locale:, query: nil)
+        localized_path = Localization::PublicPathPolicy.localized(
+          path: path,
+          locale: locale,
+          default_locale: DEFAULT_LOCALE
+        )
+        query ? "#{localized_path}?#{Rack::Utils.build_query(query)}" : localized_path
+      end
+
+      def current_query
+        query = Rack::Utils.parse_nested_query(request.query_string)
+        query.empty? ? nil : query
+      end
+
+      def locale_query_without_lang
+        query = Rack::Utils.parse_nested_query(request.query_string)
+        query.delete('lang')
+        query.empty? ? nil : query
       end
     end
   end
