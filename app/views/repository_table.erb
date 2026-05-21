@@ -18,7 +18,10 @@
               <a class="muted-link muted-link--standalone" href="<%= h app_path(user_profile_path(row.merge(login: row.fetch(:owner_login)))) %>"><%= h row.fetch(:owner_login) %></a>
             </div>
           </div>
-          <span class="metric" title="<%= h metric_label %>" aria-label="<%= h metric_label %>: <%= h number(row.fetch(metric)) %>"><%= number(row.fetch(metric)) %></span>
+          <div class="ranking-list__metrics">
+            <span class="metric" title="<%= h metric_label %>" aria-label="<%= h metric_label %>: <%= h number(row.fetch(metric)) %>"><%= number(row.fetch(metric)) %></span>
+            <a class="metric-link" href="<%= h row.fetch(:html_url) %>"><%= h platform_name(row.fetch(:platform, "github")) %></a>
+          </div>
         </li>
       <% end %>
     </ol>
