@@ -44,6 +44,10 @@
             <a class="nav__link js-secondary-link" href="<%= h app_path(editions_path) %>"><%= h t('nav.editions') %></a>
             <a class="nav__link js-secondary-link" href="<%= h app_path('/about') %>"><%= h t('nav.about') %></a>
           </span>
+          <details class="nav-menu nav-menu--hamburger js-hamburger" hidden>
+            <summary class="nav-hamburger" aria-label="<%= h t('nav.menu') %>"></summary>
+            <div class="nav-menu__panel js-hamburger-panel"></div>
+          </details>
           <% if current_user %>
             <a class="nav__link js-secondary-link" href="<%= h app_path(user_profile_path(current_user)) %>">@<%= h current_user.fetch(:login) %></a>
             <form class="nav-form" method="post" action="<%= h app_path('/logout') %>">
@@ -52,10 +56,6 @@
           <% else %>
             <a class="nav-pill" href="<%= h app_path('/auth/github') %>"><%= h t('auth.login.github') %></a>
           <% end %>
-          <details class="nav-menu nav-menu--hamburger js-hamburger" hidden>
-            <summary class="nav-hamburger" aria-label="<%= h t('nav.menu') %>"></summary>
-            <div class="nav-menu__panel js-hamburger-panel"></div>
-          </details>
           <div class="language-switch" aria-label="<%= h t('nav.language') %>">
             <% SUPPORTED_LOCALES.each do |locale| %>
               <a class="language-switch__link <%= 'is-active' if current_locale?(locale) %>" href="<%= h locale_path(locale) %>" hreflang="<%= h locale %>" lang="<%= h locale %>"><%= h locale.upcase %></a>

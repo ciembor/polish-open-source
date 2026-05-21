@@ -29,9 +29,12 @@ function ensureNavLayout() {
 
   if (!moreCitiesPanel || !hamburger || !hamburgerPanel) return;
 
-  const firstItem = nav.querySelector("a, details, form, button");
-  const firstRowTop = firstItem ? firstItem.offsetTop : nav.offsetTop;
-  const isNarrow = primaryCities.some((link) => link.offsetTop > firstRowTop);
+  if (primaryCitySlot) moveChildren(primaryCities, primaryCitySlot);
+  if (secondaryLinksSlot) moveChildren(secondaryLinks, secondaryLinksSlot);
+  hamburger.hidden = true;
+  hamburger.removeAttribute("open");
+
+  const isNarrow = nav.scrollWidth > nav.clientWidth + 4;
 
   if (isNarrow) {
     if (primaryCitySlot) {
@@ -46,10 +49,6 @@ function ensureNavLayout() {
     hamburger.hidden = hamburgerPanel.children.length === 0;
     return;
   }
-
-  if (primaryCitySlot) moveChildren(primaryCities, primaryCitySlot);
-  if (secondaryLinksSlot) moveChildren(secondaryLinks, secondaryLinksSlot);
-  hamburger.hidden = true;
 }
 
 window.addEventListener("resize", () => {
