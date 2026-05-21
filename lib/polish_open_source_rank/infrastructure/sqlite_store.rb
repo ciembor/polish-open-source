@@ -10,9 +10,8 @@ module PolishOpenSourceRank
       end
 
       def migrate!
-        execute_batch('PRAGMA foreign_keys = ON;')
-        migration = PlatformSchemaMigration.new(database, schema_sql)
-        migration.needed? ? migration.run : create_schema
+        PlatformSchemaMigration.new(database, schema_sql).bootstrap!
+        execute("PRAGMA user_version = #{SCHEMA_VERSION}")
         self
       end
 
@@ -181,17 +180,8 @@ module PolishOpenSourceRank
         @database ||= Shared::Infrastructure::SQLite::Database.open(path)
       end
 
-      def create_schema
-        execute_batch(schema_sql)
-        execute("PRAGMA user_version = #{SCHEMA_VERSION}")
-      end
-
       def execute(sql, params = [])
         database.execute(sql, params)
-      end
-
-      def execute_batch(sql)
-        database.execute_batch(sql)
       end
 
       def fetch_all(sql, params = [])

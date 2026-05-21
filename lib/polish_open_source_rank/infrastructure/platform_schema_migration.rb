@@ -8,6 +8,10 @@ module PolishOpenSourceRank
         @schema_sql = schema_sql
       end
 
+      def bootstrap!
+        needed? ? run : execute_batch(schema_sql)
+      end
+
       def needed?
         table_exists?('users') && !table_columns('users').include?('platform')
       end
@@ -131,7 +135,7 @@ module PolishOpenSourceRank
       end
 
       def table_exists?(table_name)
-        database.get_first_value("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", [table_name])
+        database.dataset(:sqlite_master).where(type: 'table', name: table_name).select(1).first
       end
 
       def execute_batch(sql)

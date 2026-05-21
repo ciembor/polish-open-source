@@ -31,8 +31,7 @@ module PolishOpenSourceRank
         def database
           @database ||= begin
             db = Shared::Infrastructure::SQLite::Database.open(configuration.database_path)
-            migration = Infrastructure::PlatformSchemaMigration.new(db, Infrastructure::SQLiteSchema.sql)
-            migration.needed? ? migration.run : db.execute_batch(Infrastructure::SQLiteSchema.sql)
+            Infrastructure::PlatformSchemaMigration.new(db, Infrastructure::SQLiteSchema.sql).bootstrap!
             db
           end
         end
