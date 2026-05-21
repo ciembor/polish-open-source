@@ -124,6 +124,10 @@ a {
   position: relative;
 }
 
+.nav-menu[hidden] {
+  display: none !important;
+}
+
 .nav-menu--hamburger {
   margin-left: 2px;
 }
