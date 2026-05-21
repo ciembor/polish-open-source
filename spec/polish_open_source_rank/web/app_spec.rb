@@ -282,9 +282,13 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     failing_connect = instance_double(
       PolishOpenSourceRank::Contexts::Community::Application::ConnectDiscordAccount
     )
-    allow(failing_connect).to receive(:call).and_raise(
-      PolishOpenSourceRank::Contexts::Community::Application::ConnectDiscordAccount::ProfileNotFound
-    )
+    allow(failing_connect).to receive(:call).with(
+      current_user: anything,
+      discord_user: anything,
+      access_token: anything,
+      period_start: anything,
+      welcome_channel_id: anything
+    ).and_raise(PolishOpenSourceRank::Contexts::Community::Application::ConnectDiscordAccount::ProfileNotFound)
     # rubocop:disable RSpec/AnyInstance
     allow_any_instance_of(described_class).to receive(:connect_discord_account).and_return(failing_connect)
     # rubocop:enable RSpec/AnyInstance
