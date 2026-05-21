@@ -72,6 +72,7 @@
       <h2 id="profile-badge-heading"><%= h t('users.badge.title') %></h2>
       <% if @profile.fetch(:badges, []).any? %>
         <div class="badge-preview">
+          <p class="badge-preview__label"><%= h @profile.fetch(:login) %></p>
           <a href="<%= h app_path('/latest') %>">
             <img src="<%= h app_path(user_badge_path(@profile)) %>" alt="<%= h t('users.badge.alt') %>">
           </a>
@@ -80,6 +81,7 @@
       <% end %>
       <% @repositories.select { |repository| repository[:polish_repo_badge] && repository[:polish_repo_badge][:value] }.each do |repository| %>
         <div class="badge-preview">
+          <p class="badge-preview__label"><%= h repository.fetch(:full_name) %></p>
           <a href="<%= h app_path('/latest') %>">
             <img src="<%= h app_path(repository_badge_path(repository)) %>" alt="<%= h t('repositories.badge.alt') %>">
           </a>

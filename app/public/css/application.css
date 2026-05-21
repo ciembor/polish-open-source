@@ -1027,14 +1027,22 @@ h3 {
 }
 
 .badge-preview {
-  align-items: center;
+  align-items: flex-start;
   display: flex;
+  flex-direction: column;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 10px;
 }
 
 .badge-preview + .badge-preview {
   margin-top: 20px;
+}
+
+.badge-preview__label {
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 800;
+  margin: 0;
 }
 
 .badge-preview img {
