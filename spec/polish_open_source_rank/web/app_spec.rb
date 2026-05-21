@@ -289,9 +289,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       period_start: anything,
       welcome_channel_id: anything
     ).and_raise(PolishOpenSourceRank::Contexts::Community::Application::ConnectDiscordAccount::ProfileNotFound)
-    # rubocop:disable RSpec/AnyInstance
-    allow_any_instance_of(described_class).to receive(:connect_discord_account).and_return(failing_connect)
-    # rubocop:enable RSpec/AnyInstance
+    allow(PolishOpenSourceRank::Contexts::Community::Application::ConnectDiscordAccount)
+      .to receive(:new).and_return(failing_connect)
 
     github_callback = sign_in_with_github(request)
 
