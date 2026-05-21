@@ -48,6 +48,51 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     expect(row('repository_monthly_stats')).to include(stargazers_count: 31, monthly_stars_delta: 4)
   end
 
+  # rubocop:disable RSpec/ExampleLength
+  it 'retries snapshot writes as an update when the insert races with another writer' do
+    initial_scope = double('initial scope')
+    dataset = double('dataset')
+    database = double('database')
+    repository = described_class.new(database, clock: clock)
+
+    allow(database).to receive(:dataset).with(:users).and_return(dataset)
+    allow(database).to receive(:transaction).and_yield
+    allow(dataset).to receive(:where).with({ platform: 'github', github_id: 10 }).and_return(initial_scope)
+    allow(initial_scope).to receive(:update).with(
+      {
+        login: 'alice-renamed',
+        name: 'Alice',
+        location_raw: 'Kraków, Poland',
+        city: 'Kraków',
+        country: 'Poland',
+        email: 'alice@example.com',
+        homepage: 'https://alice.example.com',
+        html_url: 'https://github.com/alice',
+        avatar_url: 'https://avatars.example.com/alice.png',
+        updated_at: '2026-05-01T12:00:00Z'
+      }
+    ).and_return(0, 1)
+    allow(dataset).to receive(:insert).and_raise(Sequel::UniqueConstraintViolation, 'race')
+
+    repository.upsert_user(user_attributes(login: 'alice-renamed'))
+
+    expect(initial_scope).to have_received(:update).with(
+      {
+        login: 'alice-renamed',
+        name: 'Alice',
+        location_raw: 'Kraków, Poland',
+        city: 'Kraków',
+        country: 'Poland',
+        email: 'alice@example.com',
+        homepage: 'https://alice.example.com',
+        html_url: 'https://github.com/alice',
+        avatar_url: 'https://avatars.example.com/alice.png',
+        updated_at: '2026-05-01T12:00:00Z'
+      }
+    ).twice
+  end
+  # rubocop:enable RSpec/ExampleLength
+
   def row(table)
     database.fetch_all("SELECT * FROM #{table}").first
   end

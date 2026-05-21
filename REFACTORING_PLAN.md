@@ -95,7 +95,7 @@ Start with adapters where Sequel datasets clearly reduce boilerplate and query r
 
 ### 4. Convert ranking snapshot write side
 
-- [ ] Convert `SQLiteSnapshotRepository` inserts/upserts to Sequel datasets.
+- [x] Convert `SQLiteSnapshotRepository` inserts/upserts to Sequel datasets.
 - [ ] Convert `SQLiteSnapshotRunRepository` lifecycle updates to Sequel datasets.
 - [ ] Convert `MonthlySnapshotStore` only where it owns persistence orchestration; do not turn it into a pass-through Sequel wrapper.
 - [ ] Keep storage-name mapping hidden in the adapter:

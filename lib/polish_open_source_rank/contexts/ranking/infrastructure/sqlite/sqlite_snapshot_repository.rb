@@ -6,37 +6,17 @@ module PolishOpenSourceRank
       module Infrastructure
         module SQLite
           class SQLiteSnapshotRepository
-            REPOSITORY_STAR_OBSERVATION_SQL = <<~SQL
-              INSERT INTO repository_star_observations(
-                period_start, platform, repository_github_id, stargazers_count, observed_at
-              )
-              VALUES (?, ?, ?, ?, ?)
-              ON CONFLICT(period_start, platform, repository_github_id) DO UPDATE SET
-                stargazers_count = excluded.stargazers_count,
-                observed_at = excluded.observed_at
-            SQL
-
             def initialize(database, clock: -> { Time.now.utc })
               @database = database
               @clock = clock
             end
 
             def upsert_user(attributes)
-              database.execute(<<~SQL, user_values(attributes))
-                INSERT INTO users(platform, github_id, login, name, location_raw, city, country, email, homepage, html_url, avatar_url, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(platform, github_id) DO UPDATE SET
-                  login = excluded.login,
-                  name = excluded.name,
-                  location_raw = excluded.location_raw,
-                  city = excluded.city,
-                  country = excluded.country,
-                  email = excluded.email,
-                  homepage = excluded.homepage,
-                  html_url = excluded.html_url,
-                  avatar_url = excluded.avatar_url,
-                  updated_at = excluded.updated_at
-              SQL
+              upsert(
+                users_dataset,
+                { platform: attributes.fetch(:platform, 'github'), github_id: attributes.fetch(:github_id) },
+                user_record(attributes)
+              )
             end
 
             def record_contributor_snapshot(snapshot)
@@ -45,22 +25,15 @@ module PolishOpenSourceRank
             end
 
             def record_user_stats(attributes)
-              database.execute(<<~SQL, user_stats_values(attributes))
-                INSERT INTO user_monthly_stats(
-                  period_start, platform, user_github_id, login, city, country, public_repo_count,
-                  total_stars, monthly_stars_delta, public_activity_count, updated_at
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(period_start, platform, user_github_id) DO UPDATE SET
-                  login = excluded.login,
-                  city = excluded.city,
-                  country = excluded.country,
-                  public_repo_count = excluded.public_repo_count,
-                  total_stars = excluded.total_stars,
-                  monthly_stars_delta = excluded.monthly_stars_delta,
-                  public_activity_count = excluded.public_activity_count,
-                  updated_at = excluded.updated_at
-              SQL
+              upsert(
+                user_stats_dataset,
+                {
+                  period_start: attributes.fetch(:period_start),
+                  platform: attributes.fetch(:platform, 'github'),
+                  user_github_id: attributes.fetch(:user_github_id)
+                },
+                user_stats_record(attributes)
+              )
             end
 
             def record_repository_snapshot(snapshot)
@@ -69,44 +42,24 @@ module PolishOpenSourceRank
             end
 
             def upsert_repository(attributes)
-              database.execute(<<~SQL, repository_values(attributes))
-                INSERT INTO repositories(
-                  platform, github_id, owner_github_id, owner_login, name, full_name, description,
-                  html_url, homepage, language, fork, archived, updated_at
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(platform, github_id) DO UPDATE SET
-                  owner_github_id = excluded.owner_github_id,
-                  owner_login = excluded.owner_login,
-                  name = excluded.name,
-                  full_name = excluded.full_name,
-                  description = excluded.description,
-                  html_url = excluded.html_url,
-                  homepage = excluded.homepage,
-                  language = excluded.language,
-                  fork = excluded.fork,
-                  archived = excluded.archived,
-                  updated_at = excluded.updated_at
-              SQL
+              upsert(
+                repositories_dataset,
+                { platform: attributes.fetch(:platform, 'github'), github_id: attributes.fetch(:github_id) },
+                repository_record(attributes)
+              )
             end
 
             def record_repository_stats(attributes)
               observed_at = timestamp
-              database.execute(<<~SQL, repository_stats_values(attributes, observed_at))
-                INSERT INTO repository_monthly_stats(
-                  period_start, platform, repository_github_id, owner_github_id, owner_login, owner_city,
-                  owner_country, stargazers_count, monthly_stars_delta, updated_at
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(period_start, platform, repository_github_id) DO UPDATE SET
-                  owner_github_id = excluded.owner_github_id,
-                  owner_login = excluded.owner_login,
-                  owner_city = excluded.owner_city,
-                  owner_country = excluded.owner_country,
-                  stargazers_count = excluded.stargazers_count,
-                  monthly_stars_delta = excluded.monthly_stars_delta,
-                  updated_at = excluded.updated_at
-              SQL
+              upsert(
+                repository_stats_dataset,
+                {
+                  period_start: attributes.fetch(:period_start),
+                  platform: attributes.fetch(:platform, 'github'),
+                  repository_github_id: attributes.fetch(:repository_github_id)
+                },
+                repository_stats_record(attributes, observed_at)
+              )
               record_repository_star_observation(attributes, observed_at)
             end
 
@@ -192,51 +145,124 @@ module PolishOpenSourceRank
               }
             end
 
-            def user_values(attributes)
-              [
-                attributes.fetch(:platform, 'github'), attributes.fetch(:github_id), attributes.fetch(:login),
-                attributes[:name], attributes[:location_raw], attributes[:city], attributes[:country],
-                attributes[:email], attributes[:homepage], attributes.fetch(:html_url), attributes[:avatar_url],
-                timestamp
-              ]
+            def users_dataset
+              database.dataset(:users)
             end
 
-            def user_stats_values(attributes)
-              [
-                attributes.fetch(:period_start), attributes.fetch(:platform, 'github'),
-                attributes.fetch(:user_github_id), attributes.fetch(:login), attributes[:city], attributes[:country],
-                attributes.fetch(:public_repo_count), attributes.fetch(:total_stars),
-                attributes.fetch(:monthly_stars_delta), attributes.fetch(:public_activity_count), timestamp
-              ]
+            def user_stats_dataset
+              database.dataset(:user_monthly_stats)
             end
 
-            def repository_values(attributes)
-              [
-                attributes.fetch(:platform, 'github'), attributes.fetch(:github_id),
-                attributes.fetch(:owner_github_id), attributes.fetch(:owner_login), attributes.fetch(:name),
-                attributes.fetch(:full_name), attributes[:description], attributes.fetch(:html_url),
-                attributes[:homepage], attributes[:language], boolean_int(attributes.fetch(:fork)),
-                boolean_int(attributes.fetch(:archived)), timestamp
-              ]
+            def repositories_dataset
+              database.dataset(:repositories)
             end
 
-            def repository_stats_values(attributes, updated_at)
-              [
-                attributes.fetch(:period_start), attributes.fetch(:platform, 'github'),
-                attributes.fetch(:repository_github_id), attributes.fetch(:owner_github_id),
-                attributes.fetch(:owner_login), attributes[:owner_city], attributes[:owner_country],
-                attributes.fetch(:stargazers_count), attributes.fetch(:monthly_stars_delta), updated_at
-              ]
+            def repository_stats_dataset
+              database.dataset(:repository_monthly_stats)
+            end
+
+            def repository_star_observations_dataset
+              database.dataset(:repository_star_observations)
+            end
+
+            def user_record(attributes)
+              {
+                platform: attributes.fetch(:platform, 'github'),
+                github_id: attributes.fetch(:github_id),
+                login: attributes.fetch(:login),
+                name: attributes[:name],
+                location_raw: attributes[:location_raw],
+                city: attributes[:city],
+                country: attributes[:country],
+                email: attributes[:email],
+                homepage: attributes[:homepage],
+                html_url: attributes.fetch(:html_url),
+                avatar_url: attributes[:avatar_url],
+                updated_at: timestamp
+              }
+            end
+
+            def user_stats_record(attributes)
+              {
+                period_start: attributes.fetch(:period_start),
+                platform: attributes.fetch(:platform, 'github'),
+                user_github_id: attributes.fetch(:user_github_id),
+                login: attributes.fetch(:login),
+                city: attributes[:city],
+                country: attributes[:country],
+                public_repo_count: attributes.fetch(:public_repo_count),
+                total_stars: attributes.fetch(:total_stars),
+                monthly_stars_delta: attributes.fetch(:monthly_stars_delta),
+                public_activity_count: attributes.fetch(:public_activity_count),
+                updated_at: timestamp
+              }
+            end
+
+            def repository_record(attributes)
+              {
+                platform: attributes.fetch(:platform, 'github'),
+                github_id: attributes.fetch(:github_id),
+                owner_github_id: attributes.fetch(:owner_github_id),
+                owner_login: attributes.fetch(:owner_login),
+                name: attributes.fetch(:name),
+                full_name: attributes.fetch(:full_name),
+                description: attributes[:description],
+                html_url: attributes.fetch(:html_url),
+                homepage: attributes[:homepage],
+                language: attributes[:language],
+                fork: boolean_int(attributes.fetch(:fork)),
+                archived: boolean_int(attributes.fetch(:archived)),
+                updated_at: timestamp
+              }
+            end
+
+            def repository_stats_record(attributes, updated_at)
+              {
+                period_start: attributes.fetch(:period_start),
+                platform: attributes.fetch(:platform, 'github'),
+                repository_github_id: attributes.fetch(:repository_github_id),
+                owner_github_id: attributes.fetch(:owner_github_id),
+                owner_login: attributes.fetch(:owner_login),
+                owner_city: attributes[:owner_city],
+                owner_country: attributes[:owner_country],
+                stargazers_count: attributes.fetch(:stargazers_count),
+                monthly_stars_delta: attributes.fetch(:monthly_stars_delta),
+                updated_at: updated_at
+              }
             end
 
             def record_repository_star_observation(attributes, observed_at)
-              database.execute(
-                REPOSITORY_STAR_OBSERVATION_SQL,
-                [
-                  attributes.fetch(:period_start), attributes.fetch(:platform, 'github'),
-                  attributes.fetch(:repository_github_id), attributes.fetch(:stargazers_count), observed_at
-                ]
+              upsert(
+                repository_star_observations_dataset,
+                {
+                  period_start: attributes.fetch(:period_start),
+                  platform: attributes.fetch(:platform, 'github'),
+                  repository_github_id: attributes.fetch(:repository_github_id)
+                },
+                {
+                  period_start: attributes.fetch(:period_start),
+                  platform: attributes.fetch(:platform, 'github'),
+                  repository_github_id: attributes.fetch(:repository_github_id),
+                  stargazers_count: attributes.fetch(:stargazers_count),
+                  observed_at: observed_at
+                }
               )
+            end
+
+            def upsert(dataset, identity, attributes)
+              scoped = dataset.where(identity)
+
+              database.transaction do
+                next unless scoped.update(update_attributes(attributes, identity)).zero?
+
+                dataset.insert(attributes)
+              end
+            rescue Sequel::UniqueConstraintViolation
+              scoped.update(update_attributes(attributes, identity))
+            end
+
+            def update_attributes(attributes, identity)
+              attributes.except(*identity.keys)
             end
 
             def boolean_int(value)
