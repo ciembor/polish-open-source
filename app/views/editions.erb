@@ -49,7 +49,7 @@
                   <% edition.fetch(:repositories).each do |row| %>
                     <li>
                       <a class="primary-link" href="<%= h row.fetch(:html_url) %>"><%= erb :platform_icon, locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:full_name) %></a>
-                      <span><%= number(row.fetch(:stargazers_count)) %> <%= h t('editions.stars_suffix') %></span>
+                      <span>⭐ <%= number(row.fetch(:stargazers_count)) %> <%= h t('editions.stars_suffix') %></span>
                     </li>
                   <% end %>
                 </ol>
@@ -61,7 +61,7 @@
                   <% edition.fetch(:users_by_stars).each do |row| %>
                     <li>
                       <a class="primary-link" href="<%= h row.fetch(:html_url) %>"><%= erb :platform_icon, locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:login) %></a>
-                      <span><%= number(row.fetch(:total_stars)) %> <%= h t('editions.stars_suffix') %></span>
+                      <span>⭐ <%= number(row.fetch(:total_stars)) %> <%= h t('editions.stars_suffix') %></span>
                     </li>
                   <% end %>
                 </ol>
