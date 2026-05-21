@@ -279,30 +279,17 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     described_class.set :discord_oauth_client, FakeDiscordOAuthClient.new
     described_class.set :discord_gateway, FakeDiscordGateway.new
     request = Rack::MockRequest.new(described_class)
-
-    github_start = request.get('/auth/github')
-    github_state = Rack::Utils.parse_query(URI(github_start.location).query).fetch('state')
-    github_callback = request.get(
-      "/auth/github/callback?code=github-code&state=#{github_state}",
-      'HTTP_COOKIE' => cookie_header(github_start)
-    )
     failing_connect = instance_double(
       PolishOpenSourceRank::Contexts::Community::Application::ConnectDiscordAccount
     )
     allow(failing_connect).to receive(:call).and_raise(
       PolishOpenSourceRank::Contexts::Community::Application::ConnectDiscordAccount::ProfileNotFound
     )
-    # rubocop:disable RSpec/AnyInstance
-    allow_any_instance_of(described_class).to receive(:connect_discord_account).and_return(failing_connect)
-    # rubocop:enable RSpec/AnyInstance
-    discord_start = request.get('/auth/discord', 'HTTP_COOKIE' => cookie_header(github_callback))
-    discord_state = Rack::Utils.parse_query(URI(discord_start.location).query).fetch('state')
-    discord_callback = request.get(
-      "/auth/discord/callback?code=discord-code&state=#{discord_state}",
-      'HTTP_COOKIE' => cookie_header(discord_start)
-    )
+    with_overridden_app_method(:connect_discord_account, -> { failing_connect }) do
+      github_callback = sign_in_with_github(request)
 
-    expect(discord_callback.status).to eq(404)
+      expect(finish_discord_auth(request, github_callback).status).to eq(404)
+    end
   end
 
   it 'logs out and keeps the Discord panel useful without creating invites' do
@@ -685,6 +672,24 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     Array(response['Set-Cookie']).map { |cookie| cookie.split(';').first }.join('; ')
   end
 
+  def sign_in_with_github(request)
+    github_start = request.get('/auth/github')
+    github_state = Rack::Utils.parse_query(URI(github_start.location).query).fetch('state')
+    request.get(
+      "/auth/github/callback?code=github-code&state=#{github_state}",
+      'HTTP_COOKIE' => cookie_header(github_start)
+    )
+  end
+
+  def finish_discord_auth(request, github_callback)
+    discord_start = request.get('/auth/discord', 'HTTP_COOKIE' => cookie_header(github_callback))
+    discord_state = Rack::Utils.parse_query(URI(discord_start.location).query).fetch('state')
+    request.get(
+      "/auth/discord/callback?code=discord-code&state=#{discord_state}",
+      'HTTP_COOKIE' => cookie_header(discord_start)
+    )
+  end
+
   def reset_app_memoized_dependencies
     %i[
       @database
@@ -708,6 +713,16 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     ].each do |ivar|
       described_class.remove_instance_variable(ivar) if described_class.instance_variable_defined?(ivar)
     end
+  end
+
+  def with_overridden_app_method(method_name, implementation)
+    original_method = described_class.instance_method(method_name)
+    described_class.send(:define_method, method_name, implementation)
+    described_class.send(:private, method_name)
+    yield
+  ensure
+    described_class.send(:define_method, method_name, original_method)
+    described_class.send(:private, method_name)
   end
 
   def stub_discord_invite_response(body)
