@@ -71,6 +71,10 @@ a {
   text-decoration: none;
 }
 
+.nav-slot {
+  display: contents;
+}
+
 .session-button {
   font-size: 0.78rem;
   font-weight: 800;
@@ -115,6 +119,35 @@ a {
 .nav-menu {
   display: inline-block;
   position: relative;
+}
+
+.nav-menu--hamburger {
+  margin-left: 2px;
+}
+
+.nav-hamburger {
+  width: 40px;
+  padding: 9px 0;
+}
+
+.nav-hamburger::before {
+  content: "";
+}
+
+.nav-hamburger::before {
+  background: currentColor;
+  border-radius: 1px;
+  display: block;
+  height: 2px;
+  width: 16px;
+  margin: 5px auto;
+  box-shadow: 0 -5px 0 currentColor, 0 5px 0 currentColor;
+}
+
+.nav-menu--hamburger[open] .nav-hamburger {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
 }
 
 .nav-menu summary {
