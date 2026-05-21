@@ -130,6 +130,10 @@ a {
   padding: 9px 0;
 }
 
+.nav-menu--hamburger summary::after {
+  content: none;
+}
+
 .nav-hamburger::before {
   content: "";
 }
@@ -144,7 +148,7 @@ a {
   box-shadow: 0 -5px 0 currentColor, 0 5px 0 currentColor;
 }
 
-.nav-menu--hamburger[open] .nav-hamburger {
+.nav-menu--hamburger[open] summary {
   background: var(--accent);
   border-color: var(--accent);
   color: #ffffff;
