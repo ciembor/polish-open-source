@@ -25,25 +25,6 @@ module PolishOpenSourceRank
 
           attr_reader :attributes
         end
-
-        class ProfilePage < HashResponse
-          def repositories
-            fetch(:repositories)
-          end
-
-          def badges
-            fetch(:badges, [])
-          end
-        end
-
-        class RepositoryPage < HashResponse
-          def badge
-            self[:polish_repo_badge]
-          end
-        end
-
-        class BadgeView < HashResponse
-        end
       end
     end
   end

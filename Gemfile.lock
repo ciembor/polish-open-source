@@ -196,6 +196,7 @@ DEPENDENCIES
   simplecov (~> 0.22)
   sinatra (~> 4.1)
   sqlite3 (~> 2.7)
+  zeitwerk (~> 2.7)
 
 RUBY VERSION
    ruby 3.4.8p72

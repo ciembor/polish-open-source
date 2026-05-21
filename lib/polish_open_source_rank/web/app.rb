@@ -4,24 +4,6 @@ require 'sinatra/base'
 require 'securerandom'
 require 'digest'
 
-require_relative 'localization/locale_selector'
-require_relative 'localization/translation_catalog'
-require_relative 'presentation/badge_helpers'
-require_relative 'presentation/badge_renderer'
-require_relative 'presentation/platform_catalog'
-require_relative 'presentation/ranking_catalog'
-require_relative 'presentation/view_helpers'
-require_relative 'http_cache'
-require_relative 'controllers/auth_controller'
-require_relative 'controllers/badge_controller'
-require_relative 'controllers/internal_controller'
-require_relative 'controllers/public_controller'
-require_relative 'controllers/shared_controller'
-require_relative 'routes/auth_routes'
-require_relative 'routes/badge_routes'
-require_relative 'routes/internal_routes'
-require_relative 'routes/public_routes'
-
 module PolishOpenSourceRank
   module Web
     class App < Sinatra::Base

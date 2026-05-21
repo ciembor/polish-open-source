@@ -5,83 +5,63 @@ require 'fileutils'
 require 'json'
 require 'pathname'
 require 'time'
+require 'zeitwerk'
 
 module PolishOpenSourceRank
   def self.root
     Pathname(__dir__).parent
   end
+
+  class LoaderInflector < Zeitwerk::Inflector
+    TOKEN_OVERRIDES = {
+      'cli' => 'CLI',
+      'github' => 'GitHub',
+      'gitlab' => 'GitLab',
+      'oauth' => 'OAuth',
+      'sqlite' => 'SQLite'
+    }.freeze
+
+    BASENAME_OVERRIDES = {
+      'oauth_http' => 'OAuthHTTP'
+    }.freeze
+
+    PATH_OVERRIDES = {
+      'infrastructure/codeberg/client.rb' => 'CodebergClient',
+      'infrastructure/codeberg/gateway.rb' => 'CodebergGateway',
+      'infrastructure/github/client.rb' => 'GitHubClient',
+      'infrastructure/github/gateway.rb' => 'GitHubGateway',
+      'infrastructure/gitlab/client.rb' => 'GitLabClient',
+      'infrastructure/gitlab/gateway.rb' => 'GitLabGateway'
+    }.freeze
+
+    def camelize(basename, abspath)
+      PATH_OVERRIDES.fetch(relative_path(abspath)) do
+        BASENAME_OVERRIDES.fetch(basename) do
+          basename.split('_').map { |part| TOKEN_OVERRIDES.fetch(part) { super(part, abspath) } }.join
+        end
+      end
+    end
+
+    private
+
+    def relative_path(abspath)
+      prefix = "#{PolishOpenSourceRank.root.join('lib/polish_open_source_rank')}/"
+      abspath.delete_prefix(prefix)
+    end
+  end
+
+  def self.loader
+    @loader ||= begin
+      loader = Zeitwerk::Loader.new
+      loader.inflector = LoaderInflector.new
+      loader.push_dir(root.join('lib/polish_open_source_rank').to_s, namespace: self)
+      loader.collapse(root.join('lib/polish_open_source_rank/infrastructure/github').to_s)
+      loader.collapse(root.join('lib/polish_open_source_rank/infrastructure/gitlab').to_s)
+      loader.collapse(root.join('lib/polish_open_source_rank/infrastructure/codeberg').to_s)
+      loader.setup
+      loader
+    end
+  end
 end
 
-require_relative 'polish_open_source_rank/configuration'
-require_relative 'polish_open_source_rank/shared/domain/period'
-require_relative 'polish_open_source_rank/shared/domain/platform'
-require_relative 'polish_open_source_rank/shared/domain/source_identity'
-require_relative 'polish_open_source_rank/shared/infrastructure/sqlite/database'
-require_relative 'polish_open_source_rank/contexts/ranking/domain/location_catalog'
-require_relative 'polish_open_source_rank/contexts/ranking/domain/location_classifier'
-require_relative 'polish_open_source_rank/contexts/ranking/domain/ranking_policy'
-require_relative 'polish_open_source_rank/contexts/ranking/domain/ranking_metric'
-require_relative 'polish_open_source_rank/contexts/ranking/domain/ranking_scope'
-require_relative 'polish_open_source_rank/contexts/ranking/domain/contributor_snapshot'
-require_relative 'polish_open_source_rank/contexts/ranking/domain/repository_snapshot'
-require_relative 'polish_open_source_rank/contexts/ranking/domain/source_record'
-require_relative 'polish_open_source_rank/contexts/ranking/domain/source_candidate'
-require_relative 'polish_open_source_rank/contexts/ranking/domain/source_contributor'
-require_relative 'polish_open_source_rank/contexts/ranking/domain/source_repository'
-require_relative 'polish_open_source_rank/contexts/ranking/application/source_not_found'
-require_relative 'polish_open_source_rank/contexts/ranking/application/run_monthly_snapshot'
-require_relative 'polish_open_source_rank/contexts/ranking/infrastructure/sqlite/sqlite_candidate_queue'
-require_relative 'polish_open_source_rank/contexts/ranking/infrastructure/sqlite/monthly_snapshot_store'
-require_relative 'polish_open_source_rank/contexts/ranking/infrastructure/sqlite/sqlite_ranking_retention'
-require_relative 'polish_open_source_rank/contexts/ranking/infrastructure/sqlite/sqlite_snapshot_repository'
-require_relative 'polish_open_source_rank/contexts/ranking/infrastructure/sqlite/sqlite_snapshot_run_repository'
-require_relative 'polish_open_source_rank/contexts/ranking/infrastructure/sqlite/sqlite_source_request_log'
-require_relative 'polish_open_source_rank/contexts/ranking/infrastructure/sqlite/sqlite_ranking_read_model'
-require_relative 'polish_open_source_rank/contexts/publication/domain/rank'
-require_relative 'polish_open_source_rank/contexts/publication/domain/badge_policy'
-require_relative 'polish_open_source_rank/contexts/publication/application/response_models'
-require_relative 'polish_open_source_rank/contexts/publication/application/list_editions'
-require_relative 'polish_open_source_rank/contexts/publication/application/resolve_period'
-require_relative 'polish_open_source_rank/contexts/publication/application/render_badge'
-require_relative 'polish_open_source_rank/contexts/publication/application/show_ranking_detail'
-require_relative 'polish_open_source_rank/contexts/publication/application/show_rankings'
-require_relative 'polish_open_source_rank/contexts/publication/application/show_repository_profile'
-require_relative 'polish_open_source_rank/contexts/publication/application/show_user_profile'
-require_relative 'polish_open_source_rank/contexts/publication/infrastructure/sqlite/sqlite_cache_revision_read_model'
-require_relative 'polish_open_source_rank/contexts/publication/infrastructure/sqlite/sqlite_edition_read_model'
-require_relative 'polish_open_source_rank/contexts/publication/infrastructure/sqlite/sqlite_profile_read_model'
-require_relative 'polish_open_source_rank/contexts/community/domain/discord_role_policy'
-require_relative 'polish_open_source_rank/contexts/community/application/connect_discord_account'
-require_relative 'polish_open_source_rank/contexts/community/application/show_discord_panel'
-require_relative 'polish_open_source_rank/contexts/community/infrastructure/discord/oauth_http'
-require_relative 'polish_open_source_rank/contexts/community/infrastructure/discord/discord_api_gateway'
-require_relative 'polish_open_source_rank/contexts/community/infrastructure/discord/discord_role_map'
-require_relative 'polish_open_source_rank/contexts/community/infrastructure/discord/discord_welcome_message'
-require_relative 'polish_open_source_rank/contexts/community/infrastructure/discord/discord_invite_bot'
-require_relative 'polish_open_source_rank/contexts/community/infrastructure/sqlite/sqlite_contributor_access_read_model'
-require_relative 'polish_open_source_rank/contexts/community/infrastructure/sqlite/sqlite_discord_connection_repository'
-require_relative 'polish_open_source_rank/contexts/community/infrastructure/sqlite/sqlite_discord_invite_repository'
-require_relative 'polish_open_source_rank/application/discord_invite_join'
-require_relative 'polish_open_source_rank/application/discord_invite_use_detector'
-require_relative 'polish_open_source_rank/application/monthly_snapshot_interrupted'
-require_relative 'polish_open_source_rank/infrastructure/github/client'
-require_relative 'polish_open_source_rank/infrastructure/github/gateway'
-require_relative 'polish_open_source_rank/infrastructure/gitlab/client'
-require_relative 'polish_open_source_rank/infrastructure/gitlab/gateway'
-require_relative 'polish_open_source_rank/infrastructure/codeberg/client'
-require_relative 'polish_open_source_rank/infrastructure/codeberg/gateway'
-require_relative 'polish_open_source_rank/infrastructure/platform_schema_migration'
-require_relative 'polish_open_source_rank/infrastructure/sqlite_job_progress'
-require_relative 'polish_open_source_rank/contexts/operations/application/show_job_progress'
-require_relative 'polish_open_source_rank/contexts/operations/infrastructure/sqlite/sqlite_job_progress_read_model'
-require_relative 'polish_open_source_rank/infrastructure/sqlite_schema'
-require_relative 'polish_open_source_rank/infrastructure/sqlite_store'
-require_relative 'polish_open_source_rank/infrastructure/discord_invite_bot'
-require_relative 'polish_open_source_rank/interfaces/cli/monthly_rankings_command'
-require_relative 'polish_open_source_rank/interfaces/composition/ranking_job_factory'
-require_relative 'polish_open_source_rank/web/auth/discord_gateway'
-require_relative 'polish_open_source_rank/web/auth/discord_oauth_client'
-require_relative 'polish_open_source_rank/web/auth/discord_role_map'
-require_relative 'polish_open_source_rank/web/auth/discord_welcome_message'
-require_relative 'polish_open_source_rank/web/auth/github_oauth_client'
-require_relative 'polish_open_source_rank/web/http_cache'
+PolishOpenSourceRank.loader
