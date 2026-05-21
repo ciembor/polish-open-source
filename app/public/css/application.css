@@ -1033,6 +1033,10 @@ h3 {
   gap: 16px;
 }
 
+.badge-preview + .badge-preview {
+  margin-top: 20px;
+}
+
 .badge-preview img {
   height: 20px;
   width: auto;
