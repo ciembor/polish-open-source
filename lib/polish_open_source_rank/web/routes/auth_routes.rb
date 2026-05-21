@@ -8,6 +8,7 @@ module PolishOpenSourceRank
           register_github_routes(app)
           register_discord_routes(app)
           register_session_routes(app)
+          app.register Routes::DevAuthRoutes
         end
 
         class << self
