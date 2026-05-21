@@ -276,21 +276,13 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   it 'rejects Discord sync when the logged-in GitHub profile is no longer ranked' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
-    described_class.set :discord_oauth_client, FakeDiscordOAuthClient.new
+    discord_client = FakeDiscordOAuthClient.new
+    allow(discord_client).to receive(:user).and_raise(
+      PolishOpenSourceRank::Contexts::Community::Application::ConnectDiscordAccount::ProfileNotFound
+    )
+    described_class.set :discord_oauth_client, discord_client
     described_class.set :discord_gateway, FakeDiscordGateway.new
     request = Rack::MockRequest.new(described_class)
-    failing_connect = instance_double(
-      PolishOpenSourceRank::Contexts::Community::Application::ConnectDiscordAccount
-    )
-    allow(failing_connect).to receive(:call).with(
-      current_user: anything,
-      discord_user: anything,
-      access_token: anything,
-      period_start: anything,
-      welcome_channel_id: anything
-    ).and_raise(PolishOpenSourceRank::Contexts::Community::Application::ConnectDiscordAccount::ProfileNotFound)
-    allow(PolishOpenSourceRank::Contexts::Community::Application::ConnectDiscordAccount)
-      .to receive(:new).and_return(failing_connect)
 
     github_callback = sign_in_with_github(request)
 
