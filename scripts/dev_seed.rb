@@ -19,7 +19,7 @@ module PolishOpenSourceRank
         database = Shared::Infrastructure::SQLite::Database.open(configuration.database_path)
         Infrastructure::PlatformSchemaMigration.new(database, Infrastructure::SQLiteSchema.sql).bootstrap!
 
-        period = Shared::Domain::Period.previous_calendar_month(now)
+        period = Shared::Domain::Period.previous_month(now.to_date)
         period_start = period.start_date.to_s
         period_end = period.end_date.to_s
         timestamp = now.iso8601
