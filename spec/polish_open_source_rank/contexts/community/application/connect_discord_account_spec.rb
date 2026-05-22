@@ -76,7 +76,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::ConnectDi
     expect(member_gateway.welcome).to include(channel_id: 'welcome', role_ids: %w[role-top role-city])
   end
 
-  it 'rejects Discord connection when the current user is no longer ranked' do
+  it 'rejects Discord connection when the current user has no public profile' do
     use_case = described_class.new(
       profile_read_model: instance_double(ProfileReadModel, user_profile: nil),
       connection_repository: RecordingConnectionRepository.new,
@@ -93,7 +93,30 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::ConnectDi
         period_start: '2026-04-01',
         welcome_channel_id: 'welcome'
       )
-    end.to raise_error(described_class::ProfileNotFound)
+    end.to raise_error(described_class::PublicProfileNotFound)
+  end
+
+  it 'links Discord without ranking roles for public profiles outside the current ranking' do
+    use_case = described_class.new(
+      profile_read_model: instance_double(
+        ProfileReadModel,
+        user_profile: { platform: 'github', login: 'alice', github_id: 1, period_start: nil }
+      ),
+      connection_repository: RecordingConnectionRepository.new,
+      access_read_model: instance_double(AccessReadModel, discord_access: { role_keys: [] }),
+      member_gateway: RecordingMemberGateway.new,
+      role_map: instance_double(RoleMap, role_ids: [], managed_role_ids: [])
+    )
+
+    expect do
+      use_case.call(
+        current_user: { platform: 'github', login: 'alice' },
+        discord_user: { 'id' => 'discord-1', 'username' => 'alice-discord' },
+        access_token: 'access-token',
+        period_start: nil,
+        welcome_channel_id: 'welcome'
+      )
+    end.not_to raise_error
   end
 
   it 'keeps Discord login successful when welcome delivery fails' do

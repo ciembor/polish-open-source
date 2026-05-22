@@ -74,11 +74,13 @@ module PolishOpenSourceRank
         end
 
         def profile_paths
+          users = profile_read_model.public_user_identities.map do |row|
+            "/users/#{row.fetch(:platform)}/#{row.fetch(:login)}"
+          end
           period = latest_period
-          return [] unless period
+          return users unless period
 
           page = show_rankings.call(scope: 'poland', period_start: period)
-          users = page.user_rankings.values.flatten.map { |row| "/users/#{row.fetch(:platform)}/#{row.fetch(:login)}" }
           repositories = page.repository_rankings.values.flatten.map do |row|
             platform = row.fetch(:platform, 'github')
             owner, name = row.fetch(:full_name).split('/', 2)

@@ -45,7 +45,17 @@ module PolishOpenSourceRank
           request = Net::HTTP::Get.new(uri)
           request['Accept'] = 'application/vnd.github+json'
           request['Authorization'] = "Bearer #{access_token}"
-          json_request(uri, request).slice('id', 'login')
+          user = json_request(uri, request)
+          {
+            'id' => user.fetch('id'),
+            'login' => user.fetch('login'),
+            'name' => user['name'],
+            'location' => user['location'],
+            'email' => user['email'],
+            'homepage' => user['blog'],
+            'html_url' => user['html_url'] || "https://github.com/#{user.fetch('login')}",
+            'avatar_url' => user['avatar_url']
+          }
         end
 
         private

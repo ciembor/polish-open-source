@@ -5,19 +5,16 @@ module PolishOpenSourceRank
     module Publication
       module Domain
         class BadgePolicy
-          def user_badges(rank, historical_top_ten:, historical_top_hundred:)
-            [
-              elite_badge(rank, historical_top_ten),
-              top_hundred_badge(rank, historical_top_hundred)
-            ].compact
+          def user_badges(country_rank:, city:, city_rank:)
+            [user_badge(country_rank: country_rank, city: city, city_rank: city_rank)]
           end
 
-          def user_badge(rank, historical_top_ten:, historical_top_hundred: false)
-            user_badges(
-              rank,
-              historical_top_ten: historical_top_ten,
-              historical_top_hundred: historical_top_hundred
-            ).first
+          def user_badge(country_rank:, city:, city_rank:)
+            return ranked_badge('Polish Open Source', country_rank) if top?(country_rank, 100)
+            return ranked_badge("#{city} Elite", city_rank) if city && top?(city_rank, 10)
+            return ranked_badge("#{city} Top 100", city_rank) if city && top?(city_rank, 100)
+
+            { label: 'Polish Open Source', value: nil, status: 'outside_ranking', rank: nil }
           end
 
           def repository_badge(rank)
@@ -28,18 +25,8 @@ module PolishOpenSourceRank
 
           private
 
-          def elite_badge(rank, historical_top_ten)
-            return { label: 'Polish Elite', value: Rank.place(rank), status: 'ranked', rank: rank } if top?(rank, 10)
-            return unless historical_top_ten && !top?(rank, 100)
-
-            { label: 'Polish Elite', value: 'ex', status: 'ex', rank: rank }
-          end
-
-          def top_hundred_badge(rank, historical_top_hundred)
-            return { label: 'Polish Top 100', value: Rank.place(rank), status: 'ranked', rank: rank } if top?(rank, 100)
-            return unless historical_top_hundred
-
-            { label: 'Polish Top 100', value: 'ex', status: 'ex', rank: rank }
+          def ranked_badge(label, rank)
+            { label: label, value: Rank.place(rank), status: 'ranked', rank: rank }
           end
 
           def top?(rank, limit)

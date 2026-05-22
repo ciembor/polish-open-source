@@ -1059,6 +1059,21 @@ h3 {
   padding: 8px 10px;
 }
 
+.site-notice {
+  background: #fff6e8;
+  border-bottom: 1px solid #f0d4a6;
+}
+
+.site-notice .content {
+  padding: 14px 0;
+}
+
+.site-notice p {
+  color: #6a4200;
+  font-weight: 700;
+  margin: 0;
+}
+
 .monitor-hero {
   background: #ffffff;
   border-bottom: 1px solid var(--line);

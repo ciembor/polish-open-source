@@ -69,7 +69,7 @@ module PolishOpenSourceRank
           @title = t('users.seo.title', user: display_name, platform: source_name)
           @description = t('users.seo.description', user: display_name, platform: source_name)
           @canonical_path = user_profile_path(@profile)
-          @discord_panel = show_discord_panel_for(@profile) if own_profile?(@profile) && @profile[:period_start]
+          @discord_panel = show_discord_panel_for(@profile) if own_profile?(@profile)
           @discord_error = session.delete(:discord_error) if own_profile?(@profile)
           @show_profile_badges = own_profile?(@profile)
           erb :user_profile

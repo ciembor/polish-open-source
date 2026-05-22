@@ -11,7 +11,7 @@ module PolishOpenSourceRank
 
           def user(platform:, login:, period_start:)
             profile = profile_read_model.user_profile(platform, login, period_start: period_start)
-            badge = profile&.fetch(:badges, [])&.first
+            badge = profile&.fetch(:profile_badge, nil)
             badge && BadgeView.new(badge)
           end
 

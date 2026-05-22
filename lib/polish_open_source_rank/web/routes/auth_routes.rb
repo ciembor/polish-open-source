@@ -32,12 +32,8 @@ module PolishOpenSourceRank
                 redirect_uri: oauth_callback_url('/auth/github/callback')
               )
               github_user = github_oauth_client.user(access_token)
-              profile = ranked_github_profile(github_user.fetch('login'))
-              unless profile
-                session[:current_user] = nil
-                session[:unranked_github_login] = github_user.fetch('login')
-                redirect app_path('/auth/unranked')
-              end
+              profile = public_github_profile(github_user.fetch('login')) ||
+                        register_public_github_profile.call(github_profile: github_user, period_start: latest_period)
 
               session[:current_user] = {
                 platform: 'github',
@@ -45,6 +41,10 @@ module PolishOpenSourceRank
                 github_id: profile.fetch(:github_id)
               }
               redirect app_path(user_profile_path(profile))
+            rescue Contexts::Publication::Application::RegisterPublicGitHubProfile::IneligibleLocation
+              session[:current_user] = nil
+              session[:auth_notice] = 'missing_location'
+              redirect app_path('/latest')
             end
           end
 
@@ -81,7 +81,7 @@ module PolishOpenSourceRank
               redirect discord_channel_url || app_path(user_profile_path(current_user))
             rescue Auth::DiscordOAuthClient::Error
               redirect_to_profile_after_discord_error('oauth')
-            rescue Contexts::Community::Application::ConnectDiscordAccount::ProfileNotFound
+            rescue Contexts::Community::Application::ConnectDiscordAccount::PublicProfileNotFound
               halt 404
             rescue StandardError
               redirect_to_profile_after_discord_error('sync')
@@ -90,14 +90,6 @@ module PolishOpenSourceRank
           # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
           def register_session_routes(app)
-            app.get '/auth/unranked' do
-              no_store!
-              @title = t('auth.unranked.title')
-              @description = t('auth.unranked.description')
-              @canonical_path = '/auth/unranked'
-              erb :auth_unranked
-            end
-
             app.post '/logout' do
               no_store!
               session.clear

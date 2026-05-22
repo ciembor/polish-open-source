@@ -41,6 +41,8 @@ pl:
   auth:
     login:
       github: "Zaloguj"
+    notice:
+      missing_location: "Przepraszamy, nie ma cię w naszej bazie. Zmień lokalizację na Polskę lub miasto wojewódzkie. Po zmianie uwzględnimy cię w kolejnym rankingu."
     logout: "Wyloguj"
     unranked:
       body: "Przepraszamy, nie znaleźliśmy konta %{login} w aktualnym rankingu. Zaproszenie na Discorda jest dostępne tylko dla rankingowych profili GitHuba."
@@ -183,6 +185,7 @@ pl:
       homepage: "Strona"
       source_profile: "Profil na %{platform}"
     metrics:
+      outside_ranking: "Poza rankingiem."
       title: "Metryki rankingu"
     repositories:
       empty: "Dla tego snapshotu nie zapisano publicznych repozytoriów."

@@ -29,7 +29,11 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
     expect(url).to include('scope=read%3Auser')
     token = client.exchange_code(code: 'code-1', redirect_uri: 'https://rank/auth/github/callback')
     expect(token).to eq('github-token')
-    expect(client.user('github-token')).to eq('id' => 1, 'login' => 'alice')
+    expect(client.user('github-token')).to include(
+      'id' => 1,
+      'login' => 'alice',
+      'html_url' => 'https://github.com/alice'
+    )
     expect(requests.map(&:method)).to eq(%w[POST GET])
   end
 

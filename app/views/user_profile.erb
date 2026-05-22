@@ -119,25 +119,33 @@
       <h2><%= h t('users.metrics.title') %></h2>
       <% if @profile[:period_start] %>
         <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @profile[:period_start] %>"><%= h @profile[:period_start] %></time></p>
+      <% else %>
+        <p class="profile-empty"><%= h t('users.metrics.outside_ranking') %></p>
       <% end %>
       <dl class="profile-metrics">
-        <div>
-          <dt><%= h t('rankings.metric.stars') %></dt>
-          <dd>⭐ <%= number(@profile[:total_stars]) %></dd>
-        </div>
-        <div>
-          <dt><%= h t('rankings.metric.new_stars') %></dt>
-          <dd>⭐ <%= number(@profile[:monthly_stars_delta]) %></dd>
-        </div>
-        <div>
-          <dt><%= h t('rankings.metric.events') %></dt>
-          <dd><%= number(@profile[:public_activity_count]) %></dd>
-        </div>
+        <% if !@profile[:total_stars].nil? %>
+          <div>
+            <dt><%= h t('rankings.metric.stars') %></dt>
+            <dd>⭐ <%= number(@profile[:total_stars]) %></dd>
+          </div>
+        <% end %>
+        <% if !@profile[:monthly_stars_delta].nil? %>
+          <div>
+            <dt><%= h t('rankings.metric.new_stars') %></dt>
+            <dd>⭐ <%= number(@profile[:monthly_stars_delta]) %></dd>
+          </div>
+        <% end %>
+        <% if !@profile[:public_activity_count].nil? %>
+          <div>
+            <dt><%= h t('rankings.metric.events') %></dt>
+            <dd><%= number(@profile[:public_activity_count]) %></dd>
+          </div>
+        <% end %>
         <% if @show_profile_badges %>
           <% @profile.fetch(:badges, []).each do |badge| %>
             <div>
               <dt><%= h badge.fetch(:label) %></dt>
-              <dd><%= h badge.fetch(:value) %></dd>
+              <dd><%= h(badge[:value] || t('users.metrics.outside_ranking')) %></dd>
             </div>
           <% end %>
         <% end %>

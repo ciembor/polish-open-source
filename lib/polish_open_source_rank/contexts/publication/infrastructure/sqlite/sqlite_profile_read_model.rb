@@ -18,12 +18,14 @@ module PolishOpenSourceRank
               return unless user
 
               public_period = user[:period_start] || period_start
-              badges = user_badges(user.fetch(:platform), user.fetch(:github_id), public_period)
+              country_rank = user_country_rank(user.fetch(:platform), user.fetch(:github_id), public_period)
+              city_rank = user_city_rank(user.fetch(:platform), user.fetch(:github_id), user[:city], public_period)
+              badges = user_badges(country_rank: country_rank, city: user[:city], city_rank: city_rank)
               user.merge(
-                elite_rank: user_country_rank(user.fetch(:platform), user.fetch(:github_id), public_period),
+                elite_rank: country_rank,
+                city_rank: city_rank,
                 badges: badges,
-                elite_badge: badges.find { |badge| badge.fetch(:label) == 'Polish Elite' },
-                top_100_badge: badges.find { |badge| badge.fetch(:label) == 'Polish Top 100' },
+                profile_badge: badges.first,
                 repositories: top_user_repositories(user.fetch(:platform), user.fetch(:github_id), public_period)
               )
             end
@@ -115,15 +117,6 @@ module PolishOpenSourceRank
               SQL
             end
 
-            def user_badges(platform, user_id, period_start)
-              rank = user_country_rank(platform, user_id, period_start)
-              badge_policy.user_badges(
-                rank,
-                historical_top_ten: historical_user_top_ten?(platform, user_id),
-                historical_top_hundred: historical_user_top_100?(platform, user_id)
-              )
-            end
-
             def repository_elite_rank(platform, repository_id, period_start)
               return unless period_start
 
@@ -150,31 +143,6 @@ module PolishOpenSourceRank
               badge_policy.repository_badge(rank)
             end
 
-            def historical_user_top_ten?(platform, user_id)
-              historical_user_top?(platform, user_id, 10)
-            end
-
-            def historical_user_top_100?(platform, user_id)
-              historical_user_top?(platform, user_id, 100)
-            end
-
-            def historical_user_top?(platform, user_id, limit)
-              !database.fetch_value(<<~SQL, [platform, user_id]).nil?
-                SELECT 1
-                FROM (
-                  SELECT stats.period_start, stats.platform, stats.user_github_id,
-                         RANK() OVER (
-                           PARTITION BY stats.period_start
-                           ORDER BY stats.total_stars DESC, stats.platform ASC, stats.login COLLATE NOCASE ASC
-                         ) AS elite_rank
-                  FROM user_monthly_stats stats
-                  WHERE stats.country = 'Poland'
-                )
-                WHERE platform = ? AND user_github_id = ? AND elite_rank <= #{limit}
-                LIMIT 1
-              SQL
-            end
-
             def user_country_rank(platform, user_id, period_start)
               return unless period_start
 
@@ -191,6 +159,39 @@ module PolishOpenSourceRank
                 WHERE platform = ? AND user_github_id = ?
               SQL
             end
+
+            def user_city_rank(platform, user_id, city, period_start)
+              return unless city && period_start
+
+              database.fetch_value(<<~SQL, [period_start, city, platform, user_id])
+                SELECT city_rank
+                FROM (
+                  SELECT stats.platform, stats.user_github_id,
+                         RANK() OVER (
+                           ORDER BY stats.total_stars DESC, stats.platform ASC, stats.login COLLATE NOCASE ASC
+                         ) AS city_rank
+                  FROM user_monthly_stats stats
+                  WHERE stats.period_start = ? AND stats.city = ?
+                )
+                WHERE platform = ? AND user_github_id = ?
+              SQL
+            end
+
+            def user_badges(country_rank:, city:, city_rank:)
+              badge_policy.user_badges(country_rank: country_rank, city: city, city_rank: city_rank)
+            end
+
+            public
+
+            def public_user_identities
+              database.fetch_all(<<~SQL)
+                SELECT platform, login
+                FROM users
+                ORDER BY platform ASC, login COLLATE NOCASE ASC
+              SQL
+            end
+
+            private
 
             def bounded_limit(limit)
               limit.to_i.clamp(1, REPOSITORY_LIMIT)
