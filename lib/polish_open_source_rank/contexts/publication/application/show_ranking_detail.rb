@@ -12,11 +12,16 @@ module PolishOpenSourceRank
           def call(scope:, kind:, metric:, period_start:)
             return [] unless period_start
 
-            if kind == 'users'
-              ranking_read_model.user_rankings(scope, period_start: period_start)
+            case kind
+            when 'users'
+              ranking_read_model.user_rankings(scope, period_start: period_start).fetch(metric.to_sym)
+            when 'repositories'
+              ranking_read_model.repository_rankings(scope, period_start: period_start).fetch(metric.to_sym)
+            when 'organizations'
+              ranking_read_model.organization_rankings(period_start: period_start).fetch(metric.to_sym)
             else
-              ranking_read_model.repository_rankings(scope, period_start: period_start)
-            end.fetch(metric.to_sym)
+              ranking_read_model.organization_repository_rankings(period_start: period_start).fetch(metric.to_sym)
+            end
           end
 
           private

@@ -1,0 +1,72 @@
+<section class="profile-hero">
+  <div class="content profile-hero__inner">
+    <p class="eyebrow"><%= h platform_name(@organization_repository.fetch(:platform)) %></p>
+    <div class="profile-identity profile-identity--project">
+      <div class="project-avatar" aria-hidden="true">
+        <%= erb :platform_icon, locals: { platform: @organization_repository.fetch(:platform, "github") } %>
+      </div>
+      <div>
+        <div class="profile-title-row">
+          <h1><%= h @organization_repository.fetch(:full_name) %></h1>
+          <%= erb :elite_medal, locals: { rank: @organization_repository[:elite_rank], size: "large" } %>
+        </div>
+        <% if @organization_repository[:description] && !@organization_repository[:description].empty? %>
+          <p class="lede"><%= h @organization_repository[:description] %></p>
+        <% end %>
+        <div class="profile-actions">
+          <a class="ranking-action" href="<%= h @organization_repository.fetch(:html_url) %>"><%= h t('repositories.links.source_project', platform: platform_name(@organization_repository.fetch(:platform))) %></a>
+          <% if @organization_repository[:homepage] && !@organization_repository[:homepage].empty? %>
+            <a class="ranking-action" href="<%= h @organization_repository[:homepage] %>"><%= h t('users.links.homepage') %></a>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="profile-section" aria-labelledby="organization-repository-summary-heading">
+  <div class="content profile-grid">
+    <article class="profile-summary">
+      <h2 id="organization-repository-summary-heading"><%= h t('repositories.summary.title') %></h2>
+      <dl class="profile-facts">
+        <div>
+          <dt><%= h t('repositories.summary.owner') %></dt>
+          <dd><a class="primary-link" href="<%= h app_path(organization_profile_path(platform: @organization_repository.fetch(:platform), login: @organization_repository.fetch(:organization_login))) %>"><%= h @organization_repository.fetch(:organization_login) %></a></dd>
+        </div>
+        <div>
+          <dt><%= h t('users.summary.city') %></dt>
+          <dd><%= h(@organization_repository[:organization_city] || t('users.summary.unknown')) %></dd>
+        </div>
+        <% if @organization_repository[:language] && !@organization_repository[:language].empty? %>
+          <div>
+            <dt><%= h t('users.repositories.language') %></dt>
+            <dd><%= h @organization_repository[:language] %></dd>
+          </div>
+        <% end %>
+      </dl>
+    </article>
+
+    <article class="profile-summary">
+      <h2><%= h t('users.metrics.title') %></h2>
+      <% if @organization_repository[:period_start] %>
+        <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @organization_repository[:period_start] %>"><%= h @organization_repository[:period_start] %></time></p>
+      <% end %>
+      <dl class="profile-metrics">
+        <div>
+          <dt><%= h t('rankings.metric.stars') %></dt>
+          <dd>⭐ <%= number(@organization_repository[:stargazers_count]) %></dd>
+        </div>
+        <div>
+          <dt><%= h t('rankings.metric.new_stars') %></dt>
+          <dd>⭐ <%= number(@organization_repository[:monthly_stars_delta]) %></dd>
+        </div>
+        <% if @organization_repository[:polish_repo_badge] && @organization_repository[:polish_repo_badge][:value] %>
+          <div>
+            <dt><%= h @organization_repository[:polish_repo_badge].fetch(:label) %></dt>
+            <dd><%= h @organization_repository[:polish_repo_badge].fetch(:value) %></dd>
+          </div>
+        <% end %>
+      </dl>
+    </article>
+  </div>
+</section>

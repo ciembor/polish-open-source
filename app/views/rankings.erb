@@ -46,4 +46,17 @@
       </div>
     </div>
   </section>
+
+  <% if @scope.fetch(:slug) == 'poland' %>
+    <section class="ranking-band" aria-labelledby="organizations-heading">
+      <div class="content">
+        <h2 id="organizations-heading"><%= h t('rankings.organizations') %></h2>
+        <div class="ranking-grid">
+          <%= erb :organization_table, locals: { heading_id: 'ranking-organizations-top', title: t('rankings.top_10_stars'), rows: @organization_rankings.fetch(:top).first(10), metric: :total_stars, metric_label: t('rankings.metric.stars'), top_path: ranking_path("organizations", "top") } %>
+          <%= erb :organization_table, locals: { heading_id: 'ranking-organizations-trending', title: t('rankings.trending_10_month'), rows: @organization_rankings.fetch(:trending).first(10), metric: :monthly_stars_delta, metric_label: t('rankings.metric.new_stars'), top_path: ranking_path("organizations", "trending") } %>
+          <%= erb :organization_repository_table, locals: { heading_id: 'ranking-organization-repositories-top', title: t('rankings.organization_repositories_month'), rows: @organization_repository_rankings.fetch(:top).first(10), metric: :stargazers_count, metric_label: t('rankings.metric.stars'), top_path: ranking_path("organization-repositories", "top") } %>
+        </div>
+      </div>
+    </section>
+  <% end %>
 <% end %>

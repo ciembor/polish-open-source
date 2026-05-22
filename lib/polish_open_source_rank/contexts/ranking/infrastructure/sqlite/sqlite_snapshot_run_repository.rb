@@ -58,6 +58,26 @@ module PolishOpenSourceRank
                   )
               )
             SQL
+            INCOMPLETE_PROCESSED_ORGANIZATION_CANDIDATE_CONDITION = <<~SQL
+              status = 'processed'
+              AND NOT EXISTS (
+                SELECT 1
+                FROM organization_monthly_stats organization_stats
+                WHERE organization_stats.period_start = candidate_organizations.period_start
+                  AND organization_stats.platform = candidate_organizations.platform
+                  AND organization_stats.organization_github_id = candidate_organizations.github_id
+                  AND (
+                    organization_stats.public_repo_count = 0
+                    OR EXISTS (
+                      SELECT 1
+                      FROM organization_repository_monthly_stats repository_stats
+                      WHERE repository_stats.period_start = organization_stats.period_start
+                        AND repository_stats.platform = organization_stats.platform
+                        AND repository_stats.organization_github_id = organization_stats.organization_github_id
+                    )
+                  )
+              )
+            SQL
             RETRYABLE_CANDIDATES_SQL = <<~SQL.freeze
               SELECT 1
               FROM candidate_users
@@ -65,6 +85,16 @@ module PolishOpenSourceRank
                 AND (
                   status IN ('pending', 'failed')
                   OR #{INCOMPLETE_PROCESSED_CANDIDATE_CONDITION}
+                )
+              LIMIT 1
+            SQL
+            RETRYABLE_ORGANIZATION_CANDIDATES_SQL = <<~SQL.freeze
+              SELECT 1
+              FROM candidate_organizations
+              WHERE period_start = ?
+                AND (
+                  status IN ('pending', 'failed')
+                  OR #{INCOMPLETE_PROCESSED_ORGANIZATION_CANDIDATE_CONDITION}
                 )
               LIMIT 1
             SQL
@@ -127,7 +157,11 @@ module PolishOpenSourceRank
             end
 
             def finished_without_retryable_candidates?(period_start)
-              value(<<~SQL, [period_start]) == 1
+              value(finished_run_sql, [period_start]) == 1
+            end
+
+            def finished_run_sql
+              <<~SQL
                 SELECT 1
                 FROM sync_runs
                 WHERE period_start = ? AND status = 'finished'
@@ -140,14 +174,37 @@ module PolishOpenSourceRank
                         OR #{INCOMPLETE_PROCESSED_CANDIDATE_CONDITION}
                       )
                   )
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM candidate_organizations
+                    WHERE candidate_organizations.period_start = sync_runs.period_start
+                      AND (
+                        candidate_organizations.status IN ('pending', 'failed')
+                        OR #{INCOMPLETE_PROCESSED_ORGANIZATION_CANDIDATE_CONDITION}
+                      )
+                  )
               SQL
             end
 
             def reset_retryable_candidates(period_start, updated_at, refresh_platforms)
-              period_candidates = database.dataset(:candidate_users).where(period_start: period_start)
+              reset_period_candidates(
+                database.dataset(:candidate_users).where(period_start: period_start),
+                Sequel.lit(INCOMPLETE_PROCESSED_CANDIDATE_CONDITION),
+                updated_at,
+                refresh_platforms
+              )
+              reset_period_candidates(
+                database.dataset(:candidate_organizations).where(period_start: period_start),
+                Sequel.lit(INCOMPLETE_PROCESSED_ORGANIZATION_CANDIDATE_CONDITION),
+                updated_at,
+                refresh_platforms
+              )
+            end
+
+            def reset_period_candidates(period_candidates, incomplete_condition, updated_at, refresh_platforms)
               period_candidates.where(status: 'failed').update(status: 'pending', error: nil, updated_at: updated_at)
               period_candidates
-                .where(Sequel.lit(INCOMPLETE_PROCESSED_CANDIDATE_CONDITION))
+                .where(incomplete_condition)
                 .update(status: 'pending', error: nil, updated_at: updated_at)
               reset_refresh_candidates(period_candidates, updated_at, refresh_platforms)
             end
@@ -162,9 +219,19 @@ module PolishOpenSourceRank
             end
 
             def retryable_candidates(period_start, platforms:)
-              candidates = database.dataset(:candidate_users).where(period_start: period_start)
-              candidates = candidates.where(platform: platforms) if platforms
-              candidates.where(retryable_candidate_condition)
+              retryable_candidates_in(
+                database.dataset(:candidate_users),
+                period_start,
+                platforms,
+                retryable_candidate_condition
+              ).union(
+                retryable_candidates_in(
+                  database.dataset(:candidate_organizations),
+                  period_start,
+                  platforms,
+                  retryable_organization_candidate_condition
+                )
+              )
             end
 
             def retryable_candidate_condition
@@ -172,6 +239,19 @@ module PolishOpenSourceRank
                 { status: %w[pending failed] },
                 Sequel.lit(INCOMPLETE_PROCESSED_CANDIDATE_CONDITION)
               )
+            end
+
+            def retryable_organization_candidate_condition
+              Sequel.|(
+                { status: %w[pending failed] },
+                Sequel.lit(INCOMPLETE_PROCESSED_ORGANIZATION_CANDIDATE_CONDITION)
+              )
+            end
+
+            def retryable_candidates_in(dataset, period_start, platforms, condition)
+              candidates = dataset.where(period_start: period_start)
+              candidates = candidates.where(platform: platforms) if platforms
+              candidates.where(condition).select(1)
             end
 
             def value(sql, params)

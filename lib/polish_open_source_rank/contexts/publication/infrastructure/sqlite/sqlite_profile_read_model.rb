@@ -46,6 +46,48 @@ module PolishOpenSourceRank
               )
             end
 
+            def organization_profile(platform, login, period_start:)
+              organization = fetch_organization_profile(platform, login, period_start)
+              return unless organization
+
+              public_period = organization[:period_start] || period_start
+              country_rank = organization_country_rank(
+                organization.fetch(:platform),
+                organization.fetch(:github_id),
+                public_period
+              )
+              badge = badge_policy.organization_badge(country_rank)
+              organization.merge(
+                elite_rank: country_rank,
+                badges: [badge],
+                profile_badge: badge,
+                repositories: top_organization_repositories(
+                  organization.fetch(:platform),
+                  organization.fetch(:github_id),
+                  public_period
+                )
+              )
+            end
+
+            def organization_repository_profile(platform, owner, name, period_start:)
+              repository = fetch_organization_repository_profile(platform, "#{owner}/#{name}", period_start)
+              return unless repository
+
+              public_period = repository[:period_start] || period_start
+              repository.merge(
+                elite_rank: organization_repository_rank(
+                  repository.fetch(:platform),
+                  repository.fetch(:github_id),
+                  public_period
+                ),
+                polish_repo_badge: organization_repository_badge(
+                  repository.fetch(:platform),
+                  repository.fetch(:github_id),
+                  public_period
+                )
+              )
+            end
+
             private
 
             attr_reader :badge_policy, :database
@@ -87,12 +129,64 @@ module PolishOpenSourceRank
               SQL
             end
 
+            def fetch_organization_profile(platform, login, period_start)
+              database.fetch_all(<<~SQL, [period_start, platform, login]).first
+                SELECT organizations.platform, organizations.github_id, organizations.login, organizations.name,
+                       organizations.location_raw, organizations.city, organizations.country, organizations.email,
+                       organizations.homepage, organizations.html_url, organizations.avatar_url,
+                       stats.period_start, stats.public_repo_count, stats.total_stars, stats.monthly_stars_delta
+                FROM organizations
+                LEFT JOIN organization_monthly_stats stats
+                  ON stats.platform = organizations.platform
+                 AND stats.organization_github_id = organizations.github_id
+                 AND stats.period_start = ?
+                WHERE organizations.platform = ? AND organizations.login = ?
+                LIMIT 1
+              SQL
+            end
+
+            def fetch_organization_repository_profile(platform, full_name, period_start)
+              database.fetch_all(<<~SQL, [period_start, platform, full_name]).first
+                SELECT repositories.platform, repositories.github_id, repositories.full_name, repositories.name,
+                       repositories.description, repositories.html_url, repositories.homepage,
+                       repositories.language, repositories.organization_github_id, repositories.organization_login,
+                       organizations.name AS owner_name, organizations.html_url AS owner_html_url,
+                       organizations.avatar_url AS owner_avatar_url,
+                       stats.period_start, stats.organization_city, stats.organization_country,
+                       stats.stargazers_count, stats.monthly_stars_delta
+                FROM organization_repositories repositories
+                INNER JOIN organizations
+                  ON organizations.platform = repositories.platform
+                 AND organizations.github_id = repositories.organization_github_id
+                LEFT JOIN organization_repository_monthly_stats stats
+                  ON stats.platform = repositories.platform
+                 AND stats.repository_github_id = repositories.github_id
+                 AND stats.period_start = ?
+                WHERE repositories.platform = ? AND repositories.full_name = ?
+                LIMIT 1
+              SQL
+            end
+
             def top_user_repositories(platform, user_id, period_start, limit: 6)
               return [] unless period_start
 
               top_user_repository_rows(platform, user_id, period_start, limit).map do |repository|
                 repository.merge(
                   polish_repo_badge: repository_badge(
+                    repository.fetch(:platform),
+                    repository.fetch(:github_id),
+                    period_start
+                  )
+                )
+              end
+            end
+
+            def top_organization_repositories(platform, organization_id, period_start, limit: 6)
+              return [] unless period_start
+
+              top_organization_repository_rows(platform, organization_id, period_start, limit).map do |repository|
+                repository.merge(
+                  polish_repo_badge: organization_repository_badge(
                     repository.fetch(:platform),
                     repository.fetch(:github_id),
                     period_start
@@ -112,6 +206,21 @@ module PolishOpenSourceRank
                   ON repositories.platform = stats.platform
                  AND repositories.github_id = stats.repository_github_id
                 WHERE stats.period_start = ? AND stats.platform = ? AND stats.owner_github_id = ?
+                ORDER BY stats.stargazers_count DESC, repositories.full_name COLLATE NOCASE ASC
+                LIMIT #{bounded_limit(limit)}
+              SQL
+            end
+
+            def top_organization_repository_rows(platform, organization_id, period_start, limit)
+              database.fetch_all(<<~SQL, [period_start, platform, organization_id])
+                SELECT repositories.platform, repositories.github_id, repositories.full_name, repositories.name,
+                       repositories.description, repositories.html_url, repositories.homepage,
+                       repositories.language, stats.stargazers_count, stats.monthly_stars_delta
+                FROM organization_repository_monthly_stats stats
+                INNER JOIN organization_repositories repositories
+                  ON repositories.platform = stats.platform
+                 AND repositories.github_id = stats.repository_github_id
+                WHERE stats.period_start = ? AND stats.platform = ? AND stats.organization_github_id = ?
                 ORDER BY stats.stargazers_count DESC, repositories.full_name COLLATE NOCASE ASC
                 LIMIT #{bounded_limit(limit)}
               SQL
@@ -141,6 +250,49 @@ module PolishOpenSourceRank
             def repository_badge(platform, repository_id, period_start)
               rank = repository_elite_rank(platform, repository_id, period_start)
               badge_policy.repository_badge(rank)
+            end
+
+            def organization_country_rank(platform, organization_id, period_start)
+              return unless period_start
+
+              database.fetch_value(<<~SQL, [period_start, platform, organization_id])
+                SELECT country_rank
+                FROM (
+                  SELECT stats.platform, stats.organization_github_id,
+                         RANK() OVER (
+                           ORDER BY stats.total_stars DESC, stats.platform ASC, stats.login COLLATE NOCASE ASC
+                         ) AS country_rank
+                  FROM organization_monthly_stats stats
+                  WHERE stats.period_start = ? AND stats.country = 'Poland'
+                )
+                WHERE platform = ? AND organization_github_id = ?
+              SQL
+            end
+
+            def organization_repository_rank(platform, repository_id, period_start)
+              return unless period_start
+
+              database.fetch_value(<<~SQL, [period_start, platform, repository_id])
+                SELECT elite_rank
+                FROM (
+                  SELECT stats.platform, stats.repository_github_id,
+                         RANK() OVER (
+                           ORDER BY stats.stargazers_count DESC, stats.platform ASC,
+                                    repositories.full_name COLLATE NOCASE ASC
+                         ) AS elite_rank
+                  FROM organization_repository_monthly_stats stats
+                  INNER JOIN organization_repositories repositories
+                    ON repositories.platform = stats.platform
+                   AND repositories.github_id = stats.repository_github_id
+                  WHERE stats.period_start = ? AND stats.organization_country = 'Poland'
+                )
+                WHERE platform = ? AND repository_github_id = ?
+              SQL
+            end
+
+            def organization_repository_badge(platform, repository_id, period_start)
+              rank = organization_repository_rank(platform, repository_id, period_start)
+              badge_policy.organization_repository_badge(rank)
             end
 
             def user_country_rank(platform, user_id, period_start)
@@ -187,6 +339,14 @@ module PolishOpenSourceRank
               database.fetch_all(<<~SQL)
                 SELECT platform, login
                 FROM users
+                ORDER BY platform ASC, login COLLATE NOCASE ASC
+              SQL
+            end
+
+            def public_organization_identities
+              database.fetch_all(<<~SQL)
+                SELECT platform, login
+                FROM organizations
                 ORDER BY platform ASC, login COLLATE NOCASE ASC
               SQL
             end

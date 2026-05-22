@@ -24,8 +24,24 @@ module PolishOpenSourceRank
           .flat_map { |response| response.body.fetch('items', []).map { |user| candidate(user) } }
       end
 
+      def supports_organizations?
+        true
+      end
+
+      def search_organizations_by_location(term)
+        query = %(type:org location:"#{term}")
+        each_page('/search/users', { q: query }, limit: SEARCH_PAGE_LIMIT)
+          .flat_map { |response| response.body.fetch('items', []).map { |organization| candidate(organization) } }
+      end
+
       def user(login, _github_id = nil)
         profile(client.get("/users/#{login}").body)
+      rescue GitHubClient::NotFound
+        raise Contexts::Ranking::Application::SourceNotFound
+      end
+
+      def organization(login, _github_id = nil)
+        profile(client.get("/orgs/#{login}").body)
       rescue GitHubClient::NotFound
         raise Contexts::Ranking::Application::SourceNotFound
       end
@@ -35,6 +51,14 @@ module PolishOpenSourceRank
         each_page(
           "/users/#{login}/repos",
           { type: 'owner', sort: 'full_name', direction: 'asc' }
+        ).flat_map { |response| response.body.map { |repository| repository(repository) } }
+      end
+
+      def repositories_for_organization(profile)
+        login = profile.fetch(:login)
+        each_page(
+          "/orgs/#{login}/repos",
+          { type: 'public', sort: 'full_name', direction: 'asc' }
         ).flat_map { |response| response.body.map { |repository| repository(repository) } }
       end
 

@@ -1,0 +1,44 @@
+<article class="ranking-table" aria-labelledby="<%= h heading_id %>">
+  <h3 id="<%= h heading_id %>"><%= h title %></h3>
+  <% if rows.any? %>
+    <ol class="ranking-list" aria-labelledby="<%= h heading_id %>">
+      <% rows.each_with_index do |row, index| %>
+        <% place_class = { 1 => "first_place", 2 => "second_place", 3 => "third_place" }[index + 1] %>
+        <% location = row[:location_raw] || row[:city] || row[:country] || t('scope.poland') %>
+        <li class="ranking-list__item<% if place_class %> <%= h place_class %><% end %>">
+          <span class="rank-cell rank-mark"><%= index + 1 %></span>
+          <div class="ranking-list__body">
+            <div class="ranking-list__title">
+              <%= erb :platform_icon, locals: { platform: row.fetch(:platform, "github") } %>
+              <a class="primary-link" href="<%= h app_path(organization_profile_path(row)) %>"><%= h row.fetch(:login) %></a>
+            </div>
+            <span class="ranking-list__description">
+              <% if row[:name] && !row[:name].empty? %>
+                <%= h row[:name] %>
+              <% end %>
+            </span>
+            <div class="ranking-list__meta">
+              <span><%= h location %></span>
+            </div>
+          </div>
+          <div class="ranking-list__metrics">
+            <span class="metric" title="<%= h metric_label %>" aria-label="<%= h metric_label %>: <%= h number(row.fetch(metric)) %>">
+              <% if [:total_stars, :monthly_stars_delta].include?(metric) %>⭐ <% end %><%= number(row.fetch(metric)) %>
+            </span>
+          </div>
+          <span class="ranking-list__links ranking-list__links--edge">
+            <a class="muted-link" href="<%= h row.fetch(:html_url) %>"><%= h platform_name(row.fetch(:platform, "github")) %></a>
+            <% if row[:homepage] && !row[:homepage].empty? %>
+              <a class="muted-link" href="<%= h row[:homepage] %>"><%= h t('users.links.homepage') %></a>
+            <% end %>
+          </span>
+        </li>
+      <% end %>
+    </ol>
+  <% else %>
+    <p class="ranking-list__empty"><%= h t('rankings.empty.records') %></p>
+  <% end %>
+  <% if defined?(top_path) && top_path %>
+    <a class="ranking-action" href="<%= h app_path(top_path) %>"><%= h t('rankings.see_top_100') %></a>
+  <% end %>
+</article>

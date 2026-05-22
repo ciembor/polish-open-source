@@ -69,6 +69,22 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubGateway do
     expect(gateway.search_users_by_location('Poland')).to eq([])
   end
 
+  it 'discovers and loads organizations with organization repositories' do
+    client.queue(body: { 'items' => [{ 'id' => 7, 'login' => 'polish-org' }] })
+    client.queue(body: profile(7, 'polish-org'))
+    client.queue(body: [repository(70, 'polish-org/toolkit')])
+
+    expect(gateway.supports_organizations?).to be(true)
+    expect(gateway.search_organizations_by_location('Poland')).to eq([{ source_id: 7, login: 'polish-org' }])
+    expect(gateway.organization('polish-org')).to include(login: 'polish-org', source_id: 7)
+    expect(gateway.repositories_for_organization(login: 'polish-org').map(&:to_h)).to eq(
+      [expected_repository(70, 'polish-org/toolkit')]
+    )
+    expect(client.params.first).to eq(q: 'type:org location:"Poland"', per_page: 100, page: 1)
+    expect(client.paths[1]).to eq('/orgs/polish-org')
+    expect(client.paths[2]).to eq('/orgs/polish-org/repos')
+  end
+
   it 'loads repositories across pages' do
     client.queue(body: [repository(1, 'alice/one')], link: '<x?page=2>; rel="next"')
     client.queue(body: [repository(2, 'alice/two')])
@@ -170,6 +186,15 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubGateway do
     )
 
     expect { gateway.user('missing') }.to raise_error(PolishOpenSourceRank::Contexts::Ranking::Application::SourceNotFound)
+  end
+
+  it 'translates missing organizations to the source contract error' do
+    client.queue_error(
+      PolishOpenSourceRank::Infrastructure::GitHubClient::NotFound.new('missing', status: 404, body: '{}')
+    )
+
+    expect { gateway.organization('missing-org') }
+      .to raise_error(PolishOpenSourceRank::Contexts::Ranking::Application::SourceNotFound)
   end
 
   it 'counts monthly repository stars from a single stargazer page' do

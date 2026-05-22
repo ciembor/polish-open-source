@@ -5,7 +5,14 @@ module PolishOpenSourceRank
     module Localization
       class PublicPathPolicy
         ROOT_PATHS = ['/', '/latest', '/about', '/editions'].freeze
-        PREFIX_PATHS = ['/latest/', '/editions/', '/users/', '/repositories/'].freeze
+        PREFIX_PATHS = [
+          '/latest/',
+          '/editions/',
+          '/users/',
+          '/organizations/',
+          '/repositories/',
+          '/organization-repositories/'
+        ].freeze
         PERIOD_PATTERN = %r{\A/\d{4}-\d{2}(?:/|\z)}
         LOCALE_PATTERN = %r{\A/(en|pl)(?=/|\z)}
 

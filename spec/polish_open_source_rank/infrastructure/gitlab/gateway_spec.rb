@@ -40,6 +40,10 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitLabGateway do
     expect(gateway.platform).to eq('gitlab')
   end
 
+  it 'does not support organizations' do
+    expect(gateway.supports_organizations?).to be(false)
+  end
+
   it 'discovers GitLab users through paginated search' do
     client.queue(body: [{ 'id' => 1, 'username' => 'alice' }], next_page: '2')
     client.queue(body: [{ 'id' => 2, 'username' => 'bob' }])

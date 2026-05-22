@@ -23,6 +23,15 @@ module PolishOpenSourceRank
           public_badge_cache!('user-badge', platform, login, latest_period)
           settings.badge_renderer.svg(badge, home_url: app_home_url)
         end
+
+        def render_organization_badge(platform, login)
+          badge = render_badge.organization(platform: platform, login: login, period_start: latest_period)
+          halt 404 unless badge
+
+          content_type 'image/svg+xml'
+          public_badge_cache!('organization-badge', platform, login, latest_period)
+          settings.badge_renderer.svg(badge, home_url: app_home_url)
+        end
       end
     end
   end

@@ -20,6 +20,9 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-04')
     contributor_snapshot = instance_double(PolishOpenSourceRank::Contexts::Ranking::Domain::ContributorSnapshot)
     repository_snapshot = instance_double(PolishOpenSourceRank::Contexts::Ranking::Domain::RepositorySnapshot)
+    organization_snapshot = instance_double(PolishOpenSourceRank::Contexts::Ranking::Domain::OrganizationSnapshot)
+    organization_repository_snapshot =
+      instance_double(PolishOpenSourceRank::Contexts::Ranking::Domain::OrganizationRepositorySnapshot)
 
     allow(run_repository).to receive(:create).with(period, refresh_platforms: ['github']).and_return(7)
     allow(run_repository).to receive(:finish).with(7)
@@ -37,9 +40,27 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
                                                              platform: 'gitlab').and_return([{ login: 'alice' }])
     allow(candidate_queue).to receive(:mark).with(period, 'gitlab', 'alice', 'processed', nil)
     allow(candidate_queue).to receive(:processed_user?).with(period, 'gitlab', 99).and_return(true)
+    allow(candidate_queue).to receive(:record_organization).with(
+      period,
+      login: 'polish-org',
+      source_query: 'location:poland',
+      platform: 'gitlab',
+      source_id: 55,
+      github_id: 55
+    )
+    allow(candidate_queue).to receive(:pending_organizations).with(period, limit: 10, platform: 'gitlab')
+                                                             .and_return([{ login: 'polish-org' }])
+    allow(candidate_queue).to receive(:mark_organization).with(period, 'gitlab', 'polish-org', 'processed', nil)
+    allow(candidate_queue).to receive(:processed_organization?).with(period, 'gitlab', 55).and_return(true)
     allow(snapshot_repository).to receive(:record_contributor_snapshot).with(contributor_snapshot)
     allow(snapshot_repository).to receive(:record_repository_snapshot).with(repository_snapshot)
     allow(snapshot_repository).to receive(:previous_repository_stars).with(period, 'gitlab', 123).and_return(15)
+    allow(snapshot_repository).to receive(:record_organization_snapshot).with(organization_snapshot)
+    allow(snapshot_repository).to receive(:record_organization_repository_snapshot)
+      .with(organization_repository_snapshot)
+    allow(snapshot_repository).to receive(:previous_organization_repository_stars)
+      .with(period, 'gitlab', 321)
+      .and_return(21)
     allow(ranking_retention).to receive(:prune).with(period)
 
     expect(snapshot_store.create_run(period, refresh_platforms: ['github'])).to eq(7)
@@ -57,9 +78,25 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     expect(snapshot_store.pending_candidates(period, limit: 12, platform: 'gitlab')).to eq([{ login: 'alice' }])
     snapshot_store.mark_candidate(period, 'gitlab', 'alice', 'processed')
     expect(snapshot_store.processed_user?(period, 'gitlab', 99)).to be(true)
+    snapshot_store.record_organization_candidate(
+      period,
+      login: 'polish-org',
+      source_query: 'location:poland',
+      platform: 'gitlab',
+      source_id: 55,
+      github_id: 55
+    )
+    expect(snapshot_store.pending_organization_candidates(period, limit: 10, platform: 'gitlab')).to eq(
+      [{ login: 'polish-org' }]
+    )
+    snapshot_store.mark_organization_candidate(period, 'gitlab', 'polish-org', 'processed')
+    expect(snapshot_store.processed_organization?(period, 'gitlab', 55)).to be(true)
     snapshot_store.record_contributor_snapshot(contributor_snapshot)
     snapshot_store.record_repository_snapshot(repository_snapshot)
+    snapshot_store.record_organization_snapshot(organization_snapshot)
+    snapshot_store.record_organization_repository_snapshot(organization_repository_snapshot)
     expect(snapshot_store.previous_repository_stars(period, 'gitlab', 123)).to eq(15)
+    expect(snapshot_store.previous_organization_repository_stars(period, 'gitlab', 321)).to eq(21)
     snapshot_store.prune_rankings(period)
   end
   # rubocop:enable RSpec/ExampleLength
