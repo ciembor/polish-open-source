@@ -1,7 +1,7 @@
 <section class="hero">
   <div class="hero__inner">
     <div>
-    <p class="eyebrow">Open-source ranking</p>
+    <p class="eyebrow"><%= h t('rankings.hero.eyebrow') %></p>
     <h1><%= h ranking_title(@kind, @metric) %></h1>
     <p class="lede"><%= h scope_name(@scope) %></p>
     <% if @period %>

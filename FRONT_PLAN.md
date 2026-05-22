@@ -224,15 +224,15 @@ Polska i angielska wersja mają być kompletne i naturalne, a nie tylko technicz
 
 ### Plan
 
-- [ ] Przejrzeć wszystkie teksty SEO w `pl.yml` i `en.yml`.
-- [ ] Dla każdej ważnej strony mieć osobne, sensowne:
-  - [ ] title,
-  - [ ] description,
-  - [ ] hero copy,
-  - [ ] ewentualne stałe nagłówki sekcji.
-- [ ] Upewnić się, że polski content nie zawiera angielskich wstawek tam, gdzie nie powinien.
-- [ ] Upewnić się, że EN nie jest kalką PL, jeśli brzmi nienaturalnie.
-- [ ] Przejrzeć brand text i nazewnictwo:
+- [x] Przejrzeć wszystkie teksty SEO w `pl.yml` i `en.yml`.
+- [x] Dla każdej ważnej strony mieć osobne, sensowne:
+  - [x] title,
+  - [x] description,
+  - [x] hero copy,
+  - [x] ewentualne stałe nagłówki sekcji.
+- [x] Upewnić się, że polski content nie zawiera angielskich wstawek tam, gdzie nie powinien.
+- [x] Upewnić się, że EN nie jest kalką PL, jeśli brzmi nienaturalnie.
+- [x] Przejrzeć brand text i nazewnictwo:
   - `Polish Open Source`,
   - `open-source ranking`,
   - profile,
@@ -261,24 +261,24 @@ Zabezpieczyć SEO przed przypadkowym regressem.
 
 ### Plan
 
-- [ ] Dodać testy request/HTML dla:
-  - [ ] PL canonical,
-  - [ ] EN canonical,
-  - [ ] `hreflang`,
-  - [ ] `og:*`,
-  - [ ] `twitter:*`,
-  - [ ] `html lang`,
-  - [ ] sitemap,
-  - [ ] robots,
-  - [ ] redirectów z `?lang=`.
-- [ ] Dodać testy dla najważniejszych stron:
-  - [ ] `/latest`,
-  - [ ] city ranking,
-  - [ ] ranking detail,
-  - [ ] `/about`,
-  - [ ] `/editions`,
-  - [ ] user profile,
-  - [ ] repository profile.
+- [x] Dodać testy request/HTML dla:
+  - [x] PL canonical,
+  - [x] EN canonical,
+  - [x] `hreflang`,
+  - [x] `og:*`,
+  - [x] `twitter:*`,
+  - [x] `html lang`,
+  - [x] sitemap,
+  - [x] robots,
+  - [x] redirectów z `?lang=`.
+- [x] Dodać testy dla najważniejszych stron:
+  - [x] `/latest`,
+  - [x] city ranking,
+  - [x] ranking detail,
+  - [x] `/about`,
+  - [x] `/editions`,
+  - [x] user profile,
+  - [x] repository profile.
 - [ ] Ręcznie sprawdzić wynik w:
   - [ ] Google Rich Results Test,
   - [ ] Open Graph debugger,
@@ -306,43 +306,43 @@ Zweryfikować, że zmiana naprawdę poprawiła indeksację.
 
 ### Faza 1: naprawa fundamentu indeksacji
 
-- [ ] URL-e językowe
-- [ ] canonical per locale
-- [ ] `hreflang`
-- [ ] default locale = `pl`
-- [ ] redirecty z `?lang=`
+- [x] URL-e językowe
+- [x] canonical per locale
+- [x] `hreflang`
+- [x] default locale = `pl`
+- [x] redirecty z `?lang=`
 
 ### Faza 2: sygnały dla crawlerów
 
-- [ ] `robots.txt`
-- [ ] `sitemap.xml`
-- [ ] poprawa linkowania wewnętrznego
+- [x] `robots.txt`
+- [x] `sitemap.xml`
+- [x] poprawa linkowania wewnętrznego
 
 ### Faza 3: lepszy snippet i preview
 
-- [ ] `og:*`
-- [ ] `twitter:*`
-- [ ] lepsze title/description
+- [x] `og:*`
+- [x] `twitter:*`
+- [x] lepsze title/description
 
 ### Faza 4: semantyka i dane strukturalne
 
-- [ ] JSON-LD per typ strony
-- [ ] breadcrumbs
-- [ ] HTML5 cleanup
+- [x] JSON-LD per typ strony
+- [x] breadcrumbs
+- [x] HTML5 cleanup
 
 ### Faza 5: testy i monitoring
 
-- [ ] testy regresyjne
+- [x] testy regresyjne
 - [ ] Search Console
 - [ ] walidacja snippetów i indeksacji
 
 ## Kryteria zakończenia
 
-- [ ] PL i EN mają osobne, stabilne URL-e.
-- [ ] Każda wersja językowa ma własny canonical i `hreflang`.
-- [ ] Polska wersja jest domyślną wersją publiczną serwisu.
-- [ ] Publiczne strony mają pełny zestaw metadata pod SEO i preview.
-- [ ] `robots.txt` i `sitemap.xml` działają.
-- [ ] Structured data jest zależne od typu strony, nie globalnie generyczne.
-- [ ] Najważniejsze widoki przechodzą testy SEO/locale.
+- [x] PL i EN mają osobne, stabilne URL-e.
+- [x] Każda wersja językowa ma własny canonical i `hreflang`.
+- [x] Polska wersja jest domyślną wersją publiczną serwisu.
+- [x] Publiczne strony mają pełny zestaw metadata pod SEO i preview.
+- [x] `robots.txt` i `sitemap.xml` działają.
+- [x] Structured data jest zależne od typu strony, nie globalnie generyczne.
+- [x] Najważniejsze widoki przechodzą testy SEO/locale.
 - [ ] Search Console nie pokazuje konfliktów canonical/alternate dla PL i EN.

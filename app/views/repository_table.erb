@@ -26,7 +26,7 @@
           <span class="ranking-list__links ranking-list__links--edge">
             <a class="muted-link" href="<%= h row.fetch(:html_url) %>"><%= h platform_name(row.fetch(:platform, "github")) %></a>
             <% if row[:homepage] && !row[:homepage].empty? %>
-              <a class="muted-link" href="<%= h row[:homepage] %>">website</a>
+              <a class="muted-link" href="<%= h row[:homepage] %>"><%= h t('users.links.homepage') %></a>
             <% end %>
           </span>
         </li>
