@@ -18,8 +18,19 @@ module PolishOpenSourceRank
 
         def call
           period = Shared::Domain::Period.parse(month_argument || Shared::Domain::Period.previous_month.key)
-          with_interrupt_handling { job.call(period, refresh: refresh?) }
+          with_interrupt_handling { job.call(period, **job_options) }
           output.puts "Finished monthly ranking run for #{period.key}"
+        end
+
+        def scope_argument
+          index = argv.index('--scope')
+          argv[index + 1]&.to_sym if index
+        end
+
+        def job_options
+          options = { refresh: refresh? }
+          options[:scope] = scope_argument if scope_argument
+          options
         end
 
         private
