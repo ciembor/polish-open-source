@@ -26,7 +26,7 @@ RSpec.describe PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database do
       end
     end.to raise_error(RuntimeError, 'stop')
 
-    expect(database.get_first_value('SELECT COUNT(*) FROM records')).to eq(0)
+    expect(database.fetch_value('SELECT COUNT(*) FROM records')).to eq(0)
   end
 
   it 'commits successful transactions and exposes table metadata' do

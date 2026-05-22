@@ -37,10 +37,6 @@ module PolishOpenSourceRank
             sequel_connection.fetch(sql, *params).single_value
           end
 
-          def get_first_value(sql, params = [])
-            raw_connection.get_first_value(sql, params)
-          end
-
           def table_info(table_name)
             with_hash_results { raw_connection.table_info(table_name) }
           end
