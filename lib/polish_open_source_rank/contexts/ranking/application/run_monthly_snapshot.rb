@@ -17,7 +17,8 @@ module PolishOpenSourceRank
             @store_mutex = Mutex.new
           end
 
-          def call(period, refresh: false)
+          def call(period, refresh: false, scope: nil)
+            @scope = scope
             refresh_platforms = refresh ? sources.map(&:platform) : []
             run_id = store.create_run(period, refresh_platforms: refresh_platforms)
             return unless run_id
@@ -343,16 +344,22 @@ module PolishOpenSourceRank
           end
 
           def run_source_snapshot(period, source, refresh:)
-            discover_error = run_source_stage(source, 'discover') { discover_source_candidates(period, source) }
-            process_error = run_source_stage(source, 'process') do
-              process_source_candidates(period, source, refresh: refresh)
+            unless @scope == :organizations
+              discover_error = run_source_stage(source, 'discover') { discover_source_candidates(period, source) }
+              process_error = run_source_stage(source, 'process') do
+                process_source_candidates(period, source, refresh: refresh)
+              end
             end
-            organization_discover_error = run_source_stage(source, 'discover organizations') do
-              discover_source_organizations(period, source)
+
+            unless @scope == :users
+              organization_discover_error = run_source_stage(source, 'discover organizations') do
+                discover_source_organizations(period, source)
+              end
+              organization_process_error = run_source_stage(source, 'process organizations') do
+                process_source_organizations(period, source, refresh: refresh)
+              end
             end
-            organization_process_error = run_source_stage(source, 'process organizations') do
-              process_source_organizations(period, source, refresh: refresh)
-            end
+
             Thread.current[:error] = [
               organization_process_error,
               organization_discover_error,
