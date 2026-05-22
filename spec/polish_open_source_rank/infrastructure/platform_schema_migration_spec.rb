@@ -24,6 +24,23 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration do
     expect(database.table_info('users').map { |column| column.fetch('name') }).to include('platform')
   end
 
+  it 'rolls back a failed legacy migration before old tables are dropped' do
+    database = open_database
+    database.execute_batch(legacy_schema_sql)
+    database.execute(
+      'INSERT INTO users(github_id, login, html_url, updated_at) VALUES(1, ?, ?, ?)',
+      ['alice', 'https://github.com/alice', 'now']
+    )
+
+    migration = described_class.new(database, 'CREATE TABLE users(broken')
+
+    expect { migration.bootstrap! }.to raise_error(StandardError)
+    expect(table_exists?(database, 'users')).to be(true)
+    expect(table_exists?(database, 'users_old')).to be(false)
+    expect(database.fetch_value('SELECT login FROM users WHERE github_id = 1')).to eq('alice')
+    expect(database.fetch_value('PRAGMA foreign_keys')).to eq(1)
+  end
+
   it 'keeps bootstrapping idempotent when the schema is current' do
     database = open_database
     migration = described_class.new(database, PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql)
@@ -37,6 +54,13 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration do
   def open_database
     path = File.join(Dir.mktmpdir, 'rank.sqlite3')
     PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(path)
+  end
+
+  def table_exists?(database, table_name)
+    !database.fetch_value(
+      "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+      [table_name]
+    ).nil?
   end
 
   def legacy_schema_sql
