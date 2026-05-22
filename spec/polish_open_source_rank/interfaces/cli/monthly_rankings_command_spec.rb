@@ -22,6 +22,20 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
     expect(job).to have_received(:call).with(have_attributes(key: '2026-04'), refresh: true)
   end
 
+  it 'passes an explicit scope to the monthly job' do
+    output = StringIO.new
+    job = instance_double(PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlySnapshot)
+    allow(job).to receive(:call)
+
+    described_class.call(['--month', '2026-04', '--scope', 'organizations'], job: job, output: output)
+
+    expect(job).to have_received(:call).with(
+      have_attributes(key: '2026-04'),
+      refresh: false,
+      scope: :organizations
+    )
+  end
+
   it 'turns process stop signals into job-visible interruptions' do
     output = StringIO.new
     term_handler = nil

@@ -118,6 +118,24 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(missing_organization.status).to eq(404)
   end
 
+  it 'renders organization repository pages for signed-in organization members without a 500' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    described_class.set(
+      :github_oauth_client,
+      FakeGitHubOAuthClient.new('polish-org', id: 30, location: 'Poznan, Poland')
+    )
+    request = Rack::MockRequest.new(described_class)
+
+    github_callback = sign_in_with_github(request)
+    response = request.get(
+      '/organization-repositories/github/polish-org/toolkit',
+      'HTTP_COOKIE' => cookie_header(github_callback)
+    )
+
+    expect(response.status).to eq(200)
+    expect(response.body).to include('polish-org/toolkit')
+  end
+
   # rubocop:disable RSpec/ExampleLength
   it 'renders user profile pages from ranking users', :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
