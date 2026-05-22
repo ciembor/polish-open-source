@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'sequel'
+
 module PolishOpenSourceRank
   module Infrastructure
     class SQLiteJobProgress
@@ -163,48 +165,23 @@ module PolishOpenSourceRank
       end
 
       def current_run_candidates_count(run, platform)
-        fetch_value(<<~SQL, [run.fetch(:period_start), platform, run.fetch(:started_at), run_finished_at(run)]).to_i
-          SELECT COUNT(*)
-          FROM candidate_users
-          WHERE period_start = ?
-            AND platform = ?
-            AND updated_at >= ?
-            AND updated_at <= ?
-            AND status != 'pending'
-        SQL
+        current_run_window(candidate_users_dataset, run, platform)
+          .exclude(status: 'pending')
+          .count
       end
 
       def current_run_user_stats_count(run, platform)
-        fetch_value(<<~SQL, [run.fetch(:period_start), platform, run.fetch(:started_at), run_finished_at(run)]).to_i
-          SELECT COUNT(*)
-          FROM user_monthly_stats
-          WHERE period_start = ?
-            AND platform = ?
-            AND updated_at >= ?
-            AND updated_at <= ?
-        SQL
+        current_run_window(user_monthly_stats_dataset, run, platform).count
       end
 
       def current_run_repository_stats_count(run, platform)
-        fetch_value(<<~SQL, [run.fetch(:period_start), platform, run.fetch(:started_at), run_finished_at(run)]).to_i
-          SELECT COUNT(*)
-          FROM repository_monthly_stats
-          WHERE period_start = ?
-            AND platform = ?
-            AND updated_at >= ?
-            AND updated_at <= ?
-        SQL
+        current_run_window(repository_monthly_stats_dataset, run, platform).count
       end
 
       def current_run_repository_owners_count(run, platform)
-        fetch_value(<<~SQL, [run.fetch(:period_start), platform, run.fetch(:started_at), run_finished_at(run)]).to_i
-          SELECT COUNT(DISTINCT owner_github_id)
-          FROM repository_monthly_stats
-          WHERE period_start = ?
-            AND platform = ?
-            AND updated_at >= ?
-            AND updated_at <= ?
-        SQL
+        current_run_window(repository_monthly_stats_dataset, run, platform)
+          .distinct
+          .count(:owner_github_id)
       end
 
       def last_checked_user(period_start, platform)
@@ -243,7 +220,7 @@ module PolishOpenSourceRank
       def last_api_request(run, platform)
         api_request_events_dataset
           .where(platform: platform)
-          .where(Sequel.lit('recorded_at >= ?', run.fetch(:started_at)))
+          .where { recorded_at >= run.fetch(:started_at) }
           .select(:path, :status, :recorded_at)
           .order(Sequel.desc(Sequel.function(:datetime, :recorded_at)), Sequel.desc(:id))
           .first
@@ -303,6 +280,12 @@ module PolishOpenSourceRank
         run[:finished_at] || now.iso8601
       end
 
+      def current_run_window(dataset, run, platform)
+        dataset
+          .where(period_start: run.fetch(:period_start), platform: platform)
+          .where(updated_at: run.fetch(:started_at)..run_finished_at(run))
+      end
+
       def cumulative_points(rows)
         totals = Hash.new { |hash, platform| hash[platform] = { users: 0, repositories: 0 } }
         rows.map do |row|
@@ -320,10 +303,6 @@ module PolishOpenSourceRank
 
       def fetch_all(sql, params = [])
         database.fetch_all(sql, params)
-      end
-
-      def fetch_value(sql, params = [])
-        database.fetch_value(sql, params)
       end
 
       def sync_runs_dataset

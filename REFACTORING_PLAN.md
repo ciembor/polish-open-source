@@ -127,9 +127,9 @@ Read models may keep raw SQL when that is the deeper interface. The migration ta
 
 ### 7. Convert operations job progress
 
-- [ ] Replace `Infrastructure::SQLiteJobProgress` internals with Sequel.
-- [ ] Keep `Contexts::Operations::Infrastructure::SQLite::SQLiteJobProgressReadModel` as the operations-facing adapter.
-- [ ] Preserve current progress calculations:
+- [x] Replace `Infrastructure::SQLiteJobProgress` internals with Sequel.
+- [x] Keep `Contexts::Operations::Infrastructure::SQLite::SQLiteJobProgressReadModel` as the operations-facing adapter.
+- [x] Preserve current progress calculations:
   - running vs finished duration,
   - per-platform progress,
   - API request counts,
