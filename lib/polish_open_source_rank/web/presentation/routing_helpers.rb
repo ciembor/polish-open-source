@@ -16,6 +16,8 @@ module PolishOpenSourceRank
         def locale_path(locale)
           query = Rack::Utils.parse_nested_query(request.query_string)
           query.delete('lang')
+          query['lang'] = locale if locale == settings.default_locale && !current_locale?(locale)
+
           path = localized_public_path(unlocalized_request_path, locale: locale)
           return path if query.empty?
 
