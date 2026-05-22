@@ -80,13 +80,11 @@ module PolishOpenSourceRank
               )
               redirect discord_channel_url || app_path(user_profile_path(current_user))
             rescue Auth::DiscordOAuthClient::Error
-              session[:discord_error] = 'oauth'
-              redirect app_path(user_profile_path(current_user))
-            rescue Contexts::Community::Infrastructure::Discord::DiscordApiGateway::Error
-              session[:discord_error] = 'sync'
-              redirect app_path(user_profile_path(current_user))
+              redirect_to_profile_after_discord_error('oauth')
             rescue Contexts::Community::Application::ConnectDiscordAccount::ProfileNotFound
               halt 404
+            rescue StandardError
+              redirect_to_profile_after_discord_error('sync')
             end
           end
           # rubocop:enable Metrics/AbcSize, Metrics/MethodLength

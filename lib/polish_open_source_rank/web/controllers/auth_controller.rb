@@ -23,6 +23,11 @@ module PolishOpenSourceRank
           ENV.fetch('DISCORD_WELCOME_CHANNEL_ID', configuration.discord_invite_channel_id)
         end
 
+        def redirect_to_profile_after_discord_error(type)
+          session[:discord_error] = type
+          redirect app_path(user_profile_path(current_user))
+        end
+
         def secure_oauth_state?(session_key)
           expected = session.delete(session_key)
           given = params.fetch('state', nil)
