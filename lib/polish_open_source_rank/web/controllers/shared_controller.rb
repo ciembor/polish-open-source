@@ -19,7 +19,11 @@ module PolishOpenSourceRank
         def own_repository?(repository)
           current_user &&
             current_user.fetch(:platform) == repository.fetch(:platform) &&
-            current_user.fetch(:github_id).to_i == repository.fetch(:owner_github_id).to_i
+            current_user.fetch(:github_id).to_i == repository_owner_id(repository).to_i
+        end
+
+        def repository_owner_id(repository)
+          repository.fetch(:owner_github_id) { repository.fetch(:organization_github_id) }
         end
 
         def show_discord_panel_for(profile)

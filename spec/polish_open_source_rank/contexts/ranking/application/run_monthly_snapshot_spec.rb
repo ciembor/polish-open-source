@@ -410,6 +410,54 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(github.delta_periods).to eq([['alice/new', period]])
   end
 
+  it 'runs only the organization pipeline when scoped to organizations' do
+    organization_source = FakeOrganizationGitHub.new
+    organization_source.organization_candidates = { 'Poland' => [{ source_id: 9, login: 'polish-org' }] }
+    organization_source.organizations = { 'polish-org' => profile(9, 'polish-org', 'Warsaw, Poland') }
+    organization_source.organization_repositories = { 'polish-org' => [repository(90, 'polish-org/toolkit', 33)] }
+    seed_alice_and_bob_discovery
+
+    described_class.new(store: store, sources: [organization_source], catalog: catalog, logger: StringIO.new).call(
+      period,
+      scope: :organizations
+    )
+
+    expect(organization_source.user_calls).to be_empty
+    expect(fetch_candidate('alice')).to be_nil
+    expect(fetch_candidate('polish-org', table: 'candidate_organizations')).to include(status: 'processed', error: nil)
+    expect(fetch_user('polish-org', table: 'organizations')).to include(login: 'polish-org')
+  end
+
+  it 'runs only the user pipeline when scoped to users' do
+    organization_source = FakeOrganizationGitHub.new
+    organization_source.organization_candidates = { 'Poland' => [{ source_id: 9, login: 'polish-org' }] }
+    organization_source.organizations = { 'polish-org' => profile(9, 'polish-org', 'Warsaw, Poland') }
+    organization_source.candidates = {
+      'Poland' => [{ source_id: 1, login: 'alice' }, { source_id: 2, login: 'bob' }]
+    }
+    organization_source.profiles = {
+      'alice' => profile(1, 'alice', 'Krakow, Poland', blog: ''),
+      'bob' => profile(2, 'bob', 'Berlin, Germany')
+    }
+    organization_source.repositories = {
+      'alice' => [
+        repository(10, 'alice/app', 12),
+        repository(11, 'alice/lib', 5, homepage: '', fork: true, archived: true)
+      ]
+    }
+
+    described_class.new(store: store, sources: [organization_source], catalog: catalog, logger: StringIO.new).call(
+      period,
+      scope: :users
+    )
+
+    expect(organization_source.user_calls).to eq([['alice', 1], ['bob', 2]])
+    expect(organization_source.organization_calls).to be_empty
+    expect(fetch_candidate('alice')).to include(status: 'processed', error: nil)
+    expect(fetch_candidate('polish-org', table: 'candidate_organizations')).to be_nil
+    expect(fetch_user('polish-org', table: 'organizations')).to be_nil
+  end
+
   # rubocop:disable RSpec/ExampleLength
   it 'discovers organizations, stores organization rankings, and persists organization repositories' do
     organization_source = FakeOrganizationGitHub.new
@@ -1285,10 +1333,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     )
   end
 
-  def fetch_user(login, platform: 'github')
+  def fetch_user(login, platform: 'github', table: 'users')
     fetch_row(<<~SQL, [platform, login])
       SELECT platform, github_id, login, name, location_raw, city, country, email, homepage, html_url, avatar_url
-      FROM users
+      FROM #{table}
       WHERE platform = ? AND login = ?
     SQL
   end
