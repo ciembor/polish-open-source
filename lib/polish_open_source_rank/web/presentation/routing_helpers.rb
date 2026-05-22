@@ -109,7 +109,7 @@ module PolishOpenSourceRank
         private
 
         def structured_data_payload
-          nodes = [website_schema, page_schema]
+          nodes = [organization_schema, website_schema, page_schema]
           breadcrumbs = breadcrumb_schema
           nodes << breadcrumbs if breadcrumbs
           nodes.compact
@@ -121,9 +121,27 @@ module PolishOpenSourceRank
           {
             '@context' => 'https://schema.org',
             '@type' => 'WebSite',
+            '@id' => full_url('/#website'),
             'name' => 'Polish Open Source',
-            'url' => full_url(period_base_path('latest')),
-            'inLanguage' => current_locale
+            'url' => full_url('/'),
+            'inLanguage' => current_locale,
+            'publisher' => { '@id' => full_url('/#organization') }
+          }
+        end
+
+        def organization_schema
+          return unless localized_page?
+
+          {
+            '@context' => 'https://schema.org',
+            '@type' => 'Organization',
+            '@id' => full_url('/#organization'),
+            'name' => 'Polish Open Source',
+            'url' => full_url('/'),
+            'logo' => full_url(app_path('/icons/polish-open-source.png')),
+            'sameAs' => [
+              'https://github.com/ciembor/polish-open-source'
+            ]
           }
         end
 
@@ -339,10 +357,11 @@ module PolishOpenSourceRank
         end
 
         def breadcrumb_items
-          items = [{ name: t('scope.poland'), path: period_base_path('latest') }]
+          items = [{ name: 'Polish Open Source', path: localized_public_path('/', locale: current_locale) }]
+          items << { name: t('scope.poland'), path: period_base_path('latest') }
           items << { name: scope_name(@scope), path: scope_path(@scope) } if city_scope?
           items.concat(current_page_breadcrumbs)
-          items
+          items.uniq { |item| item.fetch(:path) }
         end
 
         def current_page_breadcrumbs
