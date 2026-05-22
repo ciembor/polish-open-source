@@ -3,6 +3,7 @@
 module PolishOpenSourceRank
   module Web
     module Controllers
+      # rubocop:disable Metrics/ModuleLength
       module PublicController
         include SitemapSupport
 
@@ -28,8 +29,8 @@ module PolishOpenSourceRank
           page = show_rankings.call(scope: scope, period_start: @period)
           @user_rankings = page.user_rankings
           @repository_rankings = page.repository_rankings
-          @title = "#{scope_name(@scope)} open-source ranking"
-          @description = t('rankings.seo.description', scope: scope_name(@scope))
+          @title = rankings_page_title(@scope, @period_slug)
+          @description = rankings_page_description(@scope, @period_slug)
           @canonical_path = if scope == 'poland'
                               period_base_path(period_slug)
                             else
@@ -49,7 +50,7 @@ module PolishOpenSourceRank
           @editions = page.editions
           @newer_year = page.newer_year
           @older_year = page.older_year
-          @title = year ? "#{t('editions.title')} #{year}" : t('editions.title')
+          @title = year ? t('editions.seo.title_year', year: year) : t('editions.seo.title')
           @description = t('editions.seo.description')
           @canonical_path = year ? editions_path(year) : editions_path
           erb :editions
@@ -65,7 +66,7 @@ module PolishOpenSourceRank
           @repositories = @profile.fetch(:repositories)
           display_name = @profile[:name].to_s.empty? ? @profile.fetch(:login) : @profile[:name]
           source_name = platform_name(@profile.fetch(:platform))
-          @title = "#{display_name} - #{source_name} profile"
+          @title = t('users.seo.title', user: display_name, platform: source_name)
           @description = t('users.seo.description', user: display_name, platform: source_name)
           @canonical_path = user_profile_path(@profile)
           @discord_panel = show_discord_panel_for(@profile) if own_profile?(@profile) && @profile[:period_start]
@@ -82,7 +83,7 @@ module PolishOpenSourceRank
           repository_profile_cache!(@repository)
 
           source_name = platform_name(@repository.fetch(:platform))
-          @title = "#{@repository.fetch(:full_name)} - #{source_name} project"
+          @title = t('repositories.seo.title', repository: @repository.fetch(:full_name), platform: source_name)
           @description = t(
             'repositories.seo.description',
             repository: @repository.fetch(:full_name),
@@ -104,12 +105,42 @@ module PolishOpenSourceRank
           public_html_cache!('ranking-detail', period_slug, scope, kind, metric, @period,
                              public_cache_revision(@period))
           @ranking = show_ranking_detail.call(scope: scope, kind: kind, metric: metric, period_start: @period)
-          @title = "#{scope_name(@scope)} #{ranking_title(kind, metric)}"
-          @description = "#{ranking_title(kind, metric)} - #{scope_name(@scope)}."
+          assign_ranking_detail_metadata(kind, metric)
           @canonical_path = ranking_path(kind, metric, period_slug: period_slug, scope_slug: scope)
           erb :ranking_detail
         end
+
+        def assign_ranking_detail_metadata(kind, metric)
+          period = seo_period_label(@period_slug)
+          ranking = ranking_title(kind, metric)
+          scope = scope_name(@scope)
+          @title = t('rankings.seo.detail_title', ranking: ranking, scope: scope, period: period)
+          @description = t(
+            'rankings.seo.detail_description',
+            ranking: ranking,
+            scope: scope,
+            metric: ranking_metric_label(kind, metric),
+            period: period
+          )
+        end
+
+        def rankings_page_title(scope, period_slug)
+          key = period_slug == 'latest' ? 'rankings.seo.title_latest' : 'rankings.seo.title_period'
+          t(key, scope: scope_name(scope), period: seo_period_label(period_slug))
+        end
+
+        def rankings_page_description(scope, period_slug)
+          key = period_slug == 'latest' ? 'rankings.seo.description_latest' : 'rankings.seo.description_period'
+          t(key, scope: scope_name(scope), period: seo_period_label(period_slug))
+        end
+
+        def seo_period_label(period_slug)
+          return t('rankings.seo.current_period') if period_slug == 'latest'
+
+          period_label(Date.parse("#{period_slug}-01").iso8601)
+        end
       end
+      # rubocop:enable Metrics/ModuleLength
     end
   end
 end

@@ -25,4 +25,24 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::RoutingHelpers do
     expect(helper_host.send(:localized_page_path?, '/2026-04/locations/krakow')).to be(true)
     expect(helper_host.send(:localized_page_path?, '/auth/github')).to be(false)
   end
+
+  it 'builds page-specific schema types' do
+    helper_host.instance_variable_set(:@canonical_path, '/about')
+    expect(helper_host.send(:structured_data_type)).to eq('AboutPage')
+
+    helper_host.remove_instance_variable(:@canonical_path)
+    helper_host.instance_variable_set(:@profile, { login: 'alice', html_url: 'https://github.com/alice' })
+    expect(helper_host.send(:structured_data_type)).to eq('ProfilePage')
+
+    helper_host.remove_instance_variable(:@profile)
+    helper_host.instance_variable_set(
+      :@repository,
+      { full_name: 'alice/app', html_url: 'https://github.com/alice/app' }
+    )
+    expect(helper_host.send(:structured_data_type)).to eq('SoftwareSourceCode')
+  end
+
+  it 'returns no collection schema for pages without list content' do
+    expect(helper_host.send(:collection_schema)).to be_nil
+  end
 end

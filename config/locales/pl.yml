@@ -35,7 +35,8 @@ pl:
         body: "Osoby są wyszukiwane po publicznych lokalizacjach związanych z Polską i polskimi miastami. Do rankingu trafiają profile, których publiczna lokalizacja pasuje do obsługiwanego kraju albo miasta."
         title: "Użytkownicy"
     seo:
-      description: "Misja, zasady generowania rankingów i wspierane platformy Polish Open Source Rank."
+      title: "O Polish Open Source Rank"
+      description: "Misja, zasady rankingu open source dla Polski oraz wspierane platformy GitHub, GitLab i Codeberg."
     title: "O Polish Open Source Rank"
   auth:
     login:
@@ -62,6 +63,8 @@ pl:
     period_prefix: "Rok:"
     seo:
       description: "Archiwum miesięcznych rankingów z top projektami, użytkownikami według gwiazdek i aktywności."
+      title: "Edycje rankingu open source"
+      title_year: "Edycje rankingu open source %{year}"
     stars_suffix: "gwiazdek"
     title: "Edycje"
     top_projects: "Top projekty"
@@ -117,7 +120,14 @@ pl:
     repository: "Repozytorium"
     see_top_100: "Zobacz top 100"
     seo:
+      current_period: "najnowszy snapshot"
       description: "Top i trending publiczni użytkownicy oraz repozytoria platform kodu dla lokalizacji %{scope}."
+      description_latest: "Top i trending publiczni użytkownicy oraz repozytoria open source dla lokalizacji %{scope} w najnowszym snapshotcie."
+      description_period: "Top i trending publiczni użytkownicy oraz repozytoria open source dla lokalizacji %{scope} w edycji %{period}."
+      detail_description: "%{ranking} dla lokalizacji %{scope}, według metryki %{metric}, w edycji %{period}."
+      detail_title: "%{ranking} - %{scope} - %{period}"
+      title_latest: "%{scope} open-source ranking"
+      title_period: "%{scope} open-source ranking - %{period}"
     snapshot: "Snapshot:"
     table:
       city: "Miasto"
@@ -141,6 +151,7 @@ pl:
     links:
       source_project: "Projekt na %{platform}"
     seo:
+      title: "%{repository} - projekt %{platform}"
       description: "Publiczny projekt open source %{repository} na %{platform}, z metrykami rankingu i informacjami o właścicielu."
     summary:
       owner: "Właściciel"
@@ -174,6 +185,7 @@ pl:
       language: "Język"
       title: "Najlepsze projekty"
     seo:
+      title: "%{user} - profil %{platform}"
       description: "Publiczny profil open source użytkownika %{user} na %{platform}, z metrykami rankingu i najlepszymi projektami."
     summary:
       city: "Miasto"
