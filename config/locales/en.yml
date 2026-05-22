@@ -119,6 +119,8 @@ en:
       events: "Events"
       new_stars: "New stars"
       stars: "Stars"
+    organization_repositories_month: "Organization repositories"
+    organizations: "Organizations"
     repositories: "Repositories"
     repository: "Repository"
     see_top_100: "See top 100"
@@ -136,6 +138,12 @@ en:
       city: "City"
       user: "User"
     title:
+      organization_repositories:
+        top: "Top 100 organization repositories by stars"
+        trending: "Top 100 trending organization repositories"
+      organizations:
+        top: "Top 100 organizations by stars"
+        trending: "Top 100 trending organizations"
       repositories:
         top: "Top 100 repositories by stars"
         trending: "Top 100 trending repositories"
@@ -159,6 +167,32 @@ en:
     summary:
       owner: "Owner"
       title: "Project"
+  organization_repositories:
+    seo:
+      title: "%{repository} - organization repository on %{platform}"
+      description: "%{repository} public organization repository on %{platform}, with ranking metrics and owner profile."
+  organizations:
+    avatar_alt: "%{organization} organization logo"
+    badge:
+      alt: "Polish Open Source Org badge"
+      title: "Organization badge"
+    links:
+      source_profile: "%{platform} organization"
+    repositories:
+      empty: "No public repositories were stored for this organization in the current snapshot."
+      title: "Best repositories"
+    seo:
+      title: "%{organization} - %{platform} organization"
+      description: "%{organization} public open-source organization on %{platform}, with ranking metrics and top repositories."
+    spotlight:
+      city: "City"
+      country_rank: "Poland rank"
+      title: "Organization ranking"
+      top_repository: "Top repository"
+    summary:
+      location: "Location"
+      public_repositories: "Public repositories"
+      title: "Organization"
   users:
     avatar_alt: "%{user} profile photo"
     badge:

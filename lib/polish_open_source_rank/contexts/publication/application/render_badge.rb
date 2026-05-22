@@ -22,6 +22,12 @@ module PolishOpenSourceRank
             badge && BadgeView.new(badge)
           end
 
+          def organization(platform:, login:, period_start:)
+            profile = profile_read_model.organization_profile(platform, login, period_start: period_start)
+            badge = profile&.fetch(:profile_badge, nil)
+            badge && BadgeView.new(badge)
+          end
+
           private
 
           attr_reader :profile_read_model

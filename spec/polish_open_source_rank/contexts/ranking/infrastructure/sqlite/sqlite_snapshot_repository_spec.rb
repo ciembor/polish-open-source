@@ -48,6 +48,22 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     expect(row('repository_monthly_stats')).to include(stargazers_count: 31, monthly_stars_delta: 4)
   end
 
+  it 'persists organizations, organization repositories, and their star observations' do
+    repository.record_organization_snapshot(organization_snapshot)
+    repository.record_organization_repository_snapshot(
+      organization_repository_snapshot(period: previous_period, stars: 17, delta: 2)
+    )
+    repository.record_organization_repository_snapshot(
+      organization_repository_snapshot(period: period, stars: 20, delta: 3)
+    )
+
+    expect(row('organizations')).to include(login: 'polish-org', email: 'org@example.com')
+    expect(row('organization_monthly_stats')).to include(total_stars: 20, monthly_stars_delta: 3)
+    expect(row('organization_repositories')).to include(full_name: 'polish-org/toolkit', archived: 0)
+    expect(row('organization_repository_monthly_stats')).to include(stargazers_count: 17, monthly_stars_delta: 2)
+    expect(repository.previous_organization_repository_stargazers_count(period, 'github', 200)).to eq(17)
+  end
+
   # rubocop:disable RSpec/ExampleLength
   it 'retries snapshot writes as an update when the insert races with another writer' do
     initial_scope = double('initial scope')
@@ -157,5 +173,47 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
       stargazers_count: stars,
       monthly_stars_delta: delta
     }
+  end
+
+  def organization_snapshot
+    PolishOpenSourceRank::Contexts::Ranking::Domain::OrganizationSnapshot.new(
+      period: period,
+      platform: 'github',
+      source_id: 20,
+      login: 'polish-org',
+      name: 'Polish Org',
+      location_raw: 'Warszawa, Poland',
+      city: 'Warszawa',
+      country: 'Poland',
+      email: 'org@example.com',
+      homepage: 'https://org.example.com',
+      html_url: 'https://github.com/polish-org',
+      avatar_url: 'https://avatars.example.com/polish-org.png',
+      public_repository_count: 1,
+      total_stars: 20,
+      monthly_stars_delta: 3
+    )
+  end
+
+  def organization_repository_snapshot(period:, stars:, delta:)
+    PolishOpenSourceRank::Contexts::Ranking::Domain::OrganizationRepositorySnapshot.new(
+      period: period,
+      platform: 'github',
+      source_id: 200,
+      organization_source_id: 20,
+      organization_login: 'polish-org',
+      organization_city: 'Warszawa',
+      organization_country: 'Poland',
+      name: 'toolkit',
+      full_name: 'polish-org/toolkit',
+      description: 'Toolkit',
+      html_url: 'https://github.com/polish-org/toolkit',
+      homepage: nil,
+      language: 'Ruby',
+      fork: false,
+      archived: false,
+      stars: stars,
+      monthly_stars_delta: delta
+    )
   end
 end

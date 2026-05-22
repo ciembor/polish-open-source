@@ -17,6 +17,10 @@ module PolishOpenSourceRank
         'codeberg'
       end
 
+      def supports_organizations?
+        false
+      end
+
       def search_users_by_location(term)
         each_page('/users/search', { q: term }, limit: SEARCH_PAGE_LIMIT)
           .flat_map { |response| response.body.fetch('data', []).map { |user| candidate(user) } }

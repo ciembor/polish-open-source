@@ -52,6 +52,26 @@ module PolishOpenSourceRank
             log(source, 'candidate discovery finished')
           end
 
+          def discover_source_organizations(period, source)
+            return unless source.supports_organizations?
+
+            catalog.search_terms.each do |term|
+              log(source, "discovering organizations for location #{term.inspect}")
+              source.search_organizations_by_location(term).each do |candidate|
+                with_store do
+                  store.record_organization_candidate(
+                    period,
+                    platform: source.platform,
+                    source_id: candidate.fetch(:source_id),
+                    login: candidate_login(candidate),
+                    source_query: term
+                  )
+                end
+              end
+            end
+            log(source, 'organization discovery finished')
+          end
+
           def process_source_candidates(period, source, refresh:)
             loop do
               candidates = with_store { store.pending_candidates(period, platform: source.platform, limit: BATCH_SIZE) }
@@ -61,6 +81,23 @@ module PolishOpenSourceRank
               candidates.each { |candidate| process_candidate(period, source, candidate, refresh: refresh) }
             end
             log(source, 'candidate processing finished')
+          end
+
+          def process_source_organizations(period, source, refresh:)
+            return unless source.supports_organizations?
+
+            loop do
+              candidates = with_store do
+                store.pending_organization_candidates(period, platform: source.platform, limit: BATCH_SIZE)
+              end
+              break if candidates.empty?
+
+              log(source, "processing #{candidates.length} organizations")
+              candidates.each do |candidate|
+                process_organization_candidate(period, source, candidate, refresh: refresh)
+              end
+            end
+            log(source, 'organization processing finished')
           end
 
           def process_candidate(period, source, candidate, refresh:)
@@ -89,6 +126,34 @@ module PolishOpenSourceRank
             with_store { store.mark_candidate(period, source.platform, login, 'processed') }
           end
 
+          def process_organization_candidate(period, source, candidate, refresh:)
+            platform = candidate.fetch(:platform)
+            login = candidate.fetch(:login)
+            if !refresh && with_store { store.processed_organization?(period, platform, candidate.fetch(:source_id)) }
+              return with_store { store.mark_organization_candidate(period, platform, login, 'processed') }
+            end
+
+            process_unseen_organization_candidate(period, source, login, candidate.fetch(:source_id))
+          rescue SourceNotFound
+            with_store { store.mark_organization_candidate(period, platform, login, 'missing') }
+          rescue StandardError => e
+            with_store do
+              store.mark_organization_candidate(period, platform, login, 'failed', "#{e.class}: #{e.message}")
+            end
+            log(source, "organization #{login.inspect} failed: #{e.class}: #{e.message}")
+          end
+
+          def process_unseen_organization_candidate(period, source, login, source_id)
+            profile = source.organization(login, source_id)
+            location = classifier.call(profile[:location])
+            unless location.polish?
+              return with_store { store.mark_organization_candidate(period, source.platform, login, 'rejected') }
+            end
+
+            persist_organization_profile(period, source, profile, location)
+            with_store { store.mark_organization_candidate(period, source.platform, login, 'processed') }
+          end
+
           def persist_profile(period, source, profile, location)
             repositories = source.repositories_for(profile)
             repository_deltas = repository_deltas(source, repositories, period)
@@ -96,6 +161,15 @@ module PolishOpenSourceRank
             snapshot = contributor_snapshot(period, source, profile, location, repositories, repository_deltas)
             with_store { store.record_contributor_snapshot(snapshot) }
             persist_repositories(period, source, profile, location, repositories, repository_deltas)
+          end
+
+          def persist_organization_profile(period, source, profile, location)
+            repositories = source.repositories_for_organization(profile)
+            repository_deltas = organization_repository_deltas(source, repositories, period)
+
+            snapshot = organization_snapshot(period, source, profile, location, repositories, repository_deltas)
+            with_store { store.record_organization_snapshot(snapshot) }
+            persist_organization_repositories(period, source, profile, location, repositories, repository_deltas)
           end
 
           def repository_deltas(source, repositories, period)
@@ -116,11 +190,39 @@ module PolishOpenSourceRank
             source.repository_stars_delta(repository, period)
           end
 
+          def organization_repository_deltas(source, repositories, period)
+            repositories.to_h do |repository|
+              [repository.fetch(:source_id), organization_repository_delta(source, repository, period)]
+            end
+          end
+
+          def organization_repository_delta(source, repository, period)
+            current_stars = repository.fetch(:stars)
+            return 0 if current_stars.zero?
+
+            previous_stars = with_store do
+              store.previous_organization_repository_stars(period, source.platform, repository.fetch(:source_id))
+            end
+            return [current_stars - previous_stars.to_i, 0].max if previous_stars
+
+            source.repository_stars_delta(repository, period)
+          end
+
           def persist_repositories(period, source, profile, location, repositories, repository_deltas)
             repositories.each do |repository|
               with_store do
                 store.record_repository_snapshot(
                   repository_snapshot(period, source, profile, location, repository, repository_deltas)
+                )
+              end
+            end
+          end
+
+          def persist_organization_repositories(period, source, profile, location, repositories, repository_deltas)
+            repositories.each do |repository|
+              with_store do
+                store.record_organization_repository_snapshot(
+                  organization_repository_snapshot(period, source, profile, location, repository, repository_deltas)
                 )
               end
             end
@@ -169,6 +271,48 @@ module PolishOpenSourceRank
             )
           end
 
+          def organization_snapshot(period, source, profile, location, repositories, repository_deltas)
+            Domain::OrganizationSnapshot.new(
+              period: period,
+              platform: source.platform,
+              source_id: profile.fetch(:source_id),
+              login: profile.fetch(:login),
+              name: profile[:name],
+              location_raw: location.raw,
+              city: location.city,
+              country: location.country,
+              email: profile[:email],
+              homepage: blank_to_nil(profile[:homepage]),
+              html_url: profile.fetch(:html_url),
+              avatar_url: profile[:avatar_url],
+              public_repository_count: repositories.length,
+              total_stars: repositories.sum { |repository| repository.fetch(:stars) },
+              monthly_stars_delta: repository_deltas.values.sum
+            )
+          end
+
+          def organization_repository_snapshot(period, source, profile, location, repository, repository_deltas)
+            Domain::OrganizationRepositorySnapshot.new(
+              period: period,
+              platform: source.platform,
+              source_id: repository.fetch(:source_id),
+              organization_source_id: profile.fetch(:source_id),
+              organization_login: profile.fetch(:login),
+              organization_city: location.city,
+              organization_country: location.country,
+              name: repository.fetch(:name),
+              full_name: repository.fetch(:full_name),
+              description: repository[:description],
+              html_url: repository.fetch(:html_url),
+              homepage: blank_to_nil(repository[:homepage]),
+              language: repository[:language],
+              fork: repository.fetch(:fork),
+              archived: repository.fetch(:archived),
+              stars: repository.fetch(:stars),
+              monthly_stars_delta: repository_deltas.fetch(repository.fetch(:source_id))
+            )
+          end
+
           def candidate_login(candidate)
             candidate.fetch(:login)
           end
@@ -203,7 +347,18 @@ module PolishOpenSourceRank
             process_error = run_source_stage(source, 'process') do
               process_source_candidates(period, source, refresh: refresh)
             end
-            Thread.current[:error] = process_error || discover_error
+            organization_discover_error = run_source_stage(source, 'discover organizations') do
+              discover_source_organizations(period, source)
+            end
+            organization_process_error = run_source_stage(source, 'process organizations') do
+              process_source_organizations(period, source, refresh: refresh)
+            end
+            Thread.current[:error] = [
+              organization_process_error,
+              organization_discover_error,
+              process_error,
+              discover_error
+            ].compact.first
           end
 
           def run_source_stage(source, stage)

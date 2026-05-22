@@ -5,9 +5,16 @@ module PolishOpenSourceRank
     module Publication
       module Application
         class ShowRankings
-          RankingsPage = Struct.new(:user_rankings, :repository_rankings, keyword_init: true)
+          RankingsPage = Struct.new(
+            :user_rankings,
+            :repository_rankings,
+            :organization_rankings,
+            :organization_repository_rankings,
+            keyword_init: true
+          )
 
           EMPTY_RANKINGS = { top: [], trending: [], active: [] }.freeze
+          EMPTY_ORGANIZATION_RANKINGS = { top: [], trending: [] }.freeze
 
           def initialize(ranking_read_model:)
             @ranking_read_model = ranking_read_model
@@ -15,18 +22,37 @@ module PolishOpenSourceRank
 
           def call(scope:, period_start:)
             unless period_start
-              return RankingsPage.new(user_rankings: EMPTY_RANKINGS, repository_rankings: EMPTY_RANKINGS)
+              return RankingsPage.new(
+                user_rankings: EMPTY_RANKINGS,
+                repository_rankings: EMPTY_RANKINGS,
+                organization_rankings: { top: [], trending: [] },
+                organization_repository_rankings: { top: [], trending: [] }
+              )
             end
 
             RankingsPage.new(
               user_rankings: ranking_read_model.user_rankings(scope, period_start: period_start),
-              repository_rankings: ranking_read_model.repository_rankings(scope, period_start: period_start)
+              repository_rankings: ranking_read_model.repository_rankings(scope, period_start: period_start),
+              organization_rankings: organization_rankings(scope, period_start),
+              organization_repository_rankings: organization_repository_rankings(scope, period_start)
             )
           end
 
           private
 
           attr_reader :ranking_read_model
+
+          def organization_rankings(scope, period_start)
+            return EMPTY_ORGANIZATION_RANKINGS unless scope == 'poland'
+
+            ranking_read_model.organization_rankings(period_start: period_start)
+          end
+
+          def organization_repository_rankings(scope, period_start)
+            return EMPTY_ORGANIZATION_RANKINGS unless scope == 'poland'
+
+            ranking_read_model.organization_repository_rankings(period_start: period_start)
+          end
         end
       end
     end

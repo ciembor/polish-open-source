@@ -40,6 +40,10 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::CodebergGateway do
     expect(gateway.platform).to eq('codeberg')
   end
 
+  it 'does not support organizations' do
+    expect(gateway.supports_organizations?).to be(false)
+  end
+
   it 'discovers Codeberg users through search result pages' do
     client.queue(body: { 'ok' => true, 'data' => [{ 'id' => 1, 'login' => 'alice' }] })
 

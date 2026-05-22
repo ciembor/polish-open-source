@@ -4,8 +4,9 @@ require 'timeout'
 
 class FakeJobGitHub
   attr_accessor :activities, :candidates, :deltas, :fail_errors, :fail_logins, :missing_logins, :profiles,
-                :repositories
-  attr_reader :activity_periods, :delta_periods, :searched_terms, :user_calls
+                :repositories, :organization_candidates, :organization_fail_errors, :organization_fail_logins,
+                :organization_missing_logins, :organizations, :organization_repositories
+  attr_reader :activity_periods, :delta_periods, :searched_terms, :user_calls, :organization_calls
 
   def initialize
     @activity_periods = []
@@ -18,8 +19,15 @@ class FakeJobGitHub
     @missing_logins = []
     @profiles = {}
     @repositories = {}
+    @organization_candidates = {}
+    @organization_fail_errors = {}
+    @organization_fail_logins = []
+    @organization_missing_logins = []
+    @organizations = {}
+    @organization_repositories = {}
     @searched_terms = []
     @user_calls = []
+    @organization_calls = []
   end
 
   def search_users_by_location(term)
@@ -31,6 +39,10 @@ class FakeJobGitHub
     'github'
   end
 
+  def supports_organizations?
+    false
+  end
+
   def user(login, id = nil)
     user_calls << [login, id]
     raise fail_errors.fetch(login) if fail_errors.key?(login)
@@ -40,8 +52,26 @@ class FakeJobGitHub
     profiles.fetch(login)
   end
 
+  def search_organizations_by_location(term)
+    searched_terms << "org:#{term}"
+    organization_candidates.fetch(term, [])
+  end
+
+  def organization(login, id = nil)
+    organization_calls << [login, id]
+    raise organization_fail_errors.fetch(login) if organization_fail_errors.key?(login)
+    raise 'boom' if organization_fail_logins.include?(login)
+    raise missing_error if organization_missing_logins.include?(login)
+
+    organizations.fetch(login)
+  end
+
   def repositories_for(profile)
     repositories.fetch(profile.fetch(:login), [])
+  end
+
+  def repositories_for_organization(profile)
+    organization_repositories.fetch(profile.fetch(:login), [])
   end
 
   def repository_stars_delta(repository, period)
@@ -82,6 +112,12 @@ class FakeJobCodeberg < FakeJobGitHub
 
   def missing_error
     PolishOpenSourceRank::Contexts::Ranking::Application::SourceNotFound.new('missing')
+  end
+end
+
+class FakeOrganizationGitHub < FakeJobGitHub
+  def supports_organizations?
+    true
   end
 end
 
@@ -374,6 +410,39 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(github.delta_periods).to eq([['alice/new', period]])
   end
 
+  # rubocop:disable RSpec/ExampleLength
+  it 'discovers organizations, stores organization rankings, and persists organization repositories' do
+    organization_source = FakeOrganizationGitHub.new
+    organization_source.organization_candidates = { 'Poland' => [{ source_id: 9, login: 'polish-org' }] }
+    organization_source.organizations = { 'polish-org' => profile(9, 'polish-org', 'Warsaw, Poland') }
+    organization_source.organization_repositories = {
+      'polish-org' => [repository(90, 'polish-org/toolkit', 33)]
+    }
+    organization_source.deltas = { 'polish-org/toolkit' => 6 }
+
+    run_job_with(source: organization_source)
+
+    expect(fetch_candidate('polish-org', table: 'candidate_organizations')).to include(status: 'processed', error: nil)
+    expect(fetch_row('SELECT login, total_stars FROM organization_monthly_stats')).to include(
+      login: 'polish-org',
+      total_stars: 33
+    )
+    expect(fetch_row(<<~SQL)).to include(full_name: 'polish-org/toolkit', stargazers_count: 33)
+      SELECT repositories.full_name, stats.stargazers_count
+      FROM organization_repository_monthly_stats stats
+      INNER JOIN organization_repositories repositories
+        ON repositories.platform = stats.platform
+       AND repositories.github_id = stats.repository_github_id
+    SQL
+    expect(organization_rankings.fetch(:top).first).to include(login: 'polish-org', total_stars: 33)
+    expect(organization_repository_rankings.fetch(:trending).first).to include(
+      full_name: 'polish-org/toolkit',
+      monthly_stars_delta: 6
+    )
+    expect(organization_source.organization_calls).to eq([['polish-org', 9]])
+  end
+  # rubocop:enable RSpec/ExampleLength
+
   it 'marks an already snapshotted pending candidate as processed' do
     upsert_user(user_attributes(1, 'alice'))
     record_user_stats(user_stats(1, 'alice'))
@@ -389,6 +458,55 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     ).at_least(:once)
     expect(store.pending_candidates(period)).to be_empty
     expect(fetch_candidate('alice')).to include(status: 'processed', error: nil)
+  end
+
+  it 'marks already snapshotted organizations on their source platform' do
+    organization_source = FakeOrganizationGitHub.new
+    store.record_organization_candidate(period, platform: 'github', source_id: 9, login: 'polish-org',
+                                                source_query: 'Poland')
+    snapshot_repository.record_organization_snapshot(organization_snapshot_record(period))
+
+    run_job_with(source: organization_source)
+
+    expect(organization_source.organization_calls).to be_empty
+    expect(fetch_candidate('polish-org', table: 'candidate_organizations')).to include(status: 'processed', error: nil)
+  end
+
+  it 'marks missing organizations without failing the run' do
+    organization_source = FakeOrganizationGitHub.new
+    store.record_organization_candidate(period, platform: 'github', source_id: 9, login: 'missing-org',
+                                                source_query: 'Poland')
+    organization_source.organization_missing_logins = ['missing-org']
+
+    run_job_with(source: organization_source)
+
+    expect(fetch_candidate('missing-org', table: 'candidate_organizations')).to include(status: 'missing', error: nil)
+  end
+
+  it 'rejects organizations outside Poland' do
+    organization_source = FakeOrganizationGitHub.new
+    store.record_organization_candidate(period, platform: 'github', source_id: 9, login: 'foreign-org',
+                                                source_query: 'Poland')
+    organization_source.organizations = { 'foreign-org' => profile(9, 'foreign-org', 'Berlin, Germany') }
+
+    run_job_with(source: organization_source)
+
+    expect(fetch_candidate('foreign-org', table: 'candidate_organizations')).to include(status: 'rejected', error: nil)
+  end
+
+  it 'records organization candidate failures and keeps processing later organizations' do
+    organization_source = FakeOrganizationGitHub.new
+    organization_source.organization_candidates = {
+      'Poland' => [{ source_id: 9, login: 'broken-org' }, { source_id: 10, login: 'polish-org' }]
+    }
+    organization_source.organization_fail_logins = ['broken-org']
+    organization_source.organizations = { 'polish-org' => profile(10, 'polish-org', 'Warsaw, Poland') }
+    organization_source.organization_repositories = { 'polish-org' => [] }
+
+    run_job_with(source: organization_source)
+
+    expect(fetch_candidate('broken-org', table: 'candidate_organizations')).to include(status: 'failed')
+    expect(fetch_candidate('polish-org', table: 'candidate_organizations')).to include(status: 'processed', error: nil)
   end
 
   it 'checks already snapshotted candidates within their source platform' do
@@ -1036,6 +1154,23 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     ranking_read_model.repository_rankings(scope, period_start: period_start)
   end
 
+  def run_job_with(source:)
+    described_class.new(
+      store: store,
+      sources: [source],
+      catalog: catalog,
+      logger: StringIO.new
+    ).call(period)
+  end
+
+  def organization_rankings(period_start: period.start_date.to_s)
+    ranking_read_model.organization_rankings(period_start: period_start)
+  end
+
+  def organization_repository_rankings(period_start: period.start_date.to_s)
+    ranking_read_model.organization_repository_rankings(period_start: period_start)
+  end
+
   def seed_alice_and_bob_discovery
     github.candidates = {
       'Poland' => [{ source_id: 1, login: 'alice' }, { source_id: 2, login: 'bob' }]
@@ -1063,6 +1198,26 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       owner_city: 'Kraków',
       owner_country: 'Poland',
       stargazers_count: 10,
+      monthly_stars_delta: 0
+    )
+  end
+
+  def organization_snapshot_record(period)
+    PolishOpenSourceRank::Contexts::Ranking::Domain::OrganizationSnapshot.new(
+      period: period,
+      platform: 'github',
+      source_id: 9,
+      login: 'polish-org',
+      name: 'Polish Org',
+      location_raw: 'Warsaw, Poland',
+      city: 'Warszawa',
+      country: 'Poland',
+      email: 'org@example.com',
+      homepage: nil,
+      html_url: 'https://github.com/polish-org',
+      avatar_url: nil,
+      public_repository_count: 0,
+      total_stars: 0,
       monthly_stars_delta: 0
     )
   end
@@ -1147,9 +1302,9 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     SQL
   end
 
-  def fetch_candidate(login, platform: 'github')
+  def fetch_candidate(login, platform: 'github', table: 'candidate_users')
     fetch_row(
-      'SELECT platform, login, status, error FROM candidate_users WHERE platform = ? AND login = ?',
+      "SELECT platform, login, status, error FROM #{table} WHERE platform = ? AND login = ?",
       [platform, login]
     )
   end

@@ -44,11 +44,26 @@ module PolishOpenSourceRank
           localized_public_path("/users/#{platform}/#{login}", locale: current_locale)
         end
 
+        def organization_profile_path(organization)
+          platform = Rack::Utils.escape_path(organization.fetch(:platform, 'github'))
+          login = Rack::Utils.escape_path(organization.fetch(:login))
+          localized_public_path("/organizations/#{platform}/#{login}", locale: current_locale)
+        end
+
         def repository_profile_path(repository)
           platform = Rack::Utils.escape_path(repository.fetch(:platform, 'github'))
           owner, name = repository.fetch(:full_name).split('/', 2)
           localized_public_path(
             "/repositories/#{platform}/#{Rack::Utils.escape_path(owner)}/#{Rack::Utils.escape_path(name)}",
+            locale: current_locale
+          )
+        end
+
+        def organization_repository_profile_path(repository)
+          platform = Rack::Utils.escape_path(repository.fetch(:platform, 'github'))
+          owner, name = repository.fetch(:full_name).split('/', 2)
+          localized_public_path(
+            "/organization-repositories/#{platform}/#{Rack::Utils.escape_path(owner)}/#{Rack::Utils.escape_path(name)}",
             locale: current_locale
           )
         end
@@ -87,7 +102,7 @@ module PolishOpenSourceRank
         end
 
         def open_graph_type
-          return 'profile' if @profile || @repository
+          return 'profile' if @profile || @organization || @repository || @organization_repository
 
           'website'
         end
@@ -231,6 +246,25 @@ module PolishOpenSourceRank
               t('rankings.trending_10_month'),
               @repository_rankings.fetch(:trending).first(10)
             ) { |row| repository_list_schema(row) }
+          ] + organization_ranking_overview_sections
+        end
+
+        def organization_ranking_overview_sections
+          return [] unless @organization_rankings && @organization_repository_rankings
+
+          [
+            item_list_schema(
+              t('rankings.top_10_stars'),
+              @organization_rankings.fetch(:top).first(10)
+            ) { |row| organization_list_schema(row) },
+            item_list_schema(
+              t('rankings.trending_10_month'),
+              @organization_rankings.fetch(:trending).first(10)
+            ) { |row| organization_list_schema(row) },
+            item_list_schema(
+              t('rankings.organization_repositories_month'),
+              @organization_repository_rankings.fetch(:top).first(10)
+            ) { |row| organization_repository_list_schema(row) }
           ]
         end
 
@@ -253,6 +287,7 @@ module PolishOpenSourceRank
 
         def profile_schema
           return repository_owner_profile_schema if @repository
+          return organization_profile_schema(@organization) if @organization
 
           profile = {
             '@type' => 'Person',
@@ -272,19 +307,49 @@ module PolishOpenSourceRank
         end
 
         def repository_schema
+          repository = @repository || @organization_repository
           {
-            'codeRepository' => @repository.fetch(:html_url),
-            'programmingLanguage' => @repository[:language],
+            'codeRepository' => repository.fetch(:html_url),
+            'programmingLanguage' => repository[:language],
             'author' => repository_owner_profile_schema
           }.compact
         end
 
         def repository_owner_profile_schema
+          return organization_owner_profile_schema if @organization_repository
+
           {
             '@type' => 'Person',
             'name' => @repository.fetch(:owner_login),
             'url' => full_url(repository_owner_profile_path)
           }
+        end
+
+        def organization_owner_profile_schema
+          {
+            '@type' => 'Organization',
+            'name' => @organization_repository.fetch(:organization_login),
+            'url' => full_url(
+              organization_profile_path(
+                platform: @organization_repository.fetch(:platform),
+                login: @organization_repository.fetch(:organization_login)
+              )
+            )
+          }
+        end
+
+        def organization_profile_schema(organization)
+          {
+            '@type' => 'Organization',
+            'name' => organization[:name].to_s.empty? ? organization.fetch(:login) : organization[:name],
+            'alternateName' => organization.fetch(:login),
+            'url' => canonical_url,
+            'sameAs' => organization.fetch(:html_url)
+          }.tap do |profile|
+            profile['logo'] = organization[:avatar_url] if present_value?(organization[:avatar_url])
+            location = organization[:city] || organization[:country]
+            profile['location'] = location if present_value?(location)
+          end
         end
 
         def repository_owner_profile_path
@@ -312,6 +377,8 @@ module PolishOpenSourceRank
 
         def ranking_row_schema(row)
           return user_schema(row) if @kind == 'users'
+          return organization_list_schema(row) if @kind == 'organizations'
+          return organization_repository_list_schema(row) if @kind == 'organization-repositories'
 
           repository_list_schema(row)
         end
@@ -331,6 +398,28 @@ module PolishOpenSourceRank
             '@type' => 'SoftwareSourceCode',
             'name' => row.fetch(:full_name),
             'url' => full_url(repository_profile_path(row)),
+            'codeRepository' => row.fetch(:html_url)
+          }.tap do |repository|
+            repository['description'] = row[:description] if present_value?(row[:description])
+            repository['programmingLanguage'] = row[:language] if present_value?(row[:language])
+          end
+        end
+
+        def organization_list_schema(row)
+          {
+            '@type' => 'Organization',
+            'name' => row[:name].to_s.empty? ? row.fetch(:login) : row[:name],
+            'alternateName' => row.fetch(:login),
+            'url' => full_url(organization_profile_path(row)),
+            'sameAs' => row.fetch(:html_url)
+          }
+        end
+
+        def organization_repository_list_schema(row)
+          {
+            '@type' => 'SoftwareSourceCode',
+            'name' => row.fetch(:full_name),
+            'url' => full_url(organization_repository_profile_path(row)),
             'codeRepository' => row.fetch(:html_url)
           }.tap do |repository|
             repository['description'] = row[:description] if present_value?(row[:description])
@@ -367,9 +456,25 @@ module PolishOpenSourceRank
         def current_page_breadcrumbs
           return [{ name: ranking_title(@kind, @metric), path: canonical_path }] if @ranking
           return edition_breadcrumbs if @editions
+
+          current_resource_breadcrumbs || generic_page_breadcrumbs
+        end
+
+        def profile_breadcrumbs
           return [{ name: @profile.fetch(:login), path: canonical_path }] if @profile
+          return [{ name: @organization.fetch(:login), path: canonical_path }] if @organization
           return [{ name: @repository.fetch(:full_name), path: canonical_path }] if @repository
-          return [{ name: t('about.title'), path: canonical_path }] if about_page?
+
+          [{ name: @organization_repository.fetch(:full_name), path: canonical_path }]
+        end
+
+        def current_resource_breadcrumbs
+          return profile_breadcrumbs if profile_page? || repository_page?
+
+          [{ name: t('about.title'), path: canonical_path }] if about_page?
+        end
+
+        def generic_page_breadcrumbs
           return [{ name: @title, path: canonical_path }] if canonical_path != period_base_path('latest')
 
           []
@@ -448,11 +553,19 @@ module PolishOpenSourceRank
 
         def structured_data_type
           return 'AboutPage' if about_page?
-          return 'SoftwareSourceCode' if @repository
-          return 'ProfilePage' if @profile
+          return 'SoftwareSourceCode' if repository_resource?
+          return 'ProfilePage' if profile_resource?
           return 'CollectionPage' if @user_rankings || @editions || @ranking
 
           'WebPage'
+        end
+
+        def repository_resource?
+          @repository || @organization_repository
+        end
+
+        def profile_resource?
+          @profile || @organization
         end
       end
       # rubocop:enable Metrics/ModuleLength

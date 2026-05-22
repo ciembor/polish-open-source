@@ -29,6 +29,8 @@ module PolishOpenSourceRank
           page = show_rankings.call(scope: scope, period_start: @period)
           @user_rankings = page.user_rankings
           @repository_rankings = page.repository_rankings
+          @organization_rankings = page.organization_rankings
+          @organization_repository_rankings = page.organization_repository_rankings
           @title = rankings_page_title(@scope, @period_slug)
           @description = rankings_page_description(@scope, @period_slug)
           @canonical_path = if scope == 'poland'
@@ -95,8 +97,59 @@ module PolishOpenSourceRank
           erb :repository_profile
         end
 
+        def render_organization_profile(platform, login)
+          @period_slug = 'latest'
+          @period = latest_period
+          @organization = show_organization_profile.call(platform: platform, login: login, period_start: @period)
+          halt 404 unless @organization
+          profile_cache!(@organization)
+
+          @repositories = @organization.fetch(:repositories)
+          display_name = @organization[:name].to_s.empty? ? @organization.fetch(:login) : @organization[:name]
+          source_name = platform_name(@organization.fetch(:platform))
+          @title = t('organizations.seo.title', organization: display_name, platform: source_name)
+          @description = t('organizations.seo.description', organization: display_name, platform: source_name)
+          @canonical_path = organization_profile_path(@organization)
+          erb :organization_profile
+        end
+
+        def render_organization_repository_profile(platform, owner, name)
+          @organization_repository = organization_repository(platform, owner, name)
+          halt 404 unless @organization_repository
+          repository_profile_cache!(@organization_repository)
+          assign_organization_repository_metadata
+          @canonical_path = organization_repository_profile_path(@organization_repository)
+          erb :organization_repository_profile
+        end
+
+        def organization_repository(platform, owner, name)
+          @period_slug = 'latest'
+          @period = latest_period
+          show_organization_repository_profile.call(
+            platform: platform,
+            owner: owner,
+            name: name,
+            period_start: @period
+          )
+        end
+
+        def assign_organization_repository_metadata
+          source_name = platform_name(@organization_repository.fetch(:platform))
+          @title = t(
+            'organization_repositories.seo.title',
+            repository: @organization_repository.fetch(:full_name),
+            platform: source_name
+          )
+          @description = t(
+            'organization_repositories.seo.description',
+            repository: @organization_repository.fetch(:full_name),
+            platform: source_name
+          )
+        end
+
         def render_ranking_detail(period_slug, scope, kind, metric)
           halt 404 unless ranking_metric?(kind, metric)
+          halt 404 if scope != 'poland' && organization_ranking_kind?(kind)
 
           @scope = scope_data(scope)
           @period_slug = period_slug
@@ -139,6 +192,10 @@ module PolishOpenSourceRank
           return t('rankings.seo.current_period') if period_slug == 'latest'
 
           period_label(Date.parse("#{period_slug}-01").iso8601)
+        end
+
+        def organization_ranking_kind?(kind)
+          %w[organizations organization-repositories].include?(kind)
         end
       end
       # rubocop:enable Metrics/ModuleLength

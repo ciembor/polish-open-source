@@ -33,7 +33,10 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('"@type": "CollectionPage"')
     expect(response.body).to include('"name": "Top 10 według gwiazdek"')
     expect(response.body).to include('alice/app')
+    expect(response.body).to include('polish-org/toolkit')
     expect(response.body).to include('href="/latest/users/top"')
+    expect(response.body).to include('href="/latest/organizations/top"')
+    expect(response.body).to include('href="/latest/organization-repositories/top"')
     expect(response.body).to include('Zobacz top 100')
     expect(response.body).to include('href="/editions"')
     expect(response.body).to include('application/ld+json')
@@ -81,27 +84,38 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   it 'renders full top 100 pages for each ranking type', :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
 
-    user_response = Rack::MockRequest.new(described_class).get('/2026-04/locations/krakow/users/active')
-    repo_response = Rack::MockRequest.new(described_class).get('/2026-04/repositories/trending')
-    latest_user_response = Rack::MockRequest.new(described_class).get('/latest/users/top')
-    latest_city_response = Rack::MockRequest.new(described_class).get('/latest/locations/krakow/repositories/top')
-    invalid_response = Rack::MockRequest.new(described_class).get('/2026-04/repositories/active')
+    responses = ranking_detail_responses
 
-    expect(user_response.status).to eq(200)
-    expect(user_response.body).to include('Top 100 aktywnych użytkowników')
-    expect(repo_response.status).to eq(200)
-    expect(repo_response.body).to include('Top 100 trendujących repozytoriów')
-    expect(latest_user_response.status).to eq(200)
-    expect(latest_user_response.body).to include('Gwiazdek')
-    expect(latest_user_response.body).not_to include('/icons/medal-gold.svg')
-    expect(latest_user_response.body).to include('<ol class="ranking-list" aria-labelledby="ranking-detail-users">')
-    expect(latest_user_response.body).to include('<li class="ranking-list__item first_place">')
-    expect(latest_user_response.body).to include('<li class="ranking-list__item second_place">')
-    expect(latest_user_response.body).to include('<li class="ranking-list__item third_place">')
-    expect(latest_user_response.body).not_to include('<table>')
-    expect(latest_city_response.status).to eq(200)
-    expect(latest_city_response.body).to include('Top 100 repozytoriów według gwiazdek')
-    expect(invalid_response.status).to eq(404)
+    expect_rankings_detail_pages(responses)
+  end
+
+  it 'renders organization profile pages, organization repository pages, and public organization badges',
+     :aggregate_failures do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    request = Rack::MockRequest.new(described_class)
+
+    organization_profile = request.get('/organizations/github/polish-org')
+    organization_badge = request.get('/badges/organizations/github/polish-org.svg')
+    organization_repository = request.get('/organization-repositories/github/polish-org/toolkit')
+    missing_organization = request.get('/organizations/github/missing')
+
+    expect(organization_profile.status).to eq(200)
+    expect(organization_profile.body).to include('<title>Polish Org - organizacja GitHub</title>')
+    expect(organization_profile.body).to include('rel="canonical" href="https://rank.example/organizations/github/polish-org"')
+    expect(organization_profile.body).to include('"@type": "Organization"')
+    expect(organization_profile.body).to include('Najmocniejsze repozytorium')
+    expect(organization_profile.body).to include('href="/organization-repositories/github/polish-org/toolkit"')
+    expect(organization_profile.body).not_to include('Twój dostęp Discord')
+    expect(organization_badge.status).to eq(200)
+    expect(organization_badge.body).to include('Polish Open Source Org')
+    expect(organization_badge.body).to include('1st')
+    expect(organization_repository.status).to eq(200)
+    expect(organization_repository.body).to include(
+      '<title>polish-org/toolkit - repozytorium organizacji na GitHub</title>'
+    )
+    expect(organization_repository.body).to include('href="/organizations/github/polish-org"')
+    expect(organization_repository.body).to include('"@type": "SoftwareSourceCode"')
+    expect(missing_organization.status).to eq(404)
   end
 
   # rubocop:disable RSpec/ExampleLength
@@ -679,6 +693,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(sitemap.body).to include('<loc>https://rank.example/en/latest</loc>')
     expect(sitemap.body).to include('<loc>https://rank.example/about</loc>')
     expect(sitemap.body).to include('<loc>https://rank.example/en/users/github/alice</loc>')
+    expect(sitemap.body).to include('<loc>https://rank.example/en/organizations/github/polish-org</loc>')
+    expect(sitemap.body).to include('<loc>https://rank.example/en/organization-repositories/github/polish-org/toolkit</loc>')
+    expect(sitemap.body).not_to include('/locations/krakow/organizations/top')
     expect(sitemap.body).to include('<lastmod>')
   end
 
@@ -745,24 +762,78 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     run_repository = snapshot_run_repository(database)
     snapshot_repository = snapshot_repository(database)
     older_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2025-12')
-    older_run_id = run_repository.create(older_period)
-    snapshot_repository.upsert_user(user_attributes)
-    snapshot_repository.record_user_stats(user_stats(older_period))
-    snapshot_repository.upsert_repository(repository_attributes)
-    snapshot_repository.record_repository_stats(repository_stats(older_period))
-    seed_extra_ranked_records(snapshot_repository, older_period)
-    run_repository.finish(older_run_id)
+    seed_period(run_repository, snapshot_repository, older_period)
 
     period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-04')
-    run_id = run_repository.create(period)
+    seed_period(run_repository, snapshot_repository, period)
+    path
+  end
 
+  def seed_period(run_repository, snapshot_repository, period)
+    run_id = run_repository.create(period)
     snapshot_repository.upsert_user(user_attributes)
     snapshot_repository.record_user_stats(user_stats(period))
     snapshot_repository.upsert_repository(repository_attributes)
     snapshot_repository.record_repository_stats(repository_stats(period))
+    snapshot_repository.record_organization_snapshot(organization_snapshot(period))
+    snapshot_repository.record_organization_repository_snapshot(organization_repository_snapshot(period))
     seed_extra_ranked_records(snapshot_repository, period)
     run_repository.finish(run_id)
-    path
+  end
+
+  def ranking_detail_responses
+    request = Rack::MockRequest.new(described_class)
+
+    {
+      user: request.get('/2026-04/locations/krakow/users/active'),
+      repository: request.get('/2026-04/repositories/trending'),
+      organization: request.get('/2026-04/organizations/top'),
+      organization_repository: request.get('/2026-04/organization-repositories/trending'),
+      latest_user: request.get('/latest/users/top'),
+      latest_city_repository: request.get('/latest/locations/krakow/repositories/top'),
+      invalid_repository: request.get('/2026-04/repositories/active'),
+      invalid_city_organization: request.get('/2026-04/locations/krakow/organizations/top')
+    }
+  end
+
+  def expect_rankings_detail_pages(responses)
+    expect_primary_ranking_pages(responses)
+    expect_latest_user_ranking_page(responses.fetch(:latest_user))
+    expect_latest_city_repository_ranking_page(responses.fetch(:latest_city_repository))
+    expect(responses.fetch(:invalid_repository).status).to eq(404)
+    expect(responses.fetch(:invalid_city_organization).status).to eq(404)
+  end
+
+  # rubocop:disable Metrics/AbcSize
+  def expect_primary_ranking_pages(responses)
+    expect(responses.fetch(:user).status).to eq(200)
+    expect(responses.fetch(:user).body).to include('Top 100 aktywnych użytkowników')
+    expect(responses.fetch(:repository).status).to eq(200)
+    expect(responses.fetch(:repository).body).to include('Top 100 trendujących repozytoriów')
+    expect(responses.fetch(:organization).status).to eq(200)
+    expect(responses.fetch(:organization).body).to include('Top 100 organizacji')
+    expect(responses.fetch(:organization_repository).status).to eq(200)
+    expect(responses.fetch(:organization_repository).body).to include('Top 100 trendujących repozytoriów organizacji')
+  end
+
+  def expect_latest_user_ranking_page(response)
+    expect(response.status).to eq(200)
+    expect(response.body).to include('Gwiazdek')
+    expect(response.body).not_to include('/icons/medal-gold.svg')
+    expect(response.body).to include(
+      '<ol class="ranking-list" aria-labelledby="ranking-detail-users">'
+    )
+    expect(response.body).to include('<li class="ranking-list__item first_place">')
+    expect(response.body).to include('<li class="ranking-list__item second_place">')
+    expect(response.body).to include('<li class="ranking-list__item third_place">')
+    expect(response.body).not_to include('<table>')
+  end
+
+  # rubocop:enable Metrics/AbcSize
+
+  def expect_latest_city_repository_ranking_page(response)
+    expect(response.status).to eq(200)
+    expect(response.body).to include('Top 100 repozytoriów według gwiazdek')
   end
 
   def seed_extra_ranked_records(snapshot_repository, period)
@@ -873,6 +944,48 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     }
   end
 
+  def organization_snapshot(period)
+    PolishOpenSourceRank::Contexts::Ranking::Domain::OrganizationSnapshot.new(
+      period: period,
+      platform: 'github',
+      source_id: 30,
+      login: 'polish-org',
+      name: 'Polish Org',
+      location_raw: 'Warsaw, Poland',
+      city: 'Warszawa',
+      country: 'Poland',
+      email: 'org@example.com',
+      homepage: 'https://polish-org.example',
+      html_url: 'https://github.com/polish-org',
+      avatar_url: 'https://avatars.example/polish-org.png',
+      public_repository_count: 1,
+      total_stars: 8_765,
+      monthly_stars_delta: 12
+    )
+  end
+
+  def organization_repository_snapshot(period)
+    PolishOpenSourceRank::Contexts::Ranking::Domain::OrganizationRepositorySnapshot.new(
+      period: period,
+      platform: 'github',
+      source_id: 300,
+      organization_source_id: 30,
+      organization_login: 'polish-org',
+      organization_city: 'Warszawa',
+      organization_country: 'Poland',
+      name: 'toolkit',
+      full_name: 'polish-org/toolkit',
+      description: 'Shared tooling',
+      html_url: 'https://github.com/polish-org/toolkit',
+      homepage: nil,
+      language: 'Ruby',
+      fork: false,
+      archived: false,
+      stars: 8_765,
+      monthly_stars_delta: 12
+    )
+  end
+
   def cookie_header(response)
     Array(response['Set-Cookie']).map { |cookie| cookie.split(';').first }.join('; ')
   end
@@ -903,6 +1016,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       @list_editions
       @show_user_profile
       @show_repository_profile
+      @show_organization_profile
+      @show_organization_repository_profile
       @render_badge
       @resolve_period
       @show_job_progress

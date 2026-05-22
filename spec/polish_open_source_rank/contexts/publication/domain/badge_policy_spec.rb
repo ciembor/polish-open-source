@@ -24,4 +24,13 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Domain::BadgePolicy 
     expect(policy.repository_badge(13)).to include(value: '13th', status: 'ranked', rank: 13)
     expect(policy.repository_badge(101)).to include(value: '101st', status: 'ranked', rank: 101)
   end
+
+  it 'classifies organization badges and organization repository badges' do
+    policy = described_class.new
+
+    expect(policy.organization_badge(3)).to include(label: 'Polish Open Source Org', value: '3rd', rank: 3)
+    expect(policy.organization_badge(nil)).to include(label: 'Polish Open Source Org', value: nil)
+    expect(policy.organization_repository_badge(8)).to include(label: 'Polish Org Repo', value: '8th', rank: 8)
+    expect(policy.organization_repository_badge(nil)).to include(label: 'Polish Org Repo', value: nil)
+  end
 end

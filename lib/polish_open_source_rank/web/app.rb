@@ -18,7 +18,7 @@ module PolishOpenSourceRank
       set :public_folder, PolishOpenSourceRank.root.join('app/public').to_s
       set :views, PolishOpenSourceRank.root.join('app/views').to_s
 
-      RANKING_DETAIL_SEGMENTS = '(users|repositories)/(top|trending|active)'
+      RANKING_DETAIL_SEGMENTS = '(users|repositories|organizations|organization-repositories)/(top|trending|active)'
       SUPPORTED_LOCALES = %w[en pl].freeze
       DEFAULT_LOCALE = 'pl'
       set :default_locale, DEFAULT_LOCALE
@@ -87,6 +87,8 @@ module PolishOpenSourceRank
           'app/views/editions.erb',
           'app/views/ranking_detail.erb',
           'app/views/rankings.erb',
+          'app/views/organization_profile.erb',
+          'app/views/organization_repository_profile.erb',
           'app/views/repository_profile.erb',
           'app/views/user_profile.erb',
           'app/public/css/application.css',
@@ -147,6 +149,18 @@ module PolishOpenSourceRank
       def show_repository_profile
         @show_repository_profile ||=
           Contexts::Publication::Application::ShowRepositoryProfile.new(profile_read_model: profile_read_model)
+      end
+
+      def show_organization_profile
+        @show_organization_profile ||=
+          Contexts::Publication::Application::ShowOrganizationProfile.new(profile_read_model: profile_read_model)
+      end
+
+      def show_organization_repository_profile
+        @show_organization_repository_profile ||=
+          Contexts::Publication::Application::ShowOrganizationRepositoryProfile.new(
+            profile_read_model: profile_read_model
+          )
       end
 
       def render_badge

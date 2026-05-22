@@ -3,9 +3,19 @@
 module PolishOpenSourceRank
   module Web
     module Controllers
+      # rubocop:disable Metrics/ModuleLength
       module SitemapSupport
-        SITEMAP_RANKING_SEGMENTS = [%w[users top], %w[users trending], %w[users active],
-                                    %w[repositories top], %w[repositories trending]].freeze
+        SITEMAP_RANKING_SEGMENTS = [
+          %w[users top],
+          %w[users trending],
+          %w[users active],
+          %w[repositories top],
+          %w[repositories trending],
+          %w[organizations top],
+          %w[organizations trending],
+          %w[organization-repositories top],
+          %w[organization-repositories trending]
+        ].freeze
 
         private
 
@@ -49,7 +59,7 @@ module PolishOpenSourceRank
         def ranking_paths
           latest_paths = SITEMAP_RANKING_SEGMENTS.map { |kind, metric| "/latest/#{kind}/#{metric}" }
           city_paths = Contexts::Ranking::Domain::LocationCatalog.city_slugs.flat_map do |slug|
-            ["/locations/#{slug}", "/latest/locations/#{slug}"] + ranking_scope_paths("/latest/locations/#{slug}")
+            ["/locations/#{slug}", "/latest/locations/#{slug}"] + city_ranking_scope_paths("/latest/locations/#{slug}")
           end
 
           edition_period_slugs.each_with_object(latest_paths + city_paths) do |period_slug, paths|
@@ -59,7 +69,7 @@ module PolishOpenSourceRank
             end)
             paths.concat(ranking_scope_paths("/#{period_slug}"))
             paths.concat(Contexts::Ranking::Domain::LocationCatalog.city_slugs.flat_map do |slug|
-              ranking_scope_paths("/#{period_slug}/locations/#{slug}")
+              city_ranking_scope_paths("/#{period_slug}/locations/#{slug}")
             end)
           end
         end
@@ -68,26 +78,43 @@ module PolishOpenSourceRank
           SITEMAP_RANKING_SEGMENTS.map { |kind, metric| "#{prefix}/#{kind}/#{metric}" }
         end
 
+        def city_ranking_scope_paths(prefix)
+          ranking_scope_paths(prefix).reject do |path|
+            path.include?('/organizations/') || path.include?('/organization-repositories/')
+          end
+        end
+
         def edition_paths
           years = list_editions.call&.years || []
           years.map { |year| "/editions/#{year}" }
         end
 
         def profile_paths
-          users = profile_read_model.public_user_identities.map do |row|
-            "/users/#{row.fetch(:platform)}/#{row.fetch(:login)}"
-          end
+          users = identity_paths(profile_read_model.public_user_identities, '/users')
+          organizations = identity_paths(profile_read_model.public_organization_identities, '/organizations')
           period = latest_period
-          return users unless period
+          return users + organizations unless period
 
           page = show_rankings.call(scope: 'poland', period_start: period)
-          repositories = page.repository_rankings.values.flatten.map do |row|
+          repositories = repository_paths(page.repository_rankings, '/repositories')
+          organization_repositories = repository_paths(
+            page.organization_repository_rankings,
+            '/organization-repositories'
+          )
+
+          users + organizations + repositories + organization_repositories
+        end
+
+        def identity_paths(rows, prefix)
+          rows.map { |row| "#{prefix}/#{row.fetch(:platform)}/#{row.fetch(:login)}" }
+        end
+
+        def repository_paths(rankings, prefix)
+          rankings.values.flatten.map do |row|
             platform = row.fetch(:platform, 'github')
             owner, name = row.fetch(:full_name).split('/', 2)
-            "/repositories/#{platform}/#{owner}/#{name}"
+            "#{prefix}/#{platform}/#{owner}/#{name}"
           end
-
-          users + repositories
         end
 
         def edition_period_slugs
@@ -103,6 +130,7 @@ module PolishOpenSourceRank
           end
         end
       end
+      # rubocop:enable Metrics/ModuleLength
     end
   end
 end

@@ -119,6 +119,8 @@ pl:
       events: "Zdarzeń"
       new_stars: "Nowe gwiazdki"
       stars: "Gwiazdek"
+    organization_repositories_month: "Repozytoria organizacji"
+    organizations: "Organizacje"
     repositories: "Repozytoria"
     repository: "Repozytorium"
     see_top_100: "Zobacz top 100"
@@ -136,6 +138,12 @@ pl:
       city: "Miasto"
       user: "Użytkownik"
     title:
+      organization_repositories:
+        top: "Top 100 repozytoriów organizacji według gwiazdek"
+        trending: "Top 100 trendujących repozytoriów organizacji"
+      organizations:
+        top: "Top 100 organizacji według gwiazdek"
+        trending: "Top 100 trendujących organizacji"
       repositories:
         top: "Top 100 repozytoriów według gwiazdek"
         trending: "Top 100 trendujących repozytoriów"
@@ -159,6 +167,32 @@ pl:
     summary:
       owner: "Właściciel"
       title: "Projekt"
+  organization_repositories:
+    seo:
+      title: "%{repository} - repozytorium organizacji na %{platform}"
+      description: "Publiczne repozytorium organizacji %{repository} na %{platform}, z metrykami rankingu i profilem właściciela."
+  organizations:
+    avatar_alt: "Logo organizacji %{organization}"
+    badge:
+      alt: "Badge Polish Open Source Org"
+      title: "Odznaka organizacji"
+    links:
+      source_profile: "Organizacja na %{platform}"
+    repositories:
+      empty: "Dla tej organizacji nie zapisano jeszcze publicznych repozytoriów w aktualnym snapshotcie."
+      title: "Najlepsze repozytoria"
+    seo:
+      title: "%{organization} - organizacja %{platform}"
+      description: "Publiczny profil organizacji open source %{organization} na %{platform}, z metrykami rankingu i najlepszymi repozytoriami."
+    spotlight:
+      city: "Miasto"
+      country_rank: "Pozycja w rankingu Polski"
+      title: "Pozycja organizacji"
+      top_repository: "Najmocniejsze repozytorium"
+    summary:
+      location: "Lokalizacja"
+      public_repositories: "Publiczne repozytoria"
+      title: "Organizacja"
   users:
     avatar_alt: "Zdjęcie profilowe %{user}"
     badge:

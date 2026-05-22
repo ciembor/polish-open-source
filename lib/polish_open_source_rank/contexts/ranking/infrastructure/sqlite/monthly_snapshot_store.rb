@@ -44,12 +44,36 @@ module PolishOpenSourceRank
               candidate_queue.pending(period, limit: limit, platform: platform)
             end
 
+            def record_organization_candidate(period, login:, source_query:, platform: 'github', source_id: nil,
+                                              github_id: nil)
+              candidate_queue.record_organization(
+                period,
+                login: login,
+                source_query: source_query,
+                platform: platform,
+                source_id: source_id,
+                github_id: github_id
+              )
+            end
+
+            def pending_organization_candidates(period, limit: 100, platform: nil)
+              candidate_queue.pending_organizations(period, limit: limit, platform: platform)
+            end
+
             def mark_candidate(period, platform, login, status = nil, error = nil)
               candidate_queue.mark(period, platform, login, status, error)
             end
 
             def processed_user?(period, platform, github_id = nil)
               candidate_queue.processed_user?(period, platform, github_id)
+            end
+
+            def mark_organization_candidate(period, platform, login, status = nil, error = nil)
+              candidate_queue.mark_organization(period, platform, login, status, error)
+            end
+
+            def processed_organization?(period, platform, github_id = nil)
+              candidate_queue.processed_organization?(period, platform, github_id)
             end
 
             def record_contributor_snapshot(snapshot)
@@ -60,8 +84,20 @@ module PolishOpenSourceRank
               snapshot_repository.record_repository_snapshot(snapshot)
             end
 
+            def record_organization_snapshot(snapshot)
+              snapshot_repository.record_organization_snapshot(snapshot)
+            end
+
+            def record_organization_repository_snapshot(snapshot)
+              snapshot_repository.record_organization_repository_snapshot(snapshot)
+            end
+
             def previous_repository_stars(period, platform, repository_source_id)
               snapshot_repository.previous_repository_stars(period, platform, repository_source_id)
+            end
+
+            def previous_organization_repository_stars(period, platform, repository_source_id)
+              snapshot_repository.previous_organization_repository_stars(period, platform, repository_source_id)
             end
 
             def prune_rankings(period)

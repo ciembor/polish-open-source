@@ -12,6 +12,10 @@ module PolishOpenSourceRank
           "#{user_profile_path(user).sub('/users/', '/badges/users/')}.svg"
         end
 
+        def organization_badge_path(organization)
+          "#{organization_profile_path(organization).sub('/organizations/', '/badges/organizations/')}.svg"
+        end
+
         def linked_badge_markdown(alt, badge_path)
           "[![#{alt}](#{configuration.public_base_url.delete_suffix('/')}#{badge_path})](#{app_home_url})"
         end

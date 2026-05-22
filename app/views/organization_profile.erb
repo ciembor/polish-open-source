@@ -1,0 +1,164 @@
+<section class="profile-hero">
+  <div class="content profile-hero__inner">
+    <p class="eyebrow"><%= h platform_name(@organization.fetch(:platform)) %></p>
+    <div class="profile-identity">
+      <% if @organization[:avatar_url] && !@organization[:avatar_url].empty? %>
+        <img class="profile-avatar" src="<%= h @organization[:avatar_url] %>" alt="<%= h t('organizations.avatar_alt', organization: @organization.fetch(:login)) %>">
+      <% else %>
+        <div class="profile-avatar profile-avatar--fallback" aria-hidden="true"><%= h @organization.fetch(:login)[0].upcase %></div>
+      <% end %>
+      <div>
+        <div class="profile-title-row">
+          <h1><%= h(@organization[:name].to_s.empty? ? @organization.fetch(:login) : @organization[:name]) %></h1>
+          <%= erb :elite_medal, locals: { rank: @organization[:elite_rank], size: "large" } %>
+        </div>
+        <p class="profile-login">@<%= h @organization.fetch(:login) %></p>
+        <div class="profile-actions">
+          <a class="ranking-action" href="<%= h @organization.fetch(:html_url) %>"><%= h t('organizations.links.source_profile', platform: platform_name(@organization.fetch(:platform))) %></a>
+          <% if @organization[:homepage] && !@organization[:homepage].empty? %>
+            <a class="ranking-action" href="<%= h @organization[:homepage] %>"><%= h t('users.links.homepage') %></a>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<% top_repository = @repositories.first %>
+<section class="profile-section profile-section--compact" aria-labelledby="organization-spotlight-heading">
+  <div class="content">
+    <article class="profile-spotlight">
+      <div class="profile-spotlight__header">
+        <h2 id="organization-spotlight-heading"><%= h t('organizations.spotlight.title') %></h2>
+        <% if @organization[:period_start] %>
+          <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @organization[:period_start] %>"><%= h @organization[:period_start] %></time></p>
+        <% end %>
+      </div>
+
+      <dl class="profile-spotlight__grid">
+        <div class="profile-spotlight__item">
+          <dt><%= h t('organizations.spotlight.country_rank') %></dt>
+          <dd><%= h(@organization[:elite_rank] ? "##{@organization[:elite_rank]}" : '-') %></dd>
+        </div>
+
+        <% if @organization[:city] %>
+          <div class="profile-spotlight__item">
+            <dt><%= h t('organizations.spotlight.city') %></dt>
+            <dd><%= h @organization.fetch(:city) %></dd>
+          </div>
+        <% end %>
+
+        <% if top_repository %>
+          <div class="profile-spotlight__item profile-spotlight__item--repository">
+            <dt><%= h t('organizations.spotlight.top_repository') %></dt>
+            <dd>
+              <a class="primary-link" href="<%= h app_path(organization_repository_profile_path(top_repository)) %>"><%= h top_repository.fetch(:full_name) %></a>
+              <span class="profile-spotlight__meta">⭐ <%= number(top_repository.fetch(:stargazers_count)) %></span>
+            </dd>
+          </div>
+        <% end %>
+      </dl>
+    </article>
+  </div>
+</section>
+
+<section class="profile-section profile-section--alt" aria-labelledby="organization-badge-heading">
+  <div class="content">
+    <h2 id="organization-badge-heading"><%= h t('organizations.badge.title') %></h2>
+    <div class="badge-preview">
+      <p class="badge-preview__label"><%= h @organization.fetch(:login) %></p>
+      <a href="<%= h app_path('/latest') %>">
+        <img src="<%= h app_path(organization_badge_path(@organization)) %>" alt="<%= h t('organizations.badge.alt') %>">
+      </a>
+      <code><%= h linked_badge_markdown(t('organizations.badge.alt'), organization_badge_path(@organization)) %></code>
+    </div>
+  </div>
+</section>
+
+<section class="profile-section" aria-labelledby="organization-summary-heading">
+  <div class="content profile-grid">
+    <article class="profile-summary">
+      <h2 id="organization-summary-heading"><%= h t('organizations.summary.title') %></h2>
+      <dl class="profile-facts">
+        <div>
+          <dt><%= h t('organizations.summary.location') %></dt>
+          <dd><%= h(@organization[:location_raw] || @organization[:city] || @organization[:country] || t('users.summary.unknown')) %></dd>
+        </div>
+        <div>
+          <dt><%= h t('users.summary.city') %></dt>
+          <dd><%= h(@organization[:city] || t('users.summary.unknown')) %></dd>
+        </div>
+        <div>
+          <dt><%= h t('organizations.summary.public_repositories') %></dt>
+          <dd><%= number(@organization[:public_repo_count]) %></dd>
+        </div>
+      </dl>
+    </article>
+
+    <article class="profile-summary">
+      <h2><%= h t('users.metrics.title') %></h2>
+      <% if @organization[:period_start] %>
+        <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @organization[:period_start] %>"><%= h @organization[:period_start] %></time></p>
+      <% else %>
+        <p class="profile-empty"><%= h t('users.metrics.outside_ranking') %></p>
+      <% end %>
+      <dl class="profile-metrics">
+        <% if !@organization[:total_stars].nil? %>
+          <div>
+            <dt><%= h t('rankings.metric.stars') %></dt>
+            <dd>⭐ <%= number(@organization[:total_stars]) %></dd>
+          </div>
+        <% end %>
+        <% if !@organization[:monthly_stars_delta].nil? %>
+          <div>
+            <dt><%= h t('rankings.metric.new_stars') %></dt>
+            <dd>⭐ <%= number(@organization[:monthly_stars_delta]) %></dd>
+          </div>
+        <% end %>
+        <div>
+          <dt><%= h @organization.fetch(:profile_badge).fetch(:label) %></dt>
+          <dd><%= h(@organization.fetch(:profile_badge)[:value] || t('users.metrics.outside_ranking')) %></dd>
+        </div>
+      </dl>
+    </article>
+  </div>
+</section>
+
+<section class="profile-section profile-section--alt" aria-labelledby="organization-repositories-heading">
+  <div class="content">
+    <h2 id="organization-repositories-heading"><%= h t('organizations.repositories.title') %></h2>
+    <% if @repositories.empty? %>
+      <p class="profile-empty"><%= h t('organizations.repositories.empty') %></p>
+    <% else %>
+      <div class="project-grid">
+        <% @repositories.each do |repository| %>
+          <article class="project-card">
+            <div class="project-card__header">
+              <%= erb :platform_icon, locals: { platform: repository.fetch(:platform, "github") } %>
+              <a class="primary-link" href="<%= h app_path(organization_repository_profile_path(repository)) %>"><%= h repository.fetch(:full_name) %></a>
+            </div>
+            <% if repository[:description] && !repository[:description].empty? %>
+              <p><%= h repository[:description] %></p>
+            <% end %>
+            <dl class="project-stats">
+              <div>
+                <dt><%= h t('rankings.metric.stars') %></dt>
+                <dd>⭐ <%= number(repository.fetch(:stargazers_count)) %></dd>
+              </div>
+              <div>
+                <dt><%= h t('rankings.metric.new_stars') %></dt>
+                <dd>⭐ <%= number(repository.fetch(:monthly_stars_delta)) %></dd>
+              </div>
+              <% if repository[:language] && !repository[:language].empty? %>
+                <div>
+                  <dt><%= h t('users.repositories.language') %></dt>
+                  <dd><%= h repository[:language] %></dd>
+                </div>
+              <% end %>
+            </dl>
+          </article>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</section>
