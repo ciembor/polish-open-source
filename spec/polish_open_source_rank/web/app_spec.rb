@@ -666,37 +666,39 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   def seed_database
     path = empty_database
-    store = PolishOpenSourceRank::Infrastructure::SQLiteStore.new(path).migrate!
+    database = bootstrapped_database(path)
+    run_repository = snapshot_run_repository(database)
+    snapshot_repository = snapshot_repository(database)
     older_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2025-12')
-    older_run_id = store.create_run(older_period)
-    store.upsert_user(user_attributes)
-    store.record_user_stats(user_stats(older_period))
-    store.upsert_repository(repository_attributes)
-    store.record_repository_stats(repository_stats(older_period))
-    seed_extra_ranked_records(store, older_period)
-    store.finish_run(older_run_id)
+    older_run_id = run_repository.create(older_period)
+    snapshot_repository.upsert_user(user_attributes)
+    snapshot_repository.record_user_stats(user_stats(older_period))
+    snapshot_repository.upsert_repository(repository_attributes)
+    snapshot_repository.record_repository_stats(repository_stats(older_period))
+    seed_extra_ranked_records(snapshot_repository, older_period)
+    run_repository.finish(older_run_id)
 
     period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-04')
-    run_id = store.create_run(period)
+    run_id = run_repository.create(period)
 
-    store.upsert_user(user_attributes)
-    store.record_user_stats(user_stats(period))
-    store.upsert_repository(repository_attributes)
-    store.record_repository_stats(repository_stats(period))
-    seed_extra_ranked_records(store, period)
-    store.finish_run(run_id)
+    snapshot_repository.upsert_user(user_attributes)
+    snapshot_repository.record_user_stats(user_stats(period))
+    snapshot_repository.upsert_repository(repository_attributes)
+    snapshot_repository.record_repository_stats(repository_stats(period))
+    seed_extra_ranked_records(snapshot_repository, period)
+    run_repository.finish(run_id)
     path
   end
 
-  def seed_extra_ranked_records(store, period)
+  def seed_extra_ranked_records(snapshot_repository, period)
     [
       [2, 'bob', 'Bob', 7_000],
       [3, 'carol', 'Carol', 3_000]
     ].each do |id, login, name, stars|
-      store.upsert_user(user_attributes(id: id, login: login, name: name, avatar_url: nil))
-      store.record_user_stats(user_stats(period, user_id: id, login: login, total_stars: stars))
-      store.upsert_repository(repository_attributes(id: id + 10, owner_id: id, owner_login: login))
-      store.record_repository_stats(
+      snapshot_repository.upsert_user(user_attributes(id: id, login: login, name: name, avatar_url: nil))
+      snapshot_repository.record_user_stats(user_stats(period, user_id: id, login: login, total_stars: stars))
+      snapshot_repository.upsert_repository(repository_attributes(id: id + 10, owner_id: id, owner_login: login))
+      snapshot_repository.record_repository_stats(
         repository_stats(period, repository_id: id + 10, owner_id: id, owner_login: login, stars: stars)
       )
     end
@@ -704,19 +706,38 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   def seed_running_database
     path = empty_database
-    store = PolishOpenSourceRank::Infrastructure::SQLiteStore.new(path).migrate!
+    database = bootstrapped_database(path)
+    run_repository = snapshot_run_repository(database)
+    snapshot_repository = snapshot_repository(database)
     period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-04')
-    store.create_run(period)
+    run_repository.create(period)
 
-    store.upsert_user(user_attributes)
-    store.record_user_stats(user_stats(period))
-    store.upsert_repository(repository_attributes)
-    store.record_repository_stats(repository_stats(period))
+    snapshot_repository.upsert_user(user_attributes)
+    snapshot_repository.record_user_stats(user_stats(period))
+    snapshot_repository.upsert_repository(repository_attributes)
+    snapshot_repository.record_repository_stats(repository_stats(period))
     path
   end
 
   def empty_database
     File.join(Dir.mktmpdir, 'web.sqlite3')
+  end
+
+  def bootstrapped_database(path)
+    PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(path).tap do |database|
+      PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration.new(
+        database,
+        PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql
+      ).bootstrap!
+    end
+  end
+
+  def snapshot_run_repository(database)
+    PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteSnapshotRunRepository.new(database)
+  end
+
+  def snapshot_repository(database)
+    PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteSnapshotRepository.new(database)
   end
 
   def user_attributes(id: 1, login: 'alice', name: 'Alice', avatar_url: 'https://avatars.example/alice.png')

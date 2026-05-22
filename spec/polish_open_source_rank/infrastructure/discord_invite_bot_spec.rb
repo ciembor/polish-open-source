@@ -42,25 +42,6 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::Discor
   end
   # rubocop:enable RSpec/ExampleLength
 
-  it 'keeps compatibility with the legacy store-shaped bot composition' do
-    discord_bot = FakeDiscordBot.new
-    configuration = instance_double(
-      PolishOpenSourceRank::Configuration,
-      discord_guild_id: '1505949566229286972',
-      discord_bot_token: 'token'
-    )
-    allow(Discordrb::Bot).to receive(:new)
-      .with(token: 'token', intents: %i[server_invites])
-      .and_return(discord_bot)
-
-    bot = described_class.build(
-      configuration: configuration,
-      store: instance_double(PolishOpenSourceRank::Infrastructure::SQLiteStore)
-    )
-
-    expect(bot).to be_a(described_class)
-  end
-
   it 'syncs a joined Discord member through the invite that changed', :aggregate_failures do
     discord_bot = FakeDiscordBot.new
     join_handler = JoinHandlerSpy.new
