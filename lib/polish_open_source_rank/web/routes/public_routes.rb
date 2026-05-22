@@ -28,7 +28,7 @@ module PolishOpenSourceRank
             app.get('/latest') { render_rankings('latest', 'poland') }
 
             app.get '/about' do
-              @title = t('about.title')
+              @title = t('about.seo.title')
               @description = t('about.seo.description')
               @canonical_path = '/about'
               public_html_cache!('about')

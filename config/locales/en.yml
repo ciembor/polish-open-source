@@ -35,7 +35,8 @@ en:
         body: "People are found through public locations connected with Poland and Polish cities. Profiles enter the ranking when their public location matches a supported country or city."
         title: "Users"
     seo:
-      description: "Mission, ranking generation rules and supported platforms for Polish Open Source Rank."
+      title: "About Polish Open Source Rank"
+      description: "Mission, ranking rules for open-source work in Poland, and the supported GitHub, GitLab, and Codeberg platforms."
     title: "About Polish Open Source Rank"
   auth:
     login:
@@ -62,6 +63,8 @@ en:
     period_prefix: "Year:"
     seo:
       description: "Archive of monthly rankings with top projects, users by stars and activity."
+      title: "Open-source ranking editions"
+      title_year: "Open-source ranking editions %{year}"
     stars_suffix: "stars"
     title: "Editions"
     top_projects: "Top projects"
@@ -117,7 +120,14 @@ en:
     repository: "Repository"
     see_top_100: "See top 100"
     seo:
+      current_period: "latest snapshot"
       description: "Top and trending public users and repositories on code platforms for %{scope}."
+      description_latest: "Top and trending public open-source users and repositories for %{scope} in the latest snapshot."
+      description_period: "Top and trending public open-source users and repositories for %{scope} in the %{period} edition."
+      detail_description: "%{ranking} for %{scope}, using the %{metric} metric, in the %{period} edition."
+      detail_title: "%{ranking} - %{scope} - %{period}"
+      title_latest: "%{scope} open-source ranking"
+      title_period: "%{scope} open-source ranking - %{period}"
     snapshot: "Snapshot:"
     table:
       city: "City"
@@ -141,6 +151,7 @@ en:
     links:
       source_project: "%{platform} project"
     seo:
+      title: "%{repository} - %{platform} project"
       description: "%{repository} public open-source project on %{platform}, with ranking metrics and owner details."
     summary:
       owner: "Owner"
@@ -174,6 +185,7 @@ en:
       language: "Language"
       title: "Best projects"
     seo:
+      title: "%{user} - %{platform} profile"
       description: "%{user} public open-source profile on %{platform}, with ranking metrics and top projects."
     summary:
       city: "City"

@@ -50,17 +50,17 @@ Rozdzielić polskie i angielskie strony na osobne, stabilne adresy.
 
 ### Plan
 
-- [ ] Wprowadzić jawny routing językowy.
-- [ ] Przyjąć jedną z dwóch strategii:
+- [x] Wprowadzić jawny routing językowy.
+- [x] Przyjąć jedną z dwóch strategii:
   - wariant preferowany SEO-first:
     - polski pod obecnymi adresami, np. `/latest`,
     - angielski pod prefiksem `/en/...`;
   - wariant alternatywny:
     - `/pl/...` i `/en/...` dla obu języków.
-- [ ] Zostawić `?lang=` tylko jako mechanizm przejściowy.
-- [ ] Dodać przekierowania 301 z `?lang=en` i `?lang=pl` na docelowe ścieżki językowe.
-- [ ] Przestać używać cookie jako głównego źródła wyboru treści dla indeksowalnych stron.
-- [ ] Ustawić polski jako domyślny język publicznych stron.
+- [x] Zostawić `?lang=` tylko jako mechanizm przejściowy.
+- [x] Dodać przekierowania 301 z `?lang=en` i `?lang=pl` na docelowe ścieżki językowe.
+- [x] Przestać używać cookie jako głównego źródła wyboru treści dla indeksowalnych stron.
+- [x] Ustawić polski jako domyślny język publicznych stron.
 
 ### Uzasadnienie
 
@@ -74,20 +74,20 @@ Każda wersja językowa ma mieć własny canonical i poprawnie wskazanego odpowi
 
 ### Plan
 
-- [ ] Przebudować helper budujący canonical tak, żeby brał pod uwagę język strony.
-- [ ] Dodać do `<head>` komplet linków alternatywnych:
-  - [ ] `hreflang="pl"`
-  - [ ] `hreflang="en"`
-  - [ ] `hreflang="x-default"`
-- [ ] Zapewnić, że każda podstrona ma alternatywę językową o tej samej semantyce:
-  - ranking Polski,
-  - ranking miasta,
-  - top/trending/active,
-  - profil użytkownika,
-  - profil repo,
-  - editions,
-  - about.
-- [ ] Wykluczyć sytuacje, w których EN kanonizuje się do PL albo odwrotnie.
+- [x] Przebudować helper budujący canonical tak, żeby brał pod uwagę język strony.
+- [x] Dodać do `<head>` komplet linków alternatywnych:
+  - [x] `hreflang="pl"`
+  - [x] `hreflang="en"`
+  - [x] `hreflang="x-default"`
+- [x] Zapewnić, że każda podstrona ma alternatywę językową o tej samej semantyce:
+  - [x] ranking Polski,
+  - [x] ranking miasta,
+  - [x] top/trending/active,
+  - [x] profil użytkownika,
+  - [x] profil repo,
+  - [x] editions,
+  - [x] about.
+- [x] Wykluczyć sytuacje, w których EN kanonizuje się do PL albo odwrotnie.
 
 ### Uzasadnienie
 
@@ -102,21 +102,21 @@ Poprawić wygląd wyniku w wyszukiwarce i spójność opisu strony.
 ### Plan
 
 - [ ] Dopracować `title` dla wszystkich głównych typów stron:
-  - [ ] homepage/rankings,
-  - [ ] ranking city,
-  - [ ] ranking detail,
-  - [ ] user profile,
-  - [ ] repository profile,
-  - [ ] editions,
-  - [ ] about.
-- [ ] Dopracować `meta description` osobno dla PL i EN.
-- [ ] Pilnować, żeby opisy były:
+  - [x] homepage/rankings,
+  - [x] ranking city,
+  - [x] ranking detail,
+  - [x] user profile,
+  - [x] repository profile,
+  - [x] editions,
+  - [x] about.
+- [x] Dopracować `meta description` osobno dla PL i EN.
+- [x] Pilnować, żeby opisy były:
   - konkretne,
   - krótkie,
   - bez duplikatów,
   - zgodne z intencją strony.
-- [ ] Ujednolicić wzorce generowania tytułów i opisów w kontrolerach publicznych.
-- [ ] Dodać testy regresyjne dla title/description/canonical na najważniejszych stronach.
+- [x] Ujednolicić wzorce generowania tytułów i opisów w kontrolerach publicznych.
+- [x] Dodać testy regresyjne dla title/description/canonical na najważniejszych stronach.
 
 ### Uwaga
 
@@ -130,24 +130,25 @@ Poprawić prezentację linków w Google, Slacku, X, Discordzie i innych miejscac
 
 ### Plan
 
-- [ ] Dodać:
-  - [ ] `og:title`
-  - [ ] `og:description`
-  - [ ] `og:url`
-  - [ ] `og:type`
-  - [ ] `og:image`
-  - [ ] `og:site_name`
-  - [ ] `og:locale`
-- [ ] Dodać:
-  - [ ] `twitter:card`
-  - [ ] `twitter:title`
-  - [ ] `twitter:description`
-  - [ ] `twitter:image`
-- [ ] Wybrać i ustabilizować główne obrazy preview:
-  - [ ] ranking page,
-  - [ ] about,
-  - [ ] editions,
-  - [ ] profile/repository fallback.
+- [x] Dodać:
+  - [x] `og:title`
+  - [x] `og:description`
+  - [x] `og:url`
+  - [x] `og:type`
+  - [x] `og:image`
+  - [x] `og:site_name`
+  - [x] `og:locale`
+- [x] Dodać:
+  - [x] `twitter:card`
+  - [x] `twitter:title`
+  - [x] `twitter:description`
+  - [x] `twitter:image`
+- [x] Wybrać i ustabilizować główne obrazy preview:
+  - [x] ranking page,
+  - [x] about,
+  - [x] editions,
+  - [x] profile/repository fallback.
+Future:
 - [ ] Jeśli będzie to opłacalne, w kolejnym kroku dodać bardziej dynamiczne obrazy OG dla profili i repo.
 
 ## Etap 5: sitemap i robots
@@ -158,19 +159,16 @@ Dać crawlerom jednoznaczną mapę indeksowalnych zasobów.
 
 ### Plan
 
-- [ ] Dodać `robots.txt`.
-- [ ] Umieścić w nim link do `sitemap.xml`.
-- [ ] Dodać `sitemap.xml` generowaną z aktualnych tras publicznych.
-- [ ] Umieścić w sitemap:
-  - [ ] strony PL,
-  - [ ] strony EN,
-  - [ ] `lastmod`,
-  - [ ] wszystkie główne publiczne widoki.
-- [ ] Rozważyć oddzielne sitemap dla:
-  - [ ] stron statycznych,
-  - [ ] rankingów,
-  - [ ] profili i repo,
-  jeśli uprości to utrzymanie.
+- [x] Dodać `robots.txt`.
+- [x] Umieścić w nim link do `sitemap.xml`.
+- [x] Dodać `sitemap.xml` generowaną z aktualnych tras publicznych.
+- [x] Umieścić w sitemap:
+  - [x] strony PL,
+  - [x] strony EN,
+  - [x] `lastmod`,
+  - [x] wszystkie główne publiczne widoki.
+- [x] Rozważyć oddzielne sitemap dla:
+  - na tym etapie zostaje jedna sitemap, bo obecny rozmiar i zakres danych tego nie wymagają.
 
 ### Uwaga
 
@@ -184,19 +182,19 @@ Ulepszyć zrozumienie typu strony przez wyszukiwarkę.
 
 ### Stan obecny
 
-- obecnie jest jedno proste JSON-LD typu `Dataset`.
+- [x] obecnie jest jedno proste JSON-LD typu `Dataset`. Zostało już zastąpione bardziej szczegółowym schematem per widok.
 
 ### Plan
 
-- [ ] Rozdzielić structured data zależnie od typu strony:
-  - [ ] `WebSite` dla serwisu,
-  - [ ] `CollectionPage` dla rankingów i editions,
-  - [ ] `ItemList` dla list rankingowych,
-  - [ ] `ProfilePage` dla user/repository pages,
-  - [ ] `BreadcrumbList` dla wszystkich głównych publicznych stron.
-- [ ] Nie generować jednego generycznego JSON-LD dla wszystkich stron.
-- [ ] Dodać helpery/presentery po stronie web, nie w domenie.
-- [ ] Utrzymać dane strukturalne spójne z canonicalem i locale.
+- [x] Rozdzielić structured data zależnie od typu strony:
+  - [x] `WebSite` dla serwisu,
+  - [x] `CollectionPage` dla rankingów i editions,
+  - [x] `ItemList` dla list rankingowych,
+  - [x] `ProfilePage` dla user/repository pages,
+  - [x] `BreadcrumbList` dla wszystkich głównych publicznych stron.
+- [x] Nie generować jednego generycznego JSON-LD dla wszystkich stron.
+- [x] Dodać helpery/presentery po stronie web, nie w domenie.
+- [x] Utrzymać dane strukturalne spójne z canonicalem i locale.
 
 ## Etap 7: jakość HTML5 i semantyka
 
@@ -248,11 +246,11 @@ Nie mieszać sygnałów językowych i indeksacyjnych.
 
 ### Plan
 
-- [ ] Wszystkie linki wewnętrzne w PL mają prowadzić do PL URL-i.
-- [ ] Wszystkie linki wewnętrzne w EN mają prowadzić do EN URL-i.
-- [ ] Language switch ma prowadzić do odpowiednika tej samej strony, a nie tylko ustawiać stan.
-- [ ] Linki z menu, hero, profili, rankingów i editions mają zachowywać bieżący język.
-- [ ] Canonical, sitemap i linkowanie wewnętrzne mają mówić to samo.
+- [x] Wszystkie linki wewnętrzne w PL mają prowadzić do PL URL-i.
+- [x] Wszystkie linki wewnętrzne w EN mają prowadzić do EN URL-i.
+- [x] Language switch ma prowadzić do odpowiednika tej samej strony, a nie tylko ustawiać stan.
+- [x] Linki z menu, hero, profili, rankingów i editions mają zachowywać bieżący język.
+- [x] Canonical, sitemap i linkowanie wewnętrzne mają mówić to samo.
 
 ## Etap 10: testy i weryfikacja
 

@@ -17,6 +17,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     reset_app_memoized_dependencies
   end
 
+  # rubocop:disable RSpec/MultipleExpectations
   it 'renders the Poland ranking with SEO metadata' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
 
@@ -27,12 +28,17 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('rel="canonical" href="https://rank.example/latest"')
     expect(response.body).to include('rel="alternate" hreflang="en" href="https://rank.example/en/latest"')
     expect(response.body).to include('property="og:title" content="Polska open-source ranking"')
+    expect(response.body).to include('property="og:image" content="https://rank.example/images/polish_open_source_banner.webp"')
+    expect(response.body).to include('"@type": "WebSite"')
+    expect(response.body).to include('"@type": "CollectionPage"')
+    expect(response.body).to include('"name": "Top 10 według gwiazdek"')
     expect(response.body).to include('alice/app')
     expect(response.body).to include('href="/latest/users/top"')
     expect(response.body).to include('Zobacz top 100')
     expect(response.body).to include('href="/editions"')
     expect(response.body).to include('application/ld+json')
   end
+  # rubocop:enable RSpec/MultipleExpectations
 
   it 'renders city rankings and empty databases' do
     ENV['DATABASE_URL'] = "sqlite://#{empty_database}"
@@ -110,10 +116,13 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     expect(ranking_response.body).to include('href="/users/github/alice"')
     expect(profile_response.status).to eq(200)
-    expect(profile_response.body).to include('<title>Alice - GitHub profile</title>')
+    expect(profile_response.body).to include('<title>Alice - profil GitHub</title>')
     expect(profile_response.body).to include('rel="canonical" href="https://rank.example/users/github/alice"')
     expect(profile_response.body).to include('src="https://avatars.example/alice.png"')
-    expect(profile_response.body).to include('GitHub profile')
+    expect(profile_response.body).to include('Profil na GitHub')
+    expect(profile_response.body).to include('"@type": "ProfilePage"')
+    expect(profile_response.body).to include('"@type": "Person"')
+    expect(profile_response.body).to include('"@type": "BreadcrumbList"')
     expect(profile_response.body).to include('Najlepsze projekty')
     expect(profile_response.body).not_to include('/badges/users/github/alice.svg')
     expect(profile_response.body).not_to include(
@@ -346,8 +355,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     expect(ranking_response.body).to include('href="/repositories/github/alice/app"')
     expect(profile_response.status).to eq(200)
-    expect(profile_response.body).to include('<title>alice/app - GitHub project</title>')
+    expect(profile_response.body).to include('<title>alice/app - projekt GitHub</title>')
     expect(profile_response.body).to include('rel="canonical" href="https://rank.example/repositories/github/alice/app"')
+    expect(profile_response.body).to include('"@type": "SoftwareSourceCode"')
     expect(profile_response.body).to include('/icons/medal-gold.svg')
     expect(profile_response.body).not_to include('Badge na GitHub')
     expect(profile_response.body).not_to include('/badges/repositories/github/alice/app.svg')
@@ -367,14 +377,17 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   end
   # rubocop:enable RSpec/ExampleLength
 
+  # rubocop:disable RSpec/MultipleExpectations
   it 'renders editions with year pagination' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
 
     response = Rack::MockRequest.new(described_class).get('/editions')
 
     expect(response.status).to eq(200)
-    expect(response.body).to include('<title>Edycje</title>')
+    expect(response.body).to include('<title>Edycje rankingu open source</title>')
     expect(response.body).to include('>Edycje</h1>')
+    expect(response.body).to include('"@type": "CollectionPage"')
+    expect(response.body).to include('property="og:image" content="https://rank.example/images/polish_open_source_join.webp"')
     expect(response.body).to include('kwiecień 2026')
     expect(response.body).to include('Top projekty')
     expect(response.body).to include('Top userzy: gwiazdki')
@@ -399,6 +412,10 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     response = Rack::MockRequest.new(described_class).get('/about')
 
     expect(response.status).to eq(200)
+    expect(response.body).to include('<title>O Polish Open Source Rank</title>')
+    expect(response.body).to include('"@type": "AboutPage"')
+    expect(response.body).to include('"@type": "WebSite"')
+    expect(response.body).to include('property="og:image" content="https://rank.example/images/pos_cut.png"')
     expect(response.body).to include('Misja')
     expect(response.body).to include('Zakres danych')
     expect(response.body).to include('GitHub')
@@ -408,6 +425,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('href="/latest/locations/krakow"')
     expect(response.body).not_to include('//locations')
   end
+  # rubocop:enable RSpec/MultipleExpectations
 
   it 'links about platform cards to source platforms' do
     response = Rack::MockRequest.new(described_class).get('/about')
@@ -562,6 +580,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(sitemap.body).to include('<loc>https://rank.example/en/latest</loc>')
     expect(sitemap.body).to include('<loc>https://rank.example/about</loc>')
     expect(sitemap.body).to include('<loc>https://rank.example/en/users/github/alice</loc>')
+    expect(sitemap.body).to include('<lastmod>')
   end
 
   it 'serves internal job progress as a noindex monitor page', :aggregate_failures do
