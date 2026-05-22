@@ -148,7 +148,7 @@ Read models may keep raw SQL when that is the deeper interface. The migration ta
 
 ### 9. Update tests and fixtures
 
-- [ ] Replace raw `SQLite3::Database.new` in specs with `Shared::Infrastructure::SQLite::Database.open`.
+- [x] Replace raw `SQLite3::Database.new` in specs with `Shared::Infrastructure::SQLite::Database.open`.
 - [ ] Keep a small number of low-level tests around the database gateway itself.
 - [ ] Avoid making tests depend on Sequel internals unless testing the gateway.
 - [ ] Preserve full integration coverage for:

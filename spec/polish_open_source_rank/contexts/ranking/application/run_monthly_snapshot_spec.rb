@@ -1144,15 +1144,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
   end
 
   def fetch_row(sql, params = [])
-    row = database.execute(sql, params).first
-    row.each_with_object({}) do |(key, value), result|
-      result[key.to_sym] = value unless key.is_a?(Integer)
-    end
+    database.fetch_all(sql, params).first
   end
 
   def database
-    @database ||= SQLite3::Database.new(path).tap do |connection|
-      connection.results_as_hash = true
-    end
+    @database ||= PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(path)
   end
 end

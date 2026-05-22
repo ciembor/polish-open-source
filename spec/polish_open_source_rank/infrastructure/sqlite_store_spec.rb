@@ -584,9 +584,9 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
 
     nested_store = described_class.new(nested_path).migrate!
 
-    nested_database = SQLite3::Database.new(nested_path)
-    expect(nested_database.get_first_value('PRAGMA user_version')).to eq(described_class::SCHEMA_VERSION)
-    expect(nested_store.send(:database).get_first_value('PRAGMA foreign_keys')).to eq(1)
+    nested_database = PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(nested_path)
+    expect(nested_database.fetch_value('PRAGMA user_version')).to eq(described_class::SCHEMA_VERSION)
+    expect(nested_store.send(:database).fetch_value('PRAGMA foreign_keys')).to eq(1)
     expect(nested_store.latest_period).to be_nil
   end
 
@@ -710,7 +710,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
 
   it 'migrates existing GitHub-only databases to platform-qualified records' do
     old_path = File.join(Dir.mktmpdir, 'old.sqlite3')
-    old_database = SQLite3::Database.new(old_path)
+    old_database = PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(old_path)
     old_database.execute_batch(legacy_schema_sql)
     old_database.execute(
       'INSERT INTO users(github_id, login, html_url, updated_at) VALUES(1, "alice", "https://github.com/alice", "now")'
@@ -721,8 +721,8 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
     expect(migrated_store.user_rankings('poland', period_start: period.start_date.to_s)).to eq(
       top: [], trending: [], active: []
     )
-    database = SQLite3::Database.new(old_path)
-    expect(database.get_first_value('SELECT platform FROM users WHERE github_id = 1')).to eq('github')
+    database = PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(old_path)
+    expect(database.fetch_value('SELECT platform FROM users WHERE github_id = 1')).to eq('github')
   end
 
   def user_attributes(id, login, city)
@@ -1049,10 +1049,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
   end
 
   def fetch_row(sql, params = [])
-    row = database.execute(sql, params).first
-    row.each_with_object({}) do |(key, value), result|
-      result[key.to_sym] = value unless key.is_a?(Integer)
-    end
+    database.fetch_all(sql, params).first
   end
 
   def fetch_candidate(login, platform: 'github')
@@ -1063,9 +1060,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteStore do
   end
 
   def database
-    @database ||= SQLite3::Database.new(path).tap do |connection|
-      connection.results_as_hash = true
-    end
+    @database ||= PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(path)
   end
 
   def legacy_schema_sql
