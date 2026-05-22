@@ -69,7 +69,8 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::RankingJobFactory 
       gitlab_base_url: 'https://gitlab.test/api/v4',
       codeberg_token: nil,
       codeberg_base_url: 'https://codeberg.test/api/v1',
-      requests_per_minute: 25
+      requests_per_minute: 25,
+      http_timeouts: { open_timeout: 5, read_timeout: 30, write_timeout: 30 }
     )
   end
 

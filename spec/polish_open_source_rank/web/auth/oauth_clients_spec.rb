@@ -21,7 +21,7 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
       json_response('{"access_token":"github-token"}'),
       json_response('{"id":1,"login":"alice","ignored":true}')
     ]
-    requests = capture_http_requests(responses)
+    requests, = capture_http_requests(responses)
 
     url = client.authorize_url(state: 'state-1', redirect_uri: 'https://rank/auth/github/callback')
 
@@ -44,7 +44,7 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
       json_response('{"access_token":"discord-token"}'),
       json_response('{"id":"u1","username":"alice","global_name":"Alice","ignored":true}')
     ]
-    requests = capture_http_requests(responses)
+    requests, = capture_http_requests(responses)
 
     url = client.authorize_url(state: 'state-2', redirect_uri: 'https://rank/auth/discord/callback')
 
@@ -57,6 +57,29 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
     expect(requests.map(&:method)).to eq(%w[POST GET])
   end
 
+  it 'uses configured HTTP timeouts for OAuth and Discord API requests' do
+    ENV['HTTP_OPEN_TIMEOUT'] = '7'
+    ENV['HTTP_READ_TIMEOUT'] = '31'
+    ENV['HTTP_WRITE_TIMEOUT'] = '29'
+    configuration = PolishOpenSourceRank::Configuration.load
+    github_client = described_class.new(configuration)
+    discord_client = PolishOpenSourceRank::Web::Auth::DiscordOAuthClient.new(configuration)
+    gateway = PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway.new(configuration)
+    responses = [
+      json_response('{"access_token":"github-token"}'),
+      json_response('{"access_token":"discord-token"}'),
+      response('404', 'Not Found', '{}')
+    ]
+    requests, options = capture_http_requests(responses)
+
+    github_client.exchange_code(code: 'code-1', redirect_uri: 'https://rank/auth/github/callback')
+    discord_client.exchange_code(code: 'code-2', redirect_uri: 'https://rank/auth/discord/callback')
+    expect(gateway.invite_available?('used')).to be(false)
+
+    expect(requests.map(&:method)).to eq(%w[POST POST GET])
+    expect(options).to all(include(use_ssl: true, open_timeout: 7, read_timeout: 31, write_timeout: 29))
+  end
+
   it 'creates one-use invites and syncs Discord guild members' do
     configuration = PolishOpenSourceRank::Configuration.load
     gateway = PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway.new(configuration)
@@ -67,7 +90,7 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
       json_response('{"roles":["role-3","unmanaged-role"]}'),
       empty_response
     ]
-    requests = capture_http_requests(responses)
+    requests, = capture_http_requests(responses)
 
     expect(gateway.create_invite(channel_id: 'channel-1')).to eq(code: 'abc', url: 'https://discord.gg/abc')
     expect(gateway.invite_available?('abc')).to be(true)
@@ -97,7 +120,7 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
   it 'posts a GitHub-rich welcome message with role-enabled channels' do
     configuration = PolishOpenSourceRank::Configuration.load
     gateway = PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway.new(configuration)
-    requests = capture_http_requests(welcome_responses)
+    requests, = capture_http_requests(welcome_responses)
 
     gateway.post_welcome_message(
       channel_id: 'welcome-channel',
@@ -184,15 +207,17 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
 
   def capture_http_requests(responses)
     requests = []
-    allow(Net::HTTP).to receive(:start) do |_host, _port, _options, &block|
+    options = []
+    allow(Net::HTTP).to receive(:start) do |_host, _port, **http_options, &block|
       http = instance_double(Net::HTTP)
       allow(http).to receive(:request) do |request|
         requests << request
+        options << http_options
         responses.shift
       end
       block.call(http)
     end
-    requests
+    [requests, options]
   end
 
   def json_response(body)

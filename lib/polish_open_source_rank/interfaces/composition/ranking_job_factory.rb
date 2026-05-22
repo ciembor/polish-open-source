@@ -69,7 +69,8 @@ module PolishOpenSourceRank
           client = Infrastructure::GitHubClient.new(
             token: configuration.github_token,
             base_url: configuration.github_base_url,
-            requests_per_minute: configuration.requests_per_minute
+            requests_per_minute: configuration.requests_per_minute,
+            http: configuration.http_timeouts
           )
           client.request_log = source_request_log
           Infrastructure::GitHubGateway.new(client)
@@ -79,7 +80,8 @@ module PolishOpenSourceRank
           client = Infrastructure::GitLabClient.new(
             token: configuration.gitlab_token,
             base_url: configuration.gitlab_base_url,
-            requests_per_minute: configuration.requests_per_minute
+            requests_per_minute: configuration.requests_per_minute,
+            http: configuration.http_timeouts
           )
           client.request_log = source_request_log
           Infrastructure::GitLabGateway.new(client)
@@ -89,7 +91,8 @@ module PolishOpenSourceRank
           client = Infrastructure::CodebergClient.new(
             token: configuration.codeberg_token,
             base_url: configuration.codeberg_base_url,
-            requests_per_minute: configuration.requests_per_minute
+            requests_per_minute: configuration.requests_per_minute,
+            http: configuration.http_timeouts
           )
           client.request_log = source_request_log
           Infrastructure::CodebergGateway.new(client)

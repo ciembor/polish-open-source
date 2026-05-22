@@ -6,7 +6,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitLabClient do
   let(:logger) { StringIO.new }
   let(:client) do
     described_class.new(token: 'token', base_url: 'https://gitlab.test/api/v4',
-                        requests_per_minute: 600, sleeper: sleeper, logger: logger)
+                        requests_per_minute: 600, execution: { sleeper: sleeper, logger: logger })
   end
 
   it 'performs token-authenticated JSON GET requests' do
@@ -48,17 +48,39 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitLabClient do
     expect(logger.string).to include('GitLab token rejected; retrying request without token')
   end
 
+  it 'configures explicit HTTP timeouts' do
+    captured_options = nil
+    client = described_class.new(
+      token: 'token',
+      base_url: 'https://gitlab.test/api/v4',
+      requests_per_minute: 600,
+      http: { open_timeout: 7, read_timeout: 31, write_timeout: 29 },
+      execution: { sleeper: sleeper, logger: logger }
+    )
+    stub_http(ok_response({ 'ok' => true })) do |_request, options|
+      captured_options = options
+    end
+
+    client.get('/users')
+
+    expect(captured_options).to include(use_ssl: true, open_timeout: 7, read_timeout: 31, write_timeout: 29)
+  end
+
   def stub_http(*responses)
-    http = instance_double(Net::HTTP)
     if block_given?
-      allow(http).to receive(:request) do |request|
-        yield request
-        responses.shift
+      allow(Net::HTTP).to receive(:start) do |_host, _port, **options, &net_http_block|
+        http = instance_double(Net::HTTP)
+        allow(http).to receive(:request) do |request|
+          yield request, options
+          responses.shift
+        end
+        net_http_block.call(http)
       end
     else
+      http = instance_double(Net::HTTP)
       allow(http).to receive(:request).and_return(*responses)
+      allow(Net::HTTP).to receive(:start).and_yield(http)
     end
-    allow(Net::HTTP).to receive(:start).and_yield(http)
   end
 
   def ok_response(body, headers = {})
