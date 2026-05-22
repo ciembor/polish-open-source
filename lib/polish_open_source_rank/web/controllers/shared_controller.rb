@@ -41,9 +41,12 @@ module PolishOpenSourceRank
           resolve_period.call(period_slug: 'latest')
         end
 
-        def ranked_github_profile(login)
-          profile = show_user_profile.call(platform: 'github', login: login, period_start: latest_period)
-          profile if profile && profile[:period_start]
+        def public_github_profile(login)
+          show_user_profile.call(platform: 'github', login: login, period_start: latest_period)
+        end
+
+        def auth_notice
+          session.delete(:auth_notice)
         end
       end
     end

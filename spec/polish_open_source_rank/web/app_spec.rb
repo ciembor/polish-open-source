@@ -134,7 +134,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile_response.body).to include('12 345')
     expect(badge_response.status).to eq(200)
     expect(badge_response.content_type).to include('image/svg+xml')
-    expect(badge_response.body).to include('Polish Elite')
+    expect(badge_response.body).to include('Polish Open Source')
     expect(badge_response.body).to include('1st')
     expect(badge_response.body).to include('href="https://rank.example/latest"')
     expect(missing_response.status).to eq(404)
@@ -142,7 +142,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   # rubocop:enable RSpec/ExampleLength
 
   # rubocop:disable RSpec/ExampleLength
-  it 'logs ranked GitHub users in and syncs their Discord account', :aggregate_failures do
+  it 'logs public GitHub users in and syncs their Discord account', :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     ENV['DISCORD_INVITE_CHANNEL_ID'] = 'invite-channel'
     ENV['DISCORD_GUILD_ID'] = 'guild-1'
@@ -177,7 +177,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile.body).to include('Top 100 Kraków')
     expect(profile.body).to include('/badges/users/github/alice.svg')
     expect(profile.body).to include('/badges/repositories/github/alice/app.svg')
-    expect(profile.body).to include('Polish Top 100')
+    expect(profile.body).to include('Polish Open Source')
     expect(profile.body.index('id="profile-discord-heading"')).to be < profile.body.index('id="profile-badge-heading"')
     # "Profile" also appears in the navbar label for logged-in users. Assert using stable section markers
     # instead of the translated heading text.
@@ -216,9 +216,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   end
   # rubocop:enable RSpec/ExampleLength
 
-  it 'shows a clear page when GitHub login is outside the ranking' do
+  it 'creates a public profile for GitHub users with a supported location' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
-    github_client = FakeGitHubOAuthClient.new('outsider')
+    github_client = FakeGitHubOAuthClient.new('outsider', id: 40, location: 'Poznan, Poland')
     described_class.set :github_oauth_client, github_client
     request = Rack::MockRequest.new(described_class)
 
@@ -228,11 +228,32 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       "/auth/github/callback?code=github-code&state=#{github_state}",
       'HTTP_COOKIE' => cookie_header(github_start)
     )
-    unranked = request.get('/auth/unranked', 'HTTP_COOKIE' => cookie_header(github_callback))
+    profile = request.get('/users/github/outsider', 'HTTP_COOKIE' => cookie_header(github_callback))
 
-    expect(github_callback.location).to eq('http://example.org/auth/unranked')
-    expect(unranked.body).to include('Nie znaleziono profilu w rankingu')
-    expect(unranked.body).to include('outsider')
+    expect(github_callback.location).to eq('http://example.org/users/github/outsider')
+    expect(profile.status).to eq(200)
+    expect(profile.body).to include('Poznan, Poland')
+    expect(profile.body).to include('Polish Open Source')
+    expect(profile.body).to include('Poza rankingiem.')
+  end
+
+  it 'keeps users signed out when their GitHub location is not eligible' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    github_client = FakeGitHubOAuthClient.new('outsider', id: 40, location: 'Berlin, Germany')
+    described_class.set :github_oauth_client, github_client
+    request = Rack::MockRequest.new(described_class)
+
+    github_start = request.get('/auth/github')
+    github_state = Rack::Utils.parse_query(URI(github_start.location).query).fetch('state')
+    github_callback = request.get(
+      "/auth/github/callback?code=github-code&state=#{github_state}",
+      'HTTP_COOKIE' => cookie_header(github_start)
+    )
+    rankings = request.get('/latest', 'HTTP_COOKIE' => cookie_header(github_callback))
+
+    expect(github_callback.location).to eq('http://example.org/latest')
+    expect(rankings.body.force_encoding('UTF-8')).to include('Przepraszamy, nie ma cię w naszej bazie.')
+    expect(rankings.body).not_to include('href="/users/github/outsider"')
   end
 
   it 'returns to the profile after Discord sync when the server channel is not configured' do
@@ -331,7 +352,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
     discord_client = FakeDiscordOAuthClient.new
     allow(discord_client).to receive(:user).and_raise(
-      PolishOpenSourceRank::Contexts::Community::Application::ConnectDiscordAccount::ProfileNotFound
+      PolishOpenSourceRank::Contexts::Community::Application::ConnectDiscordAccount::PublicProfileNotFound
     )
     described_class.set :discord_oauth_client, discord_client
     described_class.set :discord_gateway, FakeDiscordGateway.new
@@ -535,7 +556,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(english_response.body).to include('Repositories')
     expect(english_response.body).to include('rel="canonical" href="https://rank.example/en/latest"')
     expect(english_response.body).to include('href="/latest?lang=pl"')
-    expect(english_response['Set-Cookie']).to include('locale=en')
+    expect(Array(english_response['Set-Cookie']).join("\n")).to include('locale=en')
     expect(cookie_response.status).to eq(302)
     expect(cookie_response.location).to eq('http://example.org/en/latest')
   end
@@ -875,10 +896,12 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       @show_job_progress
       @show_discord_panel
       @connect_discord_account
+      @register_public_github_profile
       @cache_revision_read_model
       @ranking_read_model
       @edition_read_model
       @profile_read_model
+      @public_profile_repository
       @contributor_access_read_model
       @discord_connection_repository
       @job_progress_read_model
@@ -900,8 +923,10 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   class FakeGitHubOAuthClient
     attr_reader :exchanged
 
-    def initialize(login)
+    def initialize(login, id: 1, location: 'Krakow, Poland')
       @login = login
+      @id = id
+      @location = location
       @exchanged = []
     end
 
@@ -915,7 +940,16 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     end
 
     def user(_access_token)
-      { 'id' => 1, 'login' => @login }
+      {
+        'id' => @id,
+        'login' => @login,
+        'name' => @login.capitalize,
+        'location' => @location,
+        'email' => "#{@login}@example.com",
+        'homepage' => "https://#{@login}.example",
+        'html_url' => "https://github.com/#{@login}",
+        'avatar_url' => "https://avatars.example/#{@login}.png"
+      }
     end
   end
 

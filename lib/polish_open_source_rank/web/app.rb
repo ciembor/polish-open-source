@@ -182,6 +182,13 @@ module PolishOpenSourceRank
         )
       end
 
+      def register_public_github_profile
+        @register_public_github_profile ||= Contexts::Publication::Application::RegisterPublicGitHubProfile.new(
+          profile_read_model: profile_read_model,
+          profile_repository: public_profile_repository
+        )
+      end
+
       def cache_revision_read_model
         @cache_revision_read_model ||=
           Contexts::Publication::Infrastructure::SQLite::SQLiteCacheRevisionReadModel.new(database)
@@ -200,6 +207,11 @@ module PolishOpenSourceRank
 
       def profile_read_model
         @profile_read_model ||= Contexts::Publication::Infrastructure::SQLite::SQLiteProfileReadModel.new(database)
+      end
+
+      def public_profile_repository
+        @public_profile_repository ||=
+          Contexts::Publication::Infrastructure::SQLite::SQLitePublicProfileRepository.new(database)
       end
 
       def contributor_access_read_model

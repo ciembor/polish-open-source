@@ -6,7 +6,7 @@ module PolishOpenSourceRank
       module Application
         class ConnectDiscordAccount
           Result = Struct.new(:profile, :access, :role_ids, keyword_init: true)
-          class ProfileNotFound < StandardError
+          class PublicProfileNotFound < StandardError
           end
 
           def initialize(profile_read_model:, connection_repository:, access_read_model:, member_gateway:, role_map:)
@@ -18,7 +18,7 @@ module PolishOpenSourceRank
           end
 
           def call(current_user:, discord_user:, access_token:, period_start:, welcome_channel_id:)
-            profile = ranked_profile(current_user, period_start)
+            profile = public_profile(current_user, period_start)
             access = access_read_model.discord_access(
               profile.fetch(:platform),
               profile.fetch(:github_id),
@@ -37,13 +37,13 @@ module PolishOpenSourceRank
 
           attr_reader :access_read_model, :connection_repository, :member_gateway, :profile_read_model, :role_map
 
-          def ranked_profile(current_user, period_start)
+          def public_profile(current_user, period_start)
             profile = profile_read_model.user_profile(
               current_user.fetch(:platform),
               current_user.fetch(:login),
               period_start: period_start
             )
-            raise ProfileNotFound unless profile && profile[:period_start]
+            raise PublicProfileNotFound unless profile
 
             profile
           end

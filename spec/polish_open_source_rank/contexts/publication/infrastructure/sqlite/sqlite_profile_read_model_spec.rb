@@ -18,42 +18,38 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     profile = read_model.user_profile('github', 'alice', period_start: period)
 
     expect(profile).to include(login: 'alice', elite_rank: 1)
-    expect(profile.fetch(:elite_badge)).to include(value: '1st', status: 'ranked')
-    expect(profile.fetch(:top_100_badge)).to include(value: '1st', status: 'ranked')
+    expect(profile.fetch(:profile_badge)).to include(label: 'Polish Open Source', value: '1st', status: 'ranked')
     expect(profile.fetch(:repositories)).to contain_exactly(
       include(full_name: 'alice/app', stargazers_count: 30, polish_repo_badge: include(value: '1st'))
     )
   end
 
-  it 'returns top-100 badges without ex-elite badges while users are still ranked' do
-    seed_user(id: 1, login: 'alumni', total_stars: 1_000, period_start: '2026-03-01')
-    seed_user(id: 1, login: 'alumni', total_stars: 1)
-    11.times do |index|
-      seed_user(id: index + 2, login: "user#{index}", total_stars: 100 - index)
+  it 'returns city badges when the user is outside the Poland ranking' do
+    100.times do |index|
+      seed_user(
+        id: index + 1,
+        login: "country#{index}",
+        total_stars: 1_000 - index,
+        city: 'Warszawa',
+        country: 'Poland'
+      )
     end
-    seed_user(id: 20, login: 'contender', total_stars: 1)
+    seed_user(id: 101, login: 'alice', total_stars: 100, city: 'Kraków', country: 'Poland')
+    seed_user(id: 102, login: 'carol', total_stars: 50, city: 'Kraków', country: 'Poland')
 
-    expect(read_model.user_profile('github', 'alumni', period_start: period).fetch(:elite_badge)).to be_nil
-    expect(read_model.user_profile('github', 'alumni', period_start: period).fetch(:top_100_badge)).to include(
-      value: '12th',
-      status: 'ranked'
-    )
-    expect(read_model.user_profile('github', 'contender', period_start: period).fetch(:top_100_badge)).to include(
-      value: '13th',
-      status: 'ranked'
-    )
+    profile = read_model.user_profile('github', 'carol', period_start: period)
+
+    expect(profile.fetch(:elite_rank)).to eq(102)
+    expect(profile.fetch(:city_rank)).to eq(2)
+    expect(profile.fetch(:profile_badge)).to include(label: 'Kraków Elite', value: '2nd')
   end
 
-  it 'returns ex badges for historical users outside the current top 100' do
-    seed_user(id: 1, login: 'alumni', total_stars: 1_000, period_start: '2026-03-01')
-    seed_user_record(id: 1, login: 'alumni')
+  it 'returns a city-only badge for public profiles without current ranking stats' do
+    seed_user_record(id: 1, login: 'alumni', city: 'Kraków', country: 'Poland')
 
-    badges = read_model.user_profile('github', 'alumni', period_start: period).fetch(:badges)
+    profile = read_model.user_profile('github', 'alumni', period_start: period)
 
-    expect(badges).to contain_exactly(
-      include(label: 'Polish Elite', value: 'ex', status: 'ex'),
-      include(label: 'Polish Top 100', value: 'ex', status: 'ex')
-    )
+    expect(profile.fetch(:profile_badge)).to include(label: 'Polish Open Source', value: nil, status: 'outside_ranking')
   end
 
   it 'returns repository profiles with top-100 badges' do
@@ -74,25 +70,40 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     repository = read_model.repository_profile('github', 'alice', 'app', period_start: nil)
 
     expect(user).to include(elite_rank: nil, repositories: [])
+    expect(user.fetch(:profile_badge)).to include(label: 'Polish Open Source', value: nil)
     expect(repository).to include(elite_rank: nil)
     expect(read_model.user_profile('github', 'missing', period_start: period)).to be_nil
     expect(read_model.repository_profile('github', 'alice', 'missing', period_start: period)).to be_nil
+  end
+
+  it 'lists every public user identity for sitemap rendering' do
+    seed_user_record(id: 1, login: 'alice')
+    seed_user_record(id: 2, login: 'bob')
+
+    expect(read_model.public_user_identities).to contain_exactly(
+      include(platform: 'github', login: 'alice'),
+      include(platform: 'github', login: 'bob')
+    )
   end
 
   def period
     '2026-04-01'
   end
 
-  def seed_user(id:, login:, total_stars:, period_start: period)
-    seed_user_record(id: id, login: login)
-    database.execute(user_stats_sql, [period_start, 'github', id, login, 'Kraków', 'Poland', 1, total_stars, 0, 1,
+  def seed_user(id:, login:, total_stars:, period_start: period, city: 'Kraków', country: 'Poland')
+    seed_user_record(id: id, login: login, city: city, country: country)
+    database.execute(user_stats_sql, [period_start, 'github', id, login, city, country, 1, total_stars, 0, 1,
                                       '2026-05-01T00:10:00Z'])
   end
 
-  def seed_user_record(id:, login:)
+  def seed_user_record(id:, login:, city: nil, country: nil)
     database.execute(
-      'INSERT OR IGNORE INTO users(platform, github_id, login, html_url, updated_at) VALUES (?, ?, ?, ?, ?)',
-      ['github', id, login, "https://github.com/#{login}", '2026-05-01T00:01:00Z']
+      <<~SQL.strip,
+        INSERT OR IGNORE INTO users(
+          platform, github_id, login, city, country, html_url, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      SQL
+      ['github', id, login, city, country, "https://github.com/#{login}", '2026-05-01T00:01:00Z']
     )
   end
 

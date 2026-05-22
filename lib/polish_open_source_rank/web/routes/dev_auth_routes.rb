@@ -37,7 +37,7 @@ module PolishOpenSourceRank
           app.get '/auth/dev/:login' do
             no_store!
             login = params.fetch('login')
-            profile = ranked_github_profile(login)
+            profile = public_github_profile(login)
             halt 404 unless profile
 
             session[:current_user] = {

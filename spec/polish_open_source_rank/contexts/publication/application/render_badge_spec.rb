@@ -10,7 +10,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Application::RenderB
   it 'wraps user badges in a badge response model' do
     read_model = instance_double(
       PublicationProfileReadModel,
-      user_profile: { badges: [{ label: 'Polish Elite', value: '1st' }] }
+      user_profile: { profile_badge: { label: 'Polish Open Source', value: '1st' } }
     )
 
     result = described_class.new(profile_read_model: read_model).user(
@@ -20,7 +20,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Application::RenderB
     )
 
     expect(result).to be_a(PolishOpenSourceRank::Contexts::Publication::Application::BadgeView)
-    expect(result.fetch(:label)).to eq('Polish Elite')
+    expect(result.fetch(:label)).to eq('Polish Open Source')
   end
 
   it 'wraps repository badges in a badge response model' do

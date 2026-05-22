@@ -95,6 +95,13 @@
     </header>
 
     <main id="main-content">
+      <% if auth_notice %>
+        <section class="site-notice" aria-live="polite">
+          <div class="content">
+            <p><%= h t("auth.notice.#{auth_notice}") %></p>
+          </div>
+        </section>
+      <% end %>
       <%= yield %>
     </main>
 
