@@ -462,6 +462,10 @@ h3 {
   white-space: normal;
 }
 
+.ranking-list__meta .muted-link--standalone {
+  font-size: inherit;
+}
+
 .ranking-list__links .muted-link {
   margin-right: 0;
 }
