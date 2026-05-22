@@ -10,10 +10,10 @@
     </div>
 
     <% if current_user %>
-      <img class="hero__image" src="/images/pos.png" alt="Polish Open Source">
+      <img class="hero__image" src="/images/pos.png" alt="" aria-hidden="true">
     <% else %>
-      <a class="hero__image-link" href="<%= h app_path('/auth/github') %>">
-        <img class="hero__image" src="/images/polish_open_source_join_wide.webp" alt="Polish Open Source">
+      <a class="hero__image-link" href="<%= h app_path('/auth/github') %>" aria-label="<%= h t('auth.login.github') %>">
+        <img class="hero__image" src="/images/polish_open_source_join_wide.webp" alt="" aria-hidden="true">
       </a>
     <% end %>
   </div>
@@ -23,9 +23,9 @@
   <div class="content">
     <p><a class="muted-link muted-link--standalone" href="<%= h app_path(scope_path(@scope)) %>"><%= h t('rankings.back') %></a></p>
     <% if @kind == "users" %>
-      <%= erb :user_table, locals: { title: ranking_title(@kind, @metric), rows: @ranking, metric: ranking_metric_column(@kind, @metric), metric_label: ranking_metric_label(@kind, @metric) } %>
+      <%= erb :user_table, locals: { heading_id: 'ranking-detail-users', title: ranking_title(@kind, @metric), rows: @ranking, metric: ranking_metric_column(@kind, @metric), metric_label: ranking_metric_label(@kind, @metric) } %>
     <% else %>
-      <%= erb :repository_table, locals: { title: ranking_title(@kind, @metric), rows: @ranking, metric: ranking_metric_column(@kind, @metric), metric_label: ranking_metric_label(@kind, @metric) } %>
+      <%= erb :repository_table, locals: { heading_id: 'ranking-detail-repositories', title: ranking_title(@kind, @metric), rows: @ranking, metric: ranking_metric_column(@kind, @metric), metric_label: ranking_metric_label(@kind, @metric) } %>
     <% end %>
   </div>
 </section>
