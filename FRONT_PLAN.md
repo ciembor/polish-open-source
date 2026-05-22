@@ -204,15 +204,16 @@ Podnieść jakość dokumentu HTML bez robienia z tego kosmetycznego refaktoru.
 
 ### Plan
 
-- [ ] Sprawdzić, czy każda strona ma dokładnie jedno `h1`.
-- [ ] Uporządkować hierarchię `h1`/`h2`/`h3`.
-- [ ] Przejrzeć semantykę list rankingowych:
-  - [ ] czy powinny być listą,
-  - [ ] czy w części przypadków lepsza byłaby tabela,
-  - [ ] czy obecna struktura jest spójna dla accessibility i parserów.
-- [ ] Uzupełnić sensowne `alt` dla obrazów dekoracyjnych i znaczących.
-- [ ] Upewnić się, że elementy nawigacyjne mają poprawne `aria-label`.
-- [ ] Unikać duplikowania znaczeń przez zbędne wrappery.
+- [x] Sprawdzić, czy każda strona ma dokładnie jedno `h1`.
+- [x] Uporządkować hierarchię `h1`/`h2`/`h3`.
+- [x] Przejrzeć semantykę list rankingowych:
+  - [x] czy powinny być listą,
+  - [x] czy w części przypadków lepsza byłaby tabela,
+  - na tym etapie zostają listą, bo to ranking sekwencyjny, nie siatka danych do porównywania kolumnami.
+  - [x] czy obecna struktura jest spójna dla accessibility i parserów.
+- [x] Uzupełnić sensowne `alt` dla obrazów dekoracyjnych i znaczących.
+- [x] Upewnić się, że elementy nawigacyjne mają poprawne `aria-label`.
+- [x] Unikać duplikowania znaczeń przez zbędne wrappery.
 - [ ] Dodać walidację jakości HTML do checklisty review.
 
 ## Etap 8: treść PL i EN

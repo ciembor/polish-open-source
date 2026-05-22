@@ -45,7 +45,7 @@
   <body>
     <header class="site-header">
       <div class="site-header__inner">
-        <a class="brand" href="<%= h period_base_path('latest') %>"><img src="/icons/polish-open-source.png" alt="">Polish Open Source</a>
+        <a class="brand" href="<%= h period_base_path('latest') %>"><img src="/icons/polish-open-source.png" alt="" aria-hidden="true">Polish Open Source</a>
         <nav class="nav js-nav" aria-label="<%= h t('nav.locations') %>">
           <a class="nav__link" href="<%= h app_path(scope_path(scopes.first)) %>"><%= h t('nav.country') %></a>
           <span class="nav-slot js-primary-city-slot">
@@ -80,12 +80,12 @@
               <button class="nav-pill" type="submit"><%= h t('auth.logout') %></button>
             </form>
           <% else %>
-            <a class="nav-pill nav-pill--github" href="<%= h app_path('/auth/github') %>">
+            <a class="nav-pill nav-pill--github" href="<%= h app_path('/auth/github') %>" aria-label="<%= h t('auth.login.github') %>">
               <img class="nav-pill__icon" src="<%= h app_path('/icons/github.svg') %>" alt="" aria-hidden="true" />
               <span><%= h t('auth.login.github') %></span>
             </a>
           <% end %>
-          <div class="language-switch" aria-label="<%= h t('nav.language') %>">
+          <div class="language-switch" role="navigation" aria-label="<%= h t('nav.language') %>">
             <% SUPPORTED_LOCALES.each do |locale| %>
               <a class="language-switch__link <%= 'is-active' if current_locale?(locale) %>" href="<%= h locale_path(locale) %>" hreflang="<%= h locale %>" lang="<%= h locale %>"><%= h locale.upcase %></a>
             <% end %>
@@ -94,7 +94,7 @@
       </div>
     </header>
 
-    <main>
+    <main id="main-content">
       <%= yield %>
     </main>
 

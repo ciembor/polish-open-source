@@ -94,7 +94,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(latest_user_response.status).to eq(200)
     expect(latest_user_response.body).to include('Gwiazdek')
     expect(latest_user_response.body).not_to include('/icons/medal-gold.svg')
-    expect(latest_user_response.body).to include('<ol class="ranking-list">')
+    expect(latest_user_response.body).to include('<ol class="ranking-list" aria-labelledby="ranking-detail-users">')
     expect(latest_user_response.body).to include('<li class="ranking-list__item first_place">')
     expect(latest_user_response.body).to include('<li class="ranking-list__item second_place">')
     expect(latest_user_response.body).to include('<li class="ranking-list__item third_place">')
@@ -424,6 +424,24 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('Maciej Ciemborowicz')
     expect(response.body).to include('href="/latest/locations/krakow"')
     expect(response.body).not_to include('//locations')
+  end
+
+  it 'keeps core public pages semantically structured', :aggregate_failures do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    request = Rack::MockRequest.new(described_class)
+
+    rankings = request.get('/latest')
+    about = request.get('/about')
+    profile = request.get('/users/github/alice')
+
+    expect(rankings.body.scan('<h1').length).to eq(1)
+    expect(about.body.scan('<h1').length).to eq(1)
+    expect(profile.body.scan('<h1').length).to eq(1)
+    expect(rankings.body).to include('<main id="main-content">')
+    expect(rankings.body).to include('role="navigation" aria-label="Język"')
+    expect(rankings.body).to include('src="/icons/polish-open-source.png" alt="" aria-hidden="true"')
+    expect(rankings.body).to include('src="/images/polish_open_source_join_wide.webp" alt="" aria-hidden="true"')
+    expect(rankings.body).to include('<article class="ranking-table" aria-labelledby="ranking-users-top">')
   end
   # rubocop:enable RSpec/MultipleExpectations
 
