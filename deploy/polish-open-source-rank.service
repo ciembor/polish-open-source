@@ -12,6 +12,7 @@ TimeoutStartSec=90
 
 ExecStartPre=-/usr/bin/podman rm -f polish-open-source-rank
 ExecStart=/usr/bin/podman run --name=polish-open-source-rank -p 127.0.0.1:9293:9293 --env-file /home/ciembor/polish-open-source-rank/.env.local -e RACK_ENV=production -e APP_BASE_PATH=/ -e BASE_URL=https://polish-open-source.pl -v /home/ciembor/polish-open-source-rank/db:/app/db -v /home/ciembor/polish-open-source-rank/log:/app/log localhost/polish-open-source-rank:latest
+ExecStartPost=/usr/bin/systemctl start polish-open-source-rank-crawl-resume.service
 ExecStop=/usr/bin/podman stop --time 30 polish-open-source-rank
 ExecStopPost=-/usr/bin/podman rm -f polish-open-source-rank
 KillMode=none

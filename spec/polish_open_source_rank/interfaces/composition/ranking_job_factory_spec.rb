@@ -119,6 +119,8 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::RankingJobFactory 
       instance_double(PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteRankingRetention)
     monthly_snapshot_store =
       instance_double(PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::MonthlySnapshotStore)
+    crawl_job_repository =
+      instance_double(PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteCrawlJobRepository)
 
     allow(PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteSnapshotRunRepository)
       .to receive(:new).with(database).and_return(snapshot_run_repository)
@@ -139,6 +141,8 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::RankingJobFactory 
         ranking_retention: ranking_retention
       )
       .and_return(monthly_snapshot_store)
+    allow(PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteCrawlJobRepository)
+      .to receive(:new).with(database).and_return(crawl_job_repository)
   end
   # rubocop:enable Metrics/AbcSize
 end

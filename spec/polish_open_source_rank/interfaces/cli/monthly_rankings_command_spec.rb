@@ -36,6 +36,73 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
     )
   end
 
+  it 'tracks crawl jobs through success, failure, and interruption boundaries' do
+    output = StringIO.new
+    job = instance_double(PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlySnapshot)
+    crawl_jobs = instance_double(
+      PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteCrawlJobRepository,
+      start: 17,
+      finish: nil,
+      fail: nil
+    )
+    allow(job).to receive(:call)
+
+    described_class.call(
+      ['--month', '2026-04', '--platform', 'github', '--scope', 'organizations'],
+      job: job,
+      output: output,
+      crawl_jobs: crawl_jobs
+    )
+
+    expect(crawl_jobs).to have_received(:start).with(
+      command: 'monthly_rankings',
+      arguments: ['--month', '2026-04', '--platform', 'github', '--scope', 'organizations']
+    )
+    expect(crawl_jobs).to have_received(:finish).with(17)
+    expect(crawl_jobs).not_to have_received(:fail)
+  end
+
+  it 'marks interrupted crawl jobs as interrupted' do
+    output = StringIO.new
+    job = instance_double(PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlySnapshot)
+    crawl_jobs = instance_double(
+      PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteCrawlJobRepository,
+      start: 19,
+      finish: nil,
+      fail: nil
+    )
+    allow(job).to receive(:call).and_raise(
+      PolishOpenSourceRank::Application::MonthlySnapshotInterrupted,
+      'Received SIGTERM'
+    )
+
+    expect do
+      described_class.call(['--month', '2026-04'], job: job, output: output, crawl_jobs: crawl_jobs)
+    end.to raise_error(PolishOpenSourceRank::Application::MonthlySnapshotInterrupted, 'Received SIGTERM')
+
+    expect(crawl_jobs).to have_received(:fail).with(19, 'Received SIGTERM', status: 'interrupted')
+    expect(crawl_jobs).not_to have_received(:finish)
+  end
+
+  it 'marks failed crawl jobs with the original error' do
+    output = StringIO.new
+    job = instance_double(PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlySnapshot)
+    crawl_jobs = instance_double(
+      PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteCrawlJobRepository,
+      start: 23,
+      finish: nil,
+      fail: nil
+    )
+    allow(job).to receive(:call).and_raise(RuntimeError, 'boom')
+
+    expect do
+      described_class.call(['--month', '2026-04'], job: job, output: output, crawl_jobs: crawl_jobs)
+    end.to raise_error(RuntimeError, 'boom')
+
+    expect(crawl_jobs).to have_received(:fail).with(23, 'RuntimeError: boom')
+    expect(crawl_jobs).not_to have_received(:finish)
+  end
+
   it 'turns process stop signals into job-visible interruptions' do
     output = StringIO.new
     term_handler = nil

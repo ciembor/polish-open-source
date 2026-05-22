@@ -1,0 +1,10 @@
+[Unit]
+Description=Resume interrupted Polish Open Source crawl jobs
+After=polish-open-source-rank.service
+Wants=polish-open-source-rank.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/ciembor/polish-open-source-rank
+EnvironmentFile=/home/ciembor/polish-open-source-rank/.env.local
+ExecStart=/usr/bin/podman run --rm --env-file /home/ciembor/polish-open-source-rank/.env.local -e RACK_ENV=production -e APP_BASE_PATH=/ -e BASE_URL=https://polish-open-source.pl -v /home/ciembor/polish-open-source-rank/db:/app/db -v /home/ciembor/polish-open-source-rank/log:/app/log localhost/polish-open-source-rank:latest bundle exec ruby bin/resume_crawls

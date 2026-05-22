@@ -6,27 +6,29 @@ module PolishOpenSourceRank
       class RankingJobFactory
         SUPPORTED_PLATFORMS = %w[github gitlab codeberg].freeze
 
-        def self.build(argv, configuration: Configuration.load, output: $stdout)
-          new(argv, configuration: configuration, output: output).build
+        def self.build(argv, configuration: Configuration.load, output: $stdout, crawl_jobs: nil)
+          new(argv, configuration: configuration, output: output, crawl_jobs: crawl_jobs).build
         end
 
-        def initialize(argv, configuration:, output:)
+        def initialize(argv, configuration:, output:, crawl_jobs:)
           @argv = argv
           @configuration = configuration
           @output = output
+          @crawl_jobs = crawl_jobs
         end
 
         def build
           CLI::MonthlyRankingsCommand.new(
             argv: argv,
             job: job,
-            output: output
+            output: output,
+            crawl_jobs: crawl_jobs || crawl_job_repository
           )
         end
 
         private
 
-        attr_reader :argv, :configuration, :output
+        attr_reader :argv, :configuration, :crawl_jobs, :output
 
         def database
           @database ||= begin
@@ -125,6 +127,10 @@ module PolishOpenSourceRank
 
         def source_request_log
           @source_request_log ||= Contexts::Ranking::Infrastructure::SQLite::SQLiteSourceRequestLog.new(database)
+        end
+
+        def crawl_job_repository
+          @crawl_job_repository ||= Contexts::Operations::Infrastructure::SQLite::SQLiteCrawlJobRepository.new(database)
         end
       end
     end

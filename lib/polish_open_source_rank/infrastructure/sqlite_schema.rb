@@ -18,6 +18,18 @@ module PolishOpenSourceRank
             error TEXT
           );
 
+          CREATE TABLE IF NOT EXISTS crawl_job_runs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            command TEXT NOT NULL,
+            arguments_json TEXT NOT NULL,
+            status TEXT NOT NULL,
+            attempts INTEGER NOT NULL DEFAULT 0,
+            started_at TEXT NOT NULL,
+            finished_at TEXT,
+            error TEXT,
+            updated_at TEXT NOT NULL
+          );
+
           CREATE TABLE IF NOT EXISTS candidate_users (
             period_start TEXT NOT NULL,
             platform TEXT NOT NULL DEFAULT 'github',
@@ -235,6 +247,8 @@ module PolishOpenSourceRank
             ON candidate_users(period_start, platform, status, login);
           CREATE INDEX IF NOT EXISTS idx_candidate_organizations_period_platform_status_login
             ON candidate_organizations(period_start, platform, status, login);
+          CREATE INDEX IF NOT EXISTS idx_crawl_job_runs_status_command_started
+            ON crawl_job_runs(status, command, started_at);
           CREATE INDEX IF NOT EXISTS idx_repo_stats_period_country_total
             ON repository_monthly_stats(period_start, owner_country, stargazers_count, platform);
           CREATE INDEX IF NOT EXISTS idx_repo_stats_period_city_delta
