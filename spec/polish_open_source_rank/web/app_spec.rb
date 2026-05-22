@@ -284,6 +284,48 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(discord_callback.status).to eq(302)
   end
 
+  it 'returns to the profile with a retry message when Discord rejects the OAuth callback' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
+    described_class.set :discord_oauth_client, FailingDiscordOAuthClient.new
+    described_class.set :discord_gateway, FakeDiscordGateway.new
+    request = Rack::MockRequest.new(described_class)
+
+    github_callback = sign_in_with_github(request)
+    discord_start = request.get('/auth/discord', 'HTTP_COOKIE' => cookie_header(github_callback))
+    discord_state = Rack::Utils.parse_query(URI(discord_start.location).query).fetch('state')
+    discord_callback = request.get(
+      "/auth/discord/callback?code=discord-code&state=#{discord_state}",
+      'HTTP_COOKIE' => cookie_header(discord_start)
+    )
+    profile = request.get(discord_callback.location, 'HTTP_COOKIE' => cookie_header(discord_callback))
+
+    expect(discord_callback.status).to eq(302)
+    expect(discord_callback.location).to eq('http://example.org/users/github/alice')
+    expect(profile.body).to include('Discord odrzucił logowanie')
+  end
+
+  it 'returns to the profile with a retry message when Discord member sync fails' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
+    described_class.set :discord_oauth_client, FakeDiscordOAuthClient.new
+    described_class.set :discord_gateway, FailingMemberSyncDiscordGateway.new
+    request = Rack::MockRequest.new(described_class)
+
+    github_callback = sign_in_with_github(request)
+    discord_start = request.get('/auth/discord', 'HTTP_COOKIE' => cookie_header(github_callback))
+    discord_state = Rack::Utils.parse_query(URI(discord_start.location).query).fetch('state')
+    discord_callback = request.get(
+      "/auth/discord/callback?code=discord-code&state=#{discord_state}",
+      'HTTP_COOKIE' => cookie_header(discord_start)
+    )
+    profile = request.get(discord_callback.location, 'HTTP_COOKIE' => cookie_header(discord_callback))
+
+    expect(discord_callback.status).to eq(302)
+    expect(discord_callback.location).to eq('http://example.org/users/github/alice')
+    expect(profile.body).to include('Nie udało się zsynchronizować konta Discord')
+  end
+
   it 'rejects Discord sync when the logged-in GitHub profile is no longer ranked' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
@@ -935,6 +977,19 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   class FailingWelcomeDiscordGateway < FakeDiscordGateway
     def post_welcome_message(**_attributes)
       raise PolishOpenSourceRank::Web::Auth::DiscordGateway::Error
+    end
+  end
+
+  class FailingMemberSyncDiscordGateway < FakeDiscordGateway
+    def sync_member(**_attributes)
+      raise PolishOpenSourceRank::Web::Auth::DiscordGateway::Error
+    end
+  end
+
+  class FailingDiscordOAuthClient < FakeDiscordOAuthClient
+    def exchange_code(code:, redirect_uri:)
+      super
+      raise PolishOpenSourceRank::Web::Auth::DiscordOAuthClient::Error, '400 invalid_grant'
     end
   end
   # rubocop:enable Lint/ConstantDefinitionInBlock

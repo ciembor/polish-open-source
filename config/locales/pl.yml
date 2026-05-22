@@ -168,6 +168,9 @@ pl:
       connect_body: "Połącz konto Discord, żeby dołączyć do serwera oraz automatycznie zsynchronizować nick z GitHuba i role rankingowe."
       connect_action: "Dołącz do Elite Discorda"
       connected: "Połączono jako %{user}"
+      errors:
+        oauth: "Discord odrzucił logowanie. Zacznij ponownie od przycisku dołączenia."
+        sync: "Nie udało się zsynchronizować konta Discord. Spróbuj ponownie za chwilę."
       invite_action: "Dołącz do Discorda"
       invite_body: "To osobiste zaproszenie działa raz. Po dołączeniu bot powiąże ten invite z Twoim profilem w rankingu i automatycznie ustawi nick oraz role na serwerze."
       invite_unavailable: "Zaproszenie Discord jest chwilowo niedostępne."
