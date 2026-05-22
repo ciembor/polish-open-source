@@ -59,13 +59,7 @@ module PolishOpenSourceRank
           accept_language: request.env.fetch('HTTP_ACCEPT_LANGUAGE', nil)
         )
         redirect_to_locale_variant! if request.get?
-        response.set_cookie(
-          'locale',
-          value: @locale,
-          path: locale_cookie_path,
-          max_age: 31_536_000,
-          same_site: :lax
-        )
+        set_locale_cookie!(@locale)
       end
 
       not_found do
@@ -106,6 +100,16 @@ module PolishOpenSourceRank
 
       def locale_cookie_path
         configuration.app_base_path.empty? ? '/' : configuration.app_base_path
+      end
+
+      def set_locale_cookie!(locale)
+        response.set_cookie(
+          'locale',
+          value: locale,
+          path: locale_cookie_path,
+          max_age: 31_536_000,
+          same_site: :lax
+        )
       end
 
       def asset_path(path)
@@ -242,7 +246,8 @@ module PolishOpenSourceRank
         path = strip_locale_prefix(request.path_info)
         return unless localizable_public_path?(path)
 
-        redirect localized_public_path(path, locale: locale, query: locale_query_without_lang), 301
+        set_locale_cookie!(locale)
+        redirect localized_public_path(path, locale: locale, query: locale_query_without_lang), 302
       end
 
       def rewrite_locale_path!
@@ -252,7 +257,8 @@ module PolishOpenSourceRank
 
         path = strip_locale_prefix(request.path_info)
         if locale == DEFAULT_LOCALE
-          redirect localized_public_path(path, locale: DEFAULT_LOCALE, query: current_query), 301
+          set_locale_cookie!(locale)
+          redirect localized_public_path(path, locale: DEFAULT_LOCALE, query: current_query), 302
         end
 
         env['polish_open_source_rank.path_locale'] = locale

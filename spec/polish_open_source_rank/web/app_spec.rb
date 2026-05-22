@@ -492,25 +492,31 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(english_response.body).to include('Top 10 by stars')
     expect(english_response.body).to include('Repositories')
     expect(english_response.body).to include('rel="canonical" href="https://rank.example/en/latest"')
+    expect(english_response.body).to include('href="/latest?lang=pl"')
     expect(english_response['Set-Cookie']).to include('locale=en')
     expect(cookie_response.status).to eq(302)
     expect(cookie_response.location).to eq('http://example.org/en/latest')
   end
 
-  it 'redirects legacy locale query params to stable localized URLs' do
+  it 'redirects locale query params to stable localized URLs and stores the selected locale' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     request = Rack::MockRequest.new(described_class)
 
     english_redirect = request.get('/latest?lang=en')
-    polish_redirect = request.get('/en/latest?lang=pl')
-    prefixed_polish_redirect = request.get('/pl/latest')
+    polish_redirect = request.get('/en/latest?lang=pl', 'HTTP_COOKIE' => 'locale=en')
+    prefixed_polish_redirect = request.get('/pl/latest', 'HTTP_COOKIE' => 'locale=en')
 
-    expect(english_redirect.status).to eq(301)
+    expect(english_redirect.status).to eq(302)
     expect(english_redirect.location).to eq('http://example.org/en/latest')
-    expect(polish_redirect.status).to eq(301)
+    expect(english_redirect['Set-Cookie']).to include('locale=en')
+
+    expect(polish_redirect.status).to eq(302)
     expect(polish_redirect.location).to eq('http://example.org/latest')
-    expect(prefixed_polish_redirect.status).to eq(301)
+    expect(polish_redirect['Set-Cookie']).to include('locale=pl')
+
+    expect(prefixed_polish_redirect.status).to eq(302)
     expect(prefixed_polish_redirect.location).to eq('http://example.org/latest')
+    expect(prefixed_polish_redirect['Set-Cookie']).to include('locale=pl')
   end
 
   it 'renders links and assets under a configured app base path' do
