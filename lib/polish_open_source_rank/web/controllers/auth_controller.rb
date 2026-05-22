@@ -37,22 +37,6 @@ module PolishOpenSourceRank
         def oauth_callback_url(path)
           "#{configuration.public_base_url.delete_suffix('/')}#{path}"
         end
-
-        def github_oauth_client
-          settings.github_oauth_client || Auth::GitHubOAuthClient.new(configuration)
-        end
-
-        def discord_oauth_client
-          settings.discord_oauth_client || Auth::DiscordOAuthClient.new(configuration)
-        end
-
-        def discord_gateway
-          settings.discord_gateway || Contexts::Community::Infrastructure::Discord::DiscordApiGateway.new(configuration)
-        end
-
-        def discord_role_map
-          settings.discord_role_map
-        end
       end
     end
   end

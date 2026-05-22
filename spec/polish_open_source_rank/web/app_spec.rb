@@ -1028,28 +1028,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   def reset_app_memoized_dependencies
     %i[
-      @database
-      @show_rankings
-      @show_ranking_detail
-      @list_editions
-      @show_user_profile
-      @show_repository_profile
-      @show_organization_profile
-      @show_organization_repository_profile
-      @render_badge
-      @resolve_period
-      @show_job_progress
-      @show_discord_panel
-      @connect_discord_account
-      @register_public_github_profile
-      @cache_revision_read_model
-      @ranking_read_model
-      @edition_read_model
-      @profile_read_model
-      @public_profile_repository
-      @contributor_access_read_model
-      @discord_connection_repository
-      @job_progress_read_model
+      @composition
     ].each do |ivar|
       described_class.remove_instance_variable(ivar) if described_class.instance_variable_defined?(ivar)
     end
