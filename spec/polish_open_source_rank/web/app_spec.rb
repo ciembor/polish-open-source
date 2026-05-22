@@ -169,7 +169,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(github_callback.status).to eq(302)
     expect(github_callback.location).to eq('http://example.org/users/github/alice')
     expect(profile.body).to include('Twój dostęp Discord')
-    expect(profile.body).to include('Join Elite Discord')
+    expect(profile.body).to include('Dołącz do Elite Discorda')
     expect(profile.body).to include('href="/auth/discord"')
     expect(profile.body).to include('Kanały do pisania')
     expect(profile.body).to include('Top 10 PL')
@@ -315,7 +315,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     profile = request.get('/users/github/alice', 'HTTP_COOKIE' => cookie_header(github_callback))
     logout = request.post('/logout', 'HTTP_COOKIE' => cookie_header(github_callback))
 
-    expect(profile.body).to include('Join Elite Discord')
+    expect(profile.body).to include('Dołącz do Elite Discorda')
     expect(profile.body).to include('Kanały do pisania')
     expect(profile.body).to include('/auth/discord')
     expect(logout.status).to eq(303)
@@ -359,9 +359,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile_response.body).to include('rel="canonical" href="https://rank.example/repositories/github/alice/app"')
     expect(profile_response.body).to include('"@type": "SoftwareSourceCode"')
     expect(profile_response.body).to include('/icons/medal-gold.svg')
-    expect(profile_response.body).not_to include('Badge na GitHub')
+    expect(profile_response.body).not_to include('Odznaka na GitHub')
     expect(profile_response.body).not_to include('/badges/repositories/github/alice/app.svg')
-    expect(owner_profile_response.body).to include('Badge na GitHub')
+    expect(owner_profile_response.body).to include('Odznaka na GitHub')
     expect(owner_profile_response.body).to include('/badges/repositories/github/alice/app.svg')
     expect(owner_profile_response.body).to include(
       '[![Badge Polish Repo](https://rank.example/badges/repositories/github/alice/app.svg)]'
@@ -390,8 +390,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('property="og:image" content="https://rank.example/images/polish_open_source_join.webp"')
     expect(response.body).to include('kwiecień 2026')
     expect(response.body).to include('Top projekty')
-    expect(response.body).to include('Top userzy: gwiazdki')
-    expect(response.body).to include('Top userzy: aktywność')
+    expect(response.body).to include('Top użytkownicy: gwiazdki')
+    expect(response.body).to include('Top użytkownicy: aktywność')
     expect(response.body).to include('href="/2026-04"')
     expect(response.body).to include('href="/editions/2025"')
   end
@@ -599,6 +599,37 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(sitemap.body).to include('<loc>https://rank.example/about</loc>')
     expect(sitemap.body).to include('<loc>https://rank.example/en/users/github/alice</loc>')
     expect(sitemap.body).to include('<lastmod>')
+  end
+
+  it 'keeps localized metadata consistent across key public pages', :aggregate_failures do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    request = Rack::MockRequest.new(described_class)
+
+    about = request.get('/about')
+    editions = request.get('/editions')
+    user_profile = request.get('/users/github/alice')
+    repository_profile = request.get('/repositories/github/alice/app')
+    english_about = request.get('/en/about')
+
+    expect(about.body).to include('<html lang="pl">')
+    expect(about.body).to include('rel="canonical" href="https://rank.example/about"')
+    expect(about.body).to include('rel="alternate" hreflang="en" href="https://rank.example/en/about"')
+    expect(about.body).to include('property="og:title" content="O Polish Open Source Rank"')
+    expect(about.body).to include('name="twitter:card" content="summary_large_image"')
+
+    expect(editions.body).to include('rel="canonical" href="https://rank.example/editions"')
+    expect(editions.body).to include('property="og:image" content="https://rank.example/images/polish_open_source_join.webp"')
+
+    expect(user_profile.body).to include('rel="canonical" href="https://rank.example/users/github/alice"')
+    expect(user_profile.body).to include('property="og:type" content="profile"')
+    expect(user_profile.body).to include('name="twitter:image" content="https://rank.example/images/pos.png"')
+
+    expect(repository_profile.body).to include('rel="canonical" href="https://rank.example/repositories/github/alice/app"')
+    expect(repository_profile.body).to include('name="twitter:image" content="https://rank.example/images/pos.png"')
+
+    expect(english_about.body).to include('<html lang="en">')
+    expect(english_about.body).to include('rel="canonical" href="https://rank.example/en/about"')
+    expect(english_about.body).to include('property="og:locale" content="en_US"')
   end
 
   it 'serves internal job progress as a noindex monitor page', :aggregate_failures do

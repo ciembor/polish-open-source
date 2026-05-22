@@ -68,8 +68,8 @@ pl:
     stars_suffix: "gwiazdek"
     title: "Edycje"
     top_projects: "Top projekty"
-    top_users_activity: "Top userzy: aktywność"
-    top_users_stars: "Top userzy: gwiazdki"
+    top_users_activity: "Top użytkownicy: aktywność"
+    top_users_stars: "Top użytkownicy: gwiazdki"
   elite:
     medal_alt: "Medal Polish Elite, miejsce %{rank}"
     place: "%{rank}. miejsce"
@@ -111,6 +111,7 @@ pl:
       records: "Brak rekordów."
       title: "Brak danych rankingowych"
     hero:
+      eyebrow: "Ranking open source"
       lede: "Publiczni użytkownicy i repozytoria uporządkowane według gwiazdek, miesięcznego trendu i aktywności."
     metric:
       events: "Zdarzeń"
@@ -131,7 +132,7 @@ pl:
     snapshot: "Snapshot:"
     table:
       city: "Miasto"
-      user: "User"
+      user: "Użytkownik"
     title:
       repositories:
         top: "Top 100 repozytoriów według gwiazdek"
@@ -141,13 +142,13 @@ pl:
         top: "Top 100 użytkowników według gwiazdek"
         trending: "Top 100 trendujących użytkowników"
     top_10_stars: "Top 10 według gwiazdek"
-    trending_10_month: "Trending 10 w miesiącu"
+    trending_10_month: "Top 10 trendujących w miesiącu"
     users: "Użytkownicy"
     users_activity_month: "Aktywność w miesiącu"
   repositories:
     badge:
       alt: "Badge Polish Repo"
-      title: "Badge na GitHub"
+      title: "Odznaka na GitHub"
     links:
       source_project: "Projekt na %{platform}"
     seo:
@@ -160,12 +161,12 @@ pl:
     avatar_alt: "Zdjęcie profilowe %{user}"
     badge:
       alt: "Badge Polish Open Source"
-      title: "Badge na GitHub"
+      title: "Odznaka na GitHub"
     discord:
       channels_title: "Kanały do pisania"
       city_rank: "Ranking %{city}"
       connect_body: "Połącz konto Discord, żeby dołączyć do serwera oraz automatycznie zsynchronizować nick z GitHuba i role rankingowe."
-      connect_action: "Join Elite Discord"
+      connect_action: "Dołącz do Elite Discorda"
       connected: "Połączono jako %{user}"
       invite_action: "Dołącz do Discorda"
       invite_body: "To osobiste zaproszenie działa raz. Po dołączeniu bot powiąże ten invite z Twoim profilem w rankingu i automatycznie ustawi nick oraz role na serwerze."
