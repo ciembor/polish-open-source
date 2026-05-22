@@ -877,6 +877,10 @@ h3 {
   padding: 34px 0 42px;
 }
 
+.profile-section--compact {
+  padding-bottom: 18px;
+}
+
 .profile-spotlight {
   background: linear-gradient(112deg, #ffffff 0%, #f3faf7 58%, #fff7ed 100%);
   border: 1px solid var(--line);
@@ -1000,14 +1004,8 @@ h3 {
   color: #ffffff;
 }
 
-.discord-panel__facts {
-  margin-top: 16px;
-}
-
 .discord-access {
-  border-top: 1px solid var(--line);
-  margin-top: 18px;
-  padding-top: 18px;
+  margin-top: 8px;
 }
 
 .discord-access h3 {

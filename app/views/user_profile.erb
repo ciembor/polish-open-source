@@ -25,7 +25,7 @@
 </section>
 
 <% top_repository = @repositories.first %>
-<section class="profile-section" aria-labelledby="profile-spotlight-heading">
+<section class="profile-section profile-section--compact" aria-labelledby="profile-spotlight-heading">
   <div class="content">
     <article class="profile-spotlight">
       <div class="profile-spotlight__header">
@@ -77,30 +77,13 @@
           <a class="discord-join-button" href="<%= h app_path('/auth/discord') %>"><%= h t('users.discord.connect_action') %></a>
         </div>
 
-        <dl class="profile-facts discord-panel__facts">
-          <% access = @discord_panel.fetch(:access) %>
-          <div>
-            <dt><%= h t('users.discord.poland_rank') %></dt>
-            <dd><%= access[:country_rank] ? h("##{access.fetch(:country_rank)}") : h(t('users.summary.unknown')) %></dd>
-          </div>
-          <% if access[:city] %>
-            <div>
-              <dt><%= h t('users.discord.city_rank', city: access.fetch(:city)) %></dt>
-              <dd><%= access[:city_rank] ? h("##{access.fetch(:city_rank)}") : h(t('users.summary.unknown')) %></dd>
-            </div>
-          <% end %>
-        </dl>
         <div class="discord-access">
           <h3><%= h t('users.discord.channels_title') %></h3>
-          <% if @discord_panel.fetch(:access_channels).empty? %>
-            <p class="profile-empty"><%= h t('users.discord.no_channels') %></p>
-          <% else %>
-            <ul>
-              <% @discord_panel.fetch(:access_channels).each do |channel| %>
-                <li><%= h channel %></li>
-              <% end %>
-            </ul>
-          <% end %>
+          <ul>
+            <% @discord_panel.fetch(:access_channels).each do |channel| %>
+              <li><%= h channel %></li>
+            <% end %>
+          </ul>
         </div>
       </article>
     </div>
