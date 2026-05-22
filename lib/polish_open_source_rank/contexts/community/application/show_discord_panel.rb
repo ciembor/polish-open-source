@@ -31,7 +31,7 @@ module PolishOpenSourceRank
           attr_reader :access_read_model, :catalog, :connection_repository
 
           def access_channels(role_keys)
-            role_keys.filter_map do |role_key|
+            ['general'] + role_keys.filter_map do |role_key|
               case role_key
               when 'DISCORD_ROLE_TOP_10_PL' then 'Top 10 PL'
               when 'DISCORD_ROLE_TOP_100_PL' then 'Top 100 PL'
