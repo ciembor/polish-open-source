@@ -3,10 +3,12 @@
 require 'sinatra/base'
 require 'securerandom'
 require 'digest'
+require 'forwardable'
 
 module PolishOpenSourceRank
   module Web
     class App < Sinatra::Base
+      extend Forwardable
       include Controllers::AuthController
       include Controllers::BadgeController
       include Controllers::InternalController
@@ -32,7 +34,7 @@ module PolishOpenSourceRank
       set :github_oauth_client, nil
       set :discord_oauth_client, nil
       set :discord_gateway, nil
-      set :discord_role_map, Contexts::Community::Infrastructure::Discord::DiscordRoleMap.new
+      set :discord_role_map, nil
       use Rack::Session::Cookie,
           key: 'polish_open_source_rank.session',
           path: '/',
@@ -47,6 +49,32 @@ module PolishOpenSourceRank
       register Routes::AuthRoutes
       register Routes::BadgeRoutes
       register Routes::InternalRoutes
+
+      def_delegators :composition,
+                     :cache_revision_read_model,
+                     :connect_discord_account,
+                     :contributor_access_read_model,
+                     :discord_connection_repository,
+                     :discord_gateway,
+                     :discord_oauth_client,
+                     :discord_role_map,
+                     :github_oauth_client,
+                     :job_progress_read_model,
+                     :list_editions,
+                     :profile_read_model,
+                     :public_profile_repository,
+                     :ranking_read_model,
+                     :register_public_github_profile,
+                     :render_badge,
+                     :resolve_period,
+                     :show_discord_panel,
+                     :show_job_progress,
+                     :show_organization_profile,
+                     :show_organization_repository_profile,
+                     :show_rankings,
+                     :show_ranking_detail,
+                     :show_repository_profile,
+                     :show_user_profile
 
       before do
         redirect_param_locale! if request.get?
@@ -120,127 +148,14 @@ module PolishOpenSourceRank
         app_path("#{path}?v=#{version}")
       end
 
-      def database
-        @database ||= begin
-          db = Shared::Infrastructure::SQLite::Database.open(configuration.database_path)
-          Infrastructure::PlatformSchemaMigration.new(db, Infrastructure::SQLiteSchema.sql).bootstrap!
-          db
-        end
-      end
-
-      def show_rankings
-        @show_rankings ||= Contexts::Publication::Application::ShowRankings.new(ranking_read_model: ranking_read_model)
-      end
-
-      def show_ranking_detail
-        @show_ranking_detail ||=
-          Contexts::Publication::Application::ShowRankingDetail.new(ranking_read_model: ranking_read_model)
-      end
-
-      def list_editions
-        @list_editions ||= Contexts::Publication::Application::ListEditions.new(edition_read_model: edition_read_model)
-      end
-
-      def show_user_profile
-        @show_user_profile ||=
-          Contexts::Publication::Application::ShowUserProfile.new(profile_read_model: profile_read_model)
-      end
-
-      def show_repository_profile
-        @show_repository_profile ||=
-          Contexts::Publication::Application::ShowRepositoryProfile.new(profile_read_model: profile_read_model)
-      end
-
-      def show_organization_profile
-        @show_organization_profile ||=
-          Contexts::Publication::Application::ShowOrganizationProfile.new(profile_read_model: profile_read_model)
-      end
-
-      def show_organization_repository_profile
-        @show_organization_repository_profile ||=
-          Contexts::Publication::Application::ShowOrganizationRepositoryProfile.new(
-            profile_read_model: profile_read_model
-          )
-      end
-
-      def render_badge
-        @render_badge ||= Contexts::Publication::Application::RenderBadge.new(profile_read_model: profile_read_model)
-      end
-
-      def resolve_period
-        @resolve_period ||= Contexts::Publication::Application::ResolvePeriod.new(
-          period_read_model: cache_revision_read_model
+      def composition
+        @composition ||= Composition.new(
+          configuration: configuration,
+          github_oauth_client: settings.github_oauth_client,
+          discord_oauth_client: settings.discord_oauth_client,
+          discord_gateway: settings.discord_gateway,
+          discord_role_map: settings.discord_role_map
         )
-      end
-
-      def show_job_progress
-        @show_job_progress ||= Contexts::Operations::Application::ShowJobProgress.new(
-          read_model: job_progress_read_model
-        )
-      end
-
-      def show_discord_panel
-        @show_discord_panel ||= Contexts::Community::Application::ShowDiscordPanel.new(
-          connection_repository: discord_connection_repository,
-          access_read_model: contributor_access_read_model
-        )
-      end
-
-      def connect_discord_account
-        @connect_discord_account ||= Contexts::Community::Application::ConnectDiscordAccount.new(
-          profile_read_model: profile_read_model,
-          connection_repository: discord_connection_repository,
-          access_read_model: contributor_access_read_model,
-          member_gateway: discord_gateway,
-          role_map: discord_role_map
-        )
-      end
-
-      def register_public_github_profile
-        @register_public_github_profile ||= Contexts::Publication::Application::RegisterPublicGitHubProfile.new(
-          profile_read_model: profile_read_model,
-          profile_repository: public_profile_repository
-        )
-      end
-
-      def cache_revision_read_model
-        @cache_revision_read_model ||=
-          Contexts::Publication::Infrastructure::SQLite::SQLiteCacheRevisionReadModel.new(database)
-      end
-
-      def ranking_read_model
-        @ranking_read_model ||= Contexts::Ranking::Infrastructure::SQLite::SQLiteRankingReadModel.new(database)
-      end
-
-      def edition_read_model
-        @edition_read_model ||= Contexts::Publication::Infrastructure::SQLite::SQLiteEditionReadModel.new(
-          database,
-          ranking_read_model: ranking_read_model
-        )
-      end
-
-      def profile_read_model
-        @profile_read_model ||= Contexts::Publication::Infrastructure::SQLite::SQLiteProfileReadModel.new(database)
-      end
-
-      def public_profile_repository
-        @public_profile_repository ||=
-          Contexts::Publication::Infrastructure::SQLite::SQLitePublicProfileRepository.new(database)
-      end
-
-      def contributor_access_read_model
-        @contributor_access_read_model ||=
-          Contexts::Community::Infrastructure::SQLite::SQLiteContributorAccessReadModel.new(database)
-      end
-
-      def discord_connection_repository
-        @discord_connection_repository ||=
-          Contexts::Community::Infrastructure::SQLite::SQLiteDiscordConnectionRepository.new(database)
-      end
-
-      def job_progress_read_model
-        @job_progress_read_model ||=
-          Contexts::Operations::Infrastructure::SQLite::SQLiteJobProgressReadModel.new(database)
       end
 
       def ranking_metric?(kind, metric)
