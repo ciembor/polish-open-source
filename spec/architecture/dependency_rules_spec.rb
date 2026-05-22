@@ -12,7 +12,7 @@ RSpec.describe 'architecture dependency rules' do
   end
 
   it 'keeps new domain code independent from outer layers', :aggregate_failures do
-    forbidden = /\b(Infrastructure::|Web::|Sinatra|SQLite3|Net::HTTP|Discordrb|ENV\b)/
+    forbidden = /\b(Infrastructure::|Web::|Sinatra|SQLite3|Sequel|Net::HTTP|Discordrb|ENV\b)/
     domain_files = files_under('lib/polish_open_source_rank/shared/domain') +
                    files_under('lib/polish_open_source_rank/contexts/*/domain')
 
@@ -23,7 +23,7 @@ RSpec.describe 'architecture dependency rules' do
   end
 
   it 'keeps new application code from instantiating mechanisms', :aggregate_failures do
-    forbidden = /\b(SQLite3|Sinatra|Net::HTTP|Discordrb|ENV\b)/
+    forbidden = /\b(SQLite3|Sequel|Sinatra|Net::HTTP|Discordrb|ENV\b)/
     application_files = files_under('lib/polish_open_source_rank/contexts/*/application')
 
     application_files.each do |path|
@@ -105,6 +105,18 @@ RSpec.describe 'architecture dependency rules' do
 
     production_files.each do |path|
       expect(file_body(path)).not_to match(forbidden), "#{path} reaches through the SQLite infrastructure seam"
+    end
+  end
+
+  it 'keeps Sequel confined to infrastructure adapters', :aggregate_failures do
+    forbidden = /\bSequel\b|require ['"]sequel['"]/
+    infrastructure_files = files_under('lib/polish_open_source_rank/infrastructure') +
+                           files_under('lib/polish_open_source_rank/shared/infrastructure') +
+                           files_under('lib/polish_open_source_rank/contexts/*/infrastructure')
+    production_files = files_under('lib/polish_open_source_rank') - infrastructure_files
+
+    production_files.each do |path|
+      expect(file_body(path)).not_to match(forbidden), "#{path} references Sequel outside infrastructure"
     end
   end
 end

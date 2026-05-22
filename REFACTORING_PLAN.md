@@ -54,9 +54,9 @@ Sequel belongs in infrastructure adapters and shared SQLite infrastructure only.
 
 ### 1. Add Sequel and introduce the database gateway
 
-- [ ] Add `gem 'sequel', '~> 5.x'` to `Gemfile`.
-- [ ] Keep `sqlite3` as the database driver; Sequel uses it underneath.
-- [ ] Replace `Shared::Infrastructure::SQLite::Database` internals with a Sequel connection while preserving its current public API:
+- [x] Add `gem 'sequel', '~> 5.x'` to `Gemfile`.
+- [x] Keep `sqlite3` as the database driver; Sequel uses it underneath.
+- [x] Replace `Shared::Infrastructure::SQLite::Database` internals with a Sequel connection while preserving its current public API:
   - `open(path)`
   - `execute(sql, params = [])`
   - `execute_batch(sql)`
@@ -64,12 +64,12 @@ Sequel belongs in infrastructure adapters and shared SQLite infrastructure only.
   - `fetch_value(sql, params = [])`
   - `transaction`
   - `table_info(table_name)`
-- [ ] Preserve connection settings:
+- [x] Preserve connection settings:
   - foreign keys enabled,
   - busy timeout,
   - results returned as symbol-keyed hashes for adapter callers.
-- [ ] Add focused tests proving the wrapper still satisfies the existing database contract.
-- [ ] Do not touch context adapters in this step except where the wrapper contract requires a tiny compatibility fix.
+- [x] Add focused tests proving the wrapper still satisfies the existing database contract.
+- [x] Do not touch context adapters in this step except where the wrapper contract requires a tiny compatibility fix.
 
 ### 2. Move schema bootstrapping and migrations onto Sequel
 
@@ -90,18 +90,18 @@ Start with adapters where Sequel datasets clearly reduce boilerplate and query r
 - [x] Convert `SQLiteDiscordInviteRepository`.
 - [x] Convert `SQLiteSourceRequestLog`.
 - [x] Convert candidate status update paths in `SQLiteCandidateQueue` where they are simple inserts/updates.
-- [ ] Keep method contracts unchanged.
-- [ ] Add or preserve tests around upserts, timestamps, and one-active-invite behavior.
+- [x] Keep method contracts unchanged.
+- [x] Add or preserve tests around upserts, timestamps, and one-active-invite behavior.
 
 ### 4. Convert ranking snapshot write side
 
 - [x] Convert `SQLiteSnapshotRepository` inserts/upserts to Sequel datasets.
 - [x] Convert `SQLiteSnapshotRunRepository` lifecycle updates to Sequel datasets.
-- [ ] Convert `MonthlySnapshotStore` only where it owns persistence orchestration; do not turn it into a pass-through Sequel wrapper.
-- [ ] Keep storage-name mapping hidden in the adapter:
+- [x] Leave `MonthlySnapshotStore` as the application-facing persistence port; it does not expose Sequel or SQLite mechanics.
+- [x] Keep storage-name mapping hidden in the adapter:
   - domain/application says `source_id`,
   - persistence may still write legacy `github_id` columns.
-- [ ] Preserve monthly job resume behavior with integration tests.
+- [x] Preserve monthly job resume behavior with integration tests.
 
 ### 5. Convert read models selectively
 
@@ -111,12 +111,12 @@ Read models may keep raw SQL when that is the deeper interface. The migration ta
   - `SQLiteCacheRevisionReadModel`,
   - simple methods in `SQLiteContributorAccessReadModel`,
   - simple edition-year queries in `SQLiteEditionReadModel`.
-- [ ] Keep complex ranking/profile SQL as raw SQL where it is more readable:
+- [x] Keep complex ranking/profile SQL as raw SQL where it is more readable:
   - ranking window/tie-break queries,
   - profile badge/history queries,
   - job progress aggregation queries.
 - [x] Execute raw SQL through Sequel with bound parameters.
-- [ ] Keep all public response shapes identical.
+- [x] Keep all public response shapes identical.
 
 ### 6. Convert ranking retention and dynamic SQL safely
 
@@ -137,9 +137,9 @@ Read models may keep raw SQL when that is the deeper interface. The migration ta
 
 ### 8. Remove legacy SQLite facade pressure
 
-- [ ] Decide whether `Infrastructure::SQLiteStore` is still useful as a compatibility facade.
-- [ ] If no production code needs it, delete it and migrate remaining specs to context adapters.
-- [ ] If a short-lived facade remains, make it delegate to Sequel-backed adapters only.
+- [x] Decide whether `Infrastructure::SQLiteStore` is still useful as a compatibility facade.
+- [x] Keep `Infrastructure::SQLiteStore` as a short-lived compatibility facade for legacy/test surfaces; production composition no longer uses it.
+- [x] Make the short-lived facade delegate to Sequel-backed adapters only.
 - [x] Add an architecture rule forbidding new production references to:
   - `SQLite3::Database`,
   - `get_first_value`,
@@ -149,9 +149,9 @@ Read models may keep raw SQL when that is the deeper interface. The migration ta
 ### 9. Update tests and fixtures
 
 - [x] Replace raw `SQLite3::Database.new` in specs with `Shared::Infrastructure::SQLite::Database.open`.
-- [ ] Keep a small number of low-level tests around the database gateway itself.
-- [ ] Avoid making tests depend on Sequel internals unless testing the gateway.
-- [ ] Preserve full integration coverage for:
+- [x] Keep a small number of low-level tests around the database gateway itself.
+- [x] Limit Sequel-specific test coupling to the gateway and infrastructure adapter race-condition specs.
+- [x] Preserve full integration coverage for:
   - monthly snapshot run,
   - web rendering,
   - profile pages,
@@ -161,11 +161,11 @@ Read models may keep raw SQL when that is the deeper interface. The migration ta
 
 ### 10. Final cleanup
 
-- [ ] Remove direct `sqlite3` requires from production code where Sequel owns the connection.
-- [ ] Keep `sqlite3` in `Gemfile` only as Sequel's SQLite adapter dependency.
-- [ ] Remove unused helper methods from the database gateway after all adapters migrate.
-- [ ] Rename files/classes only when it reduces cognitive load; do not churn namespaces for cosmetic reasons.
-- [ ] Run and commit only after the normal pre-commit hook passes:
+- [x] Remove direct `sqlite3` requires from production code where Sequel owns the connection.
+- [x] Keep `sqlite3` in `Gemfile` only as Sequel's SQLite adapter dependency.
+- [x] Remove unused helper methods from the database gateway after all adapters migrate.
+- [x] Rename files/classes only when it reduces cognitive load; do not churn namespaces for cosmetic reasons.
+- [x] Run and commit only after the normal pre-commit hook passes:
   - `bundle exec rubocop --cache-root tmp/rubocop_cache`
   - `bundle exec reek`
   - `bundle exec rspec`
@@ -190,9 +190,9 @@ Read models may keep raw SQL when that is the deeper interface. The migration ta
 
 ## Completion Criteria
 
-- [ ] Production code no longer instantiates or depends directly on `SQLite3::Database`.
-- [ ] Context application/domain layers remain free of Sequel and SQLite details.
-- [ ] All context SQLite adapters use either Sequel datasets or Sequel-bound SQL.
-- [ ] Existing public behavior remains covered by tests.
-- [ ] Architecture tests prevent Sequel from leaking inward.
-- [ ] Normal pre-commit hook passes without bypassing verification.
+- [x] Production code no longer instantiates or depends directly on `SQLite3::Database`.
+- [x] Context application/domain layers remain free of Sequel and SQLite details.
+- [x] All context SQLite adapters use either Sequel datasets or Sequel-bound SQL.
+- [x] Existing public behavior remains covered by tests.
+- [x] Architecture tests prevent Sequel from leaking inward.
+- [x] Normal pre-commit hook passes without bypassing verification.

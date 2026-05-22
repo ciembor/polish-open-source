@@ -22,7 +22,7 @@ module PolishOpenSourceRank
           end
 
           def execute(sql, params = [])
-            raw_connection.execute(sql, params)
+            sequel_connection.fetch(sql, *params).delete
           end
 
           def execute_batch(sql)

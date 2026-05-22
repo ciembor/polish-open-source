@@ -57,4 +57,15 @@ RSpec.describe PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database do
     expect(database.fetch_all('SELECT name FROM records WHERE id = ?', [1])).to eq([{ name: 'alice' }])
     expect(database.fetch_value('SELECT COUNT(*) FROM records WHERE name = ?', ['alice'])).to eq(1)
   end
+
+  it 'executes raw SQL writes through Sequel with bind parameters' do
+    database = described_class.open(File.join(Dir.mktmpdir, 'rank.sqlite3'))
+    database.execute('CREATE TABLE records(id INTEGER PRIMARY KEY, name TEXT)')
+    database.execute('INSERT INTO records(name) VALUES (?)', ['alice'])
+
+    deleted_count = database.execute('DELETE FROM records WHERE name = ?', ['alice'])
+
+    expect(deleted_count).to eq(1)
+    expect(database.fetch_value('SELECT COUNT(*) FROM records')).to eq(0)
+  end
 end
