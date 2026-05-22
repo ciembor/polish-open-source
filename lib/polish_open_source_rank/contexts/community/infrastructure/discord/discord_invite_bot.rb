@@ -8,10 +8,8 @@ module PolishOpenSourceRank
       module Infrastructure
         module Discord
           class DiscordInviteBot
-            def self.build(configuration:, logger: $stdout, store: nil)
-              invite_repository, connection_repository, access_read_model =
-                store ? repositories_from_store(store) : repositories_from_database(configuration)
-
+            def self.build(configuration:, logger: $stdout)
+              invite_repository, connection_repository, access_read_model = repositories_from_database(configuration)
               new(
                 guild_id: configuration.discord_guild_id,
                 bot: Discordrb::Bot.new(token: configuration.discord_bot_token, intents: %i[server_invites]),
@@ -50,10 +48,6 @@ module PolishOpenSourceRank
 
             class << self
               private
-
-              def repositories_from_store(store)
-                [store, store, store]
-              end
 
               def repositories_from_database(configuration)
                 database = Shared::Infrastructure::SQLite::Database.open(configuration.database_path)

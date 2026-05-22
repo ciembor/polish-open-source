@@ -81,12 +81,7 @@ RSpec.describe 'architecture dependency rules' do
 
   it 'keeps production composition off the SQLiteStore facade', :aggregate_failures do
     forbidden = /\bSQLiteStore\b/
-    compatibility_files = %w[
-      lib/polish_open_source_rank/infrastructure/sqlite_store.rb
-    ]
-    production_files = (files_under('lib/polish_open_source_rank') + files_under('bin')).reject do |path|
-      compatibility_files.include?(path.delete_prefix("#{PolishOpenSourceRank.root}/"))
-    end
+    production_files = files_under('lib/polish_open_source_rank') + files_under('bin')
 
     production_files.each do |path|
       expect(file_body(path)).not_to match(forbidden), "#{path} references the SQLiteStore facade"

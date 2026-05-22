@@ -315,7 +315,14 @@ end
 RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlySnapshot do
   let(:period) { PolishOpenSourceRank::Shared::Domain::Period.parse('2026-04') }
   let(:path) { File.join(Dir.mktmpdir, 'job.sqlite3') }
-  let(:store) { PolishOpenSourceRank::Infrastructure::SQLiteStore.new(path).migrate! }
+  let(:store) do
+    PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::MonthlySnapshotStore.new(
+      run_repository: run_repository,
+      candidate_queue: candidate_queue,
+      snapshot_repository: snapshot_repository,
+      ranking_retention: ranking_retention
+    )
+  end
   let(:catalog) { double('catalog', search_terms: ['Poland']) }
   let(:github) { FakeJobGitHub.new }
 
@@ -328,9 +335,9 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     job.call(period)
 
     expect(store).to have_received(:prune_rankings).with(period)
-    expect(store.user_rankings('poland').fetch(:trending).first).to include(login: 'alice', monthly_stars_delta: 4)
-    expect(store.user_rankings('krakow').fetch(:active).first).to include(public_activity_count: 7)
-    expect(store.repository_rankings('poland').fetch(:top).map do |row|
+    expect(user_rankings('poland').fetch(:trending).first).to include(login: 'alice', monthly_stars_delta: 4)
+    expect(user_rankings('krakow').fetch(:active).first).to include(public_activity_count: 7)
+    expect(repository_rankings('poland').fetch(:top).map do |row|
       row.fetch(:full_name)
     end).to eq(%w[alice/app alice/lib])
     expect(store.pending_candidates(period)).to be_empty
@@ -368,8 +375,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
   end
 
   it 'marks an already snapshotted pending candidate as processed' do
-    store.upsert_user(user_attributes(1, 'alice'))
-    store.record_user_stats(user_stats(1, 'alice'))
+    upsert_user(user_attributes(1, 'alice'))
+    record_user_stats(user_stats(1, 'alice'))
     store.record_candidate(period, github_id: 1, login: 'alice', source_query: 'Poland')
     allow(store).to receive(:pending_candidates).and_call_original
 
@@ -386,8 +393,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
 
   it 'checks already snapshotted candidates within their source platform' do
     gitlab = FakeJobGitLab.new
-    store.upsert_user(user_attributes(1, 'alice').merge(platform: 'github'))
-    store.record_user_stats(user_stats(1, 'alice').merge(platform: 'github'))
+    upsert_user(user_attributes(1, 'alice').merge(platform: 'github'))
+    record_user_stats(user_stats(1, 'alice').merge(platform: 'github'))
     store.record_candidate(period, platform: 'gitlab', source_id: 1, login: 'alice', source_query: 'Poland')
     gitlab.profiles = { 'alice' => profile(1, 'alice', 'Krakow, Poland') }
     gitlab.repositories = { 'alice' => [] }
@@ -400,8 +407,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
 
   it 'marks already snapshotted candidates on their source platform' do
     gitlab = FakeJobGitLab.new
-    store.upsert_user(user_attributes(1, 'alice').merge(platform: 'gitlab'))
-    store.record_user_stats(user_stats(1, 'alice').merge(platform: 'gitlab'))
+    upsert_user(user_attributes(1, 'alice').merge(platform: 'gitlab'))
+    record_user_stats(user_stats(1, 'alice').merge(platform: 'gitlab'))
     store.record_candidate(period, platform: 'gitlab', source_id: 1, login: 'alice', source_query: 'Poland')
 
     described_class.new(store: store, sources: [gitlab], catalog: catalog, logger: StringIO.new).call(period)
@@ -414,8 +421,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
   it 'reprocesses already snapshotted candidates during an explicit refresh' do
     gitlab = FakeJobGitLab.new
     store.record_candidate(period, platform: 'gitlab', source_id: 1, login: 'alice', source_query: 'Poland')
-    store.upsert_user(user_attributes(1, 'alice').merge(platform: 'gitlab'))
-    store.record_user_stats(user_stats(1, 'alice').merge(platform: 'gitlab'))
+    upsert_user(user_attributes(1, 'alice').merge(platform: 'gitlab'))
+    record_user_stats(user_stats(1, 'alice').merge(platform: 'gitlab'))
     store.mark_candidate(period, 'gitlab', 'alice', 'processed')
     gitlab.profiles = { 'alice' => profile(1, 'alice', 'Krakow, Poland') }
     gitlab.repositories = { 'alice' => [] }
@@ -532,14 +539,14 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
 
     described_class.new(store: store, sources: [codeberg], catalog: catalog, logger: StringIO.new).call(period)
 
-    expect(store.user_rankings('warszawa').fetch(:top).first).to include(
+    expect(user_rankings('warszawa').fetch(:top).first).to include(
       platform: 'codeberg',
       login: 'celina',
       name: 'Celina C',
       homepage: 'https://celina.example',
       total_stars: 9
     )
-    expect(store.repository_rankings('warszawa').fetch(:top).first).to include(
+    expect(repository_rankings('warszawa').fetch(:top).first).to include(
       platform: 'codeberg',
       full_name: 'celina/tool',
       stargazers_count: 9
@@ -556,8 +563,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
   it 'reprocesses processed candidates when repository stats are missing from a previous run' do
     run_id = store.create_run(period)
     store.record_candidate(period, platform: 'gitlab', source_id: 2, login: 'bob', source_query: 'Poland')
-    store.upsert_user(user_attributes(2, 'bob').merge(platform: 'gitlab'))
-    store.record_user_stats(user_stats(2, 'bob').merge(platform: 'gitlab', public_repo_count: 1, total_stars: 4))
+    upsert_user(user_attributes(2, 'bob').merge(platform: 'gitlab'))
+    record_user_stats(user_stats(2, 'bob').merge(platform: 'gitlab', public_repo_count: 1, total_stars: 4))
     store.mark_candidate(period, 'gitlab', 'bob', 'processed')
     store.finish_run(run_id)
     gitlab = FakeJobGitLab.new
@@ -745,8 +752,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
 
   it 'serializes already processed candidate writes from parallel sources' do
     store.create_run(period)
-    store.upsert_user(user_attributes(1, 'alice').merge(platform: 'github'))
-    store.record_user_stats(user_stats(1, 'alice').merge(platform: 'github'))
+    upsert_user(user_attributes(1, 'alice').merge(platform: 'github'))
+    record_user_stats(user_stats(1, 'alice').merge(platform: 'github'))
     store.record_candidate(period, platform: 'github', source_id: 1, login: 'alice', source_query: 'Poland')
     store.record_candidate(period, platform: 'gitlab', source_id: 2, login: 'bob', source_query: 'Poland')
     guarded_store = ConcurrentWriteDetectingStore.new(store)
@@ -1005,6 +1012,30 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     described_class.new(store: store, github: github, catalog: catalog, logger: StringIO.new)
   end
 
+  def upsert_user(attributes)
+    snapshot_repository.upsert_user(attributes)
+  end
+
+  def record_user_stats(attributes)
+    snapshot_repository.record_user_stats(attributes)
+  end
+
+  def upsert_repository(attributes)
+    snapshot_repository.upsert_repository(attributes)
+  end
+
+  def record_repository_stats(attributes)
+    snapshot_repository.record_repository_stats(attributes)
+  end
+
+  def user_rankings(scope, period_start: period.start_date.to_s)
+    ranking_read_model.user_rankings(scope, period_start: period_start)
+  end
+
+  def repository_rankings(scope, period_start: period.start_date.to_s)
+    ranking_read_model.repository_rankings(scope, period_start: period_start)
+  end
+
   def seed_alice_and_bob_discovery
     github.candidates = {
       'Poland' => [{ source_id: 1, login: 'alice' }, { source_id: 2, login: 'bob' }]
@@ -1022,9 +1053,9 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
   end
 
   def seed_previous_repository_observation(previous_period)
-    store.upsert_user(user_attributes(1, 'alice'))
-    store.upsert_repository(repository_attributes(10, 'alice/app'))
-    store.record_repository_stats(
+    upsert_user(user_attributes(1, 'alice'))
+    upsert_repository(repository_attributes(10, 'alice/app'))
+    record_repository_stats(
       period_start: previous_period.start_date.to_s,
       repository_github_id: 10,
       owner_github_id: 1,
@@ -1148,6 +1179,41 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
   end
 
   def database
-    @database ||= PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(path)
+    @database ||= PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(path).tap do |db|
+      PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration.new(
+        db,
+        PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql
+      ).bootstrap!
+    end
+  end
+
+  def run_repository
+    @run_repository ||= PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteSnapshotRunRepository.new(
+      database
+    )
+  end
+
+  def candidate_queue
+    @candidate_queue ||= PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteCandidateQueue.new(
+      database
+    )
+  end
+
+  def snapshot_repository
+    @snapshot_repository ||= PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteSnapshotRepository.new(
+      database
+    )
+  end
+
+  def ranking_retention
+    @ranking_retention ||= PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteRankingRetention.new(
+      database
+    )
+  end
+
+  def ranking_read_model
+    @ranking_read_model ||= PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteRankingReadModel.new(
+      database
+    )
   end
 end
