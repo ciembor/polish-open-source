@@ -32,6 +32,9 @@
         <% if @discord_panel[:connection] %>
           <p><%= h t('users.discord.connected', user: @discord_panel.fetch(:connection).fetch(:discord_username)) %></p>
         <% end %>
+        <% if @discord_error %>
+          <p class="profile-empty"><%= h t("users.discord.errors.#{@discord_error}") %></p>
+        <% end %>
         <div class="discord-panel__join">
           <a class="discord-join-button" href="<%= h app_path('/auth/discord') %>"><%= h t('users.discord.connect_action') %></a>
         </div>

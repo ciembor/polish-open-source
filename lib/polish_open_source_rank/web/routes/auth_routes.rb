@@ -79,6 +79,12 @@ module PolishOpenSourceRank
                 welcome_channel_id: discord_welcome_channel_id
               )
               redirect discord_channel_url || app_path(user_profile_path(current_user))
+            rescue Auth::DiscordOAuthClient::Error
+              session[:discord_error] = 'oauth'
+              redirect app_path(user_profile_path(current_user))
+            rescue Contexts::Community::Infrastructure::Discord::DiscordApiGateway::Error
+              session[:discord_error] = 'sync'
+              redirect app_path(user_profile_path(current_user))
             rescue Contexts::Community::Application::ConnectDiscordAccount::ProfileNotFound
               halt 404
             end
