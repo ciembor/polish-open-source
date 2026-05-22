@@ -187,6 +187,11 @@ pl:
     metrics:
       outside_ranking: "Poza rankingiem."
       title: "Metryki rankingu"
+    spotlight:
+      city_rank: "Pozycja w %{city}"
+      country_rank: "Pozycja w rankingu Polski"
+      title: "Profil w rankingu"
+      top_repository: "Najmocniejsze repozytorium"
     repositories:
       empty: "Dla tego snapshotu nie zapisano publicznych repozytoriów."
       language: "Język"

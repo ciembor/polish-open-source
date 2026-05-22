@@ -123,6 +123,12 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile_response.body).to include('"@type": "ProfilePage"')
     expect(profile_response.body).to include('"@type": "Person"')
     expect(profile_response.body).to include('"@type": "BreadcrumbList"')
+    expect(profile_response.body).to include('Profil w rankingu')
+    expect(profile_response.body).to include('Pozycja w rankingu Polski')
+    expect(profile_response.body).to include('Pozycja w Kraków')
+    expect(profile_response.body).to include('Najmocniejsze repozytorium')
+    expect(profile_response.body).to include('href="/repositories/github/alice/app"')
+    expect(profile_response.body).to include('#1')
     expect(profile_response.body).to include('Najlepsze projekty')
     expect(profile_response.body).not_to include('/badges/users/github/alice.svg')
     expect(profile_response.body).not_to include(
@@ -235,6 +241,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile.body).to include('Poznan, Poland')
     expect(profile.body).to include('Polish Open Source')
     expect(profile.body).to include('Poza rankingiem.')
+    expect(profile.body).to include('Profil w rankingu')
+    expect(profile.body).to include('>-<')
   end
 
   it 'keeps users signed out when their GitHub location is not eligible' do

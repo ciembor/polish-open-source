@@ -187,6 +187,11 @@ en:
     metrics:
       outside_ranking: "Outside the ranking."
       title: "Ranking metrics"
+    spotlight:
+      city_rank: "%{city} rank"
+      country_rank: "Poland rank"
+      title: "Ranking profile"
+      top_repository: "Top repository"
     repositories:
       empty: "No public repositories were stored for this snapshot."
       language: "Language"
