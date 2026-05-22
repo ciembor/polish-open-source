@@ -49,7 +49,7 @@
     <article class="profile-summary">
       <h2><%= h t('users.metrics.title') %></h2>
       <% if @organization_repository[:period_start] %>
-        <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @organization_repository[:period_start] %>"><%= h @organization_repository[:period_start] %></time></p>
+        <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @organization_repository[:period_start] %>"><%= h period_label(@organization_repository[:period_start]) %></time></p>
       <% end %>
       <dl class="profile-metrics">
         <div>

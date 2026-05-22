@@ -5,7 +5,7 @@
     <h1><%= h scope_name(@scope) %></h1>
     <p class="lede"><%= h t('rankings.hero.lede') %></p>
     <% if @period %>
-      <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @period %>"><%= h @period %></time></p>
+      <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @period %>"><%= h period_label(@period) %></time></p>
     <% end %>
   </div>
 

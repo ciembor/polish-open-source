@@ -5,7 +5,7 @@
     <h1><%= h ranking_title(@kind, @metric) %></h1>
     <p class="lede"><%= h scope_name(@scope) %></p>
     <% if @period %>
-      <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @period %>"><%= h @period %></time></p>
+      <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @period %>"><%= h period_label(@period) %></time></p>
     <% end %>
     </div>
 

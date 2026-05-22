@@ -31,7 +31,7 @@
       <div class="profile-spotlight__header">
         <h2 id="organization-spotlight-heading"><%= h t('organizations.spotlight.title') %></h2>
         <% if @organization[:period_start] %>
-          <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @organization[:period_start] %>"><%= h @organization[:period_start] %></time></p>
+          <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @organization[:period_start] %>"><%= h period_label(@organization[:period_start]) %></time></p>
         <% end %>
       </div>
 
@@ -98,7 +98,7 @@
     <article class="profile-summary">
       <h2><%= h t('users.metrics.title') %></h2>
       <% if @organization[:period_start] %>
-        <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @organization[:period_start] %>"><%= h @organization[:period_start] %></time></p>
+        <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @organization[:period_start] %>"><%= h period_label(@organization[:period_start]) %></time></p>
       <% else %>
         <p class="profile-empty"><%= h t('users.metrics.outside_ranking') %></p>
       <% end %>
