@@ -6,6 +6,7 @@ RSpec.describe PolishOpenSourceRank::Configuration do
       GITHUB_TOKEN GITLAB_TOKEN CODEBERG_TOKEN DATABASE_URL REQUESTS_PER_MINUTE
       GITHUB_BASE_URL GITLAB_BASE_URL CODEBERG_BASE_URL BASE_URL
       DISCORD_INVITE_CHANNEL_ID GITHUB_OAUTH_CLIENT_ID
+      HTTP_OPEN_TIMEOUT HTTP_READ_TIMEOUT HTTP_WRITE_TIMEOUT RACK_ENV SESSION_SECRET
     ]
     old_values = keys.to_h { |key| [key, ENV.fetch(key, nil)] }
     keys.each { |key| ENV.delete(key) }
@@ -63,6 +64,18 @@ RSpec.describe PolishOpenSourceRank::Configuration do
     expect(configuration.app_base_path).to eq('')
   end
 
+  it 'uses stable local HTTP and session defaults without an env file' do
+    configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
+
+    expect(configuration.http_open_timeout).to eq(5)
+    expect(configuration.http_read_timeout).to eq(30)
+    expect(configuration.http_write_timeout).to eq(30)
+    expect(configuration.http_timeouts).to eq(open_timeout: 5, read_timeout: 30, write_timeout: 30)
+    expect(configuration.session_secret).to eq(
+      'local-development-session-secret-for-polish-open-source-rank-auth-flows'
+    )
+  end
+
   it 'normalizes a configured base path' do
     ENV['APP_BASE_PATH'] = '/polish-open-source-rank/'
     configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
@@ -88,5 +101,28 @@ RSpec.describe PolishOpenSourceRank::Configuration do
 
     expect(configuration.public_base_url).to eq('https://rank.test')
     expect(described_class.config.public_base_url).to eq('http://localhost:9292')
+  end
+
+  it 'reads configured HTTP timeouts as integers' do
+    ENV['HTTP_OPEN_TIMEOUT'] = '7'
+    ENV['HTTP_READ_TIMEOUT'] = '31'
+    ENV['HTTP_WRITE_TIMEOUT'] = '29'
+
+    configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
+
+    expect(configuration.http_open_timeout).to eq(7)
+    expect(configuration.http_read_timeout).to eq(31)
+    expect(configuration.http_write_timeout).to eq(29)
+  end
+
+  it 'requires a session secret in production' do
+    ENV['RACK_ENV'] = 'production'
+    configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
+
+    expect { configuration.session_secret }.to raise_error(KeyError)
+
+    ENV['SESSION_SECRET'] = 'production-secret'
+
+    expect(configuration.session_secret).to eq('production-secret')
   end
 end

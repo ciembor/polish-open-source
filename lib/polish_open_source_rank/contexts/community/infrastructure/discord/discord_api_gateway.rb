@@ -30,7 +30,7 @@ module PolishOpenSourceRank
             def invite_available?(code)
               uri = URI("#{API_BASE}/invites/#{code}")
               request = Net::HTTP::Get.new(uri)
-              response = Net::HTTP.start(uri.host, uri.port, use_ssl: true) { |http| http.request(request) }
+              response = Net::HTTP.start(uri.host, uri.port, **http_options(uri)) { |http| http.request(request) }
               return false if response.code == '404'
               raise Error, "#{response.code} #{response.body}" unless response.is_a?(Net::HTTPSuccess)
 

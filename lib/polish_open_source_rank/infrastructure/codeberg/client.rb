@@ -23,14 +23,12 @@ module PolishOpenSourceRank
       class NotFound < Error; end
       RETRYABLE_STATUSES = [429, 500, 502, 503, 504].freeze
 
-      def initialize(token:, requests_per_minute:, base_url: 'https://codeberg.org/api/v1',
-                     max_retries: 5, sleeper: Kernel.method(:sleep), logger: $stdout)
+      def initialize(token:, requests_per_minute:, base_url: 'https://codeberg.org/api/v1', http: {}, execution: {})
         @token = token
         @base_url = base_url
         @request_interval = 60.0 / requests_per_minute
-        @max_retries = max_retries
-        @sleeper = sleeper
-        @logger = logger
+        @execution = default_execution_options.merge(execution)
+        @http = default_http_options.merge(http)
         @last_request_at = nil
       end
 
@@ -52,14 +50,43 @@ module PolishOpenSourceRank
 
       private
 
-      attr_reader :base_url, :logger, :max_retries, :request_interval, :request_log, :sleeper, :token
+      attr_reader :base_url, :execution, :http, :request_interval, :request_log, :token
 
       def perform_get(path, params)
         throttle
         uri = build_uri(path, params)
-        Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == 'https') do |http|
+        Net::HTTP.start(uri.hostname, uri.port, **http_options(uri)) do |http|
           http.request(Net::HTTP::Get.new(uri, request_headers)).tap { |response| record_request(path, response) }
         end
+      end
+
+      def http_options(uri)
+        {
+          use_ssl: uri.scheme == 'https',
+          open_timeout: http.fetch(:open_timeout),
+          read_timeout: http.fetch(:read_timeout),
+          write_timeout: http.fetch(:write_timeout)
+        }
+      end
+
+      def default_http_options
+        { open_timeout: 5, read_timeout: 30, write_timeout: 30 }
+      end
+
+      def default_execution_options
+        { max_retries: 5, sleeper: Kernel.method(:sleep), logger: $stdout }
+      end
+
+      def logger
+        execution.fetch(:logger)
+      end
+
+      def max_retries
+        execution.fetch(:max_retries)
+      end
+
+      def sleeper
+        execution.fetch(:sleeper)
       end
 
       def record_request(path, response)

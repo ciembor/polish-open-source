@@ -5,7 +5,13 @@ require 'net/http'
 RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubClient do
   let(:sleeps) { [] }
   let(:sleeper) { ->(seconds) { sleeps << seconds } }
-  let(:client) { described_class.new(token: 'token', requests_per_minute: 600, sleeper: sleeper, logger: StringIO.new) }
+  let(:client) do
+    described_class.new(
+      token: 'token',
+      requests_per_minute: 600,
+      execution: { sleeper: sleeper, logger: StringIO.new }
+    )
+  end
 
   it 'performs authenticated JSON GET requests' do
     stub_http(ok_response({ 'ok' => true }, 'x-ratelimit-remaining' => '1'))
@@ -63,10 +69,38 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubClient do
     expect { client.get('/bad') }.to raise_error(described_class::Error)
   end
 
+  it 'configures explicit HTTP timeouts' do
+    captured_options = nil
+    client = described_class.new(
+      token: 'token',
+      requests_per_minute: 600,
+      http: { open_timeout: 7, read_timeout: 31, write_timeout: 29 },
+      execution: { sleeper: sleeper, logger: StringIO.new }
+    )
+    stub_http(ok_response({ 'ok' => true }, 'x-ratelimit-remaining' => '1')) do |_request, options|
+      captured_options = options
+    end
+
+    client.get('/timeouts')
+
+    expect(captured_options).to include(use_ssl: true, open_timeout: 7, read_timeout: 31, write_timeout: 29)
+  end
+
   def stub_http(*responses)
-    http = instance_double(Net::HTTP)
-    allow(http).to receive(:request).and_return(*responses)
-    allow(Net::HTTP).to receive(:start).and_yield(http)
+    if block_given?
+      allow(Net::HTTP).to receive(:start) do |_host, _port, **options, &net_http_block|
+        http = instance_double(Net::HTTP)
+        allow(http).to receive(:request) do |request|
+          yield request, options
+          responses.shift
+        end
+        net_http_block.call(http)
+      end
+    else
+      http = instance_double(Net::HTTP)
+      allow(http).to receive(:request).and_return(*responses)
+      allow(Net::HTTP).to receive(:start).and_yield(http)
+    end
   end
 
   def ok_response(body, headers = {})
