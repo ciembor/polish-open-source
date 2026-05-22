@@ -9,7 +9,7 @@ module PolishOpenSourceRank
       end
 
       def bootstrap!
-        needed? ? run : execute_batch(schema_sql)
+        needed? ? run : create_current_schema
       end
 
       def needed?
@@ -17,19 +17,33 @@ module PolishOpenSourceRank
       end
 
       def run
-        rename_old_tables
-        execute_batch(schema_sql)
-        copy_github_rows
-        drop_old_tables
+        with_foreign_keys_disabled do
+          database.transaction do
+            rename_old_tables
+            execute_batch(schema_sql)
+            copy_github_rows
+            drop_old_tables
+          end
+        end
       end
 
       private
 
       attr_reader :database, :schema_sql
 
+      def create_current_schema
+        database.transaction { execute_batch(schema_sql) }
+      end
+
+      def with_foreign_keys_disabled
+        database.execute('PRAGMA foreign_keys = OFF')
+        yield
+      ensure
+        database.execute('PRAGMA foreign_keys = ON')
+      end
+
       def rename_old_tables
         execute_batch(<<~SQL)
-          PRAGMA foreign_keys = OFF;
           DROP INDEX IF EXISTS idx_user_stats_period_country_total;
           DROP INDEX IF EXISTS idx_user_stats_period_city_delta;
           DROP INDEX IF EXISTS idx_repo_stats_period_country_total;
@@ -126,7 +140,6 @@ module PolishOpenSourceRank
           DROP TABLE user_monthly_stats_old;
           DROP TABLE repositories_old;
           DROP TABLE repository_monthly_stats_old;
-          PRAGMA foreign_keys = ON;
         SQL
       end
 
