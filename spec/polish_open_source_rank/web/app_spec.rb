@@ -1029,6 +1029,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   def reset_app_memoized_dependencies
     %i[
       @composition
+      @public_page_state
     ].each do |ivar|
       described_class.remove_instance_variable(ivar) if described_class.instance_variable_defined?(ivar)
     end
