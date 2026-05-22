@@ -91,14 +91,9 @@ module PolishOpenSourceRank
             end
 
             def retryable_candidates?(period, platforms: nil)
-              sql = RETRYABLE_CANDIDATES_SQL.dup
-              params = [period.start_date.to_s]
-              if platforms
-                placeholders = (['?'] * platforms.length).join(', ')
-                sql = sql.sub('WHERE period_start = ?', "WHERE period_start = ? AND platform IN (#{placeholders})")
-                params.concat(platforms)
-              end
-              value(sql, params) == 1
+              return false if platforms&.empty?
+
+              retryable_candidates(period.start_date.to_s, platforms: platforms).any?
             end
 
             private
@@ -164,6 +159,19 @@ module PolishOpenSourceRank
                   .exclude(status: 'pending')
                   .update(status: 'pending', error: nil, updated_at: updated_at)
               end
+            end
+
+            def retryable_candidates(period_start, platforms:)
+              candidates = database.dataset(:candidate_users).where(period_start: period_start)
+              candidates = candidates.where(platform: platforms) if platforms
+              candidates.where(retryable_candidate_condition)
+            end
+
+            def retryable_candidate_condition
+              Sequel.|(
+                { status: %w[pending failed] },
+                Sequel.lit(INCOMPLETE_PROCESSED_CANDIDATE_CONDITION)
+              )
             end
 
             def value(sql, params)

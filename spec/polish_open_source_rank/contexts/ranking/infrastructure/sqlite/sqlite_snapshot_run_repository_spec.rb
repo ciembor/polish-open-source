@@ -91,6 +91,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     expect(repository.retryable_candidates?(period)).to be(true)
     expect(repository.retryable_candidates?(period, platforms: ['gitlab'])).to be(true)
     expect(repository.retryable_candidates?(period, platforms: ['codeberg'])).to be(false)
+    expect(repository.retryable_candidates?(period, platforms: [])).to be(false)
   end
 
   def sync_run
