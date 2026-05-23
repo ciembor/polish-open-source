@@ -1,3 +1,5 @@
+/* Base */
+
 :root {
   --bg: #f7f7f4;
   --ink: #1d2521;
@@ -24,6 +26,8 @@ a {
   color: inherit;
 }
 
+/* Layout */
+
 .site-header {
   background: var(--surface);
   border-bottom: 1px solid var(--line);
@@ -46,11 +50,11 @@ a {
 }
 
 .brand {
+  align-items: center;
+  display: flex;
   font-weight: 800;
   text-decoration: none;
   white-space: nowrap;
-  align-items: center;
-  display: flex
 }
 
 .brand img {
@@ -86,6 +90,8 @@ a {
   text-align: center;
   text-decoration: none;
 }
+
+/* Navigation */
 
 .nav-pill,
 .nav-menu summary {
@@ -274,11 +280,12 @@ a {
   color: #ffffff;
 }
 
+/* Hero */
+
 .hero {
   border-bottom: 1px solid var(--line);
   background: linear-gradient(110deg, #ffffff 0%, #eef7f3 52%, #fff7ed 100%);
-
-} 
+}
 
 .hero__inner {
   padding: 56px 0 44px;
@@ -341,6 +348,8 @@ h3 {
   margin-bottom: 18px;
 }
 
+/* Ranking Lists */
+
 .ranking-band {
   padding: 38px 0 46px;
 }
@@ -401,6 +410,10 @@ h3 {
 }
 
 .ranking-list__metrics {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   grid-column: 3;
   grid-row: 1;
 }
@@ -550,13 +563,6 @@ h3 {
   white-space: nowrap;
 }
 
-.ranking-list__metrics {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-}
-
 .rank-cell {
   white-space: nowrap;
 }
@@ -579,6 +585,8 @@ h3 {
   height: 54px;
   width: 54px;
 }
+
+/* Editions */
 
 .empty-state {
   width: min(760px, calc(100% - 32px));
@@ -665,6 +673,8 @@ h3 {
   display: block;
   font-size: 0.86rem;
 }
+
+/* About Page */
 
 .about-hero .lede {
   max-width: 700px;
@@ -790,6 +800,8 @@ h3 {
 .about-author__inner {
   max-width: 820px;
 }
+
+/* Profile Pages */
 
 .profile-hero {
   background: #ffffff;
@@ -1135,6 +1147,8 @@ h3 {
   padding: 8px 10px;
 }
 
+/* Notices */
+
 .site-notice {
   background: #fff6e8;
   border-bottom: 1px solid #f0d4a6;
@@ -1149,6 +1163,8 @@ h3 {
   font-weight: 700;
   margin: 0;
 }
+
+/* Operations Monitor */
 
 .monitor-hero {
   background: #ffffff;
@@ -1382,12 +1398,16 @@ h3 {
   border-top-color: #f1c2aa;
 }
 
+/* Footer */
+
 .site-footer {
   border-top: 1px solid var(--line);
   color: var(--muted);
   padding: 24px 16px;
   text-align: center;
 }
+
+/* Responsive */
 
 @media (max-width: 980px) {
   .site-header__inner {
