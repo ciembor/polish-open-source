@@ -1,0 +1,31 @@
+<section class="hero">
+  <div class="hero__inner">
+    <div>
+      <p class="eyebrow"><%= h t('packages.hero.eyebrow') %></p>
+      <h1><%= h t('packages.title') %></h1>
+      <p class="lede"><%= h t('packages.hero.lede') %></p>
+      <% if @period %>
+        <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @period %>"><%= h period_label(@period) %></time></p>
+      <% end %>
+    </div>
+    <img class="hero__image" src="/images/polish_open_source_join_wide.webp" alt="" aria-hidden="true">
+  </div>
+</section>
+
+<section class="ranking-band">
+  <div class="content">
+    <% if @package_ecosystems.any? %>
+      <div class="ranking-grid ranking-grid--compact">
+        <% @package_ecosystems.each do |ecosystem| %>
+          <article class="ranking-table">
+            <h3><%= h ecosystem %></h3>
+            <p class="ranking-list__description"><%= h t('packages.ecosystem.description') %></p>
+            <a class="ranking-action" href="<%= h app_path(package_ecosystem_path(ecosystem)) %>"><%= h t('packages.ecosystem.action') %></a>
+          </article>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="ranking-list__empty"><%= h t('packages.empty') %></p>
+    <% end %>
+  </div>
+</section>

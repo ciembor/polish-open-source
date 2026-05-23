@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'base64'
+
 module PolishOpenSourceRank
   module Web
     module Presentation
@@ -66,6 +68,42 @@ module PolishOpenSourceRank
             "/organization-repositories/#{platform}/#{Rack::Utils.escape_path(owner)}/#{Rack::Utils.escape_path(name)}",
             locale: current_locale
           )
+        end
+
+        def package_index_path(period_slug: @period_slug)
+          path = period_slug.nil? || period_slug == 'latest' ? '/packages' : "/#{period_slug}/packages"
+          localized_public_path(path, locale: current_locale)
+        end
+
+        def package_ecosystem_path(ecosystem, period_slug: @period_slug)
+          prefix = period_slug.nil? || period_slug == 'latest' ? '/latest' : "/#{period_slug}"
+          path = "#{prefix}/packages/#{Rack::Utils.escape_path(ecosystem)}"
+          localized_public_path(path, locale: current_locale)
+        end
+
+        def package_ranking_path(ecosystem, metric_slug, period_slug: @period_slug)
+          "#{package_ecosystem_path(ecosystem, period_slug: period_slug)}/#{metric_slug}"
+        end
+
+        def package_profile_path(package)
+          ecosystem = Rack::Utils.escape_path(package.fetch(:ecosystem))
+          encoded_name = package_name_slug(package.fetch(:package_name))
+          localized_public_path("/packages/#{ecosystem}/names/#{encoded_name}", locale: current_locale)
+        end
+
+        def package_name_slug(package_name)
+          Base64.urlsafe_encode64(package_name, padding: false)
+        end
+
+        def decode_package_name_slug(slug)
+          padding = '=' * ((4 - (slug.length % 4)) % 4)
+          Base64.urlsafe_decode64("#{slug}#{padding}")
+        rescue ArgumentError
+          nil
+        end
+
+        def package_metric_label(metric)
+          t("packages.metric.#{metric.to_s.tr('_', '.')}")
         end
 
         def period_base_path(period_slug)
@@ -176,6 +214,7 @@ module PolishOpenSourceRank
         def page_schema_details
           return { 'about' => { '@type' => 'Organization', 'name' => 'Polish Open Source Rank' } } if about_page?
           return { 'mainEntity' => collection_schema } if collection_page?
+          return { 'mainEntity' => package_profile_schema } if @package_profile
           return { 'mainEntity' => profile_schema } if profile_page?
           return repository_schema if repository_page?
 
@@ -183,11 +222,30 @@ module PolishOpenSourceRank
         end
 
         def collection_schema
+          return package_dataset_schema if package_collection?
           return ranking_collection_schema if @ranking
           return rankings_overview_schema if @user_rankings || @repository_rankings
           return editions_collection_schema if @editions
 
           nil
+        end
+
+        def package_dataset_schema
+          {
+            '@type' => 'Dataset',
+            'name' => @title,
+            'description' => @description,
+            'url' => canonical_url,
+            'inLanguage' => current_locale,
+            'variableMeasured' => package_dataset_metrics,
+            'temporalCoverage' => @period
+          }.compact
+        end
+
+        def package_dataset_metrics
+          %w[downloads_30d downloads_total dependents_count].map do |metric|
+            { '@type' => 'PropertyValue', 'name' => package_metric_label(metric) }
+          end
         end
 
         def ranking_collection_schema
@@ -427,6 +485,23 @@ module PolishOpenSourceRank
           end
         end
 
+        def package_profile_schema
+          {
+            '@type' => 'SoftwareApplication',
+            'name' => @package_profile.fetch(:package_name),
+            'applicationCategory' => @package_profile.fetch(:ecosystem),
+            'url' => canonical_url
+          }.tap do |package|
+            if present_value?(@package_profile[:latest_version])
+              package['softwareVersion'] = @package_profile[:latest_version]
+            end
+            package['license'] = @package_profile[:license] if present_value?(@package_profile[:license])
+            if present_value?(@package_profile[:repository_url])
+              package['codeRepository'] = @package_profile[:repository_url]
+            end
+          end
+        end
+
         def breadcrumb_schema
           items = breadcrumb_items
           return if items.length < 2
@@ -454,6 +529,7 @@ module PolishOpenSourceRank
         end
 
         def current_page_breadcrumbs
+          return package_breadcrumbs if package_page?
           return [{ name: ranking_title(@kind, @metric), path: canonical_path }] if @ranking
           return edition_breadcrumbs if @editions
 
@@ -472,6 +548,16 @@ module PolishOpenSourceRank
           return profile_breadcrumbs if profile_page? || repository_page?
 
           [{ name: t('about.title'), path: canonical_path }] if about_page?
+        end
+
+        def package_breadcrumbs
+          breadcrumbs = [{ name: t('packages.title'), path: package_index_path(period_slug: 'latest') }]
+          if @package_ecosystem
+            breadcrumbs << { name: @package_ecosystem, path: package_ecosystem_path(@package_ecosystem) }
+          end
+          breadcrumbs << { name: package_metric_label(@package_metric), path: canonical_path } if @package_ranking
+          breadcrumbs << { name: @package_profile.fetch(:package_name), path: canonical_path } if @package_profile
+          breadcrumbs
         end
 
         def generic_page_breadcrumbs
@@ -555,9 +641,21 @@ module PolishOpenSourceRank
           return 'AboutPage' if about_page?
           return 'SoftwareSourceCode' if repository_resource?
           return 'ProfilePage' if profile_resource?
-          return 'CollectionPage' if @user_rankings || @editions || @ranking
+          return 'CollectionPage' if collection_resource?
 
           'WebPage'
+        end
+
+        def collection_resource?
+          @user_rankings || @editions || @ranking || package_collection?
+        end
+
+        def package_collection?
+          @package_ecosystems || @package_rankings || @package_ranking
+        end
+
+        def package_page?
+          package_collection? || @package_profile
         end
 
         def repository_resource?

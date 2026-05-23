@@ -89,6 +89,16 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect_rankings_detail_pages(responses)
   end
 
+  it 'renders package ranking pages and package profiles', :aggregate_failures do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    request = Rack::MockRequest.new(described_class)
+    encoded_name = Base64.urlsafe_encode64('@scope/tool', padding: false)
+
+    responses = package_responses(request, encoded_name)
+
+    expect_package_ranking_pages(responses, encoded_name)
+  end
+
   it 'renders organization profile pages, organization repository pages, and public organization badges',
      :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
@@ -724,6 +734,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(sitemap_locations).to include('https://rank.example/en/organizations/github/polish-org')
     expect(sitemap_locations).to include('https://rank.example/en/organization-repositories/github/polish-org/toolkit')
     expect(sitemap_locations).to include('https://rank.example/latest/locations/krakow/organizations/top')
+    expect(sitemap_locations).to include('https://rank.example/packages')
+    expect(sitemap_locations).to include('https://rank.example/en/latest/packages/npm/top')
     expect(REXML::XPath.match(xml_document(sitemap.body), '//url/lastmod')).not_to be_empty
   end
 
@@ -794,6 +806,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-04')
     seed_period(run_repository, snapshot_repository, period)
+    seed_package_records(database, older_period)
+    seed_package_records(database, period)
     path
   end
 
@@ -823,6 +837,60 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       invalid_repository: request.get('/2026-04/repositories/active'),
       invalid_city_organization: request.get('/2026-04/locations/unknown/organizations/top')
     }
+  end
+
+  def package_responses(request, encoded_name)
+    {
+      index: request.get('/packages'),
+      ecosystem: request.get('/latest/packages/npm'),
+      shortcut: request.get('/packages/npm'),
+      period_ecosystem: request.get('/2026-04/packages/npm'),
+      top: request.get('/latest/packages/npm/top'),
+      downloads: request.get('/2026-04/packages/npm/downloads'),
+      dependents: request.get('/latest/packages/npm/dependents'),
+      profile: request.get("/packages/npm/names/#{encoded_name}"),
+      missing_profile: request.get('/packages/npm/names/not-base64!')
+    }
+  end
+
+  def expect_package_ranking_pages(responses, encoded_name)
+    expect_package_index_page(responses.fetch(:index))
+    expect_package_ecosystem_page(responses.fetch(:ecosystem), encoded_name)
+    expect_package_detail_pages(responses)
+    expect_package_profile_page(responses.fetch(:profile))
+    expect(responses.fetch(:missing_profile).status).to eq(404)
+  end
+
+  def expect_package_ecosystem_page(response, encoded_name)
+    expect(response.status).to eq(200)
+    expect(response.body).to include('@scope/tool')
+    expect(response.body).to include("href=\"/packages/npm/names/#{encoded_name}\"")
+  end
+
+  def expect_package_detail_pages(responses)
+    expect(responses.fetch(:ecosystem).status).to eq(200)
+    expect(responses.fetch(:shortcut).status).to eq(200)
+    expect(responses.fetch(:period_ecosystem).status).to eq(200)
+    expect(responses.fetch(:top).body).to include('Top 100 według pobrań z 30 dni')
+    expect(responses.fetch(:downloads).body).to include('Top 100 według pobrań łącznie')
+    expect(responses.fetch(:dependents).body).to include('Top 100 według zależnych pakietów')
+  end
+
+  def expect_package_index_page(response)
+    expect(response.status).to eq(200)
+    expect(response.body).to include('<title>Pakiety open source - Polish Open Source</title>')
+    expect(response.body).to include('rel="canonical" href="https://rank.example/packages"')
+    expect(response.body).to include('href="/latest/packages/npm"')
+    expect(response.body).to include('"@type": "Dataset"')
+  end
+
+  def expect_package_profile_page(response)
+    expect(response.status).to eq(200)
+    expect(response.body).to include('<title>@scope/tool - pakiet open source</title>')
+    expect(response.body).to include('rel="canonical" href="https://rank.example/packages/npm/names/')
+    expect(response.body).to include('"@type": "SoftwareApplication"')
+    expect(response.body).to include('n/a')
+    expect(response.body).to include('href="/repositories/github/alice/app"')
   end
 
   def expect_rankings_detail_pages(responses)
@@ -1016,6 +1084,84 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       archived: false,
       stars: 8_765,
       monthly_stars_delta: 12
+    )
+  end
+
+  def seed_package_records(database, period)
+    seed_package(database, period, '@scope/tool', downloads_30d: 1_000)
+    seed_package(database, period, 'rack', downloads_total: 50_000, dependents_count: 23)
+    link_package_repository(database, period, '@scope/tool')
+  end
+
+  def seed_package(database, period, name, downloads_30d: nil, downloads_total: nil, dependents_count: nil)
+    normalized_name = name.downcase
+    database.execute(
+      <<~SQL,
+        INSERT INTO registry_packages(
+          ecosystem, package_name, normalized_package_name, registry_url, repository_url, homepage_url,
+          license, latest_version, status, updated_at
+        )
+        VALUES ('npm', ?, ?, ?, ?, ?, 'MIT', '1.0.0', 'active', '2026-05-23T12:00:00Z')
+        ON CONFLICT(ecosystem, normalized_package_name) DO UPDATE SET updated_at = excluded.updated_at
+      SQL
+      [
+        name,
+        normalized_name,
+        "https://www.npmjs.com/package/#{name}",
+        "https://github.com/#{name.delete_prefix('@')}",
+        "https://example.com/#{normalized_name}"
+      ]
+    )
+    seed_package_snapshot(database, period, normalized_name, downloads_30d, downloads_total, dependents_count)
+  end
+
+  def seed_package_snapshot(database, period, normalized_name, downloads_30d, downloads_total, dependents_count)
+    database.execute(
+      <<~SQL,
+        INSERT INTO registry_package_snapshots(
+          ecosystem, normalized_package_name, period_start, downloads_total, downloads_30d, downloads_7d,
+          dependents_count, dependent_repositories_count, latest_version, latest_release_at, observed_at
+        )
+        VALUES ('npm', ?, ?, ?, ?, NULL, ?, 1, '1.0.0', '2026-05-01T00:00:00Z', '2026-05-23T12:00:00Z')
+      SQL
+      [normalized_name, period.start_date.to_s, downloads_total, downloads_30d, dependents_count]
+    )
+  end
+
+  def link_package_repository(database, period, package_name)
+    scan_id = period.start_date.month * 1_000
+    manifest_id = seed_package_scan(database, period, scan_id, package_name)
+    database.execute(
+      <<~SQL,
+        INSERT OR IGNORE INTO registry_package_links(
+          manifest_id, ecosystem, normalized_package_name, match_confidence, matched, checked_at
+        )
+        VALUES (?, 'npm', ?, 'high', 1, '2026-05-23T12:00:00Z')
+      SQL
+      [manifest_id, package_name.downcase]
+    )
+  end
+
+  def seed_package_scan(database, period, scan_id, package_name)
+    database.execute(
+      <<~SQL,
+        INSERT OR IGNORE INTO package_repository_scans(
+          id, period_start, repository_kind, platform, repository_source_id, full_name, status, updated_at
+        )
+        VALUES (?, ?, 'user', 'github', 10, 'alice/app', 'scanned', '2026-05-23T12:00:00Z')
+      SQL
+      [scan_id, period.start_date.to_s]
+    )
+    database.dataset(:package_manifests).insert(
+      repository_scan_id: scan_id,
+      ecosystem: 'npm',
+      path: 'package.json',
+      package_name: package_name,
+      normalized_package_name: package_name.downcase,
+      confidence: 'high',
+      parse_status: 'parsed',
+      parser_version: 'test',
+      parsed_at: '2026-05-23T12:00:00Z'
     )
   end
 

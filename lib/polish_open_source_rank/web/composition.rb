@@ -64,6 +64,30 @@ module PolishOpenSourceRank
           )
       end
 
+      def show_package_index
+        @show_package_index ||= Contexts::Packages::Application::ShowPackageIndex.new(
+          package_ranking_read_model: package_ranking_read_model
+        )
+      end
+
+      def show_package_ecosystem_rankings
+        @show_package_ecosystem_rankings ||= Contexts::Packages::Application::ShowPackageEcosystemRankings.new(
+          package_ranking_read_model: package_ranking_read_model
+        )
+      end
+
+      def show_package_ranking_detail
+        @show_package_ranking_detail ||= Contexts::Packages::Application::ShowPackageRankingDetail.new(
+          package_ranking_read_model: package_ranking_read_model
+        )
+      end
+
+      def show_package_profile
+        @show_package_profile ||= Contexts::Packages::Application::ShowPackageProfile.new(
+          package_ranking_read_model: package_ranking_read_model
+        )
+      end
+
       def render_badge
         @render_badge ||= Contexts::Publication::Application::RenderBadge.new(profile_read_model: profile_read_model)
       end
@@ -123,6 +147,11 @@ module PolishOpenSourceRank
 
       def profile_read_model
         @profile_read_model ||= Contexts::Publication::Infrastructure::SQLite::SQLiteProfileReadModel.new(database)
+      end
+
+      def package_ranking_read_model
+        @package_ranking_read_model ||=
+          Contexts::Packages::Infrastructure::SQLite::SQLitePackageRankingReadModel.new(database)
       end
 
       def public_profile_repository

@@ -16,6 +16,7 @@ module PolishOpenSourceRank
           %w[organization-repositories top],
           %w[organization-repositories trending]
         ].freeze
+        SITEMAP_PACKAGE_METRICS = %w[top downloads dependents].freeze
 
         private
 
@@ -48,8 +49,8 @@ module PolishOpenSourceRank
 
         def sitemap_entries
           lastmod = Time.now.utc.strftime('%Y-%m-%d')
-          static_paths = ['/', '/latest', '/about', '/editions']
-          locale_paths = locale_variants(static_paths + ranking_paths + edition_paths + profile_paths)
+          static_paths = ['/', '/latest', '/about', '/editions', '/packages']
+          locale_paths = locale_variants(static_paths + ranking_paths + package_paths + edition_paths + profile_paths)
 
           locale_paths.map do |path|
             { loc: full_url(app_path(path)), lastmod: lastmod }
@@ -80,6 +81,34 @@ module PolishOpenSourceRank
 
         def city_ranking_scope_paths(prefix)
           ranking_scope_paths(prefix)
+        end
+
+        def package_paths
+          latest_package_paths + edition_package_paths
+        end
+
+        def latest_package_paths
+          period = latest_period
+          return [] unless period
+
+          package_scope_paths('/latest', period)
+        end
+
+        def edition_package_paths
+          edition_period_slugs.flat_map do |period_slug|
+            package_scope_paths("/#{period_slug}", "#{period_slug}-01")
+          end
+        end
+
+        def package_scope_paths(prefix, period)
+          package_ranking_read_model.ecosystems(period_start: period).flat_map do |ecosystem|
+            package_ecosystem_paths(prefix, ecosystem)
+          end
+        end
+
+        def package_ecosystem_paths(prefix, ecosystem)
+          path = "#{prefix}/packages/#{ecosystem}"
+          [path] + SITEMAP_PACKAGE_METRICS.map { |metric| "#{path}/#{metric}" }
         end
 
         def edition_paths

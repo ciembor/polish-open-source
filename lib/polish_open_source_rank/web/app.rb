@@ -12,6 +12,7 @@ module PolishOpenSourceRank
       include Controllers::AuthController
       include Controllers::BadgeController
       include Controllers::InternalController
+      include Controllers::PackageController
       include Controllers::PublicController
       include Controllers::SharedController
 
@@ -63,6 +64,7 @@ module PolishOpenSourceRank
                      :list_editions,
                      :profile_read_model,
                      :public_profile_repository,
+                     :package_ranking_read_model,
                      :ranking_read_model,
                      :register_public_github_profile,
                      :render_badge,
@@ -71,6 +73,10 @@ module PolishOpenSourceRank
                      :show_job_progress,
                      :show_organization_profile,
                      :show_organization_repository_profile,
+                     :show_package_ecosystem_rankings,
+                     :show_package_index,
+                     :show_package_profile,
+                     :show_package_ranking_detail,
                      :show_rankings,
                      :show_ranking_detail,
                      :show_repository_profile,
@@ -113,6 +119,11 @@ module PolishOpenSourceRank
           'app/views/layout.erb',
           'app/views/about.erb',
           'app/views/editions.erb',
+          'app/views/package_ecosystem.erb',
+          'app/views/package_profile.erb',
+          'app/views/package_ranking_detail.erb',
+          'app/views/package_ranking_table.erb',
+          'app/views/packages.erb',
           'app/views/ranking_detail.erb',
           'app/views/rankings.erb',
           'app/views/organization_profile.erb',

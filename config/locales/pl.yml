@@ -101,6 +101,7 @@ pl:
     locations: "Rankingi lokalizacji"
     menu: "Menu"
     more_cities: "Więcej miast"
+    packages: "Pakiety"
     profile: "Profil"
   not_found:
     body: "Wybrana lokalizacja nie jest obsługiwana."
@@ -155,6 +156,56 @@ pl:
     trending_10_month: "Top 10 trendujących w miesiącu"
     users: "Użytkownicy"
     users_activity_month: "Aktywność w miesiącu"
+  packages:
+    back: "Wróć do pakietów"
+    ecosystem:
+      action: "Zobacz rankingi"
+      description: "Pakiety powiązane z polskimi repozytoriami open source."
+      lede: "Najpopularniejsze pakiety ekosystemu według pobrań i liczby zależnych projektów."
+      title: "Pakiety %{ecosystem}"
+    empty: "Brak danych o pakietach dla tego snapshotu."
+    hero:
+      eyebrow: "Rankingi pakietów"
+      lede: "Publiczne pakiety wykryte w polskich repozytoriach open source i uzupełnione metrykami z rejestrów."
+    links:
+      registry: "Rejestr"
+      repository: "Repozytorium"
+    metric:
+      dependents:
+        count: "Zależne pakiety"
+      dependent:
+        repositories:
+          count: "Zależne repozytoria"
+      downloads:
+        30d: "Pobrania 30 dni"
+        total: "Pobrania łącznie"
+      unavailable: "n/a"
+    profile:
+      lede: "Publiczny profil pakietu z metrykami rejestru i powiązanymi repozytoriami."
+      metrics: "Metryki pakietu"
+      summary: "Pakiet"
+    repository:
+      empty: "Nie zapisano powiązanych repozytoriów dla tego pakietu."
+      title: "Powiązane repozytoria"
+      unlinked: "Brak powiązanego repozytorium"
+    seo:
+      ecosystem_description: "Rankingi pakietów %{ecosystem} używanych przez polskie repozytoria open source."
+      ecosystem_title: "Pakiety %{ecosystem} - Polish Open Source"
+      index_description: "Rankingi pakietów używanych przez polskie repozytoria open source."
+      index_title: "Pakiety open source - Polish Open Source"
+      profile_description: "Profil pakietu %{package} w ekosystemie %{ecosystem}, z pobraniami, zależnymi projektami i powiązanymi repozytoriami."
+      profile_title: "%{package} - pakiet open source"
+      ranking_description: "Top 100 pakietów %{ecosystem} według metryki %{metric}."
+      ranking_title: "Pakiety %{ecosystem}: %{metric}"
+    table:
+      ecosystem: "Ekosystem"
+      latest_version: "Najnowsza wersja"
+      license: "Licencja"
+    title: "Pakiety"
+    ranking_title:
+      dependents: "Top 100 według zależnych pakietów"
+      downloads: "Top 100 według pobrań łącznie"
+      top: "Top 100 według pobrań z 30 dni"
   repositories:
     badge:
       alt: "Badge Polish Repo"

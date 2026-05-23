@@ -8,6 +8,8 @@ module PolishOpenSourceRank
         PREFIX_PATHS = [
           '/latest/',
           '/editions/',
+          '/packages',
+          '/packages/',
           '/users/',
           '/organizations/',
           '/repositories/',

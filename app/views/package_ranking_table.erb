@@ -1,0 +1,44 @@
+<article class="ranking-table" aria-labelledby="<%= h heading_id %>">
+  <h3 id="<%= h heading_id %>"><%= h title %></h3>
+  <% if rows.any? %>
+    <ol class="ranking-list" aria-labelledby="<%= h heading_id %>">
+      <% rows.each_with_index do |row, index| %>
+        <% place_class = { 1 => "first_place", 2 => "second_place", 3 => "third_place" }[index + 1] %>
+        <li class="ranking-list__item<% if place_class %> <%= h place_class %><% end %>">
+          <span class="rank-cell rank-mark"><%= index + 1 %></span>
+          <div class="ranking-list__body">
+            <div class="ranking-list__title">
+              <a class="primary-link" href="<%= h app_path(package_profile_path(row)) %>"><%= h row.fetch(:package_name) %></a>
+            </div>
+            <span class="ranking-list__description"><%= h row.fetch(:ecosystem) %></span>
+            <div class="ranking-list__meta">
+              <% if row[:repository_full_name] %>
+                <% repository = { platform: row.fetch(:repository_platform), full_name: row.fetch(:repository_full_name) } %>
+                <% path = row[:repository_kind] == "organization" ? organization_repository_profile_path(repository) : repository_profile_path(repository) %>
+                <a class="muted-link muted-link--standalone" href="<%= h app_path(path) %>"><%= h row.fetch(:repository_full_name) %></a>
+              <% else %>
+                <span><%= h t('packages.repository.unlinked') %></span>
+              <% end %>
+            </div>
+          </div>
+          <div class="ranking-list__metrics">
+            <span class="metric" title="<%= h metric_label %>" aria-label="<%= h metric_label %>: <%= h number(row.fetch(metric)) %>">
+              <%= h number(row.fetch(metric)) %>
+            </span>
+          </div>
+          <span class="ranking-list__links ranking-list__links--edge">
+            <a class="muted-link" href="<%= h row.fetch(:registry_url) %>"><%= h t('packages.links.registry') %></a>
+            <% if row[:repository_url] && !row[:repository_url].empty? %>
+              <a class="muted-link" href="<%= h row[:repository_url] %>"><%= h t('packages.links.repository') %></a>
+            <% end %>
+          </span>
+        </li>
+      <% end %>
+    </ol>
+  <% else %>
+    <p class="ranking-list__empty"><%= h t('rankings.empty.records') %></p>
+  <% end %>
+  <% if defined?(top_path) && top_path %>
+    <a class="ranking-action" href="<%= h app_path(top_path) %>"><%= h t('rankings.see_top_100') %></a>
+  <% end %>
+</article>
