@@ -18,31 +18,7 @@
 } %>
 
 <% if @discord_panel %>
-  <section class="profile-section" aria-labelledby="profile-discord-heading">
-    <div class="content">
-      <article class="profile-summary discord-panel">
-        <h2 id="profile-discord-heading"><%= h t('users.discord.title') %></h2>
-        <% if @discord_panel[:connection] %>
-          <p><%= h t('users.discord.connected', user: @discord_panel.fetch(:connection).fetch(:discord_username)) %></p>
-        <% end %>
-        <% if @discord_error %>
-          <p class="profile-empty"><%= h t("users.discord.errors.#{@discord_error}") %></p>
-        <% end %>
-        <div class="discord-panel__join">
-          <a class="discord-join-button" href="<%= h app_path('/auth/discord') %>"><%= h t('users.discord.connect_action') %></a>
-        </div>
-
-        <div class="discord-access">
-          <h3><%= h t('users.discord.channels_title') %></h3>
-          <ul>
-            <% @discord_panel.fetch(:access_channels).each do |channel| %>
-              <li><%= h channel %></li>
-            <% end %>
-          </ul>
-        </div>
-      </article>
-    </div>
-  </section>
+  <%= erb :discord_panel, locals: { panel: @discord_panel, error: @discord_error } %>
 <% end %>
 
 <% if @show_profile_badges %>
@@ -61,23 +37,15 @@
 
 <section class="profile-section" aria-labelledby="profile-summary-heading">
   <div class="content profile-grid">
-    <article class="profile-summary">
-      <h2 id="profile-summary-heading"><%= h t('users.summary.title') %></h2>
-      <dl class="profile-facts">
-        <div>
-          <dt><%= h t('users.summary.location') %></dt>
-          <dd><%= h(@profile[:location_raw] || @profile[:city] || @profile[:country] || t('users.summary.unknown')) %></dd>
-        </div>
-        <div>
-          <dt><%= h t('users.summary.city') %></dt>
-          <dd><%= h(@profile[:city] || t('users.summary.unknown')) %></dd>
-        </div>
-        <div>
-          <dt><%= h t('users.summary.public_repositories') %></dt>
-          <dd><%= number(@profile[:public_repo_count]) %></dd>
-        </div>
-      </dl>
-    </article>
+    <%= erb :profile_fact_card, locals: {
+      heading_id: 'profile-summary-heading',
+      title: t('users.summary.title'),
+      items: [
+        { label: t('users.summary.location'), value: (@profile[:location_raw] || @profile[:city] || @profile[:country] || t('users.summary.unknown')) },
+        { label: t('users.summary.city'), value: (@profile[:city] || t('users.summary.unknown')) },
+        { label: t('users.summary.public_repositories'), value: number(@profile[:public_repo_count]) }
+      ]
+    } %>
 
     <% metric_items = [] %>
     <% metric_items << { label: t('rankings.metric.stars'), value: "⭐ #{number(@profile[:total_stars])}" } unless @profile[:total_stars].nil? %>

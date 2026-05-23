@@ -26,23 +26,15 @@
 
 <section class="profile-section" aria-labelledby="organization-summary-heading">
   <div class="content profile-grid">
-    <article class="profile-summary">
-      <h2 id="organization-summary-heading"><%= h t('organizations.summary.title') %></h2>
-      <dl class="profile-facts">
-        <div>
-          <dt><%= h t('organizations.summary.location') %></dt>
-          <dd><%= h(@organization[:location_raw] || @organization[:city] || @organization[:country] || t('users.summary.unknown')) %></dd>
-        </div>
-        <div>
-          <dt><%= h t('users.summary.city') %></dt>
-          <dd><%= h(@organization[:city] || t('users.summary.unknown')) %></dd>
-        </div>
-        <div>
-          <dt><%= h t('organizations.summary.public_repositories') %></dt>
-          <dd><%= number(@organization[:public_repo_count]) %></dd>
-        </div>
-      </dl>
-    </article>
+    <%= erb :profile_fact_card, locals: {
+      heading_id: 'organization-summary-heading',
+      title: t('organizations.summary.title'),
+      items: [
+        { label: t('organizations.summary.location'), value: (@organization[:location_raw] || @organization[:city] || @organization[:country] || t('users.summary.unknown')) },
+        { label: t('users.summary.city'), value: (@organization[:city] || t('users.summary.unknown')) },
+        { label: t('organizations.summary.public_repositories'), value: number(@organization[:public_repo_count]) }
+      ]
+    } %>
 
     <% metric_items = [] %>
     <% metric_items << { label: t('rankings.metric.stars'), value: "⭐ #{number(@organization[:total_stars])}" } unless @organization[:total_stars].nil? %>

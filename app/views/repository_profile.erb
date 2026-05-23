@@ -2,25 +2,21 @@
 
 <section class="profile-section" aria-labelledby="repository-summary-heading">
   <div class="content profile-grid">
-    <article class="profile-summary">
-      <h2 id="repository-summary-heading"><%= h t('repositories.summary.title') %></h2>
-      <dl class="profile-facts">
-        <div>
-          <dt><%= h t('repositories.summary.owner') %></dt>
-          <dd><a class="primary-link" href="<%= h app_path(user_profile_path(platform: @repository.fetch(:platform), login: @repository.fetch(:owner_login))) %>"><%= h @repository.fetch(:owner_login) %></a></dd>
-        </div>
-        <div>
-          <dt><%= h t('users.summary.city') %></dt>
-          <dd><%= h(@repository[:owner_city] || t('users.summary.unknown')) %></dd>
-        </div>
-        <% if @repository[:language] && !@repository[:language].empty? %>
-          <div>
-            <dt><%= h t('users.repositories.language') %></dt>
-            <dd><%= h @repository[:language] %></dd>
-          </div>
-        <% end %>
-      </dl>
-    </article>
+    <% fact_items = [
+      {
+        label: t('repositories.summary.owner'),
+        value_html: %(<a class="primary-link" href="#{h app_path(user_profile_path(platform: @repository.fetch(:platform), login: @repository.fetch(:owner_login)))}">#{h @repository.fetch(:owner_login)}</a>)
+      },
+      { label: t('users.summary.city'), value: (@repository[:owner_city] || t('users.summary.unknown')) }
+    ] %>
+    <% if @repository[:language] && !@repository[:language].empty? %>
+      <% fact_items << { label: t('users.repositories.language'), value: @repository[:language] } %>
+    <% end %>
+    <%= erb :profile_fact_card, locals: {
+      heading_id: 'repository-summary-heading',
+      title: t('repositories.summary.title'),
+      items: fact_items
+    } %>
 
     <% metric_items = [
       { label: t('rankings.metric.stars'), value: "⭐ #{number(@repository[:stargazers_count])}" },
