@@ -1,28 +1,4 @@
-<section class="profile-hero">
-  <div class="content profile-hero__inner">
-    <p class="eyebrow"><%= h platform_name(@repository.fetch(:platform)) %></p>
-    <div class="profile-identity profile-identity--project">
-      <div class="project-avatar" aria-hidden="true">
-        <%= erb :platform_icon, locals: { platform: @repository.fetch(:platform, "github") } %>
-      </div>
-      <div>
-        <div class="profile-title-row">
-          <h1><%= h @repository.fetch(:full_name) %></h1>
-          <%= erb :elite_medal, locals: { rank: @repository[:elite_rank], size: "large" } %>
-        </div>
-        <% if @repository[:description] && !@repository[:description].empty? %>
-          <p class="lede"><%= h @repository[:description] %></p>
-        <% end %>
-        <div class="profile-actions">
-          <a class="ranking-action" href="<%= h @repository.fetch(:html_url) %>"><%= h t('repositories.links.source_project', platform: platform_name(@repository.fetch(:platform))) %></a>
-          <% if @repository[:homepage] && !@repository[:homepage].empty? %>
-            <a class="ranking-action" href="<%= h @repository[:homepage] %>"><%= h t('users.links.homepage') %></a>
-          <% end %>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+<%= erb :profile_project_hero, locals: { record: @repository } %>
 
 <section class="profile-section" aria-labelledby="repository-summary-heading">
   <div class="content profile-grid">

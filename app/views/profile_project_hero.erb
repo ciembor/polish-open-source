@@ -1,0 +1,25 @@
+<section class="profile-hero">
+  <div class="content profile-hero__inner">
+    <p class="eyebrow"><%= h platform_name(record.fetch(:platform)) %></p>
+    <div class="profile-identity profile-identity--project">
+      <div class="project-avatar" aria-hidden="true">
+        <%= erb :platform_icon, locals: { platform: record.fetch(:platform, "github") } %>
+      </div>
+      <div>
+        <div class="profile-title-row">
+          <h1><%= h record.fetch(:full_name) %></h1>
+          <%= erb :elite_medal, locals: { rank: record[:elite_rank], size: "large" } %>
+        </div>
+        <% if record[:description] && !record[:description].empty? %>
+          <p class="lede"><%= h record[:description] %></p>
+        <% end %>
+        <div class="profile-actions">
+          <a class="ranking-action" href="<%= h record.fetch(:html_url) %>"><%= h t('repositories.links.source_project', platform: platform_name(record.fetch(:platform))) %></a>
+          <% if record[:homepage] && !record[:homepage].empty? %>
+            <a class="ranking-action" href="<%= h record[:homepage] %>"><%= h t('users.links.homepage') %></a>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

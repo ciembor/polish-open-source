@@ -1,0 +1,25 @@
+<section class="profile-hero">
+  <div class="content profile-hero__inner">
+    <p class="eyebrow"><%= h platform_name(record.fetch(:platform)) %></p>
+    <div class="profile-identity">
+      <% if record[:avatar_url] && !record[:avatar_url].empty? %>
+        <img class="profile-avatar" src="<%= h record[:avatar_url] %>" alt="<%= h t("#{translation_scope}.avatar_alt", translation_value_key => record.fetch(:login)) %>">
+      <% else %>
+        <div class="profile-avatar profile-avatar--fallback" aria-hidden="true"><%= h record.fetch(:login)[0].upcase %></div>
+      <% end %>
+      <div>
+        <div class="profile-title-row">
+          <h1><%= h(record[:name].to_s.empty? ? record.fetch(:login) : record[:name]) %></h1>
+          <%= erb :elite_medal, locals: { rank: record[:elite_rank], size: "large" } %>
+        </div>
+        <p class="profile-login">@<%= h record.fetch(:login) %></p>
+        <div class="profile-actions">
+          <a class="ranking-action" href="<%= h record.fetch(:html_url) %>"><%= h t("#{translation_scope}.links.source_profile", platform: platform_name(record.fetch(:platform))) %></a>
+          <% if record[:homepage] && !record[:homepage].empty? %>
+            <a class="ranking-action" href="<%= h record[:homepage] %>"><%= h t('users.links.homepage') %></a>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
