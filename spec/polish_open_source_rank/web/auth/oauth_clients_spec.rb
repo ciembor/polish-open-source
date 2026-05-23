@@ -57,6 +57,36 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
     expect(requests.map(&:method)).to eq(%w[POST GET])
   end
 
+  it 'maps fixture Discord OAuth and member payloads through public adapters' do
+    configuration = PolishOpenSourceRank::Configuration.load
+    oauth_client = PolishOpenSourceRank::Web::Auth::DiscordOAuthClient.new(configuration)
+    gateway = PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway.new(configuration)
+    responses = [
+      json_response(JSON.generate(fixture_json('external_payloads/discord_oauth_user.json'))),
+      json_response(JSON.generate(fixture_json('external_payloads/discord_member.json'))),
+      empty_response
+    ]
+    requests, = capture_http_requests(responses)
+
+    expect(oauth_client.user('discord-token')).to eq(
+      'id' => 'discord-1',
+      'username' => 'alice',
+      'global_name' => 'Alice Example'
+    )
+    gateway.sync_joined_member(
+      discord_user_id: 'discord-1',
+      github_login: 'alice',
+      desired_role_ids: ['role-1'],
+      managed_role_ids: %w[role-1 role-3]
+    )
+
+    expect(requests.map(&:method)).to eq(%w[GET GET PATCH])
+    expect(JSON.parse(requests.fetch(2).body)).to eq(
+      'nick' => 'alice',
+      'roles' => %w[unmanaged-role role-1]
+    )
+  end
+
   it 'uses configured HTTP timeouts for OAuth and Discord API requests' do
     ENV['HTTP_OPEN_TIMEOUT'] = '7'
     ENV['HTTP_READ_TIMEOUT'] = '31'

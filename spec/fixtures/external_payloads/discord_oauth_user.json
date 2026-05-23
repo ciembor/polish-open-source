@@ -1,0 +1,18 @@
+{
+  "id": "discord-1",
+  "username": "alice",
+  "avatar": "avatar-hash",
+  "discriminator": "0",
+  "public_flags": 0,
+  "flags": 0,
+  "banner": null,
+  "accent_color": null,
+  "global_name": "Alice Example",
+  "avatar_decoration_data": null,
+  "banner_color": null,
+  "clan": null,
+  "primary_guild": null,
+  "mfa_enabled": true,
+  "locale": "pl",
+  "premium_type": 0
+}

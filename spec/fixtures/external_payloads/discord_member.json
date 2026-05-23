@@ -1,0 +1,18 @@
+{
+  "user": {
+    "id": "discord-1",
+    "username": "alice",
+    "global_name": "Alice Example"
+  },
+  "nick": "old-nick",
+  "avatar": null,
+  "roles": ["role-3", "unmanaged-role"],
+  "joined_at": "2026-04-15T10:00:00.000000+00:00",
+  "premium_since": null,
+  "deaf": false,
+  "mute": false,
+  "flags": 0,
+  "pending": false,
+  "permissions": "0",
+  "communication_disabled_until": null
+}
