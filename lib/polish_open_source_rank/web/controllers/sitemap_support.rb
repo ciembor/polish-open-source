@@ -79,9 +79,7 @@ module PolishOpenSourceRank
         end
 
         def city_ranking_scope_paths(prefix)
-          ranking_scope_paths(prefix).reject do |path|
-            path.include?('/organizations/') || path.include?('/organization-repositories/')
-          end
+          ranking_scope_paths(prefix)
         end
 
         def edition_paths

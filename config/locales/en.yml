@@ -185,7 +185,7 @@ en:
       title: "%{organization} - %{platform} organization"
       description: "%{organization} public open-source organization on %{platform}, with ranking metrics and top repositories."
     spotlight:
-      city: "City"
+      city_rank: "%{city} rank"
       country_rank: "Poland rank"
       title: "Organization ranking"
       top_repository: "Top repository"

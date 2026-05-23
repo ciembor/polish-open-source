@@ -100,7 +100,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     organization = read_model.organization_profile('github', 'polish-org', period_start: period)
     repository = read_model.organization_repository_profile('github', 'polish-org', 'toolkit', period_start: period)
 
-    expect(organization).to include(login: 'polish-org', elite_rank: 1)
+    expect(organization).to include(login: 'polish-org', elite_rank: 1, city_rank: 1)
     expect(organization.fetch(:profile_badge)).to include(label: 'Polish Open Source Org', value: '1st')
     expect(organization.fetch(:repositories)).to contain_exactly(
       include(full_name: 'polish-org/toolkit', polish_repo_badge: include(label: 'Polish Org Repo', value: '1st'))

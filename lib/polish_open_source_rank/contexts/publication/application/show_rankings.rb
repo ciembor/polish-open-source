@@ -14,7 +14,6 @@ module PolishOpenSourceRank
           )
 
           EMPTY_RANKINGS = { top: [], trending: [], active: [] }.freeze
-          EMPTY_ORGANIZATION_RANKINGS = { top: [], trending: [] }.freeze
 
           def initialize(ranking_read_model:)
             @ranking_read_model = ranking_read_model
@@ -33,26 +32,17 @@ module PolishOpenSourceRank
             RankingsPage.new(
               user_rankings: ranking_read_model.user_rankings(scope, period_start: period_start),
               repository_rankings: ranking_read_model.repository_rankings(scope, period_start: period_start),
-              organization_rankings: organization_rankings(scope, period_start),
-              organization_repository_rankings: organization_repository_rankings(scope, period_start)
+              organization_rankings: ranking_read_model.organization_rankings(scope, period_start: period_start),
+              organization_repository_rankings: ranking_read_model.organization_repository_rankings(
+                scope,
+                period_start: period_start
+              )
             )
           end
 
           private
 
           attr_reader :ranking_read_model
-
-          def organization_rankings(scope, period_start)
-            return EMPTY_ORGANIZATION_RANKINGS unless scope == 'poland'
-
-            ranking_read_model.organization_rankings(period_start: period_start)
-          end
-
-          def organization_repository_rankings(scope, period_start)
-            return EMPTY_ORGANIZATION_RANKINGS unless scope == 'poland'
-
-            ranking_read_model.organization_repository_rankings(period_start: period_start)
-          end
         end
       end
     end

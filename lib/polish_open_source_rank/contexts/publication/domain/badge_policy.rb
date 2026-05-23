@@ -23,8 +23,10 @@ module PolishOpenSourceRank
             { label: 'Polish Repo', value: nil, status: 'outside_top_100', rank: rank }
           end
 
-          def organization_badge(rank)
+          def organization_badge(rank, city: nil, city_rank: nil)
             return { label: 'Polish Open Source Org', value: Rank.place(rank), status: 'ranked', rank: rank } if rank
+            return ranked_badge("#{city} Org Elite", city_rank) if city && top?(city_rank, 10)
+            return ranked_badge("#{city} Org Top 100", city_rank) if city && top?(city_rank, 100)
 
             { label: 'Polish Open Source Org', value: nil, status: 'outside_top_100', rank: rank }
           end

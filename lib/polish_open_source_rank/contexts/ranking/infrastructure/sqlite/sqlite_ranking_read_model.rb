@@ -23,15 +23,15 @@ module PolishOpenSourceRank
               end
             end
 
-            def organization_rankings(period_start:)
+            def organization_rankings(scope = 'poland', period_start:)
               Domain::RankingPolicy::ORGANIZATION_RANKINGS.transform_values do |metric|
-                ranked_organizations(period_start, metric.column)
+                ranked_organizations(scope, period_start, metric.column)
               end
             end
 
-            def organization_repository_rankings(period_start:)
+            def organization_repository_rankings(scope = 'poland', period_start:)
               Domain::RankingPolicy::ORGANIZATION_REPOSITORY_RANKINGS.transform_values do |metric|
-                ranked_organization_repositories(period_start, metric.column)
+                ranked_organization_repositories(scope, period_start, metric.column)
               end
             end
 
@@ -43,13 +43,15 @@ module PolishOpenSourceRank
               ranked_repositories(scope, period_start, Domain::RankingPolicy.column(metric_key), limit: limit)
             end
 
-            def ranked_organization_metric(period_start, metric_key, limit: Domain::RankingPolicy::RANKING_LIMIT)
-              ranked_organizations(period_start, Domain::RankingPolicy.column(metric_key), limit: limit)
+            def ranked_organization_metric(scope, period_start, metric_key,
+                                           limit: Domain::RankingPolicy::RANKING_LIMIT)
+              ranked_organizations(scope, period_start, Domain::RankingPolicy.column(metric_key), limit: limit)
             end
 
-            def ranked_organization_repository_metric(period_start, metric_key,
+            def ranked_organization_repository_metric(scope, period_start, metric_key,
                                                       limit: Domain::RankingPolicy::RANKING_LIMIT)
-              ranked_organization_repositories(period_start, Domain::RankingPolicy.column(metric_key), limit: limit)
+              ranked_organization_repositories(scope, period_start, Domain::RankingPolicy.column(metric_key),
+                                               limit: limit)
             end
 
             def ranked_users(scope, period_start, order_column, limit: Domain::RankingPolicy::RANKING_LIMIT)
@@ -83,8 +85,9 @@ module PolishOpenSourceRank
               SQL
             end
 
-            def ranked_organizations(period_start, order_column, limit: Domain::RankingPolicy::RANKING_LIMIT)
-              database.fetch_all(<<~SQL, [period_start])
+            def ranked_organizations(scope, period_start, order_column, limit: Domain::RankingPolicy::RANKING_LIMIT)
+              sql_scope, params = organization_scope(scope)
+              database.fetch_all(<<~SQL, [period_start, *params])
                 SELECT organizations.platform, organizations.login, organizations.name, organizations.email,
                        organizations.homepage, organizations.html_url, organizations.avatar_url,
                        stats.city, stats.country, stats.public_repo_count, stats.total_stars,
@@ -93,16 +96,17 @@ module PolishOpenSourceRank
                 INNER JOIN organizations
                   ON organizations.platform = stats.platform
                  AND organizations.github_id = stats.organization_github_id
-                WHERE stats.period_start = ? AND stats.country = 'Poland' #{trending_filter(order_column, 'stats')}
+                WHERE stats.period_start = ? AND #{sql_scope} #{trending_filter(order_column, 'stats')}
                 ORDER BY stats.#{order_column} DESC, organizations.platform ASC,
                          organizations.login COLLATE NOCASE ASC
                 LIMIT #{Domain::RankingPolicy.bounded_limit(limit)}
               SQL
             end
 
-            def ranked_organization_repositories(period_start, order_column,
+            def ranked_organization_repositories(scope, period_start, order_column,
                                                  limit: Domain::RankingPolicy::RANKING_LIMIT)
-              database.fetch_all(<<~SQL, [period_start])
+              sql_scope, params = organization_repository_scope(scope)
+              database.fetch_all(<<~SQL, [period_start, *params])
                 SELECT repositories.platform, repositories.full_name, repositories.name, repositories.description,
                        repositories.html_url, repositories.homepage, repositories.language,
                        stats.organization_login, stats.organization_city, stats.organization_country,
@@ -111,8 +115,7 @@ module PolishOpenSourceRank
                 INNER JOIN organization_repositories repositories
                   ON repositories.platform = stats.platform
                  AND repositories.github_id = stats.repository_github_id
-                WHERE stats.period_start = ? AND stats.organization_country = 'Poland'
-                  #{trending_filter(order_column, 'stats')}
+                WHERE stats.period_start = ? AND #{sql_scope} #{trending_filter(order_column, 'stats')}
                 ORDER BY stats.#{order_column} DESC, repositories.platform ASC,
                          repositories.full_name COLLATE NOCASE ASC
                 LIMIT #{Domain::RankingPolicy.bounded_limit(limit)}
@@ -137,6 +140,18 @@ module PolishOpenSourceRank
               return ['stats.owner_country = ?', ['Poland']] if scope == 'poland'
 
               ['stats.owner_city = ?', [catalog.city_name(scope)]]
+            end
+
+            def organization_scope(scope)
+              return ['stats.country = ?', ['Poland']] if scope == 'poland'
+
+              ['stats.city = ?', [catalog.city_name(scope)]]
+            end
+
+            def organization_repository_scope(scope)
+              return ['stats.organization_country = ?', ['Poland']] if scope == 'poland'
+
+              ['stats.organization_city = ?', [catalog.city_name(scope)]]
             end
           end
         end

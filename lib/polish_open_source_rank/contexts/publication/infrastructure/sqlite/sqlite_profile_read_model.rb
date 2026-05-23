@@ -50,21 +50,16 @@ module PolishOpenSourceRank
               organization = fetch_organization_profile(platform, login, period_start)
               return unless organization
 
-              public_period = organization[:period_start] || period_start
-              country_rank = organization_country_rank(
-                organization.fetch(:platform),
-                organization.fetch(:github_id),
-                public_period
-              )
-              badge = badge_policy.organization_badge(country_rank)
+              ranking = organization_ranking(organization, period_start)
               organization.merge(
-                elite_rank: country_rank,
-                badges: [badge],
-                profile_badge: badge,
+                elite_rank: ranking.fetch(:country_rank),
+                city_rank: ranking.fetch(:city_rank),
+                badges: [ranking.fetch(:badge)],
+                profile_badge: ranking.fetch(:badge),
                 repositories: top_organization_repositories(
                   organization.fetch(:platform),
                   organization.fetch(:github_id),
-                  public_period
+                  ranking.fetch(:period_start)
                 )
               )
             end
@@ -293,6 +288,44 @@ module PolishOpenSourceRank
             def organization_repository_badge(platform, repository_id, period_start)
               rank = organization_repository_rank(platform, repository_id, period_start)
               badge_policy.organization_repository_badge(rank)
+            end
+
+            def organization_ranking(organization, fallback_period)
+              public_period = organization[:period_start] || fallback_period
+              country_rank = organization_country_rank(
+                organization.fetch(:platform),
+                organization.fetch(:github_id),
+                public_period
+              )
+              city_rank = organization_city_rank(
+                organization.fetch(:platform),
+                organization.fetch(:github_id),
+                organization[:city],
+                public_period
+              )
+              {
+                period_start: public_period,
+                country_rank: country_rank,
+                city_rank: city_rank,
+                badge: badge_policy.organization_badge(country_rank, city: organization[:city], city_rank: city_rank)
+              }
+            end
+
+            def organization_city_rank(platform, organization_id, city, period_start)
+              return unless city && period_start
+
+              database.fetch_value(<<~SQL, [period_start, city, platform, organization_id])
+                SELECT city_rank
+                FROM (
+                  SELECT stats.platform, stats.organization_github_id,
+                         RANK() OVER (
+                           ORDER BY stats.total_stars DESC, stats.platform ASC, stats.login COLLATE NOCASE ASC
+                         ) AS city_rank
+                  FROM organization_monthly_stats stats
+                  WHERE stats.period_start = ? AND stats.city = ?
+                )
+                WHERE platform = ? AND organization_github_id = ?
+              SQL
             end
 
             def user_country_rank(platform, user_id, period_start)

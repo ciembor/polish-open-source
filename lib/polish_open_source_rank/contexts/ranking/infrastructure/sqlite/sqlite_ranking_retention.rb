@@ -72,7 +72,7 @@ module PolishOpenSourceRank
                 table: 'organization_monthly_stats',
                 id_column: 'platform, organization_github_id',
                 country_column: 'country',
-                city_column: nil,
+                city_column: 'city',
                 metrics: Domain::RankingPolicy::ORGANIZATION_RANKINGS.values,
                 tie_breaker: Domain::RankingPolicy::ORGANIZATION_TIE_BREAKER
               )
@@ -89,7 +89,7 @@ module PolishOpenSourceRank
                 table: 'organization_repository_monthly_stats',
                 id_column: 'platform, repository_github_id',
                 country_column: 'organization_country',
-                city_column: nil,
+                city_column: 'organization_city',
                 metrics: Domain::RankingPolicy::ORGANIZATION_REPOSITORY_RANKINGS.values,
                 tie_breaker: Domain::RankingPolicy::ORGANIZATION_REPOSITORY_TIE_BREAKER
               )
