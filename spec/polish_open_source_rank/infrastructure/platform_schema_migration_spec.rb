@@ -10,7 +10,30 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration do
     expect(
       database.fetch_value("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'crawl_job_runs'")
     ).to eq(1)
+    expect(database.fetch_value(package_table_sql('package_crawl_runs'))).to eq(1)
+    expect(database.fetch_value(package_table_sql('registry_package_snapshots'))).to eq(1)
     expect(database.table_info('users').map { |column| column.fetch('name') }).to include('platform')
+  end
+
+  it 'creates package ranking tables and indexes in a fresh database' do
+    database = open_database
+
+    described_class.new(database, PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql).bootstrap!
+
+    expect(package_tables(database)).to include(
+      'package_crawl_runs',
+      'package_repository_scans',
+      'package_manifests',
+      'registry_packages',
+      'registry_package_links',
+      'registry_package_snapshots'
+    )
+    expect(package_indexes(database)).to include(
+      'idx_package_repository_scans_status_period',
+      'idx_package_manifests_ecosystem_name',
+      'idx_registry_package_snapshots_ecosystem_downloads',
+      'idx_registry_package_snapshots_ecosystem_dependents'
+    )
   end
 
   it 'migrates a legacy GitHub-only database to platform-qualified records' do
@@ -64,6 +87,24 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration do
       "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
       [table_name]
     ).nil?
+  end
+
+  def package_table_sql(table_name)
+    "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = '#{table_name}'"
+  end
+
+  def package_tables(database)
+    database.fetch_all(<<~SQL).map { |row| row.fetch(:name) }
+      SELECT name FROM sqlite_master
+      WHERE type = 'table' AND name LIKE 'package_%' OR name LIKE 'registry_package%'
+    SQL
+  end
+
+  def package_indexes(database)
+    database.fetch_all(<<~SQL).map { |row| row.fetch(:name) }
+      SELECT name FROM sqlite_master
+      WHERE type = 'index' AND name LIKE 'idx_package_%' OR name LIKE 'idx_registry_package%'
+    SQL
   end
 
   def legacy_schema_sql
