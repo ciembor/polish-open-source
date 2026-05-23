@@ -185,7 +185,7 @@ pl:
       title: "%{organization} - organizacja %{platform}"
       description: "Publiczny profil organizacji open source %{organization} na %{platform}, z metrykami rankingu i najlepszymi repozytoriami."
     spotlight:
-      city: "Miasto"
+      city_rank: "Pozycja w %{city}"
       country_rank: "Pozycja w rankingu Polski"
       title: "Pozycja organizacji"
       top_repository: "Najmocniejsze repozytorium"

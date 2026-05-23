@@ -104,6 +104,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(organization_profile.body).to include('rel="canonical" href="https://rank.example/organizations/github/polish-org"')
     expect(organization_profile.body).to include('"@type": "Organization"')
     expect(organization_profile.body).to include('Najmocniejsze repozytorium')
+    expect(organization_profile.body).to include('Pozycja w Warszawa')
     expect(organization_profile.body).to include('href="/organization-repositories/github/polish-org/toolkit"')
     expect(organization_profile.body).not_to include('Twój dostęp Discord')
     expect(organization_badge.status).to eq(200)
@@ -722,7 +723,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(sitemap_locations).to include('https://rank.example/en/users/github/alice')
     expect(sitemap_locations).to include('https://rank.example/en/organizations/github/polish-org')
     expect(sitemap_locations).to include('https://rank.example/en/organization-repositories/github/polish-org/toolkit')
-    expect(sitemap.body).not_to include('/locations/krakow/organizations/top')
+    expect(sitemap_locations).to include('https://rank.example/latest/locations/krakow/organizations/top')
     expect(REXML::XPath.match(xml_document(sitemap.body), '//url/lastmod')).not_to be_empty
   end
 
@@ -818,8 +819,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       organization_repository: request.get('/2026-04/organization-repositories/trending'),
       latest_user: request.get('/latest/users/top'),
       latest_city_repository: request.get('/latest/locations/krakow/repositories/top'),
+      city_organization: request.get('/2026-04/locations/warszawa/organizations/top'),
       invalid_repository: request.get('/2026-04/repositories/active'),
-      invalid_city_organization: request.get('/2026-04/locations/krakow/organizations/top')
+      invalid_city_organization: request.get('/2026-04/locations/unknown/organizations/top')
     }
   end
 
@@ -827,6 +829,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect_primary_ranking_pages(responses)
     expect_latest_user_ranking_page(responses.fetch(:latest_user))
     expect_latest_city_repository_ranking_page(responses.fetch(:latest_city_repository))
+    expect(responses.fetch(:city_organization).status).to eq(200)
+    expect(responses.fetch(:city_organization).body).to include('polish-org')
     expect(responses.fetch(:invalid_repository).status).to eq(404)
     expect(responses.fetch(:invalid_city_organization).status).to eq(404)
   end

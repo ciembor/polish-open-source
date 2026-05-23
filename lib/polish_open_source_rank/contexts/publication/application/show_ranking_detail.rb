@@ -18,9 +18,12 @@ module PolishOpenSourceRank
             when 'repositories'
               ranking_read_model.repository_rankings(scope, period_start: period_start).fetch(metric.to_sym)
             when 'organizations'
-              ranking_read_model.organization_rankings(period_start: period_start).fetch(metric.to_sym)
+              ranking_read_model.organization_rankings(scope, period_start: period_start).fetch(metric.to_sym)
             else
-              ranking_read_model.organization_repository_rankings(period_start: period_start).fetch(metric.to_sym)
+              ranking_read_model.organization_repository_rankings(
+                scope,
+                period_start: period_start
+              ).fetch(metric.to_sym)
             end
           end
 

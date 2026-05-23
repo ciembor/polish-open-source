@@ -75,23 +75,57 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     expect(capturing_database.calls[1].fetch(:sql)).to match(/LIMIT 1\n\z/)
   end
 
-  it 'returns Poland-wide organization and organization repository rankings' do
+  it 'returns scoped organization rankings' do
     seed_organization(id: 100, login: 'polish-org', stars: 80, delta: 10)
-    seed_organization(id: 200, login: 'second-org', stars: 70, delta: 4)
-    seed_organization_repository(id: 1000, owner_id: 100, owner: 'polish-org', full_name: 'polish-org/toolkit',
-                                 stars: 90, delta: 7)
-    seed_organization_repository(id: 2000, owner_id: 200, owner: 'second-org', full_name: 'second-org/widget',
-                                 stars: 60, delta: 3)
+    seed_organization(id: 200, login: 'second-org', city: 'Kraków', stars: 70, delta: 4)
 
     expect(read_model.organization_rankings(period_start: period).fetch(:top).map { _1.fetch(:login) }).to eq(
       %w[polish-org second-org]
     )
+    expect(read_model.organization_rankings('krakow', period_start: period).fetch(:top).map { _1.fetch(:login) }).to eq(
+      ['second-org']
+    )
+    expect(read_model.ranked_organization_metric('poland', period, :organization_top).first).to include(
+      login: 'polish-org'
+    )
+  end
+
+  it 'returns scoped organization repository rankings' do
+    seed_organization(id: 100, login: 'polish-org', stars: 80, delta: 10)
+    seed_organization(id: 200, login: 'second-org', city: 'Kraków', stars: 70, delta: 4)
+    seed_organization_repository(
+      id: 1000, owner_id: 100, owner: 'polish-org', full_name: 'polish-org/toolkit', stars: 90, delta: 7
+    )
+    seed_organization_repository(
+      id: 2000, owner_id: 200, owner: 'second-org', full_name: 'second-org/widget',
+      stars: 60, delta: 3, city: 'Kraków'
+    )
+
     expect(
       read_model.organization_repository_rankings(period_start: period).fetch(:trending).map { _1.fetch(:full_name) }
     ).to eq(['polish-org/toolkit', 'second-org/widget'])
-    expect(read_model.ranked_organization_metric(period, :organization_top).first).to include(login: 'polish-org')
-    expect(read_model.ranked_organization_repository_metric(period, :organization_repository_top).first).to include(
-      full_name: 'polish-org/toolkit'
+    expect(
+      read_model.organization_repository_rankings('krakow', period_start: period)
+                .fetch(:trending).map { _1.fetch(:full_name) }
+    ).to eq(['second-org/widget'])
+    expect(read_model.ranked_organization_repository_metric('poland', period, :organization_repository_top).first)
+      .to include(
+        full_name: 'polish-org/toolkit'
+      )
+  end
+
+  it 'binds organization city scope params as flat positional SQL parameters' do
+    capturing_database = new_capturing_database
+    read_model = described_class.new(capturing_database)
+
+    read_model.ranked_organizations('krakow', period, 'total_stars')
+    read_model.ranked_organization_repositories('krakow', period, 'stargazers_count')
+
+    expect(capturing_database.calls[0]).to include(
+      sql: include('stats.city = ?'), params: %w[2026-04-01 Kraków]
+    )
+    expect(capturing_database.calls[1]).to include(
+      sql: include('stats.organization_city = ?'), params: %w[2026-04-01 Kraków]
     )
   end
 
@@ -157,7 +191,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     end.new([])
   end
 
-  def seed_organization(id:, login:, stars:, delta:)
+  def seed_organization(id:, login:, stars:, delta:, city: 'Warszawa')
     database.execute(
       'INSERT INTO organizations(platform, github_id, login, html_url, updated_at) VALUES (?, ?, ?, ?, ?)',
       ['github', id, login, "https://github.com/#{login}", '2026-05-01T00:00:00Z']
@@ -170,11 +204,13 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       SQL
-      [period, 'github', id, login, 'Warszawa', 'Poland', 1, stars, delta, '2026-05-01T00:00:00Z']
+      [period, 'github', id, login, city, 'Poland', 1, stars, delta, '2026-05-01T00:00:00Z']
     )
   end
 
-  def seed_organization_repository(id:, owner_id:, owner:, full_name:, stars:, delta:)
+  def seed_organization_repository(attributes)
+    city = attributes.fetch(:city, 'Warszawa')
+    full_name = attributes.fetch(:full_name)
     database.execute(
       <<~SQL,
         INSERT INTO organization_repositories(
@@ -183,7 +219,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
         )
         VALUES (?, ?, ?, ?, ?, ?, 'https://example.com/repo', 0, 0, ?)
       SQL
-      ['github', id, owner_id, owner, full_name.split('/').last, full_name, '2026-05-01T00:00:00Z']
+      [
+        'github', attributes.fetch(:id), attributes.fetch(:owner_id), attributes.fetch(:owner),
+        full_name.split('/').last, full_name, '2026-05-01T00:00:00Z'
+      ]
     )
     database.execute(
       <<~SQL,
@@ -193,7 +232,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       SQL
-      [period, 'github', id, owner_id, owner, 'Warszawa', 'Poland', stars, delta, '2026-05-01T00:00:00Z']
+      [
+        period, 'github', attributes.fetch(:id), attributes.fetch(:owner_id), attributes.fetch(:owner),
+        city, 'Poland', attributes.fetch(:stars), attributes.fetch(:delta), '2026-05-01T00:00:00Z'
+      ]
     )
   end
 end

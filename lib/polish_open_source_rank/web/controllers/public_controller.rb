@@ -88,7 +88,6 @@ module PolishOpenSourceRank
 
         def render_ranking_detail(period_slug, scope, kind, metric)
           halt 404 unless ranking_metric?(kind, metric)
-          halt 404 if scope != 'poland' && organization_ranking_kind?(kind)
           @scope = scope_data(scope)
           @period_slug = period_slug
           @period = period_for(period_slug)
@@ -109,8 +108,6 @@ module PolishOpenSourceRank
         end
 
         def assign_public_page(attributes) = attributes.each { |name, value| instance_variable_set("@#{name}", value) }
-
-        def organization_ranking_kind?(kind) = %w[organizations organization-repositories].include?(kind)
 
         def public_page_state = (@public_page_state ||= Presentation::PublicPageState.new(self))
       end
