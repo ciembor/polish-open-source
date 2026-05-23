@@ -1,0 +1,25 @@
+# frozen_string_literal: true
+
+module PolishOpenSourceRank
+  module Contexts
+    module Packages
+      module Application
+        class ShowPackageIndex
+          def initialize(package_ranking_read_model:)
+            @package_ranking_read_model = package_ranking_read_model
+          end
+
+          def call(period_start:)
+            return [] unless period_start
+
+            package_ranking_read_model.ecosystems(period_start: period_start)
+          end
+
+          private
+
+          attr_reader :package_ranking_read_model
+        end
+      end
+    end
+  end
+end
