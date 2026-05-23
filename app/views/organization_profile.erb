@@ -1,42 +1,21 @@
 <%= erb :profile_subject_hero, locals: { record: @organization, translation_scope: 'organizations', translation_value_key: :organization } %>
 
 <% top_repository = @repositories.first %>
-<section class="profile-section profile-section--compact" aria-labelledby="organization-spotlight-heading">
-  <div class="content">
-    <article class="profile-spotlight">
-      <div class="profile-spotlight__header">
-        <h2 id="organization-spotlight-heading"><%= h t('organizations.spotlight.title') %></h2>
-        <% if @organization[:period_start] %>
-          <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @organization[:period_start] %>"><%= h period_label(@organization[:period_start]) %></time></p>
-        <% end %>
-      </div>
-
-      <dl class="profile-spotlight__grid">
-        <div class="profile-spotlight__item">
-          <dt><%= h t('organizations.spotlight.country_rank') %></dt>
-          <dd><%= h(@organization[:elite_rank] ? "##{@organization[:elite_rank]}" : '-') %></dd>
-        </div>
-
-        <% if @organization[:city] %>
-          <div class="profile-spotlight__item">
-            <dt><%= h t('organizations.spotlight.city') %></dt>
-            <dd><%= h @organization.fetch(:city) %></dd>
-          </div>
-        <% end %>
-
-        <% if top_repository %>
-          <div class="profile-spotlight__item profile-spotlight__item--repository">
-            <dt><%= h t('organizations.spotlight.top_repository') %></dt>
-            <dd>
-              <a class="primary-link" href="<%= h app_path(organization_repository_profile_path(top_repository)) %>"><%= h top_repository.fetch(:full_name) %></a>
-              <span class="profile-spotlight__meta">⭐ <%= number(top_repository.fetch(:stargazers_count)) %></span>
-            </dd>
-          </div>
-        <% end %>
-      </dl>
-    </article>
-  </div>
-</section>
+<% spotlight_items = [
+  { label: t('organizations.spotlight.country_rank'), value: (@organization[:elite_rank] ? "##{@organization[:elite_rank]}" : '-') }
+] %>
+<% if @organization[:city] %>
+  <% spotlight_items << { label: t('organizations.spotlight.city'), value: @organization.fetch(:city) } %>
+<% end %>
+<%= erb :profile_spotlight, locals: {
+  heading_id: 'organization-spotlight-heading',
+  title: t('organizations.spotlight.title'),
+  period_start: @organization[:period_start],
+  items: spotlight_items,
+  top_repository: top_repository,
+  top_repository_label: t('organizations.spotlight.top_repository'),
+  top_repository_path: top_repository ? organization_repository_profile_path(top_repository) : nil
+} %>
 
 <section class="profile-section profile-section--alt" aria-labelledby="organization-badge-heading">
   <div class="content">
