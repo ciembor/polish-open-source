@@ -1,0 +1,31 @@
+<section class="profile-section profile-section--compact" aria-labelledby="<%= h heading_id %>">
+  <div class="content">
+    <article class="profile-spotlight">
+      <div class="profile-spotlight__header">
+        <h2 id="<%= h heading_id %>"><%= h title %></h2>
+        <% if period_start %>
+          <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h period_start %>"><%= h period_label(period_start) %></time></p>
+        <% end %>
+      </div>
+
+      <dl class="profile-spotlight__grid">
+        <% items.each do |item| %>
+          <div class="profile-spotlight__item">
+            <dt><%= h item.fetch(:label) %></dt>
+            <dd><%= h item.fetch(:value) %></dd>
+          </div>
+        <% end %>
+
+        <% if top_repository %>
+          <div class="profile-spotlight__item profile-spotlight__item--repository">
+            <dt><%= h top_repository_label %></dt>
+            <dd>
+              <a class="primary-link" href="<%= h app_path(top_repository_path) %>"><%= h top_repository.fetch(:full_name) %></a>
+              <span class="profile-spotlight__meta">⭐ <%= number(top_repository.fetch(:stargazers_count)) %></span>
+            </dd>
+          </div>
+        <% end %>
+      </dl>
+    </article>
+  </div>
+</section>
