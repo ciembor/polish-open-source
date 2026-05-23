@@ -239,6 +239,106 @@ module PolishOpenSourceRank
             FOREIGN KEY(platform, user_github_id) REFERENCES users(platform, github_id)
           );
 
+          CREATE TABLE IF NOT EXISTS package_crawl_runs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            period_start TEXT NOT NULL,
+            ecosystem TEXT,
+            status TEXT NOT NULL,
+            refresh INTEGER NOT NULL DEFAULT 0,
+            started_at TEXT NOT NULL,
+            finished_at TEXT,
+            error TEXT,
+            updated_at TEXT NOT NULL
+          );
+
+          CREATE TABLE IF NOT EXISTS package_repository_scans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            period_start TEXT NOT NULL,
+            repository_kind TEXT NOT NULL,
+            platform TEXT NOT NULL,
+            repository_source_id INTEGER NOT NULL,
+            full_name TEXT NOT NULL,
+            default_branch TEXT,
+            tree_sha TEXT,
+            tree_truncated INTEGER NOT NULL DEFAULT 0,
+            manifest_count INTEGER NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'pending',
+            error TEXT,
+            checked_at TEXT,
+            updated_at TEXT NOT NULL,
+            UNIQUE(period_start, repository_kind, platform, repository_source_id)
+          );
+
+          CREATE TABLE IF NOT EXISTS package_manifests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            repository_scan_id INTEGER NOT NULL,
+            ecosystem TEXT NOT NULL,
+            path TEXT NOT NULL,
+            blob_sha TEXT,
+            package_name TEXT,
+            normalized_package_name TEXT,
+            private_package INTEGER NOT NULL DEFAULT 0,
+            custom_registry TEXT,
+            repository_url TEXT,
+            homepage_url TEXT,
+            license TEXT,
+            confidence TEXT NOT NULL,
+            parse_status TEXT NOT NULL,
+            parser_version TEXT NOT NULL,
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            parsed_at TEXT NOT NULL,
+            UNIQUE(repository_scan_id, ecosystem, path),
+            FOREIGN KEY(repository_scan_id) REFERENCES package_repository_scans(id)
+          );
+
+          CREATE TABLE IF NOT EXISTS registry_packages (
+            ecosystem TEXT NOT NULL,
+            package_name TEXT NOT NULL,
+            normalized_package_name TEXT NOT NULL,
+            registry_url TEXT NOT NULL,
+            repository_url TEXT,
+            homepage_url TEXT,
+            license TEXT,
+            latest_version TEXT,
+            status TEXT NOT NULL DEFAULT 'pending',
+            error TEXT,
+            checked_at TEXT,
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY(ecosystem, normalized_package_name)
+          );
+
+          CREATE TABLE IF NOT EXISTS registry_package_links (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            manifest_id INTEGER NOT NULL,
+            ecosystem TEXT NOT NULL,
+            normalized_package_name TEXT NOT NULL,
+            match_confidence TEXT NOT NULL,
+            matched INTEGER NOT NULL DEFAULT 0,
+            checked_at TEXT,
+            UNIQUE(manifest_id, ecosystem, normalized_package_name),
+            FOREIGN KEY(manifest_id) REFERENCES package_manifests(id),
+            FOREIGN KEY(ecosystem, normalized_package_name)
+              REFERENCES registry_packages(ecosystem, normalized_package_name)
+          );
+
+          CREATE TABLE IF NOT EXISTS registry_package_snapshots (
+            ecosystem TEXT NOT NULL,
+            normalized_package_name TEXT NOT NULL,
+            period_start TEXT NOT NULL,
+            downloads_total INTEGER,
+            downloads_30d INTEGER,
+            downloads_7d INTEGER,
+            dependents_count INTEGER,
+            dependent_repositories_count INTEGER,
+            latest_version TEXT,
+            latest_release_at TEXT,
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            observed_at TEXT NOT NULL,
+            PRIMARY KEY(ecosystem, normalized_package_name, period_start),
+            FOREIGN KEY(ecosystem, normalized_package_name)
+              REFERENCES registry_packages(ecosystem, normalized_package_name)
+          );
+
           CREATE INDEX IF NOT EXISTS idx_user_stats_period_country_total
             ON user_monthly_stats(period_start, country, total_stars, platform);
           CREATE INDEX IF NOT EXISTS idx_user_stats_period_city_delta
@@ -273,6 +373,14 @@ module PolishOpenSourceRank
             ON api_request_events(recorded_at, platform);
           CREATE INDEX IF NOT EXISTS idx_discord_connections_user
             ON discord_connections(platform, user_github_id);
+          CREATE INDEX IF NOT EXISTS idx_package_repository_scans_status_period
+            ON package_repository_scans(period_start, status, repository_kind, platform);
+          CREATE INDEX IF NOT EXISTS idx_package_manifests_ecosystem_name
+            ON package_manifests(ecosystem, normalized_package_name);
+          CREATE INDEX IF NOT EXISTS idx_registry_package_snapshots_ecosystem_downloads
+            ON registry_package_snapshots(period_start, ecosystem, downloads_30d, downloads_total);
+          CREATE INDEX IF NOT EXISTS idx_registry_package_snapshots_ecosystem_dependents
+            ON registry_package_snapshots(period_start, ecosystem, dependents_count);
 
           INSERT OR IGNORE INTO repository_star_observations(
             period_start, platform, repository_github_id, stargazers_count, observed_at
