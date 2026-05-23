@@ -44,13 +44,35 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::CrawlResumerFactor
     expect(monthly_command).to have_received(:call)
   end
 
-  def stub_resume_environment
+  it 'rebuilds interrupted package crawls through the package job factory' do
+    configuration, crawl_jobs = stub_resume_environment(
+      command: 'package_rankings',
+      arguments: ['--period', '2026-04', '--ecosystem', 'npm']
+    )
+    package_command = instance_double(PolishOpenSourceRank::Interfaces::CLI::PackageRankingsCommand, call: nil)
+    output = StringIO.new
+    allow(PolishOpenSourceRank::Interfaces::Composition::PackageRankingJobFactory)
+      .to receive(:build)
+      .with(
+        ['--period', '2026-04', '--ecosystem', 'npm'],
+        configuration: configuration,
+        output: output,
+        crawl_jobs: crawl_jobs
+      ).and_return(package_command)
+
+    described_class.build(configuration: configuration, output: output).call
+
+    expect(output.string).to include('Resuming package_rankings --period 2026-04 --ecosystem npm')
+    expect(package_command).to have_received(:call)
+  end
+
+  def stub_resume_environment(command: 'monthly_rankings', arguments: ['--month', '2026-04', '--platform', 'github'])
     configuration = instance_double(PolishOpenSourceRank::Configuration, database_path: 'db/test.sqlite3')
     database = instance_double(PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database)
     migration = instance_double(PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration, bootstrap!: nil)
     crawl_jobs = instance_double(
       PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteCrawlJobRepository,
-      resumable: [{ command: 'monthly_rankings', arguments: ['--month', '2026-04', '--platform', 'github'] }]
+      resumable: [{ command: command, arguments: arguments }]
     )
 
     allow(PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database)
