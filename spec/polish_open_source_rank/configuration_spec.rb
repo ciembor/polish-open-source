@@ -7,6 +7,10 @@ RSpec.describe PolishOpenSourceRank::Configuration do
       GITHUB_BASE_URL GITLAB_BASE_URL CODEBERG_BASE_URL BASE_URL
       DISCORD_INVITE_CHANNEL_ID GITHUB_OAUTH_CLIENT_ID
       HTTP_OPEN_TIMEOUT HTTP_READ_TIMEOUT HTTP_WRITE_TIMEOUT RACK_ENV SESSION_SECRET
+      NPM_REGISTRY_REQUESTS_PER_MINUTE RUBYGEMS_REGISTRY_REQUESTS_PER_MINUTE
+      CRATES_REGISTRY_REQUESTS_PER_MINUTE PYPI_REGISTRY_REQUESTS_PER_MINUTE
+      HEX_REGISTRY_REQUESTS_PER_MINUTE PACKAGIST_REGISTRY_REQUESTS_PER_MINUTE
+      GO_REGISTRY_REQUESTS_PER_MINUTE
     ]
     old_values = keys.to_h { |key| [key, ENV.fetch(key, nil)] }
     keys.each { |key| ENV.delete(key) }
@@ -113,6 +117,25 @@ RSpec.describe PolishOpenSourceRank::Configuration do
     expect(configuration.http_open_timeout).to eq(7)
     expect(configuration.http_read_timeout).to eq(31)
     expect(configuration.http_write_timeout).to eq(29)
+  end
+
+  it 'exposes conservative package registry request limits' do
+    ENV['NPM_REGISTRY_REQUESTS_PER_MINUTE'] = '11'
+    ENV['CRATES_REGISTRY_REQUESTS_PER_MINUTE'] = '7'
+
+    configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
+
+    expect(configuration.npm_registry_requests_per_minute).to eq(11)
+    expect(configuration.crates_registry_requests_per_minute).to eq(7)
+    expect(configuration.package_registry_request_limits).to include(
+      npm: 11,
+      rubygems: 20,
+      crates: 7,
+      pypi: 20,
+      hex: 20,
+      packagist: 20,
+      go: 20
+    )
   end
 
   it 'requires a session secret in production' do

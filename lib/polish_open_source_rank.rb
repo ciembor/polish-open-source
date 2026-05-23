@@ -22,7 +22,9 @@ module PolishOpenSourceRank
     }.freeze
 
     BASENAME_OVERRIDES = {
-      'oauth_http' => 'OAuthHTTP'
+      'oauth_http' => 'OAuthHTTP',
+      'py_pi_registry_client' => 'PyPIRegistryClient',
+      'registry_http_client' => 'RegistryHTTPClient'
     }.freeze
 
     PATH_OVERRIDES = {
