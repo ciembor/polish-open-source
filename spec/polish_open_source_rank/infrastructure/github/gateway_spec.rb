@@ -85,6 +85,27 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubGateway do
     expect(client.paths[2]).to eq('/orgs/polish-org/repos')
   end
 
+  it 'maps fixture GitHub user, organization, and repository payloads to source contracts' do
+    client.queue(body: fixture_json('external_payloads/github_search_users.json'))
+    client.queue(body: fixture_json('external_payloads/github_user.json'))
+    client.queue(body: fixture_json('external_payloads/github_organization.json'))
+    client.queue(body: [fixture_json('external_payloads/github_repository.json')])
+
+    expect(gateway.search_users_by_location('Poland').map(&:to_h)).to eq([{ source_id: 1, login: 'alice' }])
+    expect(gateway.user('alice').to_h).to include(expected_fixture_user)
+    expect(gateway.organization('polish-org').to_h).to include(expected_fixture_organization)
+    expect(gateway.repositories_for_organization(login: 'polish-org').map(&:to_h))
+      .to eq([expected_fixture_repository])
+  end
+
+  it 'counts fixture GitHub stargazer and public event payloads inside the requested period' do
+    client.queue(body: fixture_json('external_payloads/github_stargazers.json'))
+    client.queue(body: fixture_json('external_payloads/github_public_events.json'))
+
+    expect(gateway.repository_stars_delta({ full_name: 'polish-org/toolkit' }, period)).to eq(1)
+    expect(gateway.public_activity_count({ login: 'alice' }, period)).to eq(1)
+  end
+
   it 'loads repositories across pages' do
     client.queue(body: [repository(1, 'alice/one')], link: '<x?page=2>; rel="next"')
     client.queue(body: [repository(2, 'alice/two')])
@@ -386,6 +407,41 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubGateway do
       fork: false,
       archived: false,
       stars: 1
+    }
+  end
+
+  def expected_fixture_user
+    {
+      source_id: 1,
+      login: 'alice',
+      name: 'Alice Example',
+      location: 'Krakow, Poland',
+      html_url: 'https://github.com/alice'
+    }
+  end
+
+  def expected_fixture_organization
+    {
+      source_id: 7,
+      login: 'polish-org',
+      name: 'Polish Org',
+      location: 'Warsaw, Poland',
+      html_url: 'https://github.com/polish-org'
+    }
+  end
+
+  def expected_fixture_repository
+    {
+      source_id: 70,
+      name: 'toolkit',
+      full_name: 'polish-org/toolkit',
+      description: 'Toolkit for Polish open source projects',
+      html_url: 'https://github.com/polish-org/toolkit',
+      homepage: 'https://toolkit.example',
+      language: 'Ruby',
+      fork: false,
+      archived: false,
+      stars: 1234
     }
   end
 

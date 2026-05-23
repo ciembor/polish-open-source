@@ -1,0 +1,18 @@
+{
+  "total_count": 1,
+  "incomplete_results": false,
+  "items": [
+    {
+      "login": "alice",
+      "id": 1,
+      "node_id": "MDQ6VXNlcjE=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/alice",
+      "html_url": "https://github.com/alice",
+      "type": "User",
+      "site_admin": false,
+      "score": 1.0
+    }
+  ]
+}

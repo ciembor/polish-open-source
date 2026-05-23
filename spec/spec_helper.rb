@@ -59,9 +59,16 @@ module HtmlSpecHelpers
   end
 end
 
+module FixtureSpecHelpers
+  def fixture_json(relative_path)
+    JSON.parse(File.read(File.expand_path("fixtures/#{relative_path}", __dir__)))
+  end
+end
+
 RSpec.configure do |config|
   config.disable_monkey_patching!
   config.expect_with(:rspec) { |expectations| expectations.syntax = :expect }
   config.mock_with(:rspec) { |mocks| mocks.verify_partial_doubles = true }
   config.include HtmlSpecHelpers
+  config.include FixtureSpecHelpers
 end
