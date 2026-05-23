@@ -45,7 +45,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::ConnectDi
   it 'links Discord, syncs member roles, and posts a welcome message' do
     profile_read_model = instance_double(
       ProfileReadModel,
-      user_profile: { platform: 'github', login: 'alice', github_id: 1, period_start: '2026-04-01' }
+      user_profile: { platform: 'github', login: 'alice', source_id: 1, period_start: '2026-04-01' }
     )
     access_read_model = instance_double(
       AccessReadModel,
@@ -100,7 +100,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::ConnectDi
     use_case = described_class.new(
       profile_read_model: instance_double(
         ProfileReadModel,
-        user_profile: { platform: 'github', login: 'alice', github_id: 1, period_start: nil }
+        user_profile: { platform: 'github', login: 'alice', source_id: 1, period_start: nil }
       ),
       connection_repository: RecordingConnectionRepository.new,
       access_read_model: instance_double(AccessReadModel, discord_access: { role_keys: [] }),
@@ -123,7 +123,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::ConnectDi
     use_case = described_class.new(
       profile_read_model: instance_double(
         ProfileReadModel,
-        user_profile: { platform: 'github', login: 'alice', github_id: 1, period_start: '2026-04-01' }
+        user_profile: { platform: 'github', login: 'alice', source_id: 1, period_start: '2026-04-01' }
       ),
       connection_repository: RecordingConnectionRepository.new,
       access_read_model: instance_double(AccessReadModel, discord_access: { role_keys: [] }),

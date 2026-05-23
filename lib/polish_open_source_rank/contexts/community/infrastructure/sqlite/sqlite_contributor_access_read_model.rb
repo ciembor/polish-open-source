@@ -16,12 +16,12 @@ module PolishOpenSourceRank
               @role_policy = role_policy
             end
 
-            def access(platform, user_github_id, period_start:)
+            def access(platform, source_id, period_start:)
               period_start = effective_period_start(period_start)
-              rank = user_country_rank(platform, user_github_id, period_start)
-              city = user_city(platform, user_github_id, period_start)
+              rank = user_country_rank(platform, source_id, period_start)
+              city = user_city(platform, source_id, period_start)
               city_slug = city_slug_for(city)
-              city_rank = city && user_city_rank(platform, user_github_id, city, period_start)
+              city_rank = city && user_city_rank(platform, source_id, city, period_start)
               access_role_keys = role_policy.role_keys(country_rank: rank, city_slug: city_slug, city_rank: city_rank)
               badge_role_key = role_policy.badge_role_key(rank)
 
@@ -36,8 +36,8 @@ module PolishOpenSourceRank
               }
             end
 
-            def discord_access(platform, user_github_id, period_start:)
-              access(platform, user_github_id, period_start: period_start)
+            def discord_access(platform, source_id, period_start:)
+              access(platform, source_id, period_start: period_start)
             end
 
             private

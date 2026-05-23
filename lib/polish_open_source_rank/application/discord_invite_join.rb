@@ -23,11 +23,11 @@ module PolishOpenSourceRank
 
         save_connection(
           platform: profile.fetch(:platform),
-          user_github_id: profile.fetch(:github_id),
+          source_id: profile.fetch(:source_id),
           discord_user_id: discord_user_id,
           discord_username: discord_username
         )
-        access = load_access(profile.fetch(:platform), profile.fetch(:github_id))
+        access = load_access(profile.fetch(:platform), profile.fetch(:source_id))
         discord_gateway.sync_joined_member(
           discord_user_id: discord_user_id,
           github_login: profile.fetch(:login),
@@ -45,17 +45,17 @@ module PolishOpenSourceRank
         invite_repository.profile_for_code(invite_code)
       end
 
-      def save_connection(platform:, user_github_id:, discord_user_id:, discord_username:)
+      def save_connection(platform:, source_id:, discord_user_id:, discord_username:)
         connection_repository.upsert(
           platform: platform,
-          user_github_id: user_github_id,
+          source_id: source_id,
           discord_user_id: discord_user_id,
           discord_username: discord_username
         )
       end
 
-      def load_access(platform, user_github_id)
-        access_read_model.access(platform, user_github_id, period_start: nil)
+      def load_access(platform, source_id)
+        access_read_model.access(platform, source_id, period_start: nil)
       end
     end
   end

@@ -21,7 +21,7 @@ module PolishOpenSourceRank
             profile = public_profile(current_user, period_start)
             access = access_read_model.discord_access(
               profile.fetch(:platform),
-              profile.fetch(:github_id),
+              profile.fetch(:source_id),
               period_start: period_start
             )
             role_ids = role_map.role_ids(access.fetch(:role_keys))
@@ -51,7 +51,7 @@ module PolishOpenSourceRank
           def connect(profile, discord_user)
             connection_repository.upsert_discord_connection(
               platform: profile.fetch(:platform),
-              user_github_id: profile.fetch(:github_id),
+              source_id: profile.fetch(:source_id),
               discord_user_id: discord_user.fetch('id'),
               discord_username: discord_user['global_name'] || discord_user.fetch('username')
             )
