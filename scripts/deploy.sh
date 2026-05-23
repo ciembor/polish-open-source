@@ -11,8 +11,7 @@ rsync -az --delete \
   --exclude '.git/' \
   --exclude 'AGENTS.md' \
   --exclude 'coverage/' \
-  --exclude 'db/*.sqlite3' \
-  --exclude 'db/*.sqlite3-*' \
+  --exclude 'db/' \
   --exclude 'log/' \
   --exclude 'tmp/' \
   --exclude 'vendor/bundle/' \
