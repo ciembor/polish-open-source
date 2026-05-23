@@ -10,7 +10,7 @@ gem 'rackup', '~> 2.2'
 gem 'rake', '~> 13.3'
 gem 'sequel', '~> 5.90'
 gem 'sinatra', '~> 4.1'
-gem 'sqlite3', '~> 2.7'
+gem 'sqlite3', '~> 2.8.0'
 gem 'zeitwerk', '~> 2.7'
 
 group :development, :test do
