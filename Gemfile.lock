@@ -47,16 +47,12 @@ GEM
       dry-logic (~> 1.4)
       zeitwerk (~> 2.6)
     event_emitter (0.2.6)
-    ffi (1.17.4-aarch64-linux-gnu)
-    ffi (1.17.4-aarch64-linux-musl)
-    ffi (1.17.4-arm-linux-gnu)
-    ffi (1.17.4-arm-linux-musl)
+    ffi (1.17.4-aarch64-linux)
+    ffi (1.17.4-arm-linux)
     ffi (1.17.4-arm64-darwin)
-    ffi (1.17.4-x86-linux-gnu)
-    ffi (1.17.4-x86-linux-musl)
+    ffi (1.17.4-x86-linux)
     ffi (1.17.4-x86_64-darwin)
-    ffi (1.17.4-x86_64-linux-gnu)
-    ffi (1.17.4-x86_64-linux-musl)
+    ffi (1.17.4-x86_64-linux)
     http-accept (1.7.0)
     http-cookie (1.1.6)
       domain_name (~> 0.5)
@@ -93,6 +89,7 @@ GEM
     rackup (2.3.1)
       rack (>= 3)
     rainbow (3.1.1)
+    rake (13.4.2)
     reek (6.5.0)
       dry-schema (~> 1.13)
       logger (~> 1.6)
@@ -152,16 +149,12 @@ GEM
       rack-protection (= 4.2.1)
       rack-session (>= 2.0.0, < 3)
       tilt (~> 2.0)
-    sqlite3 (2.9.4-aarch64-linux-gnu)
-    sqlite3 (2.9.4-aarch64-linux-musl)
-    sqlite3 (2.9.4-arm-linux-gnu)
-    sqlite3 (2.9.4-arm-linux-musl)
+    sqlite3 (2.9.4-aarch64-linux)
+    sqlite3 (2.9.4-arm-linux)
     sqlite3 (2.9.4-arm64-darwin)
-    sqlite3 (2.9.4-x86-linux-gnu)
-    sqlite3 (2.9.4-x86-linux-musl)
+    sqlite3 (2.9.4-x86-linux)
     sqlite3 (2.9.4-x86_64-darwin)
-    sqlite3 (2.9.4-x86_64-linux-gnu)
-    sqlite3 (2.9.4-x86_64-linux-musl)
+    sqlite3 (2.9.4-x86_64-linux)
     tilt (2.7.0)
     unicode-display_width (3.2.0)
       unicode-emoji (~> 4.1)
@@ -175,22 +168,23 @@ GEM
     zeitwerk (2.7.5)
 
 PLATFORMS
-  aarch64-linux-gnu
-  aarch64-linux-musl
-  arm-linux-gnu
-  arm-linux-musl
+  aarch64-linux
+  aarch64-linux
+  arm-linux
+  arm-linux
   arm64-darwin
-  x86-linux-gnu
-  x86-linux-musl
+  x86-linux
+  x86-linux
   x86_64-darwin
-  x86_64-linux-gnu
-  x86_64-linux-musl
+  x86_64-linux
+  x86_64-linux
 
 DEPENDENCIES
   discordrb (~> 3.7)
   dry-configurable (~> 1.4)
   puma (~> 7.0)
   rackup (~> 2.2)
+  rake (~> 13.3)
   reek (~> 6.5)
   rspec (~> 3.13)
   rubocop (~> 1.81)
@@ -205,4 +199,4 @@ RUBY VERSION
    ruby 3.4.8p72
 
 BUNDLED WITH
-   2.6.9
+   2.3.14

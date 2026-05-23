@@ -47,19 +47,35 @@ module PolishOpenSourceRank
       end
 
       def repositories_for(profile)
+        each_repository_for(profile).to_a
+      end
+
+      def each_repository_for(profile)
+        return enum_for(:each_repository_for, profile) unless block_given?
+
         login = profile.fetch(:login)
         each_page(
           "/users/#{login}/repos",
           { type: 'owner', sort: 'full_name', direction: 'asc' }
-        ).flat_map { |response| response.body.map { |repository| repository(repository) } }
+        ) do |response|
+          response.body.each { |repository| yield repository(repository) }
+        end
       end
 
       def repositories_for_organization(profile)
+        each_repository_for_organization(profile).to_a
+      end
+
+      def each_repository_for_organization(profile)
+        return enum_for(:each_repository_for_organization, profile) unless block_given?
+
         login = profile.fetch(:login)
         each_page(
           "/orgs/#{login}/repos",
           { type: 'public', sort: 'full_name', direction: 'asc' }
-        ).flat_map { |response| response.body.map { |repository| repository(repository) } }
+        ) do |response|
+          response.body.each { |repository| yield repository(repository) }
+        end
       end
 
       def repository_stars_delta(repository, period)

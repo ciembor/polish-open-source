@@ -25,6 +25,10 @@ module PolishOpenSourceRank
               record_user_stats(contributor_stats_attributes(snapshot))
             end
 
+            def record_contributor_profile(snapshot)
+              upsert_user(contributor_attributes(snapshot))
+            end
+
             def record_user_stats(attributes)
               upsert(
                 user_stats_dataset,
@@ -45,6 +49,10 @@ module PolishOpenSourceRank
             def record_organization_snapshot(snapshot)
               upsert_organization(organization_attributes(snapshot))
               record_organization_stats(organization_stats_attributes(snapshot))
+            end
+
+            def record_organization_profile(snapshot)
+              upsert_organization(organization_attributes(snapshot))
             end
 
             def record_organization_repository_snapshot(snapshot)
