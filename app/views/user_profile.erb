@@ -79,42 +79,21 @@
       </dl>
     </article>
 
-    <article class="profile-summary">
-      <h2><%= h t('users.metrics.title') %></h2>
-      <% if @profile[:period_start] %>
-        <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @profile[:period_start] %>"><%= h period_label(@profile[:period_start]) %></time></p>
-      <% else %>
-        <p class="profile-empty"><%= h t('users.metrics.outside_ranking') %></p>
+    <% metric_items = [] %>
+    <% metric_items << { label: t('rankings.metric.stars'), value: "⭐ #{number(@profile[:total_stars])}" } unless @profile[:total_stars].nil? %>
+    <% metric_items << { label: t('rankings.metric.new_stars'), value: "⭐ #{number(@profile[:monthly_stars_delta])}" } unless @profile[:monthly_stars_delta].nil? %>
+    <% metric_items << { label: t('rankings.metric.events'), value: number(@profile[:public_activity_count]) } unless @profile[:public_activity_count].nil? %>
+    <% if @show_profile_badges %>
+      <% @profile.fetch(:badges, []).each do |badge| %>
+        <% metric_items << { label: badge.fetch(:label), value: (badge[:value] || t('users.metrics.outside_ranking')) } %>
       <% end %>
-      <dl class="profile-metrics">
-        <% if !@profile[:total_stars].nil? %>
-          <div>
-            <dt><%= h t('rankings.metric.stars') %></dt>
-            <dd>⭐ <%= number(@profile[:total_stars]) %></dd>
-          </div>
-        <% end %>
-        <% if !@profile[:monthly_stars_delta].nil? %>
-          <div>
-            <dt><%= h t('rankings.metric.new_stars') %></dt>
-            <dd>⭐ <%= number(@profile[:monthly_stars_delta]) %></dd>
-          </div>
-        <% end %>
-        <% if !@profile[:public_activity_count].nil? %>
-          <div>
-            <dt><%= h t('rankings.metric.events') %></dt>
-            <dd><%= number(@profile[:public_activity_count]) %></dd>
-          </div>
-        <% end %>
-        <% if @show_profile_badges %>
-          <% @profile.fetch(:badges, []).each do |badge| %>
-            <div>
-              <dt><%= h badge.fetch(:label) %></dt>
-              <dd><%= h(badge[:value] || t('users.metrics.outside_ranking')) %></dd>
-            </div>
-          <% end %>
-        <% end %>
-      </dl>
-    </article>
+    <% end %>
+    <%= erb :profile_metric_card, locals: {
+      title: t('users.metrics.title'),
+      period_start: @profile[:period_start],
+      empty_message: t('users.metrics.outside_ranking'),
+      items: metric_items
+    } %>
   </div>
 </section>
 

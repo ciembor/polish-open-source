@@ -22,27 +22,18 @@
       </dl>
     </article>
 
-    <article class="profile-summary">
-      <h2><%= h t('users.metrics.title') %></h2>
-      <% if @organization_repository[:period_start] %>
-        <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @organization_repository[:period_start] %>"><%= h period_label(@organization_repository[:period_start]) %></time></p>
-      <% end %>
-      <dl class="profile-metrics">
-        <div>
-          <dt><%= h t('rankings.metric.stars') %></dt>
-          <dd>⭐ <%= number(@organization_repository[:stargazers_count]) %></dd>
-        </div>
-        <div>
-          <dt><%= h t('rankings.metric.new_stars') %></dt>
-          <dd>⭐ <%= number(@organization_repository[:monthly_stars_delta]) %></dd>
-        </div>
-        <% if @organization_repository[:polish_repo_badge] && @organization_repository[:polish_repo_badge][:value] %>
-          <div>
-            <dt><%= h @organization_repository[:polish_repo_badge].fetch(:label) %></dt>
-            <dd><%= h @organization_repository[:polish_repo_badge].fetch(:value) %></dd>
-          </div>
-        <% end %>
-      </dl>
-    </article>
+    <% metric_items = [
+      { label: t('rankings.metric.stars'), value: "⭐ #{number(@organization_repository[:stargazers_count])}" },
+      { label: t('rankings.metric.new_stars'), value: "⭐ #{number(@organization_repository[:monthly_stars_delta])}" }
+    ] %>
+    <% if @organization_repository[:polish_repo_badge] && @organization_repository[:polish_repo_badge][:value] %>
+      <% metric_items << { label: @organization_repository[:polish_repo_badge].fetch(:label), value: @organization_repository[:polish_repo_badge].fetch(:value) } %>
+    <% end %>
+    <%= erb :profile_metric_card, locals: {
+      title: t('users.metrics.title'),
+      period_start: @organization_repository[:period_start],
+      empty_message: nil,
+      items: metric_items
+    } %>
   </div>
 </section>
