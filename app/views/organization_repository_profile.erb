@@ -2,25 +2,21 @@
 
 <section class="profile-section" aria-labelledby="organization-repository-summary-heading">
   <div class="content profile-grid">
-    <article class="profile-summary">
-      <h2 id="organization-repository-summary-heading"><%= h t('repositories.summary.title') %></h2>
-      <dl class="profile-facts">
-        <div>
-          <dt><%= h t('repositories.summary.owner') %></dt>
-          <dd><a class="primary-link" href="<%= h app_path(organization_profile_path(platform: @organization_repository.fetch(:platform), login: @organization_repository.fetch(:organization_login))) %>"><%= h @organization_repository.fetch(:organization_login) %></a></dd>
-        </div>
-        <div>
-          <dt><%= h t('users.summary.city') %></dt>
-          <dd><%= h(@organization_repository[:organization_city] || t('users.summary.unknown')) %></dd>
-        </div>
-        <% if @organization_repository[:language] && !@organization_repository[:language].empty? %>
-          <div>
-            <dt><%= h t('users.repositories.language') %></dt>
-            <dd><%= h @organization_repository[:language] %></dd>
-          </div>
-        <% end %>
-      </dl>
-    </article>
+    <% fact_items = [
+      {
+        label: t('repositories.summary.owner'),
+        value_html: %(<a class="primary-link" href="#{h app_path(organization_profile_path(platform: @organization_repository.fetch(:platform), login: @organization_repository.fetch(:organization_login)))}">#{h @organization_repository.fetch(:organization_login)}</a>)
+      },
+      { label: t('users.summary.city'), value: (@organization_repository[:organization_city] || t('users.summary.unknown')) }
+    ] %>
+    <% if @organization_repository[:language] && !@organization_repository[:language].empty? %>
+      <% fact_items << { label: t('users.repositories.language'), value: @organization_repository[:language] } %>
+    <% end %>
+    <%= erb :profile_fact_card, locals: {
+      heading_id: 'organization-repository-summary-heading',
+      title: t('repositories.summary.title'),
+      items: fact_items
+    } %>
 
     <% metric_items = [
       { label: t('rankings.metric.stars'), value: "⭐ #{number(@organization_repository[:stargazers_count])}" },

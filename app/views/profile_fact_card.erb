@@ -1,0 +1,15 @@
+<article class="profile-summary">
+  <h2 id="<%= h heading_id %>"><%= h title %></h2>
+  <dl class="profile-facts">
+    <% items.each do |item| %>
+      <div>
+        <dt><%= h item.fetch(:label) %></dt>
+        <% if item[:value_html] %>
+          <dd><%= item.fetch(:value_html) %></dd>
+        <% else %>
+          <dd><%= h item.fetch(:value) %></dd>
+        <% end %>
+      </div>
+    <% end %>
+  </dl>
+</article>
