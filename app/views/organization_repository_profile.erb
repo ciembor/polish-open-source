@@ -1,28 +1,4 @@
-<section class="profile-hero">
-  <div class="content profile-hero__inner">
-    <p class="eyebrow"><%= h platform_name(@organization_repository.fetch(:platform)) %></p>
-    <div class="profile-identity profile-identity--project">
-      <div class="project-avatar" aria-hidden="true">
-        <%= erb :platform_icon, locals: { platform: @organization_repository.fetch(:platform, "github") } %>
-      </div>
-      <div>
-        <div class="profile-title-row">
-          <h1><%= h @organization_repository.fetch(:full_name) %></h1>
-          <%= erb :elite_medal, locals: { rank: @organization_repository[:elite_rank], size: "large" } %>
-        </div>
-        <% if @organization_repository[:description] && !@organization_repository[:description].empty? %>
-          <p class="lede"><%= h @organization_repository[:description] %></p>
-        <% end %>
-        <div class="profile-actions">
-          <a class="ranking-action" href="<%= h @organization_repository.fetch(:html_url) %>"><%= h t('repositories.links.source_project', platform: platform_name(@organization_repository.fetch(:platform))) %></a>
-          <% if @organization_repository[:homepage] && !@organization_repository[:homepage].empty? %>
-            <a class="ranking-action" href="<%= h @organization_repository[:homepage] %>"><%= h t('users.links.homepage') %></a>
-          <% end %>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+<%= erb :profile_project_hero, locals: { record: @organization_repository } %>
 
 <section class="profile-section" aria-labelledby="organization-repository-summary-heading">
   <div class="content profile-grid">

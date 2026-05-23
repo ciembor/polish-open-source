@@ -1,0 +1,36 @@
+<% if repositories.empty? %>
+  <p class="profile-empty"><%= h t(empty_translation_key) %></p>
+<% else %>
+  <div class="project-grid">
+    <% repositories.each do |repository| %>
+      <article class="project-card">
+        <div class="project-card__header">
+          <%= erb :platform_icon, locals: { platform: repository.fetch(:platform, "github") } %>
+          <a class="primary-link" href="<%= h app_path(path_builder.call(repository)) %>"><%= h repository.fetch(:full_name) %></a>
+        </div>
+        <% if repository[:description] && !repository[:description].empty? %>
+          <p><%= h repository[:description] %></p>
+        <% end %>
+        <dl class="project-stats">
+          <div>
+            <dt><%= h t('rankings.metric.stars') %></dt>
+            <dd>⭐ <%= number(repository.fetch(:stargazers_count)) %></dd>
+          </div>
+          <div>
+            <dt><%= h t('rankings.metric.new_stars') %></dt>
+            <dd>⭐ <%= number(repository.fetch(:monthly_stars_delta)) %></dd>
+          </div>
+          <% if repository[:language] && !repository[:language].empty? %>
+            <div>
+              <dt><%= h t('users.repositories.language') %></dt>
+              <dd><%= h repository[:language] %></dd>
+            </div>
+          <% end %>
+        </dl>
+        <% if show_homepage && repository[:homepage] && !repository[:homepage].empty? %>
+          <a class="muted-link muted-link--standalone" href="<%= h repository[:homepage] %>"><%= h t('users.links.homepage') %></a>
+        <% end %>
+      </article>
+    <% end %>
+  </div>
+<% end %>

@@ -1,28 +1,4 @@
-<section class="profile-hero">
-  <div class="content profile-hero__inner">
-    <p class="eyebrow"><%= h platform_name(@profile.fetch(:platform)) %></p>
-    <div class="profile-identity">
-      <% if @profile[:avatar_url] && !@profile[:avatar_url].empty? %>
-        <img class="profile-avatar" src="<%= h @profile[:avatar_url] %>" alt="<%= h t('users.avatar_alt', user: @profile.fetch(:login)) %>">
-      <% else %>
-        <div class="profile-avatar profile-avatar--fallback" aria-hidden="true"><%= h @profile.fetch(:login)[0].upcase %></div>
-      <% end %>
-      <div>
-        <div class="profile-title-row">
-          <h1><%= h(@profile[:name].to_s.empty? ? @profile.fetch(:login) : @profile[:name]) %></h1>
-          <%= erb :elite_medal, locals: { rank: @profile[:elite_rank], size: "large" } %>
-        </div>
-        <p class="profile-login">@<%= h @profile.fetch(:login) %></p>
-        <div class="profile-actions">
-          <a class="ranking-action" href="<%= h @profile.fetch(:html_url) %>"><%= h t('users.links.source_profile', platform: platform_name(@profile.fetch(:platform))) %></a>
-          <% if @profile[:homepage] && !@profile[:homepage].empty? %>
-            <a class="ranking-action" href="<%= h @profile[:homepage] %>"><%= h t('users.links.homepage') %></a>
-          <% end %>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+<%= erb :profile_subject_hero, locals: { record: @profile, translation_scope: 'users', translation_value_key: :user } %>
 
 <% top_repository = @repositories.first %>
 <section class="profile-section profile-section--compact" aria-labelledby="profile-spotlight-heading">
@@ -178,41 +154,11 @@
 <section class="profile-section profile-section--alt" aria-labelledby="profile-repositories-heading">
   <div class="content">
     <h2 id="profile-repositories-heading"><%= h t('users.repositories.title') %></h2>
-    <% if @repositories.empty? %>
-      <p class="profile-empty"><%= h t('users.repositories.empty') %></p>
-    <% else %>
-      <div class="project-grid">
-        <% @repositories.each do |repository| %>
-          <article class="project-card">
-            <div class="project-card__header">
-              <%= erb :platform_icon, locals: { platform: repository.fetch(:platform, "github") } %>
-              <a class="primary-link" href="<%= h app_path(repository_profile_path(repository)) %>"><%= h repository.fetch(:full_name) %></a>
-            </div>
-            <% if repository[:description] && !repository[:description].empty? %>
-              <p><%= h repository[:description] %></p>
-            <% end %>
-            <dl class="project-stats">
-              <div>
-                <dt><%= h t('rankings.metric.stars') %></dt>
-                <dd>⭐ <%= number(repository.fetch(:stargazers_count)) %></dd>
-              </div>
-              <div>
-                <dt><%= h t('rankings.metric.new_stars') %></dt>
-                <dd>⭐ <%= number(repository.fetch(:monthly_stars_delta)) %></dd>
-              </div>
-              <% if repository[:language] && !repository[:language].empty? %>
-                <div>
-                  <dt><%= h t('users.repositories.language') %></dt>
-                  <dd><%= h repository[:language] %></dd>
-                </div>
-              <% end %>
-            </dl>
-            <% if repository[:homepage] && !repository[:homepage].empty? %>
-              <a class="muted-link muted-link--standalone" href="<%= h repository[:homepage] %>"><%= h t('users.links.homepage') %></a>
-            <% end %>
-          </article>
-        <% end %>
-      </div>
-    <% end %>
+    <%= erb :profile_repository_grid, locals: {
+      repositories: @repositories,
+      empty_translation_key: 'users.repositories.empty',
+      path_builder: method(:repository_profile_path),
+      show_homepage: true
+    } %>
   </div>
 </section>
