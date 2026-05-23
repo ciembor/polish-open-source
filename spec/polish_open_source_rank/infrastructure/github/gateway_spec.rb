@@ -104,6 +104,21 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubGateway do
     )
   end
 
+  it 'streams organization repositories across pages' do
+    client.queue(body: [repository(1, 'polish-org/one')], link: '<x?page=2>; rel="next"')
+    client.queue(body: [repository(2, 'polish-org/two')])
+
+    repositories = gateway.each_repository_for_organization(login: 'polish-org').map(&:to_h)
+
+    expect(repositories).to eq(
+      [
+        expected_repository(1, 'polish-org/one'),
+        expected_repository(2, 'polish-org/two')
+      ]
+    )
+    expect(client.paths).to eq(['/orgs/polish-org/repos', '/orgs/polish-org/repos'])
+  end
+
   it 'does not continue pagination for non-next links' do
     client.queue(body: [repository(1, 'alice/one')], link: '<x?page=2>; rel="last"')
 

@@ -121,6 +121,16 @@ class FakeOrganizationGitHub < FakeJobGitHub
   end
 end
 
+class StreamingOrganizationGitHub < FakeOrganizationGitHub
+  def repositories_for_organization(_profile)
+    raise 'organization repositories should be streamed'
+  end
+
+  def each_repository_for_organization(profile, &)
+    organization_repositories.fetch(profile.fetch(:login), []).each(&)
+  end
+end
+
 class BlockingDiscoverySource < FakeJobGitHub
   attr_reader :platform
 
@@ -333,6 +343,8 @@ class SinglePendingCandidateStore
 
   def upsert_user(*); end
 
+  def record_contributor_profile(*); end
+
   def record_contributor_snapshot(*); end
 
   def record_repository_snapshot(*); end
@@ -490,6 +502,27 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(organization_source.organization_calls).to eq([['polish-org', 9]])
   end
   # rubocop:enable RSpec/ExampleLength
+
+  it 'streams organization repositories while calculating organization metrics' do
+    organization_source = StreamingOrganizationGitHub.new
+    organization_source.organization_candidates = { 'Poland' => [{ source_id: 9, login: 'polish-org' }] }
+    organization_source.organizations = { 'polish-org' => profile(9, 'polish-org', 'Warsaw, Poland') }
+    organization_source.organization_repositories = {
+      'polish-org' => [
+        repository(90, 'polish-org/toolkit', 33),
+        repository(91, 'polish-org/docs', 7)
+      ]
+    }
+    organization_source.deltas = { 'polish-org/toolkit' => 6, 'polish-org/docs' => 2 }
+
+    run_job_with(source: organization_source)
+
+    expect(fetch_row('SELECT public_repo_count, total_stars, monthly_stars_delta FROM organization_monthly_stats'))
+      .to include(public_repo_count: 2, total_stars: 40, monthly_stars_delta: 8)
+    expect(organization_repository_rankings.fetch(:top).map { |row| row.fetch(:full_name) }).to eq(
+      ['polish-org/toolkit', 'polish-org/docs']
+    )
+  end
 
   it 'marks an already snapshotted pending candidate as processed' do
     upsert_user(user_attributes(1, 'alice'))

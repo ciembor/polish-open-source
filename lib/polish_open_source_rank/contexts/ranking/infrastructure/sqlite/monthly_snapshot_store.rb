@@ -80,12 +80,20 @@ module PolishOpenSourceRank
               snapshot_repository.record_contributor_snapshot(snapshot)
             end
 
+            def record_contributor_profile(snapshot)
+              snapshot_repository.record_contributor_profile(snapshot)
+            end
+
             def record_repository_snapshot(snapshot)
               snapshot_repository.record_repository_snapshot(snapshot)
             end
 
             def record_organization_snapshot(snapshot)
               snapshot_repository.record_organization_snapshot(snapshot)
+            end
+
+            def record_organization_profile(snapshot)
+              snapshot_repository.record_organization_profile(snapshot)
             end
 
             def record_organization_repository_snapshot(snapshot)

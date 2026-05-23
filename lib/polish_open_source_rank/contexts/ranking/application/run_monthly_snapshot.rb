@@ -156,27 +156,19 @@ module PolishOpenSourceRank
           end
 
           def persist_profile(period, source, profile, location)
-            repositories = source.repositories_for(profile)
-            repository_deltas = repository_deltas(source, repositories, period)
+            with_store { store.record_contributor_profile(contributor_profile(period, source, profile, location)) }
+            repository_metrics = persist_repositories(period, source, profile, location)
 
-            snapshot = contributor_snapshot(period, source, profile, location, repositories, repository_deltas)
+            snapshot = contributor_snapshot(period, source, profile, location, repository_metrics)
             with_store { store.record_contributor_snapshot(snapshot) }
-            persist_repositories(period, source, profile, location, repositories, repository_deltas)
           end
 
           def persist_organization_profile(period, source, profile, location)
-            repositories = source.repositories_for_organization(profile)
-            repository_deltas = organization_repository_deltas(source, repositories, period)
+            with_store { store.record_organization_profile(organization_profile(period, source, profile, location)) }
+            repository_metrics = persist_organization_repositories(period, source, profile, location)
 
-            snapshot = organization_snapshot(period, source, profile, location, repositories, repository_deltas)
+            snapshot = organization_snapshot(period, source, profile, location, repository_metrics)
             with_store { store.record_organization_snapshot(snapshot) }
-            persist_organization_repositories(period, source, profile, location, repositories, repository_deltas)
-          end
-
-          def repository_deltas(source, repositories, period)
-            repositories.to_h do |repository|
-              [repository.fetch(:source_id), repository_delta(source, repository, period)]
-            end
           end
 
           def repository_delta(source, repository, period)
@@ -191,12 +183,6 @@ module PolishOpenSourceRank
             source.repository_stars_delta(repository, period)
           end
 
-          def organization_repository_deltas(source, repositories, period)
-            repositories.to_h do |repository|
-              [repository.fetch(:source_id), organization_repository_delta(source, repository, period)]
-            end
-          end
-
           def organization_repository_delta(source, repository, period)
             current_stars = repository.fetch(:stars)
             return 0 if current_stars.zero?
@@ -209,48 +195,55 @@ module PolishOpenSourceRank
             source.repository_stars_delta(repository, period)
           end
 
-          def persist_repositories(period, source, profile, location, repositories, repository_deltas)
-            repositories.each do |repository|
+          def persist_repositories(period, source, profile, location)
+            metrics = Domain::RepositoryMetrics.empty
+            each_repository_for(source, profile) do |repository|
+              monthly_stars_delta = repository_delta(source, repository, period)
+              metrics.add(repository, monthly_stars_delta)
               with_store do
                 store.record_repository_snapshot(
-                  repository_snapshot(period, source, profile, location, repository, repository_deltas)
+                  repository_snapshot(period, source, profile, location, repository, monthly_stars_delta)
                 )
               end
             end
+            metrics
           end
 
-          def persist_organization_repositories(period, source, profile, location, repositories, repository_deltas)
-            repositories.each do |repository|
+          def persist_organization_repositories(period, source, profile, location)
+            metrics = Domain::RepositoryMetrics.empty
+            each_organization_repository_for(source, profile) do |repository|
+              monthly_stars_delta = organization_repository_delta(source, repository, period)
+              metrics.add(repository, monthly_stars_delta)
               with_store do
                 store.record_organization_repository_snapshot(
-                  organization_repository_snapshot(period, source, profile, location, repository, repository_deltas)
+                  organization_repository_snapshot(period, source, profile, location, repository, monthly_stars_delta)
                 )
               end
             end
+            metrics
           end
 
-          def contributor_snapshot(period, source, profile, location, repositories, repository_deltas)
+          def contributor_snapshot(period, source, profile, location, repository_metrics)
             Domain::ContributorSnapshot.new(
-              period: period,
-              platform: source.platform,
-              source_id: profile.fetch(:source_id),
-              login: profile.fetch(:login),
-              name: profile[:name],
-              location_raw: location.raw,
-              city: location.city,
-              country: location.country,
-              email: profile[:email],
-              homepage: blank_to_nil(profile[:homepage]),
-              html_url: profile.fetch(:html_url),
-              avatar_url: profile[:avatar_url],
-              public_repository_count: repositories.length,
-              total_stars: repositories.sum { |repository| repository.fetch(:stars) },
-              monthly_stars_delta: repository_deltas.values.sum,
+              **profile_snapshot_attributes(period, source, profile, location),
+              public_repository_count: repository_metrics.public_repository_count,
+              total_stars: repository_metrics.total_stars,
+              monthly_stars_delta: repository_metrics.monthly_stars_delta,
               public_activity_count: source.public_activity_count(profile, period)
             )
           end
 
-          def repository_snapshot(period, source, profile, location, repository, repository_deltas)
+          def contributor_profile(period, source, profile, location)
+            Domain::ContributorSnapshot.new(
+              **profile_snapshot_attributes(period, source, profile, location),
+              public_repository_count: 0,
+              total_stars: 0,
+              monthly_stars_delta: 0,
+              public_activity_count: 0
+            )
+          end
+
+          def repository_snapshot(period, source, profile, location, repository, monthly_stars_delta)
             Domain::RepositorySnapshot.new(
               period: period,
               platform: source.platform,
@@ -268,31 +261,29 @@ module PolishOpenSourceRank
               fork: repository.fetch(:fork),
               archived: repository.fetch(:archived),
               stars: repository.fetch(:stars),
-              monthly_stars_delta: repository_deltas.fetch(repository.fetch(:source_id))
+              monthly_stars_delta: monthly_stars_delta
             )
           end
 
-          def organization_snapshot(period, source, profile, location, repositories, repository_deltas)
+          def organization_snapshot(period, source, profile, location, repository_metrics)
             Domain::OrganizationSnapshot.new(
-              period: period,
-              platform: source.platform,
-              source_id: profile.fetch(:source_id),
-              login: profile.fetch(:login),
-              name: profile[:name],
-              location_raw: location.raw,
-              city: location.city,
-              country: location.country,
-              email: profile[:email],
-              homepage: blank_to_nil(profile[:homepage]),
-              html_url: profile.fetch(:html_url),
-              avatar_url: profile[:avatar_url],
-              public_repository_count: repositories.length,
-              total_stars: repositories.sum { |repository| repository.fetch(:stars) },
-              monthly_stars_delta: repository_deltas.values.sum
+              **profile_snapshot_attributes(period, source, profile, location),
+              public_repository_count: repository_metrics.public_repository_count,
+              total_stars: repository_metrics.total_stars,
+              monthly_stars_delta: repository_metrics.monthly_stars_delta
             )
           end
 
-          def organization_repository_snapshot(period, source, profile, location, repository, repository_deltas)
+          def organization_profile(period, source, profile, location)
+            Domain::OrganizationSnapshot.new(
+              **profile_snapshot_attributes(period, source, profile, location),
+              public_repository_count: 0,
+              total_stars: 0,
+              monthly_stars_delta: 0
+            )
+          end
+
+          def organization_repository_snapshot(period, source, profile, location, repository, monthly_stars_delta)
             Domain::OrganizationRepositorySnapshot.new(
               period: period,
               platform: source.platform,
@@ -310,8 +301,39 @@ module PolishOpenSourceRank
               fork: repository.fetch(:fork),
               archived: repository.fetch(:archived),
               stars: repository.fetch(:stars),
-              monthly_stars_delta: repository_deltas.fetch(repository.fetch(:source_id))
+              monthly_stars_delta: monthly_stars_delta
             )
+          end
+
+          def each_repository_for(source, profile, &)
+            return source.each_repository_for(profile, &) if source.respond_to?(:each_repository_for)
+
+            source.repositories_for(profile).each(&)
+          end
+
+          def each_organization_repository_for(source, profile, &)
+            if source.respond_to?(:each_repository_for_organization)
+              return source.each_repository_for_organization(profile, &)
+            end
+
+            source.repositories_for_organization(profile).each(&)
+          end
+
+          def profile_snapshot_attributes(period, source, profile, location)
+            {
+              period: period,
+              platform: source.platform,
+              source_id: profile.fetch(:source_id),
+              login: profile.fetch(:login),
+              name: profile[:name],
+              location_raw: location.raw,
+              city: location.city,
+              country: location.country,
+              email: profile[:email],
+              homepage: blank_to_nil(profile[:homepage]),
+              html_url: profile.fetch(:html_url),
+              avatar_url: profile[:avatar_url]
+            }
           end
 
           def candidate_login(candidate)
