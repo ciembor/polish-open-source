@@ -19,6 +19,7 @@ rsync -az --delete \
 
 ssh "${REMOTE_HOST}" "cd ${REMOTE_DIR} && \
   sudo install -m 0644 deploy/${SERVICE_NAME}.service /etc/systemd/system/${SERVICE_NAME}.service && \
+  sudo install -m 0644 deploy/${SERVICE_NAME}-crawl.service /etc/systemd/system/${SERVICE_NAME}-crawl.service && \
   sudo install -m 0644 deploy/${SERVICE_NAME}-crawl-resume.service /etc/systemd/system/${SERVICE_NAME}-crawl-resume.service && \
   sudo install -m 0644 deploy/${SERVICE_NAME}-discord-bot.service /etc/systemd/system/${SERVICE_NAME}-discord-bot.service && \
   sudo install -m 0644 deploy/${SERVICE_NAME}-monthly.service /etc/systemd/system/${SERVICE_NAME}-monthly.service && \

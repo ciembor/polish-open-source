@@ -2,9 +2,21 @@
 Description=Resume interrupted Polish Open Source crawl jobs
 After=polish-open-source-rank.service
 Wants=polish-open-source-rank.service
+StartLimitIntervalSec=0
 
 [Service]
 Type=oneshot
 WorkingDirectory=/home/ciembor/polish-open-source-rank
 EnvironmentFile=/home/ciembor/polish-open-source-rank/.env.local
-ExecStart=/usr/bin/podman run --rm --env-file /home/ciembor/polish-open-source-rank/.env.local -e RACK_ENV=production -e APP_BASE_PATH=/ -e BASE_URL=https://polish-open-source.pl -v /home/ciembor/polish-open-source-rank/db:/app/db -v /home/ciembor/polish-open-source-rank/log:/app/log localhost/polish-open-source-rank:latest bundle exec ruby bin/resume_crawls
+Restart=on-failure
+RestartSec=60
+TimeoutStartSec=infinity
+TimeoutStopSec=45
+ExecStartPre=/usr/bin/mkdir -p /home/ciembor/polish-open-source-rank/tmp
+ExecStartPre=-/usr/bin/podman rm -f polish-open-source-rank-crawl-resume
+ExecStart=/usr/bin/flock -n /home/ciembor/polish-open-source-rank/tmp/crawl.lock /usr/bin/podman run --name=polish-open-source-rank-crawl-resume --memory=2500m --memory-swap=3000m --env-file /home/ciembor/polish-open-source-rank/.env.local -e RACK_ENV=production -e APP_BASE_PATH=/ -e BASE_URL=https://polish-open-source.pl -v /home/ciembor/polish-open-source-rank/db:/app/db -v /home/ciembor/polish-open-source-rank/log:/app/log localhost/polish-open-source-rank:latest bundle exec ruby bin/resume_crawls
+ExecStop=-/usr/bin/podman stop --time 30 polish-open-source-rank-crawl-resume
+ExecStopPost=-/usr/bin/podman rm -f polish-open-source-rank-crawl-resume
+
+[Install]
+WantedBy=multi-user.target
