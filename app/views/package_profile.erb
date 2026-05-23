@@ -1,0 +1,67 @@
+<section class="profile-hero">
+  <div class="content profile-hero__grid">
+    <div>
+      <p class="eyebrow"><%= h @package_profile.fetch(:ecosystem) %></p>
+      <h1><%= h @package_profile.fetch(:package_name) %></h1>
+      <p class="lede"><%= h t('packages.profile.lede') %></p>
+      <div class="profile-actions">
+        <a class="button-link" href="<%= h @package_profile.fetch(:registry_url) %>"><%= h t('packages.links.registry') %></a>
+        <% if @package_profile[:repository_url] && !@package_profile[:repository_url].empty? %>
+          <a class="button-link button-link--muted" href="<%= h @package_profile[:repository_url] %>"><%= h t('packages.links.repository') %></a>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="profile-content">
+  <div class="content profile-grid">
+    <article class="profile-card" aria-labelledby="package-summary-heading">
+      <h2 id="package-summary-heading"><%= h t('packages.profile.summary') %></h2>
+      <dl class="definition-list">
+        <div>
+          <dt><%= h t('packages.table.ecosystem') %></dt>
+          <dd><%= h @package_profile.fetch(:ecosystem) %></dd>
+        </div>
+        <div>
+          <dt><%= h t('packages.table.latest_version') %></dt>
+          <dd><%= h(@package_profile[:latest_version] || t('packages.metric.unavailable')) %></dd>
+        </div>
+        <div>
+          <dt><%= h t('packages.table.license') %></dt>
+          <dd><%= h(@package_profile[:license] || t('packages.metric.unavailable')) %></dd>
+        </div>
+      </dl>
+    </article>
+
+    <article class="profile-card" aria-labelledby="package-metrics-heading">
+      <h2 id="package-metrics-heading"><%= h t('packages.profile.metrics') %></h2>
+      <dl class="definition-list">
+        <% %i[downloads_30d downloads_total dependents_count dependent_repositories_count].each do |metric| %>
+          <div>
+            <dt><%= h package_metric_label(metric) %></dt>
+            <dd><%= @package_profile[metric].nil? ? h(t('packages.metric.unavailable')) : h(number(@package_profile[metric])) %></dd>
+          </div>
+        <% end %>
+      </dl>
+    </article>
+  </div>
+
+  <div class="content">
+    <article class="profile-card profile-card--full" aria-labelledby="package-repositories-heading">
+      <h2 id="package-repositories-heading"><%= h t('packages.repository.title') %></h2>
+      <% if @package_profile.fetch(:repositories).any? %>
+        <ul class="repository-list">
+          <% @package_profile.fetch(:repositories).each do |repository| %>
+            <% link_target = repository.fetch(:repository_kind) == "organization" ? organization_repository_profile_path(platform: repository.fetch(:repository_platform), full_name: repository.fetch(:repository_full_name)) : repository_profile_path(platform: repository.fetch(:repository_platform), full_name: repository.fetch(:repository_full_name)) %>
+            <li>
+              <a class="primary-link" href="<%= h app_path(link_target) %>"><%= h repository.fetch(:repository_full_name) %></a>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="ranking-list__empty"><%= h t('packages.repository.empty') %></p>
+      <% end %>
+    </article>
+  </div>
+</section>

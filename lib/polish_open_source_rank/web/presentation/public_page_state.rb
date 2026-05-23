@@ -93,6 +93,60 @@ module PolishOpenSourceRank
           }
         end
 
+        def package_index(period_slug:, period_start:, ecosystems:)
+          {
+            package_ecosystems: ecosystems,
+            title: t('packages.seo.index_title'),
+            description: t('packages.seo.index_description'),
+            canonical_path: call_view(:package_index_path, period_slug: period_slug),
+            period_start: period_start
+          }
+        end
+
+        def package_ecosystem(period_slug:, period_start:, ecosystem:, rankings:)
+          {
+            package_ecosystem: ecosystem,
+            package_rankings: rankings,
+            title: t('packages.seo.ecosystem_title', ecosystem: ecosystem),
+            description: t('packages.seo.ecosystem_description', ecosystem: ecosystem),
+            canonical_path: call_view(:package_ecosystem_path, ecosystem, period_slug: period_slug),
+            period_start: period_start
+          }
+        end
+
+        def package_ranking_detail(period_slug:, period_start:, ecosystem:, metric_slug:, metric:, ranking:)
+          {
+            package_ecosystem: ecosystem,
+            package_metric_slug: metric_slug,
+            package_metric: metric,
+            package_ranking: ranking,
+            title: t(
+              'packages.seo.ranking_title',
+              ecosystem: ecosystem,
+              metric: call_view(:package_metric_label, metric)
+            ),
+            description: t(
+              'packages.seo.ranking_description',
+              ecosystem: ecosystem,
+              metric: call_view(:package_metric_label, metric)
+            ),
+            canonical_path: call_view(:package_ranking_path, ecosystem, metric_slug, period_slug: period_slug),
+            period_start: period_start
+          }
+        end
+
+        def package_profile(profile:)
+          {
+            title: t('packages.seo.profile_title', package: profile.fetch(:package_name)),
+            description: t(
+              'packages.seo.profile_description',
+              package: profile.fetch(:package_name),
+              ecosystem: profile.fetch(:ecosystem)
+            ),
+            canonical_path: call_view(:package_profile_path, profile)
+          }
+        end
+
         def ranking_detail(scope:, period_slug:, kind:, metric:, ranking:)
           ranking_name = call_view(:ranking_title, kind, metric)
           scope_name = call_view(:scope_name, scope)

@@ -101,6 +101,7 @@ en:
     locations: "Location rankings"
     menu: "Menu"
     more_cities: "More cities"
+    packages: "Packages"
     profile: "Profile"
   not_found:
     body: "The selected location is not supported."
@@ -155,6 +156,56 @@ en:
     trending_10_month: "Trending 10 this month"
     users: "Users"
     users_activity_month: "Activity this month"
+  packages:
+    back: "Back to packages"
+    ecosystem:
+      action: "View rankings"
+      description: "Packages connected to Polish open-source repositories."
+      lede: "Top ecosystem packages by downloads and dependent projects."
+      title: "%{ecosystem} packages"
+    empty: "No package data is available for this snapshot."
+    hero:
+      eyebrow: "Package rankings"
+      lede: "Public packages detected in Polish open-source repositories and enriched with registry metrics."
+    links:
+      registry: "Registry"
+      repository: "Repository"
+    metric:
+      dependents:
+        count: "Dependent packages"
+      dependent:
+        repositories:
+          count: "Dependent repositories"
+      downloads:
+        30d: "30-day downloads"
+        total: "Total downloads"
+      unavailable: "n/a"
+    profile:
+      lede: "Public package profile with registry metrics and linked repositories."
+      metrics: "Package metrics"
+      summary: "Package"
+    repository:
+      empty: "No linked repositories were stored for this package."
+      title: "Linked repositories"
+      unlinked: "No linked repository"
+    seo:
+      ecosystem_description: "%{ecosystem} package rankings for packages used by Polish open-source repositories."
+      ecosystem_title: "%{ecosystem} packages - Polish Open Source"
+      index_description: "Package rankings for packages used by Polish open-source repositories."
+      index_title: "Open-source packages - Polish Open Source"
+      profile_description: "%{package} package profile in the %{ecosystem} ecosystem, with downloads, dependents, and linked repositories."
+      profile_title: "%{package} - open-source package"
+      ranking_description: "Top 100 %{ecosystem} packages by %{metric}."
+      ranking_title: "%{ecosystem} packages: %{metric}"
+    table:
+      ecosystem: "Ecosystem"
+      latest_version: "Latest version"
+      license: "License"
+    title: "Packages"
+    ranking_title:
+      dependents: "Top 100 by dependent packages"
+      downloads: "Top 100 by total downloads"
+      top: "Top 100 by 30-day downloads"
   repositories:
     badge:
       alt: "Polish Repo badge"

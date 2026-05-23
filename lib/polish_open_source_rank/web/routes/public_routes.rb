@@ -6,6 +6,7 @@ module PolishOpenSourceRank
       module PublicRoutes
         def self.registered(app)
           register_static_pages(app)
+          register_package_routes(app)
           register_profile_routes(app)
           register_ranking_routes(app)
         end
@@ -37,6 +38,25 @@ module PolishOpenSourceRank
 
             app.get('/editions') { render_editions }
             app.get(%r{/editions/(\d{4})}) { |year| render_editions(year) }
+          end
+
+          def register_package_routes(app)
+            app.get('/packages') { render_package_index('latest') }
+            app.get('/packages/:ecosystem') { render_package_ecosystem('latest', params.fetch('ecosystem')) }
+            app.get('/packages/:ecosystem/names/:encoded_name') do
+              render_package_profile(params.fetch('ecosystem'), params.fetch('encoded_name'))
+            end
+            app.get('/latest/packages/:ecosystem') { render_package_ecosystem('latest', params.fetch('ecosystem')) }
+            app.get(%r{/latest/packages/([^/]+)/(top|downloads|dependents)}) do |ecosystem, metric|
+              render_package_ranking_detail('latest', ecosystem, metric)
+            end
+            app.get(%r{/(\d{4}-\d{2})/packages}) { |period_slug| render_package_index(period_slug) }
+            app.get(%r{/(\d{4}-\d{2})/packages/([^/]+)}) do |period_slug, ecosystem|
+              render_package_ecosystem(period_slug, ecosystem)
+            end
+            app.get(%r{/(\d{4}-\d{2})/packages/([^/]+)/(top|downloads|dependents)}) do |period_slug, ecosystem, metric|
+              render_package_ranking_detail(period_slug, ecosystem, metric)
+            end
           end
 
           def register_profile_routes(app)

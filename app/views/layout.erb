@@ -67,6 +67,7 @@
             </div>
           </details>
           <span class="nav-slot js-secondary-links-slot">
+            <a class="nav__link js-secondary-link" href="<%= h app_path(package_index_path(period_slug: 'latest')) %>"><%= h t('nav.packages') %></a>
             <a class="nav__link js-secondary-link" href="<%= h app_path(editions_path) %>"><%= h t('nav.editions') %></a>
             <a class="nav__link js-secondary-link" href="<%= h app_path('/about') %>"><%= h t('nav.about') %></a>
           </span>
