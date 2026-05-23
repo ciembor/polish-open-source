@@ -40,12 +40,22 @@ module PolishOpenSourceRank
         def resume_job
           Contexts::Operations::Application::ResumeCrawlJobs.new(
             crawl_jobs: crawl_job_repository,
-            monthly_runner: method(:run_monthly_rankings)
+            monthly_runner: method(:run_monthly_rankings),
+            package_runner: method(:run_package_rankings)
           )
         end
 
         def run_monthly_rankings(argv)
           RankingJobFactory.build(
+            argv,
+            configuration: configuration,
+            output: output,
+            crawl_jobs: crawl_job_repository
+          ).call
+        end
+
+        def run_package_rankings(argv)
+          PackageRankingJobFactory.build(
             argv,
             configuration: configuration,
             output: output,

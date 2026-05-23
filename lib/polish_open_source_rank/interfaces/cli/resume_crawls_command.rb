@@ -11,7 +11,7 @@ module PolishOpenSourceRank
         end
 
         def call
-          resumable_jobs = crawl_jobs.resumable(command: 'monthly_rankings')
+          resumable_jobs = crawl_jobs.resumable
           return output.puts('No interrupted crawl jobs to resume') if resumable_jobs.empty?
 
           resumable_jobs.each do |crawl_job|

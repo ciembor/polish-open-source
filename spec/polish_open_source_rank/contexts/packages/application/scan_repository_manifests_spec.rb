@@ -66,10 +66,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application::ScanReposi
 
     use_case.call(period, limit: 10)
 
-    expect(manifests.map { |manifest| manifest.slice(:ecosystem, :path, :parse_status) }).to eq(
+    expect(manifests.map { |manifest| manifest.slice(:ecosystem, :path, :package_name, :parse_status) }).to eq(
       [
-        { ecosystem: 'npm', path: 'package.json', parse_status: 'partial' },
-        { ecosystem: 'rubygems', path: 'pkg/tool.gemspec', parse_status: 'partial' }
+        { ecosystem: 'npm', path: 'package.json', package_name: 'app', parse_status: 'parsed' },
+        { ecosystem: 'rubygems', path: 'pkg/tool.gemspec', package_name: nil, parse_status: 'partial' }
       ]
     )
     expect(scan).to include(status: 'scanned', tree_sha: 'tree-sha', tree_truncated: 1, manifest_count: 2)
