@@ -541,14 +541,22 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     about = request.get('/about')
     profile = request.get('/users/github/alice')
 
-    expect(rankings.body.scan('<h1').length).to eq(1)
-    expect(about.body.scan('<h1').length).to eq(1)
-    expect(profile.body.scan('<h1').length).to eq(1)
-    expect(rankings.body).to include('<main id="main-content">')
-    expect(rankings.body).to include('role="navigation" aria-label="Język"')
-    expect(rankings.body).to include('src="/icons/polish-open-source.png" alt="" aria-hidden="true"')
-    expect(rankings.body).to include('src="/images/polish_open_source_join_wide.webp" alt="" aria-hidden="true"')
-    expect(rankings.body).to include('<article class="ranking-table" aria-labelledby="ranking-users-top">')
+    expect(html_elements(rankings.body, '//h1').length).to eq(1)
+    expect(html_elements(about.body, '//h1').length).to eq(1)
+    expect(html_elements(profile.body, '//h1').length).to eq(1)
+    expect(html_element(rankings.body, "//*[@id='main-content']")).not_to be_nil
+    expect(html_element(rankings.body, "//*[@role='navigation' and @aria-label='Język']")).not_to be_nil
+    expect(
+      html_element(rankings.body, "//img[@src='/icons/polish-open-source.png' and @alt='' and @aria-hidden='true']")
+    ).not_to be_nil
+    expect(
+      html_element(
+        rankings.body,
+        "//img[@src='/images/polish_open_source_join_wide.webp' and @alt='' and @aria-hidden='true']"
+      )
+    ).not_to be_nil
+    expect(html_element(rankings.body, "//article[@class='ranking-table' and @aria-labelledby='ranking-users-top']"))
+      .not_to be_nil
   end
   # rubocop:enable RSpec/MultipleExpectations
 
@@ -707,14 +715,15 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(robots.body).to include('Sitemap: https://rank.example/sitemap.xml')
     expect(sitemap.status).to eq(200)
     expect(sitemap.content_type).to include('application/xml')
-    expect(sitemap.body).to include('<loc>https://rank.example/latest</loc>')
-    expect(sitemap.body).to include('<loc>https://rank.example/en/latest</loc>')
-    expect(sitemap.body).to include('<loc>https://rank.example/about</loc>')
-    expect(sitemap.body).to include('<loc>https://rank.example/en/users/github/alice</loc>')
-    expect(sitemap.body).to include('<loc>https://rank.example/en/organizations/github/polish-org</loc>')
-    expect(sitemap.body).to include('<loc>https://rank.example/en/organization-repositories/github/polish-org/toolkit</loc>')
+    sitemap_locations = REXML::XPath.match(xml_document(sitemap.body), '//url/loc').map(&:text)
+    expect(sitemap_locations).to include('https://rank.example/latest')
+    expect(sitemap_locations).to include('https://rank.example/en/latest')
+    expect(sitemap_locations).to include('https://rank.example/about')
+    expect(sitemap_locations).to include('https://rank.example/en/users/github/alice')
+    expect(sitemap_locations).to include('https://rank.example/en/organizations/github/polish-org')
+    expect(sitemap_locations).to include('https://rank.example/en/organization-repositories/github/polish-org/toolkit')
     expect(sitemap.body).not_to include('/locations/krakow/organizations/top')
-    expect(sitemap.body).to include('<lastmod>')
+    expect(REXML::XPath.match(xml_document(sitemap.body), '//url/lastmod')).not_to be_empty
   end
 
   it 'keeps localized metadata consistent across key public pages', :aggregate_failures do
@@ -838,12 +847,14 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.status).to eq(200)
     expect(response.body).to include('Gwiazdek')
     expect(response.body).not_to include('/icons/medal-gold.svg')
-    expect(response.body).to include(
-      '<ol class="ranking-list" aria-labelledby="ranking-detail-users">'
-    )
-    expect(response.body).to include('<li class="ranking-list__item first_place">')
-    expect(response.body).to include('<li class="ranking-list__item second_place">')
-    expect(response.body).to include('<li class="ranking-list__item third_place">')
+    expect(html_element(response.body, "//ol[@class='ranking-list' and @aria-labelledby='ranking-detail-users']"))
+      .not_to be_nil
+    podium_classes = html_elements(response.body, "//ol[@aria-labelledby='ranking-detail-users']/li")
+                     .first(3)
+                     .map { |element| element.attributes['class'] }
+    expect(podium_classes).to include('ranking-list__item first_place')
+    expect(podium_classes).to include('ranking-list__item second_place')
+    expect(podium_classes).to include('ranking-list__item third_place')
     expect(response.body).not_to include('<table>')
   end
 
