@@ -22,14 +22,6 @@
 <section class="ranking-band">
   <div class="content">
     <p><a class="muted-link muted-link--standalone" href="<%= h app_path(scope_path(@scope)) %>"><%= h t('rankings.back') %></a></p>
-    <% if @kind == "users" %>
-      <%= erb :user_table, locals: { heading_id: 'ranking-detail-users', title: ranking_title(@kind, @metric), rows: @ranking, metric: ranking_metric_column(@kind, @metric), metric_label: ranking_metric_label(@kind, @metric) } %>
-    <% elsif @kind == "repositories" %>
-      <%= erb :repository_table, locals: { heading_id: 'ranking-detail-repositories', title: ranking_title(@kind, @metric), rows: @ranking, metric: ranking_metric_column(@kind, @metric), metric_label: ranking_metric_label(@kind, @metric) } %>
-    <% elsif @kind == "organizations" %>
-      <%= erb :organization_table, locals: { heading_id: 'ranking-detail-organizations', title: ranking_title(@kind, @metric), rows: @ranking, metric: ranking_metric_column(@kind, @metric), metric_label: ranking_metric_label(@kind, @metric) } %>
-    <% else %>
-      <%= erb :organization_repository_table, locals: { heading_id: 'ranking-detail-organization-repositories', title: ranking_title(@kind, @metric), rows: @ranking, metric: ranking_metric_column(@kind, @metric), metric_label: ranking_metric_label(@kind, @metric) } %>
-    <% end %>
+    <%= erb :ranking_table, locals: { kind: @kind, heading_id: "ranking-detail-#{@kind}", title: ranking_title(@kind, @metric), rows: @ranking, metric: ranking_metric_column(@kind, @metric), metric_label: ranking_metric_label(@kind, @metric) } %>
   </div>
 </section>
