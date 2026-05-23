@@ -25,6 +25,41 @@ module PolishOpenSourceRank
       http_open_timeout: { env: 'HTTP_OPEN_TIMEOUT', default: 5, constructor: INTEGER_CONSTRUCTOR },
       http_read_timeout: { env: 'HTTP_READ_TIMEOUT', default: 30, constructor: INTEGER_CONSTRUCTOR },
       http_write_timeout: { env: 'HTTP_WRITE_TIMEOUT', default: 30, constructor: INTEGER_CONSTRUCTOR },
+      npm_registry_requests_per_minute: {
+        env: 'NPM_REGISTRY_REQUESTS_PER_MINUTE',
+        default: 30,
+        constructor: INTEGER_CONSTRUCTOR
+      },
+      rubygems_registry_requests_per_minute: {
+        env: 'RUBYGEMS_REGISTRY_REQUESTS_PER_MINUTE',
+        default: 20,
+        constructor: INTEGER_CONSTRUCTOR
+      },
+      crates_registry_requests_per_minute: {
+        env: 'CRATES_REGISTRY_REQUESTS_PER_MINUTE',
+        default: 10,
+        constructor: INTEGER_CONSTRUCTOR
+      },
+      pypi_registry_requests_per_minute: {
+        env: 'PYPI_REGISTRY_REQUESTS_PER_MINUTE',
+        default: 20,
+        constructor: INTEGER_CONSTRUCTOR
+      },
+      hex_registry_requests_per_minute: {
+        env: 'HEX_REGISTRY_REQUESTS_PER_MINUTE',
+        default: 20,
+        constructor: INTEGER_CONSTRUCTOR
+      },
+      packagist_registry_requests_per_minute: {
+        env: 'PACKAGIST_REGISTRY_REQUESTS_PER_MINUTE',
+        default: 20,
+        constructor: INTEGER_CONSTRUCTOR
+      },
+      go_registry_requests_per_minute: {
+        env: 'GO_REGISTRY_REQUESTS_PER_MINUTE',
+        default: 20,
+        constructor: INTEGER_CONSTRUCTOR
+      },
       github_base_url: { env: 'GITHUB_BASE_URL', default: 'https://api.github.com' },
       github_oauth_client_id: { env: 'GITHUB_OAUTH_CLIENT_ID', required: true },
       github_oauth_client_secret: { env: 'GITHUB_OAUTH_CLIENT_SECRET', required: true },
@@ -93,6 +128,18 @@ module PolishOpenSourceRank
         open_timeout: http_open_timeout,
         read_timeout: http_read_timeout,
         write_timeout: http_write_timeout
+      }
+    end
+
+    def package_registry_request_limits
+      {
+        npm: npm_registry_requests_per_minute,
+        rubygems: rubygems_registry_requests_per_minute,
+        crates: crates_registry_requests_per_minute,
+        pypi: pypi_registry_requests_per_minute,
+        hex: hex_registry_requests_per_minute,
+        packagist: packagist_registry_requests_per_minute,
+        go: go_registry_requests_per_minute
       }
     end
 
