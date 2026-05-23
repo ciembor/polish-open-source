@@ -40,6 +40,15 @@ RSpec.describe 'architecture dependency rules' do
     end
   end
 
+  it 'keeps community use cases from speaking SQLite identity column names', :aggregate_failures do
+    forbidden = /\b(github_id|user_github_id)\b/
+    application_files = files_under('lib/polish_open_source_rank/contexts/community/application')
+
+    application_files.each do |path|
+      expect(file_body(path)).not_to match(forbidden), "#{path} exposes persistence identity names in a use case"
+    end
+  end
+
   it 'keeps production code off old compatibility namespaces', :aggregate_failures do
     forbidden = /
       \bApplication::MonthPeriod\b|

@@ -11,15 +11,15 @@ module PolishOpenSourceRank
               @clock = clock
             end
 
-            def upsert(platform:, user_github_id:, discord_user_id:, discord_username:)
+            def upsert(platform:, source_id:, discord_user_id:, discord_username:)
               attributes = {
                 platform: platform,
-                user_github_id: user_github_id,
+                user_github_id: source_id,
                 discord_user_id: discord_user_id,
                 discord_username: discord_username,
                 updated_at: timestamp
               }
-              scoped = connections_dataset.where(platform: platform, user_github_id: user_github_id)
+              scoped = connections_dataset.where(platform: platform, user_github_id: source_id)
 
               database.transaction do
                 next unless scoped.update(update_attributes(attributes)).zero?
@@ -30,17 +30,17 @@ module PolishOpenSourceRank
               scoped.update(update_attributes(attributes))
             end
 
-            def upsert_discord_connection(platform:, user_github_id:, discord_user_id:, discord_username:)
+            def upsert_discord_connection(platform:, source_id:, discord_user_id:, discord_username:)
               upsert(
                 platform: platform,
-                user_github_id: user_github_id,
+                source_id: source_id,
                 discord_user_id: discord_user_id,
                 discord_username: discord_username
               )
             end
 
-            def find(platform, user_github_id)
-              database.fetch_all(<<~SQL, [platform, user_github_id]).first
+            def find(platform, source_id)
+              database.fetch_all(<<~SQL, [platform, source_id]).first
                 SELECT discord_user_id, discord_username, updated_at
                 FROM discord_connections
                 WHERE platform = ? AND user_github_id = ?
@@ -48,8 +48,8 @@ module PolishOpenSourceRank
               SQL
             end
 
-            def discord_connection(platform, user_github_id)
-              find(platform, user_github_id)
+            def discord_connection(platform, source_id)
+              find(platform, source_id)
             end
 
             private

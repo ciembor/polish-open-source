@@ -32,7 +32,7 @@ RSpec.describe PolishOpenSourceRank::Application::DiscordInviteJoin do
     snapshot_repository.record_user_stats(user_stats(period))
     invite_repository.record(
       platform: 'github',
-      user_github_id: 1,
+      source_id: 1,
       code: 'invite-for-alice',
       url: 'https://discord.gg/invite-for-alice'
     )

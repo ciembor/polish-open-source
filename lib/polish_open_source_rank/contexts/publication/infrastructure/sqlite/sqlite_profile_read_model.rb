@@ -94,7 +94,7 @@ module PolishOpenSourceRank
 
             def fetch_user_profile(platform, login, period_start)
               database.fetch_all(<<~SQL, [period_start, platform, login]).first
-                SELECT users.platform, users.github_id, users.login, users.name, users.location_raw, users.city,
+                SELECT users.platform, users.github_id AS source_id, users.github_id, users.login, users.name, users.location_raw, users.city,
                        users.country, users.email, users.homepage, users.html_url, users.avatar_url,
                        stats.period_start, stats.public_repo_count, stats.total_stars, stats.monthly_stars_delta,
                        stats.public_activity_count

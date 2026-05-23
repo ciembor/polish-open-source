@@ -11,15 +11,15 @@ module PolishOpenSourceRank
               @clock = clock
             end
 
-            def record(platform:, user_github_id:, code:, url:)
+            def record(platform:, source_id:, code:, url:)
               attributes = {
                 platform: platform,
-                user_github_id: user_github_id,
+                user_github_id: source_id,
                 code: code,
                 url: url,
                 created_at: timestamp
               }
-              scoped = invites_dataset.where(platform: platform, user_github_id: user_github_id)
+              scoped = invites_dataset.where(platform: platform, user_github_id: source_id)
 
               database.transaction do
                 next unless scoped.update(update_attributes(attributes)).zero?
@@ -30,8 +30,8 @@ module PolishOpenSourceRank
               scoped.update(update_attributes(attributes))
             end
 
-            def find(platform, user_github_id)
-              database.fetch_all(<<~SQL, [platform, user_github_id]).first
+            def find(platform, source_id)
+              database.fetch_all(<<~SQL, [platform, source_id]).first
                 SELECT code, url, created_at
                 FROM discord_invites
                 WHERE platform = ? AND user_github_id = ?
@@ -41,7 +41,7 @@ module PolishOpenSourceRank
 
             def profile_for_code(code)
               database.fetch_all(<<~SQL, [code]).first
-                SELECT users.platform, users.github_id, users.login
+                SELECT users.platform, users.github_id AS source_id, users.login
                 FROM discord_invites
                 JOIN users
                   ON users.platform = discord_invites.platform

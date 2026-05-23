@@ -14,15 +14,15 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
   it 'records one active Discord invite per ranking identity' do
     seed_user
 
-    repository.record(platform: 'github', user_github_id: 1, code: 'abc', url: 'https://discord.gg/abc')
-    repository.record(platform: 'github', user_github_id: 1, code: 'def', url: 'https://discord.gg/def')
+    repository.record(platform: 'github', source_id: 1, code: 'abc', url: 'https://discord.gg/abc')
+    repository.record(platform: 'github', source_id: 1, code: 'def', url: 'https://discord.gg/def')
 
     expect(repository.find('github', 1)).to include(
       code: 'def',
       url: 'https://discord.gg/def',
       created_at: '2026-05-01T12:00:00Z'
     )
-    expect(repository.profile_for_code('def')).to include(platform: 'github', github_id: 1, login: 'alice')
+    expect(repository.profile_for_code('def')).to include(platform: 'github', source_id: 1, login: 'alice')
   end
 
   it 'retries as an update when the invite insert races with another writer' do
@@ -43,7 +43,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
     ).and_return(0, 1)
     allow(dataset).to receive(:insert).and_raise(Sequel::UniqueConstraintViolation, 'race')
 
-    repository.record(platform: 'github', user_github_id: 1, code: 'def', url: 'https://discord.gg/def')
+    repository.record(platform: 'github', source_id: 1, code: 'def', url: 'https://discord.gg/def')
 
     expect(initial_scope).to have_received(:update).with(
       {

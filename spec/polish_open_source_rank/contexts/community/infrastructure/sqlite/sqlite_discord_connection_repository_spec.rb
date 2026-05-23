@@ -16,13 +16,13 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
 
     repository.upsert(
       platform: 'github',
-      user_github_id: 1,
+      source_id: 1,
       discord_user_id: 'discord-1',
       discord_username: 'Alice'
     )
     repository.upsert(
       platform: 'github',
-      user_github_id: 1,
+      source_id: 1,
       discord_user_id: 'discord-2',
       discord_username: 'Alice D'
     )
@@ -55,7 +55,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
 
     repository.upsert(
       platform: 'github',
-      user_github_id: 1,
+      source_id: 1,
       discord_user_id: 'discord-2',
       discord_username: 'Alice D'
     )
