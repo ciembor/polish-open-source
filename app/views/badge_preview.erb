@@ -1,0 +1,7 @@
+<div class="badge-preview">
+  <p class="badge-preview__label"><%= h label %></p>
+  <a href="<%= h app_path('/latest') %>">
+    <img src="<%= h app_path(badge_path) %>" alt="<%= h alt_text %>">
+  </a>
+  <code><%= h linked_badge_markdown(alt_text, badge_path) %></code>
+</div>

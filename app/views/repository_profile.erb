@@ -51,13 +51,7 @@
   <section class="profile-section profile-section--alt" aria-labelledby="repository-badge-heading">
     <div class="content">
       <h2 id="repository-badge-heading"><%= h t('repositories.badge.title') %></h2>
-      <div class="badge-preview">
-        <p class="badge-preview__label"><%= h @repository.fetch(:full_name) %></p>
-        <a href="<%= h app_path('/latest') %>">
-          <img src="<%= h app_path(repository_badge_path(@repository)) %>" alt="<%= h t('repositories.badge.alt') %>">
-        </a>
-        <code><%= h linked_badge_markdown(t('repositories.badge.alt'), repository_badge_path(@repository)) %></code>
-      </div>
+      <%= erb :badge_preview, locals: { label: @repository.fetch(:full_name), badge_path: repository_badge_path(@repository), alt_text: t('repositories.badge.alt') } %>
     </div>
   </section>
 <% end %>
