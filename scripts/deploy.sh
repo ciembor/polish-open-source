@@ -20,11 +20,13 @@ rsync -az --delete \
 
 ssh "${REMOTE_HOST}" "cd ${REMOTE_DIR} && \
   sudo install -m 0644 deploy/${SERVICE_NAME}.service /etc/systemd/system/${SERVICE_NAME}.service && \
+  sudo install -m 0644 deploy/${SERVICE_NAME}-crawl-resume.service /etc/systemd/system/${SERVICE_NAME}-crawl-resume.service && \
   sudo install -m 0644 deploy/${SERVICE_NAME}-discord-bot.service /etc/systemd/system/${SERVICE_NAME}-discord-bot.service && \
   sudo install -m 0644 deploy/${SERVICE_NAME}-monthly.service /etc/systemd/system/${SERVICE_NAME}-monthly.service && \
   sudo install -m 0644 deploy/${SERVICE_NAME}-monthly.timer /etc/systemd/system/${SERVICE_NAME}-monthly.timer && \
   sudo systemctl daemon-reload && \
   sudo systemctl enable ${SERVICE_NAME}.service && \
+  sudo systemctl enable ${SERVICE_NAME}-crawl-resume.service && \
   sudo systemctl enable ${SERVICE_NAME}-discord-bot.service && \
   sudo systemctl enable --now ${SERVICE_NAME}-monthly.timer && \
   if sudo systemctl is-active --quiet ${SERVICE_NAME}-monthly.service; then echo '${SERVICE_NAME}-monthly.service is active; leaving the running monthly job untouched'; fi && \
