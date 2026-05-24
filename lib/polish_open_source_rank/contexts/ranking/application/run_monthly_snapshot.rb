@@ -7,6 +7,7 @@ module PolishOpenSourceRank
         # rubocop:disable Metrics/ClassLength
         class RunMonthlySnapshot
           BATCH_SIZE = 50
+          MINIMUM_REPOSITORY_STARS = 5
 
           # rubocop:disable Metrics/ParameterLists
           def initialize(store:, github: nil, sources: nil, classifier: Domain::LocationClassifier.new,
@@ -282,6 +283,8 @@ module PolishOpenSourceRank
               subject_id: repository.fetch(:source_id),
               subject_label: repository.fetch(:full_name)
             ) do
+              next 'skipped' unless catalog_repository?(repository)
+
               monthly_stars_delta = repository_delta(source, repository, period)
               metrics.add(repository, monthly_stars_delta)
               with_store do
@@ -303,6 +306,8 @@ module PolishOpenSourceRank
               subject_id: repository.fetch(:source_id),
               subject_label: repository.fetch(:full_name)
             ) do
+              next 'skipped' unless catalog_repository?(repository)
+
               monthly_stars_delta = organization_repository_delta(source, repository, period)
               metrics.add(repository, monthly_stars_delta)
               with_store do
@@ -312,6 +317,10 @@ module PolishOpenSourceRank
               end
               'stored'
             end
+          end
+
+          def catalog_repository?(repository)
+            repository.fetch(:stars) >= MINIMUM_REPOSITORY_STARS
           end
 
           def contributor_snapshot(period, source, profile, location, repository_metrics)
