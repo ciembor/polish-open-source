@@ -39,7 +39,11 @@ module PolishOpenSourceRank
         end
 
         def job
-          Contexts::Ranking::Application::RunMonthlySnapshot.new(store: monthly_snapshot_store, sources: sources)
+          Contexts::Ranking::Application::RunMonthlySnapshot.new(
+            store: monthly_snapshot_store,
+            sources: sources,
+            work_events: job_work_events
+          )
         end
 
         def sources
@@ -131,6 +135,10 @@ module PolishOpenSourceRank
 
         def crawl_job_repository
           @crawl_job_repository ||= Contexts::Operations::Infrastructure::SQLite::SQLiteCrawlJobRepository.new(database)
+        end
+
+        def job_work_events
+          @job_work_events ||= Contexts::Operations::Infrastructure::SQLite::SQLiteJobWorkEventRepository.new(database)
         end
       end
     end

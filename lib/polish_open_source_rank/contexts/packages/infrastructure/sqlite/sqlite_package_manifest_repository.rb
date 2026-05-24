@@ -10,30 +10,36 @@ module PolishOpenSourceRank
           class SQLitePackageManifestRepository
             PARSER_VERSION = 'manifest-parser-v1'
 
-            def initialize(database, clock: -> { Time.now.utc }, parser_catalog: Domain::ManifestParserCatalog.new)
+            def initialize(database, clock: -> { Time.now.utc }, parser_catalog: Domain::ManifestParserCatalog.new,
+                           work_events: Operations::Application::JobWorkEventRecorder.new)
               @database = database
               @clock = clock
               @parser_catalog = parser_catalog
+              @work_events = work_events
             end
 
             def replace_detected(scan_id, manifests:, blobs:)
+              context = scan_context(scan_id)
               database.transaction do
                 package_manifests.where(repository_scan_id: scan_id).delete
-                manifests.each { |manifest| insert_manifest(scan_id, manifest, blobs.fetch(manifest.path)) }
+                manifests.each { |manifest| insert_manifest(scan_id, manifest, blobs.fetch(manifest.path), context) }
               end
             end
 
             private
 
-            attr_reader :clock, :database, :parser_catalog
+            attr_reader :clock, :database, :parser_catalog, :work_events
 
-            def insert_manifest(scan_id, manifest, content)
-              parsed_manifest = parser_catalog.parse(
-                path: manifest.path,
-                ecosystem: manifest.ecosystem,
-                content: content
-              )
-              package_manifests.insert(manifest_attributes(scan_id, manifest, parsed_manifest, content))
+            def insert_manifest(scan_id, manifest, content, context)
+              record_work_event(manifest, context) do
+                parsed_manifest = parser_catalog.parse(
+                  path: manifest.path,
+                  ecosystem: manifest.ecosystem,
+                  content: content
+                )
+                package_manifests.insert(manifest_attributes(scan_id, manifest, parsed_manifest, content))
+                parsed_manifest.parse_status
+              end
             end
 
             def manifest_attributes(scan_id, manifest, parsed_manifest, content)
@@ -59,6 +65,31 @@ module PolishOpenSourceRank
 
             def package_manifests
               database.dataset(:package_manifests)
+            end
+
+            def scan_context(scan_id)
+              database.fetch_all(
+                <<~SQL,
+                  SELECT period_start, repository_kind, platform, repository_source_id, full_name
+                  FROM package_repository_scans
+                  WHERE id = ?
+                  LIMIT 1
+                SQL
+                [scan_id]
+              ).first
+            end
+
+            def record_work_event(manifest, context, &)
+              work_events.record_timed(
+                period_start: context.fetch(:period_start),
+                job_kind: 'packages',
+                stage: 'manifest_parse',
+                unit_kind: 'package_manifest',
+                platform: context.fetch(:platform),
+                ecosystem: manifest.ecosystem,
+                subject_id: "#{context.fetch(:repository_source_id)}:#{manifest.path}",
+                subject_label: "#{context.fetch(:full_name)}:#{manifest.path}", &
+              )
             end
 
             def timestamp

@@ -12,12 +12,14 @@ module PolishOpenSourceRank
           DEFAULT_LIMIT = DEFAULT_REPOSITORY_LIMIT
           Limits = Struct.new(:repository, :scan, :manifest, :registry, keyword_init: true)
 
-          def initialize(run_repository:, repository_queue:, manifest_scanner:, registry_packages:, registry_clients:)
+          def initialize(run_repository:, repository_queue:, manifest_scanner:, registry_packages:, registry_clients:,
+                         work_events: Operations::Application::JobWorkEventRecorder.new)
             @run_repository = run_repository
             @repository_queue = repository_queue
             @manifest_scanner = manifest_scanner
             @registry_packages = registry_packages
             @registry_clients = registry_clients
+            @work_events = work_events
           end
 
           def call(period, ecosystem: nil, limit: nil, limits: nil, refresh: false)
@@ -33,7 +35,8 @@ module PolishOpenSourceRank
 
           private
 
-          attr_reader :manifest_scanner, :registry_clients, :registry_packages, :repository_queue, :run_repository
+          attr_reader :manifest_scanner, :registry_clients, :registry_packages, :repository_queue, :run_repository,
+                      :work_events
 
           def run_flow(period, ecosystem:, limits:, refresh:)
             stale_reset = repository_queue.reset_stale_processing(period)
@@ -49,7 +52,7 @@ module PolishOpenSourceRank
             packages = registry_packages.packages_to_fetch(period, ecosystem: ecosystem, limit: limit, refresh: refresh)
             stats = registry_stats
             packages.each do |package_row|
-              result = fetch_one(period, package_row)
+              result = record_registry_fetch_event(period, package_row) { fetch_one(period, package_row) }
               record_registry_stat(stats, result)
             end
             stats
@@ -83,6 +86,19 @@ module PolishOpenSourceRank
             stats[:registry_fetched] += 1
             stats[status_key] += 1 if stats.key?(status_key)
             stats[:snapshots_written] += 1 if result.ok?
+          end
+
+          def record_registry_fetch_event(period, package_row, &)
+            work_events.record_timed(
+              period_start: period.start_date.to_s,
+              job_kind: 'packages',
+              stage: 'registry_snapshot',
+              unit_kind: 'registry_snapshot',
+              platform: nil,
+              ecosystem: package_row.fetch(:ecosystem),
+              subject_id: package_row.fetch(:normalized_package_name),
+              subject_label: package_row.fetch(:package_name), &
+            )
           end
 
           def snapshot_limits(limit:, limits:)

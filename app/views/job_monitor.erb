@@ -5,7 +5,15 @@
     <% if @progress.fetch(:run) %>
       <% run = @progress.fetch(:run) %>
       <p class="lede">
-        <%= h run.fetch(:period_start) %> to <%= h run.fetch(:period_end) %>,
+        Monthly <%= h run.fetch(:period_start) %> to <%= h run.fetch(:period_end) %>,
+        <strong><%= h run.fetch(:status) %></strong>,
+        started <%= h format_monitor_time(run.fetch(:started_at)) %>.
+        Last refresh <%= h format_monitor_time(@progress.fetch(:generated_at)) %>.
+      </p>
+    <% elsif @progress.fetch(:package_run) %>
+      <% run = @progress.fetch(:package_run) %>
+      <p class="lede">
+        Packages <%= h run.fetch(:period_start) %>,
         <strong><%= h run.fetch(:status) %></strong>,
         started <%= h format_monitor_time(run.fetch(:started_at)) %>.
         Last refresh <%= h format_monitor_time(@progress.fetch(:generated_at)) %>.
@@ -18,160 +26,63 @@
 
 <section class="monitor-section">
   <div class="content">
-    <div class="monitor-grid">
-      <% @progress.fetch(:platforms).each do |platform| %>
-        <article class="monitor-card">
-          <div class="monitor-card__header">
-            <h2><%= h platform.fetch(:platform) %></h2>
-            <span class="monitor-status"><%= h platform.fetch(:run_duration_seconds) %>s</span>
-          </div>
-
-          <div class="monitor-metric-groups">
-            <section class="monitor-metric-group">
-              <h3>Candidate queue</h3>
-              <dl class="monitor-metric-list">
-                <div><dt>Total discovered candidates</dt><dd><%= h platform.fetch(:total_candidates_count) %></dd></div>
-                <div><dt>Candidates checked</dt><dd><%= h platform.fetch(:checked_candidates_count) %></dd></div>
-                <div><dt>Still pending</dt><dd><%= h platform.fetch(:pending_candidates_count) %></dd></div>
-                <div><dt>Rejected by location/profile</dt><dd><%= h platform.fetch(:rejected_candidates_count) %></dd></div>
-                <div><dt>Missing profiles</dt><dd><%= h platform.fetch(:missing_candidates_count) %></dd></div>
-                <div><dt>Failed checks</dt><dd><%= h platform.fetch(:failed_candidates_count) %></dd></div>
-              </dl>
-            </section>
-
-            <section class="monitor-metric-group">
-              <h3>Stored snapshot</h3>
-              <dl class="monitor-metric-list">
-                <div><dt>Users stored for the month</dt><dd><%= h platform.fetch(:accepted_users_count) %></dd></div>
-                <div><dt>Stored users with repos</dt><dd><%= h platform.fetch(:repository_owners_count) %></dd></div>
-                <div><dt>Stored users with zero repos</dt><dd><%= h platform.fetch(:zero_repository_users_count) %></dd></div>
-                <div><dt>Repositories stored for the month</dt><dd><%= h platform.fetch(:checked_repositories_count) %></dd></div>
-              </dl>
-            </section>
-
-            <section class="monitor-metric-group">
-              <h3>Changes since this run started</h3>
-              <dl class="monitor-metric-list">
-                <div><dt>Candidates checked in this run</dt><dd><%= h platform.fetch(:current_run_checked_candidates_count) %></dd></div>
-                <div><dt>Users stored in this run</dt><dd><%= h platform.fetch(:current_run_accepted_users_count) %></dd></div>
-                <div><dt>Users with repos in this run</dt><dd><%= h platform.fetch(:current_run_repository_owners_count) %></dd></div>
-                <div><dt>Repositories stored in this run</dt><dd><%= h platform.fetch(:current_run_repositories_count) %></dd></div>
-              </dl>
-            </section>
-          </div>
-
-          <% user = platform.fetch(:last_checked_user) %>
-          <p class="monitor-last">
-            <span>Last checked candidate</span>
-            <strong><%= h(user ? user.fetch(:login) : 'n/a') %></strong>
-            <% if user %><small><%= h user.fetch(:status) %>, checked/stored at <%= h format_monitor_time(user.fetch(:checked_at)) %></small><% end %>
-          </p>
-
-          <% repository = platform.fetch(:last_checked_repository) %>
-          <p class="monitor-last">
-            <span>Last stored repository</span>
-            <strong><%= h(repository ? repository.fetch(:full_name) : 'n/a') %></strong>
-            <% if repository %><small><%= h format_monitor_time(repository.fetch(:checked_at)) %></small><% end %>
-          </p>
-
-          <% request = platform.fetch(:last_api_request) %>
-          <p class="monitor-last">
-            <span>Last API request</span>
-            <strong><%= h(request ? request.fetch(:path) : 'n/a') %></strong>
-            <% if request %><small>HTTP <%= h request.fetch(:status) %>, <%= h format_monitor_time(request.fetch(:recorded_at)) %></small><% end %>
-          </p>
-        </article>
-      <% end %>
-    </div>
-  </div>
-</section>
-
-<section class="monitor-section monitor-section--alt">
-  <div class="content">
-    <% platforms = @progress.fetch(:platforms).map { |platform| platform.fetch(:platform) } %>
-    <% users_chart = chart_context(@progress.fetch(:progress_points), :checked_users_count, platforms, carry_forward: true) %>
-    <% repos_chart = chart_context(@progress.fetch(:progress_points), :checked_repositories_count, platforms, carry_forward: true) %>
-    <h2>Accepted users and repositories in this run</h2>
-    <div class="monitor-chart-grid monitor-chart-grid--wide">
-      <article class="monitor-chart">
-        <h3>Accepted users</h3>
-        <svg viewBox="0 0 720 212" role="img" aria-label="Accepted users by platform">
-          <line class="monitor-axis" x1="0" y1="180" x2="720" y2="180"></line>
-          <line class="monitor-grid-line" x1="0" y1="90" x2="720" y2="90"></line>
-          <% chart_axis_values(users_chart).each_with_index do |value, index| %>
-            <text class="monitor-axis-label" x="4" y="<%= h [12, 94, 176].fetch(index) %>"><%= h value %></text>
-          <% end %>
-          <% chart_time_ticks(users_chart).each do |tick| %>
-            <text class="monitor-axis-label monitor-axis-label--time" text-anchor="<%= h tick.fetch(:anchor) %>" x="<%= h tick.fetch(:x) %>" y="205"><%= h tick.fetch(:label) %></text>
-          <% end %>
-          <% platforms.each do |platform| %>
-            <polyline class="monitor-line monitor-line--<%= h platform %>" points="<%= h chart_polyline(users_chart, platform) %>"></polyline>
-          <% end %>
-        </svg>
-        <p><span class="legend legend--github"></span> github <span class="legend legend--gitlab"></span> gitlab <span class="legend legend--codeberg"></span> codeberg</p>
-      </article>
-      <article class="monitor-chart">
-        <h3>Repositories</h3>
-        <svg viewBox="0 0 720 212" role="img" aria-label="Checked repositories by platform">
-          <line class="monitor-axis" x1="0" y1="180" x2="720" y2="180"></line>
-          <line class="monitor-grid-line" x1="0" y1="90" x2="720" y2="90"></line>
-          <% chart_axis_values(repos_chart).each_with_index do |value, index| %>
-            <text class="monitor-axis-label" x="4" y="<%= h [12, 94, 176].fetch(index) %>"><%= h value %></text>
-          <% end %>
-          <% chart_time_ticks(repos_chart).each do |tick| %>
-            <text class="monitor-axis-label monitor-axis-label--time" text-anchor="<%= h tick.fetch(:anchor) %>" x="<%= h tick.fetch(:x) %>" y="205"><%= h tick.fetch(:label) %></text>
-          <% end %>
-          <% platforms.each do |platform| %>
-            <polyline class="monitor-line monitor-line--<%= h platform %>" points="<%= h chart_polyline(repos_chart, platform) %>"></polyline>
-          <% end %>
-        </svg>
-        <p><span class="legend legend--github"></span> github <span class="legend legend--gitlab"></span> gitlab <span class="legend legend--codeberg"></span> codeberg</p>
-      </article>
-    </div>
-  </div>
-</section>
-
-<section class="monitor-section">
-  <div class="content">
-    <% request_chart = chart_context(@progress.fetch(:request_points), :requests_count, platforms) %>
-    <% error_chart = chart_context(@progress.fetch(:request_points), :error_count, platforms) %>
-    <h2>API requests per minute</h2>
-    <div class="monitor-chart-grid monitor-chart-grid--wide">
-      <article class="monitor-chart">
-        <h3>Requests</h3>
-        <svg viewBox="0 0 720 212" role="img" aria-label="API requests per minute by platform">
-          <line class="monitor-axis" x1="0" y1="180" x2="720" y2="180"></line>
-          <line class="monitor-grid-line" x1="0" y1="90" x2="720" y2="90"></line>
-          <% chart_axis_values(request_chart).each_with_index do |value, index| %>
-            <text class="monitor-axis-label" x="4" y="<%= h [12, 94, 176].fetch(index) %>"><%= h value %></text>
-          <% end %>
-          <% chart_time_ticks(request_chart).each do |tick| %>
-            <text class="monitor-axis-label monitor-axis-label--time" text-anchor="<%= h tick.fetch(:anchor) %>" x="<%= h tick.fetch(:x) %>" y="205"><%= h tick.fetch(:label) %></text>
-          <% end %>
-          <% platforms.each do |platform| %>
-            <polyline class="monitor-line monitor-line--<%= h platform %>" points="<%= h chart_polyline(request_chart, platform) %>"></polyline>
-          <% end %>
-        </svg>
-        <p><span class="legend legend--github"></span> github <span class="legend legend--gitlab"></span> gitlab <span class="legend legend--codeberg"></span> codeberg</p>
-      </article>
-      <article class="monitor-chart">
-        <h3>Errors</h3>
-        <svg viewBox="0 0 720 212" role="img" aria-label="API errors per minute by platform">
-          <line class="monitor-axis" x1="0" y1="180" x2="720" y2="180"></line>
-          <line class="monitor-grid-line" x1="0" y1="90" x2="720" y2="90"></line>
-          <% chart_axis_values(error_chart).each_with_index do |value, index| %>
-            <text class="monitor-axis-label" x="4" y="<%= h [12, 94, 176].fetch(index) %>"><%= h value %></text>
-          <% end %>
-          <% chart_time_ticks(error_chart).each do |tick| %>
-            <text class="monitor-axis-label monitor-axis-label--time" text-anchor="<%= h tick.fetch(:anchor) %>" x="<%= h tick.fetch(:x) %>" y="205"><%= h tick.fetch(:label) %></text>
-          <% end %>
-          <% platforms.each do |platform| %>
-            <polyline class="monitor-line monitor-line--<%= h platform %>" points="<%= h chart_polyline(error_chart, platform) %>"></polyline>
-          <% end %>
-        </svg>
-        <p><span class="legend legend--github"></span> github <span class="legend legend--gitlab"></span> gitlab <span class="legend legend--codeberg"></span> codeberg</p>
-      </article>
-    </div>
+    <h2>Independent job stages</h2>
+    <% sections = @progress.fetch(:sections) %>
+    <% if sections.empty? %>
+      <p class="monitor-empty">No stage progress has been recorded yet.</p>
+    <% else %>
+      <div class="monitor-table-wrap">
+        <table class="monitor-table">
+          <thead>
+            <tr>
+              <th>Stage</th>
+              <th>Scope</th>
+              <th>State</th>
+              <th>Total</th>
+              <th>Done</th>
+              <th>Pending</th>
+              <th>Failed</th>
+              <th>Skipped</th>
+              <th>Throughput/min</th>
+              <th>Avg</th>
+              <th>Median</th>
+              <th>p95</th>
+              <th>ETA avg</th>
+              <th>ETA p95</th>
+              <th>Status detail</th>
+              <th>Last event</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% sections.each do |section| %>
+              <tr class="<%= section.fetch(:stale) ? 'is-stale' : '' %>">
+                <th><%= h section.fetch(:label) %></th>
+                <td>
+                  <%= h [section[:platform], section[:ecosystem]].compact.join(' / ') %>
+                </td>
+                <td><%= h section.fetch(:state) %></td>
+                <td><%= h section.fetch(:total) %></td>
+                <td><%= h section.fetch(:done) %></td>
+                <td><%= h section.fetch(:pending) %></td>
+                <td><%= h section.fetch(:failed) %></td>
+                <td><%= h section.fetch(:skipped) %></td>
+                <td><%= h section.fetch(:throughput_per_minute) %></td>
+                <td><%= h format_duration_ms(section.fetch(:average_ms)) %></td>
+                <td><%= h format_duration_ms(section.fetch(:median_ms)) %></td>
+                <td><%= h format_duration_ms(section.fetch(:p95_ms)) %></td>
+                <td><%= h format_duration_seconds(section.fetch(:eta_average_seconds)) %></td>
+                <td><%= h format_duration_seconds(section.fetch(:eta_p95_seconds)) %></td>
+                <td><%= h(section.fetch(:status_detail) || 'n/a') %></td>
+                <td>
+                  <%= h format_monitor_time(section.fetch(:last_finished_at)) %>
+                  <% if section.fetch(:stale) %><span class="monitor-warning">stale</span><% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
   </div>
 </section>
 
@@ -202,15 +113,15 @@
         <h3>Last error logs</h3>
         <% errors = @progress.fetch(:recent_errors) %>
         <% if errors.empty? %>
-          <p class="monitor-empty">No candidate failures or API errors recorded for this run.</p>
+          <p class="monitor-empty">No job work errors recorded.</p>
         <% else %>
           <ol class="monitor-log-list monitor-log-list--errors">
             <% errors.each do |event| %>
               <li>
-                <time><%= h format_monitor_time(event.fetch(:recorded_at)) %></time>
-                <strong><%= h event.fetch(:platform) %> / <%= h event.fetch(:source) %></strong>
-                <span><%= h event.fetch(:subject) %></span>
-                <small><%= h event.fetch(:detail) %></small>
+                <time><%= h format_monitor_time(event.fetch(:finished_at)) %></time>
+                <strong><%= h event.fetch(:job_kind) %> / <%= h event.fetch(:stage) %></strong>
+                <span><%= h event.fetch(:subject_label) %></span>
+                <small><%= h event.fetch(:error) %></small>
               </li>
             <% end %>
           </ol>

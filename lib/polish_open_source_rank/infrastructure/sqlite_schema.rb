@@ -217,6 +217,24 @@ module PolishOpenSourceRank
             recorded_at TEXT NOT NULL
           );
 
+          CREATE TABLE IF NOT EXISTS job_work_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            job_run_id INTEGER,
+            period_start TEXT NOT NULL,
+            job_kind TEXT NOT NULL,
+            stage TEXT NOT NULL,
+            unit_kind TEXT NOT NULL,
+            platform TEXT,
+            ecosystem TEXT,
+            subject_id TEXT,
+            subject_label TEXT,
+            status TEXT NOT NULL,
+            started_at TEXT NOT NULL,
+            finished_at TEXT NOT NULL,
+            duration_ms INTEGER NOT NULL,
+            error TEXT
+          );
+
           CREATE TABLE IF NOT EXISTS discord_connections (
             platform TEXT NOT NULL,
             user_github_id INTEGER NOT NULL,
@@ -371,6 +389,12 @@ module PolishOpenSourceRank
             ON organization_repository_star_observations(platform, repository_github_id, period_start);
           CREATE INDEX IF NOT EXISTS idx_api_request_events_recorded_platform
             ON api_request_events(recorded_at, platform);
+
+          CREATE INDEX IF NOT EXISTS idx_job_work_events_period_kind_stage
+            ON job_work_events(period_start, job_kind, stage, unit_kind, platform, ecosystem);
+
+          CREATE INDEX IF NOT EXISTS idx_job_work_events_finished_at
+            ON job_work_events(finished_at);
           CREATE INDEX IF NOT EXISTS idx_discord_connections_user
             ON discord_connections(platform, user_github_id);
           CREATE INDEX IF NOT EXISTS idx_package_repository_scans_status_period
