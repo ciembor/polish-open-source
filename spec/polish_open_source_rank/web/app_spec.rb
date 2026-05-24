@@ -505,7 +505,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('<title>Edycje rankingu open source</title>')
     expect(response.body).to include('>Edycje</h1>')
     expect(response.body).to include('"@type": "CollectionPage"')
-    expect(response.body).to include('property="og:image" content="https://rank.example/images/polish_open_source_join.webp"')
+    expect(response.body).to include('property="og:image" content="https://rank.example/images/polish_open_source_front.webp"')
     expect(response.body).to include('kwiecień 2026')
     expect(response.body).to include('Top projekty')
     expect(response.body).to include('Top użytkownicy: gwiazdki')
@@ -533,7 +533,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('<title>O Polish Open Source Rank</title>')
     expect(response.body).to include('"@type": "AboutPage"')
     expect(response.body).to include('"@type": "WebSite"')
-    expect(response.body).to include('property="og:image" content="https://rank.example/images/pos_cut.png"')
+    expect(response.body).to include('property="og:image" content="https://rank.example/images/polish_open_source_front.webp"')
     expect(response.body).to include('Misja')
     expect(response.body).to include('Zakres danych')
     expect(response.body).to include('GitHub')
@@ -563,7 +563,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(
       html_element(
         rankings.body,
-        "//img[@src='/images/polish_open_source_join_wide.webp' and @alt='' and @aria-hidden='true']"
+        "//img[@src='/images/polish_open_source_front.webp' and @alt='' and @aria-hidden='true']"
       )
     ).not_to be_nil
     expect(html_element(rankings.body, "//article[@class='ranking-table' and @aria-labelledby='ranking-users-top']"))
@@ -756,14 +756,14 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(about.body).to include('name="twitter:card" content="summary_large_image"')
 
     expect(editions.body).to include('rel="canonical" href="https://rank.example/editions"')
-    expect(editions.body).to include('property="og:image" content="https://rank.example/images/polish_open_source_join.webp"')
+    expect(editions.body).to include('property="og:image" content="https://rank.example/images/polish_open_source_front.webp"')
 
     expect(user_profile.body).to include('rel="canonical" href="https://rank.example/users/github/alice"')
     expect(user_profile.body).to include('property="og:type" content="profile"')
-    expect(user_profile.body).to include('name="twitter:image" content="https://rank.example/images/pos.png"')
+    expect(user_profile.body).to include('name="twitter:image" content="https://rank.example/images/polish_open_source_front.webp"')
 
     expect(repository_profile.body).to include('rel="canonical" href="https://rank.example/repositories/github/alice/app"')
-    expect(repository_profile.body).to include('name="twitter:image" content="https://rank.example/images/pos.png"')
+    expect(repository_profile.body).to include('name="twitter:image" content="https://rank.example/images/polish_open_source_front.webp"')
 
     expect(english_about.body).to include('<html lang="en">')
     expect(english_about.body).to include('rel="canonical" href="https://rank.example/en/about"')
