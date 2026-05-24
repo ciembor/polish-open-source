@@ -13,7 +13,7 @@ Cel: pokazać więcej sensownych ekosystemów pakietów w publicznym `/packages`
 
 ## Kolejność
 
-1. [ ] Packagist downloads
+1. [x] Packagist downloads
 2. [ ] Hex diagnosis
 3. [ ] Homebrew
 4. [ ] NuGet
@@ -23,21 +23,23 @@ Cel: pokazać więcej sensownych ekosystemów pakietów w publicznym `/packages`
 
 Dlaczego: dane Packagist już są w bazie, ale ekosystem nie jest widoczny, bo obecny klient nie zapisuje liczbowej metryki rankingowej.
 
-- [ ] Sprawdzić oficjalny endpoint Packagist z metrykami downloads dla pakietu.
-- [ ] Rozszerzyć `PackagistRegistryClient`, żeby zapisywał:
-  - [ ] `downloads_total`,
-  - [ ] `downloads_30d` albo najbliższy wiarygodny odpowiednik miesięczny, jeśli API go daje.
-- [ ] Dodać `packagist` do publicznych metryk w `PackageRankingMetric`.
-- [ ] Upewnić się, że `/packages` pokazuje Packagist po pojawieniu się snapshotów z metryką.
-- [ ] Dodać testy dla klienta registry i ranking read modelu.
-- [ ] Uruchomić package crawl dla Packagist lub pełny crawl z obecnymi limitami.
-- [ ] Sprawdzić produkcyjne liczby snapshotów i pozycje rankingowe.
+- [x] Sprawdzić oficjalny endpoint Packagist z metrykami downloads dla pakietu.
+- [x] Rozszerzyć `PackagistRegistryClient`, żeby zapisywał:
+  - [x] `downloads_total`,
+  - [x] `downloads_30d` albo najbliższy wiarygodny odpowiednik miesięczny, jeśli API go daje.
+- [x] Dodać `packagist` do publicznych metryk w `PackageRankingMetric`.
+- [x] Upewnić się, że `/packages` pokazuje Packagist po pojawieniu się snapshotów z metryką.
+- [x] Dodać testy dla klienta registry i ranking read modelu.
+- [x] Uruchomić package crawl dla Packagist lub pełny crawl z obecnymi limitami.
+- [x] Sprawdzić produkcyjne liczby snapshotów i pozycje rankingowe.
 
 Definition of Done:
 
-- [ ] Packagist jest widoczny w `/packages`.
-- [ ] Ranking Packagist sortuje po prawdziwej metryce downloads.
-- [ ] Brak metryki w API nie tworzy fałszywych zer.
+- [x] Packagist jest widoczny w `/packages`.
+- [x] Ranking Packagist sortuje po prawdziwej metryce downloads.
+- [x] Brak metryki w API nie tworzy fałszywych zer.
+
+Wynik produkcji: Packagist ma publiczny ranking. Refresh `2026-04` zapisał 188 aktywnych snapshotów z `downloads_total` i `downloads_30d`; top po miesięcznych pobraniach zaczyna się od `symfony/polyfill-mbstring`, `guzzlehttp/psr7`, `psr/http-message`.
 
 ## 2. Hex Diagnosis
 
@@ -156,14 +158,14 @@ Definition of Done:
 
 ## Operacje Po Każdym Etapie
 
-- [ ] Uruchomić `bin/quality`.
-- [ ] Wdrożyć po przejściu hooków.
-- [ ] Sprawdzić `/packages`.
+- [x] Uruchomić `bin/quality`.
+- [x] Wdrożyć po przejściu hooków.
+- [x] Sprawdzić `/packages`.
 - [ ] Sprawdzić produkcyjne liczby:
   - [ ] `package_repository_scans`,
   - [ ] `package_manifests`,
   - [ ] `registry_packages`,
   - [ ] `registry_package_snapshots`,
   - [ ] statusy `active`, `not_found`, `failed`, `rate_limited`, `pending`.
-- [ ] Sprawdzić `/internal/jobs` po crawl runie.
-- [ ] Zanotować, czy ekosystem ma publiczny ranking, czy tylko diagnostykę.
+- [x] Sprawdzić `/internal/jobs` po crawl runie.
+- [x] Zanotować, czy ekosystem ma publiczny ranking, czy tylko diagnostykę.
