@@ -133,7 +133,7 @@ Periodic jobs are systemd one-shot services that run short-lived Podman containe
 - `polish-open-source-rank-packages.timer` starts `polish-open-source-rank-packages.service` at `07:15` on the second day of each month.
 - Both timers use `Persistent=true`, so systemd starts a missed run after the host comes back.
 - Both crawl services use `flock -n tmp/crawl.lock`, so only one crawl runs at a time.
-- Both crawl services run containers with the production env file, the production database volume, `RACK_ENV=production`, and memory limits.
+- Crawl services run containers with the production env file, the production database volume, `RACK_ENV=production`, and bounded memory/CPU limits.
 - The web service starts `polish-open-source-rank-crawl-resume.service` after the app container starts. This covers deploys and host/container restarts that left a crawl marked as `running` or `interrupted`.
 
 The relevant units are:

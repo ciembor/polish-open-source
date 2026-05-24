@@ -18,6 +18,7 @@ RSpec.describe File do
     expect(unit).to include('TimeoutStartSec=infinity')
     expect(unit).to include('/usr/bin/flock -n /home/ciembor/polish-open-source-rank/tmp/crawl.lock')
     expect(unit).to include('--name=polish-open-source-rank-monthly')
+    expect(unit).to include('--memory=1200m --memory-swap=1400m --cpus=1.0')
   end
 
   it 'runs scheduled package crawls after monthly crawls with the shared database volume' do
@@ -27,6 +28,7 @@ RSpec.describe File do
     expect(service).to include('After=network-online.target polish-open-source-rank-monthly.service')
     expect(service).to include('/usr/bin/flock -n /home/ciembor/polish-open-source-rank/tmp/crawl.lock')
     expect(service).to include('-v /home/ciembor/polish-open-source-rank/db:/app/db')
+    expect(service).to include('--memory=1200m --memory-swap=1400m --cpus=1.0')
     expect(service).to include('bundle exec ruby bin/package_rankings')
     expect(service).to include(
       '--repository-limit 5000 --scan-limit 5000 --manifest-limit 10000 --registry-limit 10000'
@@ -42,5 +44,13 @@ RSpec.describe File do
     expect(unit).to include('-e CRAWL_ARGS')
     expect(unit).to include('Restart=on-failure')
     expect(unit).to include('TimeoutStartSec=infinity')
+    expect(unit).to include('--memory=1200m --memory-swap=1400m --cpus=1.0')
+  end
+
+  it 'runs crawl resume with bounded container resources' do
+    unit = described_class.read(described_class.join(root, 'deploy/polish-open-source-rank-crawl-resume.service'))
+
+    expect(unit).to include('bundle exec ruby bin/resume_crawls')
+    expect(unit).to include('--memory=1200m --memory-swap=1400m --cpus=1.0')
   end
 end

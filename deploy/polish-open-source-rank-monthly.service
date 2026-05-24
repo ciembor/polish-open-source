@@ -14,6 +14,6 @@ TimeoutStartSec=infinity
 TimeoutStopSec=45
 ExecStartPre=/usr/bin/mkdir -p /home/ciembor/polish-open-source-rank/tmp
 ExecStartPre=-/usr/bin/podman rm -f polish-open-source-rank-monthly
-ExecStart=/usr/bin/flock -n /home/ciembor/polish-open-source-rank/tmp/crawl.lock /usr/bin/podman run --name=polish-open-source-rank-monthly --memory=2500m --memory-swap=3000m --env-file /home/ciembor/polish-open-source-rank/.env.local -e RACK_ENV=production -e APP_BASE_PATH=/ -e BASE_URL=https://polish-open-source.pl -v /home/ciembor/polish-open-source-rank/db:/app/db -v /home/ciembor/polish-open-source-rank/log:/app/log localhost/polish-open-source-rank:latest bundle exec ruby bin/monthly_rankings
+ExecStart=/usr/bin/flock -n /home/ciembor/polish-open-source-rank/tmp/crawl.lock /usr/bin/podman run --name=polish-open-source-rank-monthly --memory=1200m --memory-swap=1400m --cpus=1.0 --env-file /home/ciembor/polish-open-source-rank/.env.local -e RACK_ENV=production -e APP_BASE_PATH=/ -e BASE_URL=https://polish-open-source.pl -v /home/ciembor/polish-open-source-rank/db:/app/db -v /home/ciembor/polish-open-source-rank/log:/app/log localhost/polish-open-source-rank:latest bundle exec ruby bin/monthly_rankings
 ExecStop=-/usr/bin/podman stop --time 30 polish-open-source-rank-monthly
 ExecStopPost=-/usr/bin/podman rm -f polish-open-source-rank-monthly
