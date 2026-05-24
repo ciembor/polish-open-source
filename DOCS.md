@@ -121,6 +121,135 @@ bundle exec rake crawl:resume
 bundle exec rake crawl:list
 ```
 
+## Production Job Operations
+
+Periodic jobs are systemd one-shot services that run short-lived Podman containers against the same mounted `db/` and `log/` directories as the web app.
+
+- `polish-open-source-rank-monthly.timer` starts `polish-open-source-rank-monthly.service` at `03:15` on the second day of each month.
+- `polish-open-source-rank-packages.timer` starts `polish-open-source-rank-packages.service` at `07:15` on the second day of each month.
+- Both timers use `Persistent=true`, so systemd starts a missed run after the host comes back.
+- Both crawl services use `flock -n tmp/crawl.lock`, so only one crawl runs at a time.
+- Both crawl services run containers with the production env file, the production database volume, `RACK_ENV=production`, and memory limits.
+- The web service starts `polish-open-source-rank-crawl-resume.service` after the app container starts. This covers deploys and host/container restarts that left a crawl marked as `running` or `interrupted`.
+
+The relevant units are:
+
+- [deploy/polish-open-source-rank-monthly.service](deploy/polish-open-source-rank-monthly.service)
+- [deploy/polish-open-source-rank-monthly.timer](deploy/polish-open-source-rank-monthly.timer)
+- [deploy/polish-open-source-rank-packages.service](deploy/polish-open-source-rank-packages.service)
+- [deploy/polish-open-source-rank-packages.timer](deploy/polish-open-source-rank-packages.timer)
+- [deploy/polish-open-source-rank-crawl.service](deploy/polish-open-source-rank-crawl.service)
+- [deploy/polish-open-source-rank-crawl-resume.service](deploy/polish-open-source-rank-crawl-resume.service)
+
+### Restart and Resume Semantics
+
+Every CLI crawl records a row in `crawl_job_runs` with command name, arguments, status, attempts, timestamps, and error. Starting a crawl with the same command and arguments reopens an unfinished row instead of creating unrelated work.
+
+What happens when something fails:
+
+- If a monthly job receives `SIGINT` or `SIGTERM`, it marks the tracked crawl as `interrupted`.
+- If a monthly or package job raises an exception, it marks the tracked crawl as `failed`.
+- If the process is killed abruptly, for example by OOM or host/container loss, it may leave the tracked crawl as `running`.
+- `polish-open-source-rank-monthly.service`, `polish-open-source-rank-packages.service`, `polish-open-source-rank-crawl.service`, and `polish-open-source-rank-crawl-resume.service` use `Restart=on-failure` and retry after 60 seconds.
+- `bin/resume_crawls` resumes tracked jobs with status `running` or `interrupted`.
+- A manually stopped systemd service is treated as an operator action; start the resume service when you want to continue later.
+
+The monthly ranking job resumes at the data level:
+
+- already processed candidates and already written monthly stats are skipped;
+- retryable candidate failures can be picked up on the next attempt;
+- `--refresh` intentionally reprocesses the selected period/platform/scope.
+
+The package ranking job also resumes at the data level:
+
+- repository scan queue insertion is idempotent;
+- repositories in `pending` or `failed` scan status are retried;
+- already stored registry snapshots for the selected period are skipped unless `--refresh` is passed;
+- `--refresh` intentionally rechecks existing manifests and overwrites/upserts package snapshot data for the selected period.
+
+### Server Commands
+
+Run these from the server as `ciembor` in `/home/ciembor/polish-open-source-rank`.
+
+Inspect timers and recent job logs:
+
+```sh
+systemctl list-timers 'polish-open-source-rank-*'
+sudo journalctl -u polish-open-source-rank-monthly.service -n 200 --no-pager
+sudo journalctl -u polish-open-source-rank-packages.service -n 200 --no-pager
+sudo journalctl -u polish-open-source-rank-crawl-resume.service -n 200 --no-pager
+```
+
+List tracked crawl jobs from the running app container:
+
+```sh
+sudo podman exec -w /app polish-open-source-rank bundle exec rake crawl:list
+```
+
+Resume anything left as `running` or `interrupted`:
+
+```sh
+sudo systemctl start polish-open-source-rank-crawl-resume.service
+sudo journalctl -u polish-open-source-rank-crawl-resume.service -f
+```
+
+Run the normal monthly job for the previous calendar month:
+
+```sh
+sudo systemctl start polish-open-source-rank-monthly.service
+sudo journalctl -u polish-open-source-rank-monthly.service -f
+```
+
+Run the normal package job for the previous calendar month:
+
+```sh
+sudo systemctl start polish-open-source-rank-packages.service
+sudo journalctl -u polish-open-source-rank-packages.service -f
+```
+
+Run a manual monthly crawl with explicit arguments through the manual crawl service:
+
+```sh
+printf 'CRAWL_ARGS="--month 2026-04 --platform github --scope organizations"\n' > .crawl.env
+sudo systemctl start polish-open-source-rank-crawl.service
+sudo journalctl -u polish-open-source-rank-crawl.service -f
+```
+
+Continue the same manual monthly crawl after an interruption by starting the resume service or by starting the same command without `--refresh`. Overwrite/recompute it by adding `--refresh`:
+
+```sh
+printf 'CRAWL_ARGS="--month 2026-04 --platform github --scope organizations --refresh"\n' > .crawl.env
+sudo systemctl start polish-open-source-rank-crawl.service
+```
+
+Run a manual package crawl with explicit arguments in a one-shot Podman container:
+
+```sh
+sudo flock -n /home/ciembor/polish-open-source-rank/tmp/crawl.lock \
+  podman run --rm --name polish-open-source-rank-packages-manual \
+  --memory=2500m --memory-swap=3000m \
+  --env-file /home/ciembor/polish-open-source-rank/.env.local \
+  -e RACK_ENV=production -e APP_BASE_PATH=/ -e BASE_URL=https://polish-open-source.pl \
+  -v /home/ciembor/polish-open-source-rank/db:/app/db \
+  -v /home/ciembor/polish-open-source-rank/log:/app/log \
+  localhost/polish-open-source-rank:latest \
+  bundle exec ruby bin/package_rankings --period 2026-04 --ecosystem npm --limit 100
+```
+
+Continue a package crawl with the same command and no `--refresh`, or recompute already stored registry snapshots with `--refresh`:
+
+```sh
+sudo flock -n /home/ciembor/polish-open-source-rank/tmp/crawl.lock \
+  podman run --rm --name polish-open-source-rank-packages-manual \
+  --memory=2500m --memory-swap=3000m \
+  --env-file /home/ciembor/polish-open-source-rank/.env.local \
+  -e RACK_ENV=production -e APP_BASE_PATH=/ -e BASE_URL=https://polish-open-source.pl \
+  -v /home/ciembor/polish-open-source-rank/db:/app/db \
+  -v /home/ciembor/polish-open-source-rank/log:/app/log \
+  localhost/polish-open-source-rank:latest \
+  bundle exec ruby bin/package_rankings --period 2026-04 --ecosystem npm --limit 100 --refresh
+```
+
 ## Web App
 
 ```sh
@@ -146,6 +275,8 @@ The app is deployed behind Nginx at `https://polish-open-source.pl`. Nginx is co
 - [deploy/polish-open-source-rank-monthly.timer](deploy/polish-open-source-rank-monthly.timer)
 - [deploy/polish-open-source-rank-packages.service](deploy/polish-open-source-rank-packages.service)
 - [deploy/polish-open-source-rank-packages.timer](deploy/polish-open-source-rank-packages.timer)
+- [deploy/polish-open-source-rank-crawl.service](deploy/polish-open-source-rank-crawl.service)
+- [deploy/polish-open-source-rank-crawl-resume.service](deploy/polish-open-source-rank-crawl-resume.service)
 
 GitHub Actions runs quality checks and then calls [scripts/deploy.sh](scripts/deploy.sh). Required repository secret:
 
