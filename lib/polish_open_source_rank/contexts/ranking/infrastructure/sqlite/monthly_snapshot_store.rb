@@ -25,8 +25,8 @@ module PolishOpenSourceRank
               run_repository.fail(run_id, error)
             end
 
-            def retryable_candidates?(period, platforms: nil)
-              run_repository.retryable_candidates?(period, platforms: platforms)
+            def retryable_candidates?(period, platforms: nil, candidate_types: nil)
+              run_repository.retryable_candidates?(period, platforms: platforms, candidate_types: candidate_types)
             end
 
             def record_candidate(period, login:, source_query:, platform: 'github', source_id: nil, github_id: nil)

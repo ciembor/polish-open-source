@@ -4,6 +4,7 @@ module PolishOpenSourceRank
   module Contexts
     module Ranking
       module Application
+        # rubocop:disable Metrics/ClassLength
         class RunMonthlySnapshot
           BATCH_SIZE = 50
 
@@ -362,32 +363,51 @@ module PolishOpenSourceRank
           end
 
           def source_retryable_candidates?(period)
-            store.retryable_candidates?(period, platforms: sources.map(&:platform))
+            store.retryable_candidates?(
+              period,
+              platforms: sources.map(&:platform),
+              candidate_types: active_candidate_types
+            )
+          end
+
+          def active_candidate_types
+            case @scope
+            when :users
+              [:users]
+            when :organizations
+              [:organizations]
+            else
+              %i[users organizations]
+            end
           end
 
           def run_source_snapshot(period, source, refresh:)
-            unless @scope == :organizations
-              discover_error = run_source_stage(source, 'discover') { discover_source_candidates(period, source) }
-              process_error = run_source_stage(source, 'process') do
-                process_source_candidates(period, source, refresh: refresh)
-              end
-            end
+            errors = []
+            errors.concat(run_user_source_snapshot(period, source, refresh: refresh)) unless @scope == :organizations
+            errors.concat(run_organization_source_snapshot(period, source, refresh: refresh)) unless @scope == :users
+            Thread.current[:error] = errors.compact.first
+          end
 
-            unless @scope == :users
-              organization_discover_error = run_source_stage(source, 'discover organizations') do
-                discover_source_organizations(period, source)
-              end
-              organization_process_error = run_source_stage(source, 'process organizations') do
+          def run_user_source_snapshot(period, source, refresh:)
+            [
+              run_source_stage(source, 'process existing candidates') do
+                process_source_candidates(period, source, refresh: refresh)
+              end,
+              run_source_stage(source, 'discover') { discover_source_candidates(period, source) },
+              run_source_stage(source, 'process') { process_source_candidates(period, source, refresh: refresh) }
+            ]
+          end
+
+          def run_organization_source_snapshot(period, source, refresh:)
+            [
+              run_source_stage(source, 'process existing organizations') do
+                process_source_organizations(period, source, refresh: refresh)
+              end,
+              run_source_stage(source, 'discover organizations') { discover_source_organizations(period, source) },
+              run_source_stage(source, 'process organizations') do
                 process_source_organizations(period, source, refresh: refresh)
               end
-            end
-
-            Thread.current[:error] = [
-              organization_process_error,
-              organization_discover_error,
-              process_error,
-              discover_error
-            ].compact.first
+            ]
           end
 
           def run_source_stage(source, stage)
@@ -407,6 +427,7 @@ module PolishOpenSourceRank
             logger.flush if logger.respond_to?(:flush)
           end
         end
+        # rubocop:enable Metrics/ClassLength
       end
     end
   end

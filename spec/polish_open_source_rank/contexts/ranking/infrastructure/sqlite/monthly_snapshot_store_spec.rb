@@ -27,7 +27,9 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     allow(run_repository).to receive(:create).with(period, refresh_platforms: ['github']).and_return(7)
     allow(run_repository).to receive(:finish).with(7)
     allow(run_repository).to receive(:fail).with(7, 'boom')
-    allow(run_repository).to receive(:retryable_candidates?).with(period, platforms: ['gitlab']).and_return(true)
+    allow(run_repository).to receive(:retryable_candidates?)
+      .with(period, platforms: ['gitlab'], candidate_types: nil)
+      .and_return(true)
     allow(candidate_queue).to receive(:record).with(
       period,
       login: 'alice',
