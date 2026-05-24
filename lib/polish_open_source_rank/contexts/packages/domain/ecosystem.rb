@@ -6,7 +6,7 @@ module PolishOpenSourceRank
       module Domain
         module Ecosystem
           SUPPORTED = %w[npm rubygems crates pypi hex packagist go homebrew nuget maven].freeze
-          SNAPSHOT_SUPPORTED = %w[npm rubygems crates pypi hex packagist go homebrew].freeze
+          SNAPSHOT_SUPPORTED = %w[npm rubygems crates pypi hex packagist go homebrew nuget].freeze
 
           module_function
 

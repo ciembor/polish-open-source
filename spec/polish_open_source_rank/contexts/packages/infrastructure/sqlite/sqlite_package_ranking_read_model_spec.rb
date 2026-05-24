@@ -29,6 +29,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     seed_package(ecosystem: 'packagist', name: 'vendor/nil-downloads', downloads_30d: nil, downloads_total: 1)
     seed_package(ecosystem: 'homebrew', name: 'brew-zeta', downloads_30d: 70)
     seed_package(ecosystem: 'homebrew', name: 'brew-alpha', downloads_30d: 70)
+    seed_package(ecosystem: 'nuget', name: 'NuGet.Zeta', downloads_total: 500)
+    seed_package(ecosystem: 'nuget', name: 'NuGet.Alpha', downloads_total: 500)
 
     expect(package_names('npm', :downloads_30d)).to eq(%w[alpha zeta])
     expect(package_names('rubygems', :downloads_total)).to eq(%w[ruby-zeta ruby-alpha])
@@ -36,20 +38,25 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     expect(package_names('packagist', :downloads_30d)).to eq(%w[vendor/alpha vendor/zeta])
     expect(package_names('packagist', :downloads_total)).to eq(%w[vendor/zeta vendor/alpha vendor/nil-downloads])
     expect(package_names('homebrew', :downloads_30d)).to eq(%w[brew-alpha brew-zeta])
+    expect(package_names('nuget', :downloads_total)).to eq(%w[NuGet.Alpha NuGet.Zeta])
   end
 
   it 'returns ranking metrics supported by the ecosystem' do
     seed_package(ecosystem: 'packagist', name: 'vendor/alpha', downloads_30d: 50, downloads_total: 100)
     seed_package(ecosystem: 'homebrew', name: 'polish-tool', downloads_30d: 25)
+    seed_package(ecosystem: 'nuget', name: 'Polish.Tool', downloads_total: 1_000)
 
     rankings = read_model.rankings(ecosystem: 'packagist', period_start: period)
     homebrew_rankings = read_model.rankings(ecosystem: 'homebrew', period_start: period)
+    nuget_rankings = read_model.rankings(ecosystem: 'nuget', period_start: period)
 
     expect(rankings.keys).to eq(%i[downloads_30d downloads_total])
     expect(rankings.fetch(:downloads_30d).first).to include(package_name: 'vendor/alpha')
     expect(rankings.fetch(:downloads_total).first).to include(package_name: 'vendor/alpha')
     expect(homebrew_rankings.keys).to eq(%i[downloads_30d])
     expect(homebrew_rankings.fetch(:downloads_30d).first).to include(package_name: 'polish-tool')
+    expect(nuget_rankings.keys).to eq(%i[downloads_total])
+    expect(nuget_rankings.fetch(:downloads_total).first).to include(package_name: 'Polish.Tool')
   end
 
   it 'includes repository ownership from user and organization repositories' do
@@ -207,6 +214,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     when 'rubygems' then "https://rubygems.org/gems/#{name}"
     when 'packagist' then "https://packagist.org/packages/#{name}"
     when 'homebrew' then "https://formulae.brew.sh/formula/#{name}"
+    when 'nuget' then "https://www.nuget.org/packages/#{name}"
     else "https://example.com/#{ecosystem}/#{name}"
     end
   end

@@ -16,7 +16,7 @@ Cel: pokazać więcej sensownych ekosystemów pakietów w publicznym `/packages`
 1. [x] Packagist downloads
 2. [x] Hex diagnosis
 3. [x] Homebrew
-4. [ ] NuGet
+4. [x] NuGet
 5. [ ] Maven
 
 ## 1. Packagist Downloads
@@ -99,33 +99,35 @@ Wynik implementacji: Homebrew obsługuje formuły `Formula/*.rb` także w lokaln
 
 Dlaczego: duży ekosystem .NET/C#, z publicznym registry API i licznikami pobrań.
 
-- [ ] Dodać nowy ekosystem `nuget`.
-- [ ] Dodać detekcję manifestów:
-  - [ ] `.csproj`,
-  - [ ] `.fsproj`,
-  - [ ] `.vbproj`,
-  - [ ] `.nuspec`,
-  - [ ] `Directory.Packages.props`.
-- [ ] Dodać parser:
-  - [ ] package id,
-  - [ ] version,
-  - [ ] repository URL,
-  - [ ] project URL,
-  - [ ] license.
-- [ ] Dodać klienta NuGet registry:
-  - [ ] latest version,
-  - [ ] downloads total,
-  - [ ] registry URL,
-  - [ ] repository/project URL, jeśli API daje.
-- [ ] Dodać metrykę rankingową dla NuGet.
-- [ ] Dodać testy XML parserów bez zależności od frameworków webowych.
+- [x] Dodać nowy ekosystem `nuget`.
+- [x] Dodać detekcję manifestów:
+  - [x] `.csproj`,
+  - [x] `.fsproj`,
+  - [x] `.vbproj`,
+  - [x] `.nuspec`,
+  - [x] `Directory.Packages.props`.
+- [x] Dodać parser:
+  - [x] package id,
+  - [x] version,
+  - [x] repository URL,
+  - [x] project URL,
+  - [x] license.
+- [x] Dodać klienta NuGet registry:
+  - [x] latest version,
+  - [x] downloads total,
+  - [x] registry URL,
+  - [x] repository/project URL, jeśli API daje.
+- [x] Dodać metrykę rankingową dla NuGet.
+- [x] Dodać testy XML parserów bez zależności od frameworków webowych.
 - [ ] Uruchomić ograniczony crawl NuGet.
 
 Definition of Done:
 
-- [ ] NuGet jest widoczny w `/packages`.
-- [ ] `.csproj` i `.nuspec` nie wymagają wykonywania build tooli.
-- [ ] Ranking używa prawdziwych liczników NuGet.
+- [x] NuGet jest widoczny w `/packages`.
+- [x] `.csproj` i `.nuspec` nie wymagają wykonywania build tooli.
+- [x] Ranking używa prawdziwych liczników NuGet.
+
+Wynik implementacji: NuGet ma publiczny ranking po `downloads_total` z NuGet SearchQueryService. Klient odkrywa endpoint wyszukiwania przez service index NuGet V3, a parser XML statycznie obsługuje `.csproj`, `.fsproj`, `.vbproj`, `.nuspec` i diagnostycznie `Directory.Packages.props` bez uruchamiania build tooli. Ograniczony crawl produkcyjny pozostaje krokiem operacyjnym po wdrożeniu.
 
 ## 5. Maven
 

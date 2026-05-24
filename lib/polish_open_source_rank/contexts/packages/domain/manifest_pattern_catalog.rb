@@ -13,11 +13,13 @@ module PolishOpenSourceRank
             'crates' => ['Cargo.toml'],
             'hex' => %w[mix.exs gleam.toml rebar.config],
             'packagist' => ['composer.json'],
-            'go' => ['go.mod']
+            'go' => ['go.mod'],
+            'nuget' => ['Directory.Packages.props']
           }.freeze
 
           EXTENSIONS = {
-            'rubygems' => ['.gemspec']
+            'rubygems' => ['.gemspec'],
+            'nuget' => %w[.csproj .fsproj .vbproj .nuspec]
           }.freeze
 
           module_function

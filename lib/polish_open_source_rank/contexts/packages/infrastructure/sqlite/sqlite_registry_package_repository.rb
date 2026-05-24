@@ -15,7 +15,8 @@ module PolishOpenSourceRank
               'hex' => 'https://hex.pm/packages/%s',
               'packagist' => 'https://packagist.org/packages/%s',
               'go' => 'https://pkg.go.dev/%s',
-              'homebrew' => 'https://formulae.brew.sh/formula/%s'
+              'homebrew' => 'https://formulae.brew.sh/formula/%s',
+              'nuget' => 'https://www.nuget.org/packages/%s'
             }.freeze
 
             def initialize(database, clock: -> { Time.now.utc },

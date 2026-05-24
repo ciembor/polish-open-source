@@ -91,7 +91,8 @@ module PolishOpenSourceRank
             'hex' => registry_client(registries::HexRegistryClient, :hex),
             'packagist' => registry_client(registries::PackagistRegistryClient, :packagist),
             'go' => registry_client(registries::GoRegistryClient, :go),
-            'homebrew' => registry_client(registries::HomebrewRegistryClient, :homebrew)
+            'homebrew' => registry_client(registries::HomebrewRegistryClient, :homebrew),
+            'nuget' => registry_client(registries::NuGetRegistryClient, :nuget)
           }
         end
 

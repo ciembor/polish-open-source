@@ -205,6 +205,46 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
     )
   end
 
+  it 'maps NuGet metadata and total downloads from exact package search results' do
+    stub_http(response('200', nuget_service_index), response('200', nuget_body))
+
+    result = client(:NuGetRegistryClient).fetch('Polish.Tool')
+
+    expect(result).to be_ok
+    expect(result.package.to_h).to include(
+      ecosystem: 'nuget',
+      package_name: 'Polish.Tool',
+      registry_url: 'https://www.nuget.org/packages/Polish.Tool',
+      repository_url: 'https://github.com/acme/polish-tool',
+      homepage_url: 'https://github.com/acme/polish-tool',
+      license: 'https://licenses.example/MIT',
+      latest_version: '1.2.3'
+    )
+    expect(result.snapshot.to_h).to include(downloads_total: 12_345, downloads_30d: nil)
+    expect(requests).to include(
+      { host: 'api.nuget.org', path: '/v3/index.json' },
+      {
+        host: 'azuresearch-usnc.nuget.org',
+        path: '/query?q=packageid%3APolish.Tool&prerelease=false&semVerLevel=2.0.0&take=5'
+      }
+    )
+  end
+
+  it 'treats NuGet search results without an exact package id as not found' do
+    stub_http(response('200', nuget_service_index), response('200', { data: [{ id: 'Other.Tool', version: '1.0.0' }] }))
+
+    expect(client(:NuGetRegistryClient).fetch('Polish.Tool')).to have_attributes(status: 'not_found')
+  end
+
+  it 'fails NuGet fetches when the service index has no search endpoint' do
+    stub_http(response('200', { resources: [] }))
+
+    expect(client(:NuGetRegistryClient).fetch('Polish.Tool')).to have_attributes(
+      status: 'failed',
+      error: 'missing SearchQueryService'
+    )
+  end
+
   def client(class_name, requests_per_minute: 10_000, execution: {})
     described_class.const_get(class_name).new(
       requests_per_minute: requests_per_minute,
@@ -343,6 +383,28 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
         }
       },
       generated_date: '2026-05-24'
+    }
+  end
+
+  def nuget_body
+    {
+      data: [
+        {
+          id: 'Polish.Tool',
+          version: '1.2.3',
+          totalDownloads: 12_345,
+          projectUrl: 'https://github.com/acme/polish-tool',
+          licenseUrl: 'https://licenses.example/MIT'
+        }
+      ]
+    }
+  end
+
+  def nuget_service_index
+    {
+      resources: [
+        { '@id' => 'https://azuresearch-usnc.nuget.org/query', '@type' => 'SearchQueryService/3.5.0' }
+      ]
     }
   end
 end
