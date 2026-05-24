@@ -75,6 +75,26 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::GitHub:
     )
   end
 
+  it 'maps unavailable repository trees to a recoverable package scan failure' do
+    client.stub_error(
+      '/repos/alice/conflict/git/trees/main',
+      PolishOpenSourceRank::Infrastructure::GitHubClient::Error.new('conflict', status: 409, body: '{}'),
+      params: { recursive: 1 }
+    )
+
+    expect { gateway.tree('alice/conflict', ref: 'main') }.to raise_error(
+      PolishOpenSourceRank::Contexts::Packages::Application::RepositoryUnavailable,
+      'GitHub repository unavailable: alice/conflict'
+    )
+  end
+
+  it 'reraises unexpected GitHub errors' do
+    error = PolishOpenSourceRank::Infrastructure::GitHubClient::Error.new('server error', status: 500, body: '{}')
+    client.stub_error('/repos/alice/app/git/trees/main', error, params: { recursive: 1 })
+
+    expect { gateway.tree('alice/app', ref: 'main') }.to raise_error(error)
+  end
+
   it 'maps unavailable trees and blobs to the package domain error' do
     missing = PolishOpenSourceRank::Infrastructure::GitHubClient::NotFound.new('missing', status: 404, body: '{}')
     client.stub_error('/repos/alice/missing/git/trees/main', missing, params: { recursive: 1 })
