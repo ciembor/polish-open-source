@@ -75,14 +75,14 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
 
   it 'parses Hex manifests without executing Elixir or Erlang' do
     expect(parse('MixExsParser', 'mix.exs', 'def project, do: [app: :polish_hex]')).to have_attributes(
-      package_name: 'polish-hex',
+      package_name: 'polish_hex',
       parse_status: 'parsed'
     )
     expect(parse('GleamTomlParser', 'gleam.toml', 'name = "polish_gleam"')).to have_attributes(
       package_name: 'polish_gleam'
     )
     expect(parse('RebarConfigParser', 'rebar.config', '{app, polish_rebar}.')).to have_attributes(
-      package_name: 'polish-rebar'
+      package_name: 'polish_rebar'
     )
     expect(parse('MixExsParser', 'mix.exs', 'System.cmd("rm", ["-rf", "/"])')).to have_attributes(
       confidence: 'medium',
