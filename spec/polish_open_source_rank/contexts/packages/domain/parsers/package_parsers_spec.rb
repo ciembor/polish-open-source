@@ -133,6 +133,40 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
                  )
   end
 
+  it 'parses NuGet XML manifests without executing build tools' do
+    expect(parse('NuGetXmlParser', 'src/Polish.Tool/Polish.Tool.csproj', csproj).to_h).to include(
+      ecosystem: 'nuget',
+      package_name: 'Polish.Tool',
+      normalized_package_name: 'polish.tool',
+      repository_url: 'https://github.com/acme/polish-tool',
+      homepage_url: 'https://example.com/polish-tool',
+      license: 'MIT',
+      parse_status: 'parsed',
+      metadata: {
+        path: 'src/Polish.Tool/Polish.Tool.csproj',
+        version: '1.2.3',
+        package_references: [{ id: 'Newtonsoft.Json', version: '13.0.3' }]
+      }
+    )
+    expect(parse('NuGetXmlParser', 'Polish.Tool.nuspec', nuspec)).to have_attributes(
+      package_name: 'Polish.Nuspec.Tool',
+      repository_url: 'https://github.com/acme/polish-nuspec-tool',
+      homepage_url: 'https://example.com/polish-nuspec-tool',
+      license: 'Apache-2.0',
+      parse_status: 'parsed'
+    )
+  end
+
+  it 'keeps NuGet central package versions diagnostic when no package id exists' do
+    central_versions = parse('NuGetXmlParser', 'Directory.Packages.props', directory_packages_props)
+    expect(central_versions).to have_attributes(package_name: nil, parse_status: 'partial')
+    expect(central_versions.metadata.fetch(:package_versions)).to eq(
+      [{ id: 'Serilog', version: '4.0.0' }, { id: 'Dapper', version: '2.1.35' }]
+    )
+    expect(parse('NuGetXmlParser', 'packages.config', '<packages />')).to have_attributes(parse_status: 'failed')
+    expect(parse('NuGetXmlParser', 'broken.csproj', '<Project>')).to have_attributes(parse_status: 'failed')
+  end
+
   def parse(parser_name, path, content)
     described_class.const_get(parser_name).new.parse(path: path, content: content)
   end
@@ -215,5 +249,47 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
         license "MIT"
       end
     RUBY
+  end
+
+  def csproj
+    <<~XML
+      <Project Sdk="Microsoft.NET.Sdk">
+        <PropertyGroup>
+          <PackageId>Polish.Tool</PackageId>
+          <PackageVersion>1.2.3</PackageVersion>
+          <RepositoryUrl>https://github.com/acme/polish-tool</RepositoryUrl>
+          <PackageProjectUrl>https://example.com/polish-tool</PackageProjectUrl>
+          <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        </PropertyGroup>
+        <ItemGroup>
+          <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        </ItemGroup>
+      </Project>
+    XML
+  end
+
+  def nuspec
+    <<~XML
+      <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+        <metadata>
+          <id>Polish.Nuspec.Tool</id>
+          <version>2.0.0</version>
+          <projectUrl>https://example.com/polish-nuspec-tool</projectUrl>
+          <repository type="git" url="https://github.com/acme/polish-nuspec-tool" />
+          <license type="expression">Apache-2.0</license>
+        </metadata>
+      </package>
+    XML
+  end
+
+  def directory_packages_props
+    <<~XML
+      <Project>
+        <ItemGroup>
+          <PackageVersion Include="Serilog" Version="4.0.0" />
+          <PackageVersion Include="Dapper" Version="2.1.35" />
+        </ItemGroup>
+      </Project>
+    XML
   end
 end

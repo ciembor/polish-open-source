@@ -33,7 +33,8 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::PackageRankingJobF
       requests_per_minute: 60,
       http_timeouts: { open_timeout: 5, read_timeout: 30, write_timeout: 30 },
       package_registry_request_limits: {
-        npm: 30, rubygems: 20, crates: 10, pypi: 20, hex: 20, packagist: 20, go: 20, homebrew: 20
+        npm: 30, rubygems: 20, crates: 10, pypi: 20, hex: 20, packagist: 20, go: 20, homebrew: 20,
+        nuget: 20
       }
     )
   end
@@ -87,7 +88,7 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::PackageRankingJobF
     [
       registries::NpmRegistryClient, registries::RubyGemsRegistryClient, registries::CratesRegistryClient,
       registries::PyPIRegistryClient, registries::HexRegistryClient, registries::PackagistRegistryClient,
-      registries::GoRegistryClient, registries::HomebrewRegistryClient
+      registries::GoRegistryClient, registries::HomebrewRegistryClient, registries::NuGetRegistryClient
     ].each do |klass|
       allow(klass).to receive(:new).and_return(instance_double(klass))
     end

@@ -135,7 +135,8 @@ RSpec.describe PolishOpenSourceRank::Configuration do
       hex: 20,
       packagist: 20,
       go: 20,
-      homebrew: 20
+      homebrew: 20,
+      nuget: 20
     )
   end
 

@@ -15,7 +15,8 @@ module PolishOpenSourceRank
             'gleam.toml' => Parsers::GleamTomlParser,
             'rebar.config' => Parsers::RebarConfigParser,
             'composer.json' => Parsers::ComposerJsonParser,
-            'go.mod' => Parsers::GoModParser
+            'go.mod' => Parsers::GoModParser,
+            'Directory.Packages.props' => Parsers::NuGetXmlParser
           }.freeze
 
           def parse(path:, ecosystem:, content:)
@@ -27,6 +28,7 @@ module PolishOpenSourceRank
           def parser_for(path, ecosystem)
             return Parsers::RubyGemsGemspecParser.new if ecosystem == 'rubygems'
             return Parsers::HomebrewFormulaParser.new if ecosystem == 'homebrew'
+            return Parsers::NuGetXmlParser.new if ecosystem == 'nuget'
 
             PARSERS.fetch(File.basename(path)).new
           end

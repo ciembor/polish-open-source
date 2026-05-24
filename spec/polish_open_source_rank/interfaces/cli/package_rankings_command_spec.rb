@@ -53,7 +53,9 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::PackageRankingsCommand do
     described_class.call(%w[--help], job: job, output: output)
 
     expect(output.string).to include('--repository-limit N')
-    expect(output.string).to include('Supported ecosystems: npm, rubygems, crates, pypi, hex, packagist, go, homebrew')
+    expect(output.string).to include(
+      'Supported ecosystems: npm, rubygems, crates, pypi, hex, packagist, go, homebrew, nuget'
+    )
     expect(job).not_to have_received(:call)
   end
 
