@@ -245,6 +245,32 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
     )
   end
 
+  it 'maps Maven Central coordinates while keeping popularity metrics unavailable' do
+    stub_http(response('200', maven_body))
+
+    result = client(:MavenCentralRegistryClient).fetch('pl.example:polish-tool')
+
+    expect(result).to be_ok
+    expect(result.package.to_h).to include(
+      ecosystem: 'maven',
+      package_name: 'pl.example:polish-tool',
+      registry_url: 'https://central.sonatype.com/artifact/pl.example/polish-tool',
+      latest_version: '1.2.3'
+    )
+    expect(result.snapshot.to_h).to include(
+      downloads_total: nil,
+      downloads_30d: nil,
+      metadata: { metric_source: 'maven_central_downloads_unavailable' }
+    )
+  end
+
+  it 'treats missing Maven Central coordinates as not found' do
+    stub_http(response('200', { response: { docs: [] } }))
+
+    expect(client(:MavenCentralRegistryClient).fetch('pl.example:missing')).to have_attributes(status: 'not_found')
+    expect(client(:MavenCentralRegistryClient).fetch('invalid')).to have_attributes(status: 'not_found')
+  end
+
   def client(class_name, requests_per_minute: 10_000, execution: {})
     described_class.const_get(class_name).new(
       requests_per_minute: requests_per_minute,
@@ -405,6 +431,20 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
       resources: [
         { '@id' => 'https://azuresearch-usnc.nuget.org/query', '@type' => 'SearchQueryService/3.5.0' }
       ]
+    }
+  end
+
+  def maven_body
+    {
+      response: {
+        docs: [
+          {
+            g: 'pl.example',
+            a: 'polish-tool',
+            latestVersion: '1.2.3'
+          }
+        ]
+      }
     }
   end
 end

@@ -17,7 +17,7 @@ Cel: pokazać więcej sensownych ekosystemów pakietów w publicznym `/packages`
 2. [x] Hex diagnosis
 3. [x] Homebrew
 4. [x] NuGet
-5. [ ] Maven
+5. [x] Maven
 
 ## 1. Packagist Downloads
 
@@ -133,34 +133,36 @@ Wynik implementacji: NuGet ma publiczny ranking po `downloads_total` z NuGet Sea
 
 Dlaczego: ważny ekosystem JVM/Java/Kotlin, ale metryki popularności są mniej proste niż w Packagist/NuGet.
 
-- [ ] Dodać decyzję produktową: czy Maven pokazujemy od razu publicznie, czy najpierw zbieramy dane diagnostycznie.
-- [ ] Dodać nowy ekosystem `maven`.
+- [x] Dodać decyzję produktową: czy Maven pokazujemy od razu publicznie, czy najpierw zbieramy dane diagnostycznie: najpierw diagnostycznie, bo Maven Central Search API nie udostępnia stabilnej metryki downloads/popularity.
+- [x] Dodać nowy ekosystem `maven`.
 - [ ] Dodać detekcję manifestów:
-  - [ ] `pom.xml`,
-  - [ ] `build.gradle`,
-  - [ ] `build.gradle.kts`,
-  - [ ] `settings.gradle`,
-  - [ ] `settings.gradle.kts`.
-- [ ] Dodać parser Maven/Gradle:
-  - [ ] `groupId`,
-  - [ ] `artifactId`,
-  - [ ] version,
-  - [ ] URL projektu,
-  - [ ] SCM URL,
-  - [ ] licencja.
-- [ ] Dodać klienta Maven Central:
-  - [ ] latest version,
-  - [ ] artifact coordinates,
-  - [ ] registry URL.
-- [ ] Sprawdzić dostępne metryki popularności Maven Central.
-- [ ] Jeśli nie ma dobrej metryki downloads, nie pokazywać publicznego rankingu Maven na siłę.
-- [ ] Dodać widok diagnostyczny lub wewnętrzny raport liczby wykrytych artefaktów Maven.
+  - [x] `pom.xml`,
+  - [x] `build.gradle`,
+  - [x] `build.gradle.kts`,
+  - [x] `settings.gradle`,
+  - [x] `settings.gradle.kts`.
+- [x] Dodać parser Maven/Gradle:
+  - [x] `groupId`,
+  - [x] `artifactId`,
+  - [x] version,
+  - [x] URL projektu,
+  - [x] SCM URL,
+  - [x] licencja.
+- [x] Dodać klienta Maven Central:
+  - [x] latest version,
+  - [x] artifact coordinates,
+  - [x] registry URL.
+- [x] Sprawdzić dostępne metryki popularności Maven Central.
+- [x] Jeśli nie ma dobrej metryki downloads, nie pokazywać publicznego rankingu Maven na siłę.
+- [x] Dodać widok diagnostyczny lub wewnętrzny raport liczby wykrytych artefaktów Maven: dane są zbierane diagnostycznie w `package_manifests`, `registry_packages` i snapshotach z metadanymi `maven_central_downloads_unavailable`.
 
 Definition of Done:
 
-- [ ] Maven artefakty są wykrywane i rozwiązywane do Maven Central.
-- [ ] Publiczny ranking pojawia się tylko, jeśli mamy stabilną metrykę.
-- [ ] Brak metryki jest jawnie opisany w kodzie/testach, nie ukryty w pustym UI.
+- [x] Maven artefakty są wykrywane i rozwiązywane do Maven Central.
+- [x] Publiczny ranking pojawia się tylko, jeśli mamy stabilną metrykę.
+- [x] Brak metryki jest jawnie opisany w kodzie/testach, nie ukryty w pustym UI.
+
+Wynik implementacji: Maven działa jako ekosystem diagnostyczny. Wykrywamy `pom.xml`, `build.gradle`, `build.gradle.kts`, `settings.gradle` i `settings.gradle.kts`; parser statycznie wyciąga współrzędne `groupId:artifactId`, wersję, URL projektu, SCM i licencję bez uruchamiania Maven/Gradle. Klient Maven Central rozwiązuje artefakty przez Search API do najnowszej wersji i URL `central.sonatype.com/artifact/...`, ale snapshot jawnie zapisuje brak metryki popularności w `metadata`. UI nie pokazuje Maven w publicznym `/packages`, dopóki nie ma stabilnej metryki rankingowej.
 
 ## Operacje Po Każdym Etapie
 

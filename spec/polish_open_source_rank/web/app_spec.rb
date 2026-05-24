@@ -902,10 +902,15 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.status).to eq(200)
     expect(response.body).to include('<title>Pakiety open source - Polish Open Source</title>')
     expect(response.body).to include('rel="canonical" href="https://rank.example/packages"')
+    expect_public_package_index_links(response)
+    expect(response.body).to include('"@type": "Dataset"')
+  end
+
+  def expect_public_package_index_links(response)
     expect(response.body).to include('href="/latest/packages/npm"')
     expect(response.body).to include('href="/latest/packages/homebrew"')
     expect(response.body).to include('href="/latest/packages/nuget"')
-    expect(response.body).to include('"@type": "Dataset"')
+    expect(response.body).not_to include('href="/latest/packages/maven"')
   end
 
   def expect_package_profile_page(response)
@@ -1116,6 +1121,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     seed_package(database, period, 'rack', downloads_total: 50_000, dependents_count: 23)
     seed_package(database, period, 'polish-tool', ecosystem: 'homebrew', downloads_30d: 250)
     seed_package(database, period, 'Polish.Tool', ecosystem: 'nuget', downloads_total: 12_000)
+    seed_package(database, period, 'pl.example:polish-tool', ecosystem: 'maven')
     link_package_repository(database, period, '@scope/tool')
   end
 
@@ -1167,6 +1173,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   def package_registry_url(ecosystem, name)
     return "https://formulae.brew.sh/formula/#{name}" if ecosystem == 'homebrew'
     return "https://www.nuget.org/packages/#{name}" if ecosystem == 'nuget'
+    return "https://central.sonatype.com/artifact/#{name.tr(':', '/')}" if ecosystem == 'maven'
 
     "https://www.npmjs.com/package/#{name}"
   end

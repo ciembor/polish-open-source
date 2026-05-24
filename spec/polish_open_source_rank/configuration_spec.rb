@@ -136,7 +136,8 @@ RSpec.describe PolishOpenSourceRank::Configuration do
       packagist: 20,
       go: 20,
       homebrew: 20,
-      nuget: 20
+      nuget: 20,
+      maven: 20
     )
   end
 

@@ -14,7 +14,8 @@ module PolishOpenSourceRank
             'hex' => %w[mix.exs gleam.toml rebar.config],
             'packagist' => ['composer.json'],
             'go' => ['go.mod'],
-            'nuget' => ['Directory.Packages.props']
+            'nuget' => ['Directory.Packages.props'],
+            'maven' => %w[pom.xml build.gradle build.gradle.kts settings.gradle settings.gradle.kts]
           }.freeze
 
           EXTENSIONS = {

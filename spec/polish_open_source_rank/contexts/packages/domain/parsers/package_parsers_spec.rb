@@ -167,6 +167,33 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
     expect(parse('NuGetXmlParser', 'broken.csproj', '<Project>')).to have_attributes(parse_status: 'failed')
   end
 
+  it 'parses Maven POM and Gradle manifests without executing build tools' do
+    expect(parse('MavenManifestParser', 'pom.xml', pom_xml).to_h).to include(
+      ecosystem: 'maven',
+      package_name: 'pl.example:polish-tool',
+      repository_url: 'https://github.com/acme/polish-tool',
+      homepage_url: 'https://example.com/polish-tool',
+      license: 'Apache-2.0',
+      parse_status: 'parsed',
+      metadata: {
+        path: 'pom.xml',
+        group_id: 'pl.example',
+        artifact_id: 'polish-tool',
+        version: '1.0.0'
+      }
+    )
+    expect(parse('MavenManifestParser', 'build.gradle', gradle_build)).to have_attributes(
+      package_name: 'pl.example:gradle-tool',
+      repository_url: 'https://github.com/acme/gradle-tool',
+      parse_status: 'partial'
+    )
+    expect(parse('MavenManifestParser', 'settings.gradle.kts', 'rootProject.name = "gradle-tool"')).to have_attributes(
+      package_name: nil,
+      parse_status: 'partial'
+    )
+    expect(parse('MavenManifestParser', 'pom.xml', '<project>')).to have_attributes(parse_status: 'failed')
+  end
+
   def parse(parser_name, path, content)
     described_class.const_get(parser_name).new.parse(path: path, content: content)
   end
@@ -291,5 +318,36 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
         </ItemGroup>
       </Project>
     XML
+  end
+
+  def pom_xml
+    <<~XML
+      <project xmlns="http://maven.apache.org/POM/4.0.0">
+        <modelVersion>4.0.0</modelVersion>
+        <groupId>pl.example</groupId>
+        <artifactId>polish-tool</artifactId>
+        <version>1.0.0</version>
+        <url>https://example.com/polish-tool</url>
+        <scm>
+          <url>https://github.com/acme/polish-tool</url>
+        </scm>
+        <licenses>
+          <license>
+            <name>Apache-2.0</name>
+          </license>
+        </licenses>
+      </project>
+    XML
+  end
+
+  def gradle_build
+    <<~GRADLE
+      group = 'pl.example'
+      version = '2.0.0'
+      archivesName = 'gradle-tool'
+      url = 'https://example.com/gradle-tool'
+      scm = 'https://github.com/acme/gradle-tool'
+      license = 'MIT'
+    GRADLE
   end
 end
