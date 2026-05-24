@@ -10,6 +10,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration do
     expect(
       database.fetch_value("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'crawl_job_runs'")
     ).to eq(1)
+    expect(database.fetch_value(package_table_sql('job_work_events'))).to eq(1)
     expect(database.fetch_value(package_table_sql('package_crawl_runs'))).to eq(1)
     expect(database.fetch_value(package_table_sql('registry_package_snapshots'))).to eq(1)
     expect(database.table_info('users').map { |column| column.fetch('name') }).to include('platform')

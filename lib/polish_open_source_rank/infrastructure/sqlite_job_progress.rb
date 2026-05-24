@@ -4,80 +4,50 @@ require 'sequel'
 
 module PolishOpenSourceRank
   module Infrastructure
+    # rubocop:disable Metrics/ClassLength
     class SQLiteJobProgress
-      PLATFORM_ORDER = %w[github gitlab codeberg].freeze
-      RECENT_EVENTS_SQL = <<~SQL
-        SELECT *
-        FROM (
-          SELECT platform, 'candidate' AS source, login AS subject, status AS detail, updated_at AS recorded_at
-          FROM candidate_users
-          WHERE period_start = ?
-            AND status != 'pending'
-          UNION ALL
-          SELECT repository_monthly_stats.platform,
-                 'repository' AS source,
-                 repositories.full_name AS subject,
-                 'stored' AS detail,
-                 repository_monthly_stats.updated_at AS recorded_at
-          FROM repository_monthly_stats
-          INNER JOIN repositories
-            ON repositories.platform = repository_monthly_stats.platform
-           AND repositories.github_id = repository_monthly_stats.repository_github_id
-          WHERE repository_monthly_stats.period_start = ?
-          UNION ALL
-          SELECT platform, 'api' AS source, path AS subject, 'HTTP ' || status AS detail, recorded_at
-          FROM api_request_events
-          WHERE recorded_at >= ?
-        )
-        WHERE recorded_at >= ?
-        ORDER BY datetime(recorded_at) DESC, platform ASC, source ASC, subject COLLATE NOCASE ASC
-        LIMIT 30
-      SQL
+      STALE_SECONDS = 10 * 60
+      MONTHLY_PLATFORM_ORDER = %w[github gitlab codeberg].freeze
+      PACKAGE_STAGE_ORDER = %w[
+        repository_scan
+        manifest_parse
+        registry_resolve
+        registry_snapshot
+      ].freeze
       RECENT_ERRORS_SQL = <<~SQL
-        SELECT *
-        FROM (
-          SELECT platform,
-                 'candidate' AS source,
-                 login AS subject,
-                 COALESCE(error, status) AS detail,
-                 updated_at AS recorded_at
-          FROM candidate_users
-          WHERE period_start = ?
-            AND status = 'failed'
-          UNION ALL
-          SELECT platform, 'api' AS source, path AS subject, 'HTTP ' || status AS detail, recorded_at
-          FROM api_request_events
-          WHERE recorded_at >= ?
-            AND status >= 400
-        )
-        ORDER BY datetime(recorded_at) DESC, platform ASC, source ASC, subject COLLATE NOCASE ASC
+        SELECT job_kind, stage, unit_kind, platform, ecosystem, subject_label, error, finished_at
+        FROM job_work_events
+        WHERE error IS NOT NULL
+        ORDER BY datetime(finished_at) DESC, id DESC
         LIMIT 30
       SQL
 
-      def initialize(database)
+      def initialize(database, stale_seconds: STALE_SECONDS)
         @database = database
+        @stale_seconds = stale_seconds
       end
 
       def call(now: Time.now.utc)
         run = current_run
-        return { generated_at: now.iso8601, run: nil, platforms: [] } unless run
+        package_run = current_package_run
+        period_start = run&.fetch(:period_start) || package_run&.fetch(:period_start)
 
         {
           generated_at: now.iso8601,
-          run: run.slice(:period_start, :period_end, :status, :started_at, :finished_at, :error),
-          platforms: progress_platforms(run.fetch(:period_start)).map do |platform|
-            platform_progress(run, platform, now)
-          end,
-          progress_points: progress_points(run, now),
-          request_points: request_points(run, now),
-          recent_events: recent_events(run),
-          recent_errors: recent_errors(run)
+          run: run&.slice(:period_start, :period_end, :status, :started_at, :finished_at, :error),
+          package_run: package_run&.slice(:period_start, :ecosystem, :status, :started_at, :finished_at, :error),
+          platforms: [],
+          progress_points: [],
+          request_points: request_points(run || package_run, now),
+          sections: period_start ? sections(period_start, now) : [],
+          recent_events: recent_events,
+          recent_errors: fetch_all(RECENT_ERRORS_SQL)
         }
       end
 
       private
 
-      attr_reader :database
+      attr_reader :database, :stale_seconds
 
       def current_run
         sync_runs_dataset
@@ -86,176 +56,376 @@ module PolishOpenSourceRank
           .first
       end
 
-      def progress_platforms(period_start)
-        discovered = candidate_users_dataset.where(period_start: period_start).select_map(:platform) +
-                     user_monthly_stats_dataset.where(period_start: period_start).select_map(:platform) +
-                     repository_monthly_stats_dataset.where(period_start: period_start).select_map(:platform)
-        PLATFORM_ORDER | discovered
-      end
+      def current_package_run
+        return unless table?(:package_crawl_runs)
 
-      def platform_progress(run, platform, now)
-        checked_candidates = checked_candidates_count(run.fetch(:period_start), platform)
-        accepted_users = accepted_users_count(run.fetch(:period_start), platform)
-        checked_repositories = checked_repositories_count(run.fetch(:period_start), platform)
-        repository_owners = repository_owners_count(run.fetch(:period_start), platform)
-        {
-          platform: platform,
-          run_duration_seconds: run_duration_seconds(run, now),
-          crawled_records_count: checked_candidates + checked_repositories,
-          **platform_counts(run, platform, checked_candidates, accepted_users, checked_repositories, repository_owners),
-          last_checked_user: last_checked_user(run.fetch(:period_start), platform),
-          last_checked_repository: last_checked_repository(run.fetch(:period_start), platform),
-          last_api_request: last_api_request(run, platform)
-        }
-      end
-
-      def platform_counts(run, platform, checked_candidates, accepted_users, checked_repositories, repository_owners)
-        {
-          total_candidates_count: total_candidates_count(run.fetch(:period_start), platform),
-          checked_users_count: checked_candidates,
-          checked_candidates_count: checked_candidates,
-          accepted_users_count: accepted_users,
-          checked_repositories_count: checked_repositories,
-          repository_owners_count: repository_owners,
-          zero_repository_users_count: accepted_users - repository_owners,
-          pending_candidates_count: candidates_count(run.fetch(:period_start), platform, 'pending'),
-          rejected_candidates_count: candidates_count(run.fetch(:period_start), platform, 'rejected'),
-          missing_candidates_count: candidates_count(run.fetch(:period_start), platform, 'missing'),
-          failed_candidates_count: candidates_count(run.fetch(:period_start), platform, 'failed'),
-          current_run_checked_candidates_count: current_run_candidates_count(run, platform),
-          current_run_accepted_users_count: current_run_user_stats_count(run, platform),
-          current_run_repository_owners_count: current_run_repository_owners_count(run, platform),
-          current_run_repositories_count: current_run_repository_stats_count(run, platform)
-        }
-      end
-
-      def run_duration_seconds(run, now)
-        finished_at = run[:finished_at] ? Time.parse(run.fetch(:finished_at)) : now
-        (finished_at - Time.parse(run.fetch(:started_at))).round
-      end
-
-      def checked_candidates_count(period_start, platform)
-        candidate_users_dataset
-          .where(period_start: period_start, platform: platform)
-          .exclude(status: 'pending')
-          .count
-      end
-
-      def total_candidates_count(period_start, platform)
-        candidate_users_dataset.where(period_start: period_start, platform: platform).count
-      end
-
-      def accepted_users_count(period_start, platform)
-        user_monthly_stats_dataset.where(period_start: period_start, platform: platform).count
-      end
-
-      def checked_repositories_count(period_start, platform)
-        repository_monthly_stats_dataset.where(period_start: period_start, platform: platform).count
-      end
-
-      def repository_owners_count(period_start, platform)
-        repository_monthly_stats_dataset
-          .where(period_start: period_start, platform: platform)
-          .distinct
-          .count(:owner_github_id)
-      end
-
-      def candidates_count(period_start, platform, status)
-        candidate_users_dataset.where(period_start: period_start, platform: platform, status: status).count
-      end
-
-      def current_run_candidates_count(run, platform)
-        current_run_window(candidate_users_dataset, run, platform)
-          .exclude(status: 'pending')
-          .count
-      end
-
-      def current_run_user_stats_count(run, platform)
-        current_run_window(user_monthly_stats_dataset, run, platform).count
-      end
-
-      def current_run_repository_stats_count(run, platform)
-        current_run_window(repository_monthly_stats_dataset, run, platform).count
-      end
-
-      def current_run_repository_owners_count(run, platform)
-        current_run_window(repository_monthly_stats_dataset, run, platform)
-          .distinct
-          .count(:owner_github_id)
-      end
-
-      def last_checked_user(period_start, platform)
-        fetch_all(<<~SQL, [period_start, platform]).first
-          SELECT candidate_users.login,
-                 candidate_users.status,
-                 COALESCE(user_monthly_stats.updated_at, candidate_users.updated_at) AS checked_at
-          FROM candidate_users
-          LEFT JOIN user_monthly_stats
-            ON user_monthly_stats.period_start = candidate_users.period_start
-           AND user_monthly_stats.platform = candidate_users.platform
-           AND user_monthly_stats.user_github_id = candidate_users.github_id
-          WHERE candidate_users.period_start = ?
-            AND candidate_users.platform = ?
-            AND candidate_users.status != 'pending'
-          ORDER BY datetime(checked_at) DESC, candidate_users.login COLLATE NOCASE ASC
-          LIMIT 1
-        SQL
-      end
-
-      def last_checked_repository(period_start, platform)
-        fetch_all(<<~SQL, [period_start, platform]).first
-          SELECT repositories.full_name, repository_monthly_stats.owner_login,
-                 repository_monthly_stats.updated_at AS checked_at
-          FROM repository_monthly_stats
-          INNER JOIN repositories
-            ON repositories.platform = repository_monthly_stats.platform
-           AND repositories.github_id = repository_monthly_stats.repository_github_id
-          WHERE repository_monthly_stats.period_start = ? AND repository_monthly_stats.platform = ?
-          ORDER BY datetime(repository_monthly_stats.updated_at) DESC,
-                   repositories.full_name COLLATE NOCASE ASC
-          LIMIT 1
-        SQL
-      end
-
-      def last_api_request(run, platform)
-        api_request_events_dataset
-          .where(platform: platform)
-          .where { recorded_at >= run.fetch(:started_at) }
-          .select(:path, :status, :recorded_at)
-          .order(Sequel.desc(Sequel.function(:datetime, :recorded_at)), Sequel.desc(:id))
+        package_crawl_runs_dataset
+          .select(:period_start, :ecosystem, :status, :started_at, :finished_at, :error)
+          .order(Sequel.desc(Sequel.function(:datetime, :started_at)), Sequel.desc(:id))
           .first
       end
 
-      def progress_points(run, now)
-        rows = fetch_all(<<~SQL, run_window_params(run, now))
-          SELECT platform, minute, SUM(users) AS users, SUM(repositories) AS repositories
-          FROM (
-            SELECT platform, substr(updated_at, 1, 16) || ':00Z' AS minute, COUNT(*) AS users, 0 AS repositories
-            FROM user_monthly_stats
-            WHERE period_start = ? AND updated_at >= ? AND updated_at <= ?
-            GROUP BY platform, minute
-            UNION ALL
-            SELECT platform, substr(updated_at, 1, 16) || ':00Z' AS minute, 0 AS users, COUNT(*) AS repositories
-            FROM repository_monthly_stats
-            WHERE period_start = ? AND updated_at >= ? AND updated_at <= ?
-            GROUP BY platform, minute
-          )
-          GROUP BY platform, minute
-          ORDER BY platform, minute
-        SQL
-        cumulative_points(rows)
+      def sections(period_start, now)
+        monthly_sections(period_start, now) + package_sections(period_start, now)
       end
 
-      def run_window_params(run, now)
-        finished_at = run_finished_at(run, now)
-        [
-          run.fetch(:period_start), run.fetch(:started_at), finished_at,
-          run.fetch(:period_start), run.fetch(:started_at), finished_at
-        ]
+      def monthly_sections(period_start, now)
+        MONTHLY_PLATFORM_ORDER.flat_map do |platform|
+          [
+            user_candidate_section(period_start, platform, now),
+            organization_candidate_section(period_start, platform, now),
+            user_repository_section(period_start, platform, now),
+            organization_repository_section(period_start, platform, now)
+          ]
+        end.compact
+      end
+
+      def user_candidate_section(period_start, platform, now)
+        counts = candidate_counts(:candidate_users, period_start, platform)
+        return if counts.fetch(:total).zero?
+
+        section(
+          label: "monthly users / #{platform}",
+          period_start: period_start,
+          job_kind: 'monthly',
+          stage: 'users',
+          unit_kind: 'user_candidate',
+          platform: platform,
+          total: counts.fetch(:total),
+          done: counts.fetch(:done),
+          pending: counts.fetch(:pending),
+          failed: counts.fetch(:failed),
+          skipped: counts.fetch(:skipped),
+          status_detail: nil,
+          now: now
+        )
+      end
+
+      def organization_candidate_section(period_start, platform, now)
+        counts = candidate_counts(:candidate_organizations, period_start, platform)
+        return if counts.fetch(:total).zero?
+
+        section(
+          label: "monthly organizations / #{platform}",
+          period_start: period_start,
+          job_kind: 'monthly',
+          stage: 'organizations',
+          unit_kind: 'organization_candidate',
+          platform: platform,
+          total: counts.fetch(:total),
+          done: counts.fetch(:done),
+          pending: counts.fetch(:pending),
+          failed: counts.fetch(:failed),
+          skipped: counts.fetch(:skipped),
+          status_detail: nil,
+          now: now
+        )
+      end
+
+      def user_repository_section(period_start, platform, now)
+        total = user_monthly_stats_dataset
+                .where(period_start: period_start, platform: platform)
+                .sum(:public_repo_count).to_i
+        done = repository_monthly_stats_dataset.where(period_start: period_start, platform: platform).count
+        return if total.zero? && done.zero?
+
+        repository_section(
+          label: "user repositories / #{platform}",
+          period_start: period_start,
+          stage: 'user_repository',
+          platform: platform,
+          total: total,
+          done: done,
+          now: now
+        )
+      end
+
+      def organization_repository_section(period_start, platform, now)
+        total = organization_monthly_stats_dataset
+                .where(period_start: period_start, platform: platform)
+                .sum(:public_repo_count).to_i
+        done = organization_repository_monthly_stats_dataset.where(period_start: period_start, platform: platform).count
+        return if total.zero? && done.zero?
+
+        repository_section(
+          label: "organization repositories / #{platform}",
+          period_start: period_start,
+          stage: 'organization_repository',
+          platform: platform,
+          total: total,
+          done: done,
+          now: now
+        )
+      end
+
+      def repository_section(attributes)
+        section(
+          label: attributes.fetch(:label),
+          period_start: attributes.fetch(:period_start),
+          job_kind: 'monthly',
+          stage: attributes.fetch(:stage),
+          unit_kind: 'repository',
+          platform: attributes.fetch(:platform),
+          total: attributes.fetch(:total),
+          done: attributes.fetch(:done),
+          pending: [attributes.fetch(:total) - attributes.fetch(:done), 0].max,
+          failed: 0,
+          skipped: 0,
+          status_detail: nil,
+          now: attributes.fetch(:now)
+        )
+      end
+
+      def package_sections(period_start, now)
+        repository_scan_sections(period_start, now) +
+          manifest_sections(period_start, now) +
+          registry_package_sections(period_start, now) +
+          registry_snapshot_sections(period_start, now)
+      end
+
+      # rubocop:disable Metrics/MethodLength
+      def repository_scan_sections(period_start, now)
+        rows = fetch_all(<<~SQL, [period_start])
+          SELECT repository_kind,
+                 COUNT(*) AS total,
+                 SUM(CASE WHEN status = 'scanned' THEN 1 ELSE 0 END) AS done,
+                 SUM(CASE WHEN status IN ('pending', 'processing') THEN 1 ELSE 0 END) AS pending,
+                 SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed
+          FROM package_repository_scans
+          WHERE period_start = ?
+          GROUP BY repository_kind
+          ORDER BY repository_kind
+        SQL
+        rows.map do |row|
+          section(
+            label: "package repository scans / #{row.fetch(:repository_kind)}",
+            period_start: period_start,
+            job_kind: 'packages',
+            stage: 'repository_scan',
+            unit_kind: 'package_repository_scan',
+            total: row.fetch(:total).to_i,
+            done: row.fetch(:done).to_i,
+            pending: row.fetch(:pending).to_i,
+            failed: row.fetch(:failed).to_i,
+            skipped: 0,
+            status_detail: nil,
+            now: now
+          )
+        end
+      end
+
+      def manifest_sections(period_start, now)
+        rows = fetch_all(<<~SQL, [period_start])
+          SELECT package_manifests.ecosystem,
+                 COUNT(*) AS total,
+                 SUM(CASE WHEN package_manifests.parse_status = 'failed' THEN 0 ELSE 1 END) AS done,
+                 SUM(CASE WHEN package_manifests.parse_status = 'failed' THEN 1 ELSE 0 END) AS failed,
+                 SUM(CASE WHEN package_manifests.parse_status IN ('private', 'unpublished', 'custom_registry')
+                          THEN 1 ELSE 0 END) AS skipped
+          FROM package_manifests
+          INNER JOIN package_repository_scans
+            ON package_repository_scans.id = package_manifests.repository_scan_id
+          WHERE package_repository_scans.period_start = ?
+          GROUP BY package_manifests.ecosystem
+          ORDER BY package_manifests.ecosystem
+        SQL
+        rows.map do |row|
+          section(
+            label: "package manifests / #{row.fetch(:ecosystem)}",
+            period_start: period_start,
+            job_kind: 'packages',
+            stage: 'manifest_parse',
+            unit_kind: 'package_manifest',
+            ecosystem: row.fetch(:ecosystem),
+            total: row.fetch(:total).to_i,
+            done: row.fetch(:done).to_i,
+            pending: 0,
+            failed: row.fetch(:failed).to_i,
+            skipped: row.fetch(:skipped).to_i,
+            status_detail: nil,
+            now: now
+          )
+        end
+      end
+
+      def registry_package_sections(period_start, now)
+        rows = fetch_all(<<~SQL)
+          SELECT ecosystem,
+                 COUNT(*) AS total,
+                 SUM(CASE WHEN status = 'pending' THEN 0 ELSE 1 END) AS done,
+                 SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
+                 SUM(CASE WHEN status IN ('failed', 'rate_limited') THEN 1 ELSE 0 END) AS failed,
+                 SUM(CASE WHEN status = 'not_found' THEN 1 ELSE 0 END) AS skipped
+          FROM registry_packages
+          GROUP BY ecosystem
+          ORDER BY ecosystem
+        SQL
+        rows.map do |row|
+          section(
+            label: "registry packages / #{row.fetch(:ecosystem)}",
+            period_start: period_start,
+            job_kind: 'packages',
+            stage: 'registry_resolve',
+            unit_kind: 'registry_package',
+            ecosystem: row.fetch(:ecosystem),
+            total: row.fetch(:total).to_i,
+            done: row.fetch(:done).to_i,
+            pending: row.fetch(:pending).to_i,
+            failed: row.fetch(:failed).to_i,
+            skipped: row.fetch(:skipped).to_i,
+            status_detail: nil,
+            now: now
+          )
+        end
+      end
+
+      def registry_snapshot_sections(period_start, now)
+        rows = fetch_all(<<~SQL, [period_start])
+          SELECT registry_packages.ecosystem,
+                 COUNT(*) AS total,
+                 COUNT(registry_package_snapshots.normalized_package_name) AS done,
+                 SUM(CASE WHEN registry_packages.status = 'active' THEN 1 ELSE 0 END) AS active,
+                 SUM(CASE WHEN registry_packages.status = 'pending' THEN 1 ELSE 0 END) AS pending,
+                 SUM(CASE WHEN registry_packages.status = 'not_found' THEN 1 ELSE 0 END) AS not_found,
+                 SUM(CASE WHEN registry_packages.status = 'rate_limited' THEN 1 ELSE 0 END) AS rate_limited,
+                 SUM(CASE WHEN registry_packages.status = 'failed' THEN 1 ELSE 0 END) AS failed
+          FROM registry_packages
+          LEFT JOIN registry_package_snapshots
+            ON registry_package_snapshots.ecosystem = registry_packages.ecosystem
+           AND registry_package_snapshots.normalized_package_name = registry_packages.normalized_package_name
+           AND registry_package_snapshots.period_start = ?
+          GROUP BY registry_packages.ecosystem
+          ORDER BY registry_packages.ecosystem
+        SQL
+        rows.map do |row|
+          done = row.fetch(:done).to_i
+          total = row.fetch(:total).to_i
+          section(
+            label: "registry snapshots / #{row.fetch(:ecosystem)}",
+            period_start: period_start,
+            job_kind: 'packages',
+            stage: 'registry_snapshot',
+            unit_kind: 'registry_snapshot',
+            ecosystem: row.fetch(:ecosystem),
+            total: total,
+            done: done,
+            pending: row.fetch(:pending).to_i,
+            failed: row.fetch(:failed).to_i + row.fetch(:rate_limited).to_i,
+            skipped: row.fetch(:not_found).to_i,
+            status_detail: registry_snapshot_detail(row),
+            now: now
+          )
+        end
+      end
+      # rubocop:enable Metrics/MethodLength
+
+      def section(attributes)
+        event_stats = work_event_stats(attributes)
+        pending = attributes.fetch(:pending)
+        average_ms = event_stats.fetch(:average_ms)
+        p95_ms = event_stats.fetch(:p95_ms)
+        {
+          **attributes.except(:now, :period_start),
+          throughput_per_minute: event_stats.fetch(:throughput_per_minute),
+          average_ms: average_ms,
+          median_ms: event_stats.fetch(:median_ms),
+          p95_ms: p95_ms,
+          eta_average_seconds: eta_seconds(pending, average_ms),
+          eta_p95_seconds: eta_seconds(pending, p95_ms),
+          last_finished_at: event_stats.fetch(:last_finished_at),
+          state: section_state(attributes, event_stats),
+          stale: stale?(event_stats.fetch(:last_finished_at), attributes.fetch(:now))
+        }
+      end
+
+      def work_event_stats(attributes)
+        events = work_events_for(attributes)
+        durations = events.map { |event| event.fetch(:duration_ms).to_i }.sort
+        {
+          throughput_per_minute: throughput_per_minute(events),
+          average_ms: average(durations),
+          median_ms: percentile(durations, 0.50),
+          p95_ms: percentile(durations, 0.95),
+          last_finished_at: events.map { |event| event.fetch(:finished_at) }.max
+        }
+      end
+
+      def work_events_for(attributes)
+        dataset = job_work_events_dataset.where(
+          period_start: attributes.fetch(:period_start),
+          job_kind: attributes.fetch(:job_kind),
+          stage: attributes.fetch(:stage),
+          unit_kind: attributes.fetch(:unit_kind)
+        )
+        dataset = dataset.where(platform: attributes[:platform]) if attributes[:platform]
+        dataset = dataset.where(ecosystem: attributes[:ecosystem]) if attributes[:ecosystem]
+        dataset.select(:duration_ms, :finished_at).order(:finished_at).all
+      end
+
+      def throughput_per_minute(events)
+        return 0.0 if events.length < 2
+
+        started = Time.parse(events.first.fetch(:finished_at))
+        finished = Time.parse(events.last.fetch(:finished_at))
+        minutes = [(finished - started) / 60.0, 1.0 / 60.0].max
+        (events.length / minutes).round(2)
+      end
+
+      def average(values)
+        return nil if values.empty?
+
+        (values.sum.to_f / values.length).round
+      end
+
+      def percentile(values, percentile)
+        return nil if values.empty?
+
+        values[[(values.length * percentile).ceil - 1, 0].max]
+      end
+
+      def eta_seconds(pending, duration_ms)
+        return nil unless duration_ms&.positive?
+
+        ((pending.to_i * duration_ms) / 1000.0).round
+      end
+
+      def stale?(last_finished_at, now)
+        return false unless last_finished_at
+
+        (now - Time.parse(last_finished_at)) > stale_seconds
+      end
+
+      def section_state(attributes, event_stats)
+        return 'pending' if attributes.fetch(:pending).positive? && !event_stats.fetch(:last_finished_at)
+        return 'running' if attributes.fetch(:pending).positive?
+        return 'failed' if attributes.fetch(:failed).positive?
+
+        'complete'
+      end
+
+      def registry_snapshot_detail(row)
+        {
+          active: row.fetch(:active),
+          pending: row.fetch(:pending),
+          not_found: row.fetch(:not_found),
+          rate_limited: row.fetch(:rate_limited),
+          failed: row.fetch(:failed)
+        }.map { |status, count| "#{status}=#{count.to_i}" }.join(', ')
+      end
+
+      def candidate_counts(table, period_start, platform)
+        rows = database.dataset(table).where(period_start: period_start, platform: platform)
+        total = rows.count
+        pending = rows.where(status: 'pending').count
+        failed = rows.where(status: 'failed').count
+        skipped = rows.where(status: %w[rejected missing]).count
+        { total: total, done: total - pending, pending: pending, failed: failed, skipped: skipped }
       end
 
       def request_points(run, now)
-        finished_at = run_finished_at(run, now)
+        return [] unless run
+
+        finished_at = run[:finished_at] || now.iso8601
         fetch_all(<<~SQL, [run.fetch(:started_at), finished_at])
           SELECT platform, substr(recorded_at, 1, 16) || ':00Z' AS minute,
                  COUNT(*) AS requests_count,
@@ -267,63 +437,55 @@ module PolishOpenSourceRank
         SQL
       end
 
-      def recent_events(run)
-        params = [run.fetch(:period_start), run.fetch(:period_start), run.fetch(:started_at), run.fetch(:started_at)]
-        fetch_all(RECENT_EVENTS_SQL, params)
-      end
-
-      def recent_errors(run)
-        fetch_all(RECENT_ERRORS_SQL, [run.fetch(:period_start), run.fetch(:started_at)])
-      end
-
-      def run_finished_at(run, now = Time.now.utc)
-        run[:finished_at] || now.iso8601
-      end
-
-      def current_run_window(dataset, run, platform)
-        dataset
-          .where(period_start: run.fetch(:period_start), platform: platform)
-          .where(updated_at: run.fetch(:started_at)..run_finished_at(run))
-      end
-
-      def cumulative_points(rows)
-        totals = Hash.new { |hash, platform| hash[platform] = { users: 0, repositories: 0 } }
-        rows.map do |row|
-          total = totals[row.fetch(:platform)]
-          total[:users] += row.fetch(:users).to_i
-          total[:repositories] += row.fetch(:repositories).to_i
-          {
-            platform: row.fetch(:platform),
-            minute: row.fetch(:minute),
-            checked_users_count: total.fetch(:users),
-            checked_repositories_count: total.fetch(:repositories)
-          }
-        end
+      def recent_events
+        fetch_all(<<~SQL)
+          SELECT job_kind AS platform, stage AS source, subject_label AS subject,
+                 status AS detail, finished_at AS recorded_at
+          FROM job_work_events
+          ORDER BY datetime(finished_at) DESC, id DESC
+          LIMIT 30
+        SQL
       end
 
       def fetch_all(sql, params = [])
         database.fetch_all(sql, params)
       end
 
+      def table?(name)
+        database.fetch_value(
+          "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+          [name.to_s]
+        ) == 1
+      end
+
       def sync_runs_dataset
         database.dataset(:sync_runs)
       end
 
-      def candidate_users_dataset
-        database.dataset(:candidate_users)
+      def package_crawl_runs_dataset
+        database.dataset(:package_crawl_runs)
       end
 
       def user_monthly_stats_dataset
         database.dataset(:user_monthly_stats)
       end
 
+      def organization_monthly_stats_dataset
+        database.dataset(:organization_monthly_stats)
+      end
+
       def repository_monthly_stats_dataset
         database.dataset(:repository_monthly_stats)
       end
 
-      def api_request_events_dataset
-        database.dataset(:api_request_events)
+      def organization_repository_monthly_stats_dataset
+        database.dataset(:organization_repository_monthly_stats)
+      end
+
+      def job_work_events_dataset
+        database.dataset(:job_work_events)
       end
     end
+    # rubocop:enable Metrics/ClassLength
   end
 end

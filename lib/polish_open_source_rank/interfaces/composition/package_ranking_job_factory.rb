@@ -55,7 +55,8 @@ module PolishOpenSourceRank
             repository_queue: package_repository_queue,
             manifest_scanner: manifest_scanner,
             registry_packages: registry_package_repository,
-            registry_clients: registry_clients
+            registry_clients: registry_clients,
+            work_events: job_work_events
           )
         end
 
@@ -63,7 +64,8 @@ module PolishOpenSourceRank
           Contexts::Packages::Application::ScanRepositoryManifests.new(
             repository_queue: package_repository_queue,
             tree_gateway: package_tree_gateway,
-            manifest_repository: package_manifest_repository
+            manifest_repository: package_manifest_repository,
+            work_events: job_work_events
           )
         end
 
@@ -114,16 +116,26 @@ module PolishOpenSourceRank
 
         def package_manifest_repository
           @package_manifest_repository ||=
-            Contexts::Packages::Infrastructure::SQLite::SQLitePackageManifestRepository.new(database)
+            Contexts::Packages::Infrastructure::SQLite::SQLitePackageManifestRepository.new(
+              database,
+              work_events: job_work_events
+            )
         end
 
         def registry_package_repository
           @registry_package_repository ||=
-            Contexts::Packages::Infrastructure::SQLite::SQLiteRegistryPackageRepository.new(database)
+            Contexts::Packages::Infrastructure::SQLite::SQLiteRegistryPackageRepository.new(
+              database,
+              work_events: job_work_events
+            )
         end
 
         def crawl_job_repository
           @crawl_job_repository ||= Contexts::Operations::Infrastructure::SQLite::SQLiteCrawlJobRepository.new(database)
+        end
+
+        def job_work_events
+          @job_work_events ||= Contexts::Operations::Infrastructure::SQLite::SQLiteJobWorkEventRepository.new(database)
         end
       end
     end

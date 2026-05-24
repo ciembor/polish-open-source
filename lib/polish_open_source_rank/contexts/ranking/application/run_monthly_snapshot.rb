@@ -8,15 +8,19 @@ module PolishOpenSourceRank
         class RunMonthlySnapshot
           BATCH_SIZE = 50
 
+          # rubocop:disable Metrics/ParameterLists
           def initialize(store:, github: nil, sources: nil, classifier: Domain::LocationClassifier.new,
-                         catalog: Domain::LocationCatalog, logger: $stdout)
+                         catalog: Domain::LocationCatalog, logger: $stdout,
+                         work_events: Operations::Application::JobWorkEventRecorder.new)
             @store = store
             @sources = sources || [github]
             @classifier = classifier
             @catalog = catalog
             @logger = logger
             @store_mutex = Mutex.new
+            @work_events = work_events
           end
+          # rubocop:enable Metrics/ParameterLists
 
           def call(period, refresh: false, scope: nil)
             @scope = scope
@@ -34,7 +38,7 @@ module PolishOpenSourceRank
 
           private
 
-          attr_reader :catalog, :classifier, :logger, :sources, :store, :store_mutex
+          attr_reader :catalog, :classifier, :logger, :sources, :store, :store_mutex, :work_events
 
           def discover_source_candidates(period, source)
             catalog.search_terms.each do |term|
@@ -80,7 +84,19 @@ module PolishOpenSourceRank
               break if candidates.empty?
 
               log(source, "processing #{candidates.length} candidates")
-              candidates.each { |candidate| process_candidate(period, source, candidate, refresh: refresh) }
+              candidates.each do |candidate|
+                record_work_event(
+                  period,
+                  job_kind: 'monthly',
+                  stage: 'users',
+                  unit_kind: 'user_candidate',
+                  platform: source.platform,
+                  subject_id: candidate.fetch(:source_id),
+                  subject_label: candidate.fetch(:login)
+                ) do
+                  process_candidate(period, source, candidate, refresh: refresh)
+                end
+              end
             end
             log(source, 'candidate processing finished')
           end
@@ -89,71 +105,95 @@ module PolishOpenSourceRank
             return unless source.supports_organizations?
 
             loop do
-              candidates = with_store do
-                store.pending_organization_candidates(period, platform: source.platform, limit: BATCH_SIZE)
-              end
+              candidates = pending_organization_candidates(period, source)
               break if candidates.empty?
 
               log(source, "processing #{candidates.length} organizations")
               candidates.each do |candidate|
-                process_organization_candidate(period, source, candidate, refresh: refresh)
+                record_work_event(
+                  period,
+                  job_kind: 'monthly',
+                  stage: 'organizations',
+                  unit_kind: 'organization_candidate',
+                  platform: source.platform,
+                  subject_id: candidate.fetch(:source_id),
+                  subject_label: candidate.fetch(:login)
+                ) do
+                  process_organization_candidate(period, source, candidate, refresh: refresh)
+                end
               end
             end
             log(source, 'organization processing finished')
+          end
+
+          def pending_organization_candidates(period, source)
+            with_store do
+              store.pending_organization_candidates(period, platform: source.platform, limit: BATCH_SIZE)
+            end
           end
 
           def process_candidate(period, source, candidate, refresh:)
             platform = candidate.fetch(:platform)
             login = candidate.fetch(:login)
             if !refresh && with_store { store.processed_user?(period, platform, candidate.fetch(:source_id)) }
-              return with_store { store.mark_candidate(period, platform, login, 'processed') }
+              with_store { store.mark_candidate(period, platform, login, 'processed') }
+              return 'processed'
             end
 
             process_unseen_candidate(period, source, login, candidate.fetch(:source_id))
           rescue SourceNotFound
             with_store { store.mark_candidate(period, platform, login, 'missing') }
+            'missing'
           rescue StandardError => e
             with_store { store.mark_candidate(period, platform, login, 'failed', "#{e.class}: #{e.message}") }
             log(source, "candidate #{login.inspect} failed: #{e.class}: #{e.message}")
+            'failed'
           end
 
           def process_unseen_candidate(period, source, login, source_id)
             profile = source.user(login, source_id)
             location = classifier.call(profile[:location])
             unless location.polish?
-              return with_store { store.mark_candidate(period, source.platform, login, 'rejected') }
+              with_store { store.mark_candidate(period, source.platform, login, 'rejected') }
+              return 'rejected'
             end
 
             persist_profile(period, source, profile, location)
             with_store { store.mark_candidate(period, source.platform, login, 'processed') }
+            'processed'
           end
 
           def process_organization_candidate(period, source, candidate, refresh:)
             platform = candidate.fetch(:platform)
             login = candidate.fetch(:login)
             if !refresh && with_store { store.processed_organization?(period, platform, candidate.fetch(:source_id)) }
-              return with_store { store.mark_organization_candidate(period, platform, login, 'processed') }
+              with_store { store.mark_organization_candidate(period, platform, login, 'processed') }
+              return 'processed'
             end
 
             process_unseen_organization_candidate(period, source, login, candidate.fetch(:source_id))
           rescue SourceNotFound
             with_store { store.mark_organization_candidate(period, platform, login, 'missing') }
+            'missing'
           rescue StandardError => e
             with_store do
               store.mark_organization_candidate(period, platform, login, 'failed', "#{e.class}: #{e.message}")
             end
             log(source, "organization #{login.inspect} failed: #{e.class}: #{e.message}")
+            'failed'
           end
 
           def process_unseen_organization_candidate(period, source, login, source_id)
             profile = source.organization(login, source_id)
             location = classifier.call(profile[:location])
             unless location.polish?
-              return with_store { store.mark_organization_candidate(period, source.platform, login, 'rejected') }
+              with_store { store.mark_organization_candidate(period, source.platform, login, 'rejected') }
+              return 'rejected'
             end
 
             persist_organization_profile(period, source, profile, location)
             with_store { store.mark_organization_candidate(period, source.platform, login, 'processed') }
+            'processed'
           end
 
           def persist_profile(period, source, profile, location)
@@ -197,8 +237,51 @@ module PolishOpenSourceRank
           end
 
           def persist_repositories(period, source, profile, location)
-            metrics = Domain::RepositoryMetrics.empty
-            each_repository_for(source, profile) do |repository|
+            record_work_event(
+              period,
+              job_kind: 'monthly',
+              stage: 'user_repositories',
+              unit_kind: 'user_repository_collection',
+              platform: source.platform,
+              subject_id: profile.fetch(:source_id),
+              subject_label: profile.fetch(:login)
+            ) do
+              metrics = Domain::RepositoryMetrics.empty
+              each_repository_for(source, profile) do |repository|
+                persist_repository(period, source, profile, location, repository, metrics)
+              end
+              metrics
+            end
+          end
+
+          def persist_organization_repositories(period, source, profile, location)
+            record_work_event(
+              period,
+              job_kind: 'monthly',
+              stage: 'organization_repositories',
+              unit_kind: 'organization_repository_collection',
+              platform: source.platform,
+              subject_id: profile.fetch(:source_id),
+              subject_label: profile.fetch(:login)
+            ) do
+              metrics = Domain::RepositoryMetrics.empty
+              each_organization_repository_for(source, profile) do |repository|
+                persist_organization_repository(period, source, profile, location, repository, metrics)
+              end
+              metrics
+            end
+          end
+
+          def persist_repository(period, source, profile, location, repository, metrics)
+            record_work_event(
+              period,
+              job_kind: 'monthly',
+              stage: 'user_repository',
+              unit_kind: 'repository',
+              platform: source.platform,
+              subject_id: repository.fetch(:source_id),
+              subject_label: repository.fetch(:full_name)
+            ) do
               monthly_stars_delta = repository_delta(source, repository, period)
               metrics.add(repository, monthly_stars_delta)
               with_store do
@@ -206,13 +289,20 @@ module PolishOpenSourceRank
                   repository_snapshot(period, source, profile, location, repository, monthly_stars_delta)
                 )
               end
+              'stored'
             end
-            metrics
           end
 
-          def persist_organization_repositories(period, source, profile, location)
-            metrics = Domain::RepositoryMetrics.empty
-            each_organization_repository_for(source, profile) do |repository|
+          def persist_organization_repository(period, source, profile, location, repository, metrics)
+            record_work_event(
+              period,
+              job_kind: 'monthly',
+              stage: 'organization_repository',
+              unit_kind: 'repository',
+              platform: source.platform,
+              subject_id: repository.fetch(:source_id),
+              subject_label: repository.fetch(:full_name)
+            ) do
               monthly_stars_delta = organization_repository_delta(source, repository, period)
               metrics.add(repository, monthly_stars_delta)
               with_store do
@@ -220,8 +310,8 @@ module PolishOpenSourceRank
                   organization_repository_snapshot(period, source, profile, location, repository, monthly_stars_delta)
                 )
               end
+              'stored'
             end
-            metrics
           end
 
           def contributor_snapshot(period, source, profile, location, repository_metrics)
@@ -425,6 +515,13 @@ module PolishOpenSourceRank
           def log(source, message)
             logger.puts "[#{source.platform}] #{message}"
             logger.flush if logger.respond_to?(:flush)
+          end
+
+          def record_work_event(period, attributes, &)
+            work_events.record_timed(
+              period_start: period.start_date.to_s,
+              **attributes, &
+            )
           end
         end
         # rubocop:enable Metrics/ClassLength

@@ -17,16 +17,21 @@ module PolishOpenSourceRank
               'go' => 'https://pkg.go.dev/%s'
             }.freeze
 
-            def initialize(database, clock: -> { Time.now.utc })
+            def initialize(database, clock: -> { Time.now.utc },
+                           work_events: Operations::Application::JobWorkEventRecorder.new)
               @database = database
               @clock = clock
+              @work_events = work_events
             end
 
             def resolve_from_manifests(period, ecosystem: nil, limit: 100)
               database.transaction do
                 fetchable_manifests(period, ecosystem: ecosystem, limit: limit).each do |manifest|
-                  upsert_pending_package(manifest)
-                  link_manifest(manifest)
+                  record_resolve_event(period, manifest) do
+                    upsert_pending_package(manifest)
+                    link_manifest(manifest)
+                    'resolved'
+                  end
                 end
               end
             end
@@ -58,7 +63,7 @@ module PolishOpenSourceRank
 
             private
 
-            attr_reader :clock, :database
+            attr_reader :clock, :database, :work_events
 
             def fetchable_manifests(period, ecosystem:, limit:)
               dataset = package_manifests
@@ -218,6 +223,19 @@ module PolishOpenSourceRank
 
             def timestamp
               clock.call.iso8601
+            end
+
+            def record_resolve_event(period, manifest, &)
+              work_events.record_timed(
+                period_start: period_start(period),
+                job_kind: 'packages',
+                stage: 'registry_resolve',
+                unit_kind: 'registry_package',
+                platform: nil,
+                ecosystem: manifest.fetch(:ecosystem),
+                subject_id: manifest.fetch(:normalized_package_name),
+                subject_label: manifest.fetch(:package_name), &
+              )
             end
           end
         end

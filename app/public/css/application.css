@@ -1229,6 +1229,58 @@ h3 {
   font-weight: 900;
 }
 
+.monitor-table-wrap {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.monitor-table {
+  background: var(--surface);
+  border-collapse: collapse;
+  font-size: 0.84rem;
+  min-width: 1120px;
+  width: 100%;
+}
+
+.monitor-table th,
+.monitor-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 9px 10px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.monitor-table th:first-child,
+.monitor-table td:first-child,
+.monitor-table td:nth-child(2) {
+  text-align: left;
+}
+
+.monitor-table thead th {
+  background: #f7f6ef;
+  color: var(--muted);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+}
+
+.monitor-table tbody th {
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.monitor-table tr.is-stale {
+  background: #fff8ee;
+}
+
+.monitor-warning {
+  color: #a34000;
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
 .monitor-metric-groups {
   display: grid;
   gap: 16px;
