@@ -134,7 +134,8 @@ RSpec.describe PolishOpenSourceRank::Configuration do
       pypi: 20,
       hex: 20,
       packagist: 20,
-      go: 20
+      go: 20,
+      homebrew: 20
     )
   end
 

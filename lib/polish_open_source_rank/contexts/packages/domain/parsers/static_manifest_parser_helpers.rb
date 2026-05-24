@@ -44,6 +44,11 @@ module PolishOpenSourceRank
               match && match[1]
             end
 
+            def ruby_string_call(content, method_name)
+              match = content.match(/^\s*#{Regexp.escape(method_name)}\s+["']([^"']+)["']/)
+              match && match[1]
+            end
+
             def python_setup_name(content)
               match = content.match(/setup\s*\(.*?\bname\s*=\s*["']([^"']+)["']/m)
               match && match[1]

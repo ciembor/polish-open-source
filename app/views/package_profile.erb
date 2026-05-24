@@ -39,7 +39,7 @@
       <dl class="definition-list">
         <% %i[downloads_30d downloads_total dependents_count dependent_repositories_count].each do |metric| %>
           <div>
-            <dt><%= h package_metric_label(metric) %></dt>
+            <dt><%= h package_metric_label(metric, ecosystem: @package_profile.fetch(:ecosystem)) %></dt>
             <dd><%= @package_profile[metric].nil? ? h(t('packages.metric.unavailable')) : h(number(@package_profile[metric])) %></dd>
           </div>
         <% end %>

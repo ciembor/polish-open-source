@@ -178,6 +178,33 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
     expect(go.snapshot.to_h).to include(latest_release_at: '2026-05-01T00:00:00Z', downloads_total: nil)
   end
 
+  it 'maps Homebrew formula metadata and install analytics without download labels' do
+    stub_http(response('200', homebrew_body))
+
+    result = client(:HomebrewRegistryClient).fetch('polish-tool')
+
+    expect(result).to be_ok
+    expect(result.package.to_h).to include(
+      ecosystem: 'homebrew',
+      package_name: 'polish-tool',
+      registry_url: 'https://formulae.brew.sh/formula/polish-tool',
+      repository_url: 'https://github.com/acme/polish-tool/archive/v1.0.0.tar.gz',
+      homepage_url: 'https://example.com/polish-tool',
+      license: 'MIT',
+      latest_version: '1.0.0'
+    )
+    expect(result.snapshot.to_h).to include(
+      downloads_30d: 42,
+      downloads_total: nil,
+      metadata: {
+        metric_source: 'homebrew_formula_install_analytics',
+        installs_90d: 120,
+        installs_365d: 365,
+        generated_date: '2026-05-24'
+      }
+    )
+  end
+
   def client(class_name, requests_per_minute: 10_000, execution: {})
     described_class.const_get(class_name).new(
       requests_per_minute: requests_per_minute,
@@ -299,5 +326,23 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
 
   def go_body
     { Version: 'v1.2.3', Time: '2026-05-01T00:00:00Z' }
+  end
+
+  def homebrew_body
+    {
+      name: 'polish-tool',
+      homepage: 'https://example.com/polish-tool',
+      license: 'MIT',
+      versions: { stable: '1.0.0' },
+      urls: { stable: { url: 'https://github.com/acme/polish-tool/archive/v1.0.0.tar.gz' } },
+      analytics: {
+        install: {
+          '30d' => { 'polish-tool' => 40, 'polish-tool --HEAD' => 2 },
+          '90d' => { 'polish-tool' => 120 },
+          '365d' => { 'polish-tool' => 365 }
+        }
+      },
+      generated_date: '2026-05-24'
+    }
   end
 end

@@ -90,7 +90,8 @@ module PolishOpenSourceRank
             'pypi' => registry_client(registries::PyPIRegistryClient, :pypi),
             'hex' => registry_client(registries::HexRegistryClient, :hex),
             'packagist' => registry_client(registries::PackagistRegistryClient, :packagist),
-            'go' => registry_client(registries::GoRegistryClient, :go)
+            'go' => registry_client(registries::GoRegistryClient, :go),
+            'homebrew' => registry_client(registries::HomebrewRegistryClient, :homebrew)
           }
         end
 

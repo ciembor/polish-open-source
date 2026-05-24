@@ -38,8 +38,16 @@ module PolishOpenSourceRank
           nil
         end
 
-        def package_metric_label(metric)
+        def package_metric_label(metric, ecosystem: nil)
+          return t('packages.metric.installs.30d') if ecosystem == 'homebrew' && metric.to_s == 'downloads_30d'
+
           t("packages.metric.#{metric.to_s.tr('_', '.')}")
+        end
+
+        def package_ranking_title(metric_slug, ecosystem:)
+          return t('packages.ranking_title.installs') if ecosystem == 'homebrew' && metric_slug.to_s == 'top'
+
+          t("packages.ranking_title.#{metric_slug}", ecosystem: ecosystem)
         end
       end
     end

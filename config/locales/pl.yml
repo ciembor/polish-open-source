@@ -179,6 +179,8 @@ pl:
       downloads:
         30d: "Pobrania 30 dni"
         total: "Pobrania łącznie"
+      installs:
+        30d: "Instalacje 30 dni"
       unavailable: "n/a"
     profile:
       lede: "Publiczny profil pakietu z metrykami rejestru i powiązanymi repozytoriami."
@@ -205,6 +207,7 @@ pl:
     ranking_title:
       dependents: "Top 100 według zależnych pakietów"
       downloads: "Top 100 według pobrań łącznie"
+      installs: "Top 100 według instalacji z 30 dni"
       top: "Top 100 według pobrań z 30 dni"
   repositories:
     badge:

@@ -14,7 +14,8 @@ module PolishOpenSourceRank
               'pypi' => 'https://pypi.org/project/%s/',
               'hex' => 'https://hex.pm/packages/%s',
               'packagist' => 'https://packagist.org/packages/%s',
-              'go' => 'https://pkg.go.dev/%s'
+              'go' => 'https://pkg.go.dev/%s',
+              'homebrew' => 'https://formulae.brew.sh/formula/%s'
             }.freeze
 
             def initialize(database, clock: -> { Time.now.utc },
