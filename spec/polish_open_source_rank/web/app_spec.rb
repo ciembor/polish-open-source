@@ -849,6 +849,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       top: request.get('/latest/packages/npm/top'),
       downloads: request.get('/2026-04/packages/npm/downloads'),
       dependents: request.get('/latest/packages/npm/dependents'),
+      homebrew: request.get('/latest/packages/homebrew'),
+      homebrew_top: request.get('/latest/packages/homebrew/top'),
       profile: request.get("/packages/npm/names/#{encoded_name}"),
       missing_profile: request.get('/packages/npm/names/not-base64!')
     }
@@ -869,6 +871,11 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   end
 
   def expect_package_detail_pages(responses)
+    expect_npm_package_detail_pages(responses)
+    expect_homebrew_package_pages(responses)
+  end
+
+  def expect_npm_package_detail_pages(responses)
     expect(responses.fetch(:ecosystem).status).to eq(200)
     expect(responses.fetch(:shortcut).status).to eq(200)
     expect(responses.fetch(:period_ecosystem).status).to eq(200)
@@ -877,11 +884,18 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(responses.fetch(:dependents).status).to eq(404)
   end
 
+  def expect_homebrew_package_pages(responses)
+    expect(responses.fetch(:homebrew).body).to include('polish-tool')
+    expect(responses.fetch(:homebrew_top).body).to include('Top 100 według instalacji z 30 dni')
+    expect(responses.fetch(:homebrew_top).body).to include('Instalacje 30 dni')
+  end
+
   def expect_package_index_page(response)
     expect(response.status).to eq(200)
     expect(response.body).to include('<title>Pakiety open source - Polish Open Source</title>')
     expect(response.body).to include('rel="canonical" href="https://rank.example/packages"')
     expect(response.body).to include('href="/latest/packages/npm"')
+    expect(response.body).to include('href="/latest/packages/homebrew"')
     expect(response.body).to include('"@type": "Dataset"')
   end
 
@@ -1091,10 +1105,13 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   def seed_package_records(database, period)
     seed_package(database, period, '@scope/tool', downloads_30d: 1_000)
     seed_package(database, period, 'rack', downloads_total: 50_000, dependents_count: 23)
+    seed_package(database, period, 'polish-tool', ecosystem: 'homebrew', downloads_30d: 250)
     link_package_repository(database, period, '@scope/tool')
   end
 
-  def seed_package(database, period, name, downloads_30d: nil, downloads_total: nil, dependents_count: nil)
+  def seed_package(database, period, name, attributes = {})
+    attributes = { ecosystem: 'npm' }.merge(attributes)
+    ecosystem = attributes.fetch(:ecosystem)
     normalized_name = name.downcase
     database.execute(
       <<~SQL,
@@ -1102,31 +1119,45 @@ RSpec.describe PolishOpenSourceRank::Web::App do
           ecosystem, package_name, normalized_package_name, registry_url, repository_url, homepage_url,
           license, latest_version, status, updated_at
         )
-        VALUES ('npm', ?, ?, ?, ?, ?, 'MIT', '1.0.0', 'active', '2026-05-23T12:00:00Z')
+        VALUES (?, ?, ?, ?, ?, ?, 'MIT', '1.0.0', 'active', '2026-05-23T12:00:00Z')
         ON CONFLICT(ecosystem, normalized_package_name) DO UPDATE SET updated_at = excluded.updated_at
       SQL
       [
+        ecosystem,
         name,
         normalized_name,
-        "https://www.npmjs.com/package/#{name}",
+        package_registry_url(ecosystem, name),
         "https://github.com/#{name.delete_prefix('@')}",
         "https://example.com/#{normalized_name}"
       ]
     )
-    seed_package_snapshot(database, period, normalized_name, downloads_30d, downloads_total, dependents_count)
+    seed_package_snapshot(database, period, attributes.merge(normalized_name: normalized_name))
   end
 
-  def seed_package_snapshot(database, period, normalized_name, downloads_30d, downloads_total, dependents_count)
+  def seed_package_snapshot(database, period, attributes)
     database.execute(
       <<~SQL,
         INSERT INTO registry_package_snapshots(
           ecosystem, normalized_package_name, period_start, downloads_total, downloads_30d, downloads_7d,
           dependents_count, dependent_repositories_count, latest_version, latest_release_at, observed_at
         )
-        VALUES ('npm', ?, ?, ?, ?, NULL, ?, 1, '1.0.0', '2026-05-01T00:00:00Z', '2026-05-23T12:00:00Z')
+        VALUES (?, ?, ?, ?, ?, NULL, ?, 1, '1.0.0', '2026-05-01T00:00:00Z', '2026-05-23T12:00:00Z')
       SQL
-      [normalized_name, period.start_date.to_s, downloads_total, downloads_30d, dependents_count]
+      [
+        attributes.fetch(:ecosystem),
+        attributes.fetch(:normalized_name),
+        period.start_date.to_s,
+        attributes[:downloads_total],
+        attributes[:downloads_30d],
+        attributes[:dependents_count]
+      ]
     )
+  end
+
+  def package_registry_url(ecosystem, name)
+    return "https://formulae.brew.sh/formula/#{name}" if ecosystem == 'homebrew'
+
+    "https://www.npmjs.com/package/#{name}"
   end
 
   def link_package_repository(database, period, package_name)

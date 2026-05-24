@@ -28,12 +28,19 @@ module PolishOpenSourceRank
           end
 
           def ecosystem_for(path)
+            return 'homebrew' if homebrew_formula?(path)
+
             file_name = path.split('/').last
             FILES.each { |ecosystem, names| return ecosystem if names.include?(file_name) }
             EXTENSIONS.each do |ecosystem, extensions|
               return ecosystem if extensions.any? { |ext| file_name.end_with?(ext) }
             end
             nil
+          end
+
+          def homebrew_formula?(path)
+            segments = path.split('/')
+            segments.include?('Formula') && segments.last.to_s.end_with?('.rb')
           end
 
           def ignored_directory?(segments, directory)

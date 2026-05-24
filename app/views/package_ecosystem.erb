@@ -19,7 +19,7 @@
       <% PolishOpenSourceRank::Contexts::Packages::Domain::PackageRankingMetric.all(ecosystem: @package_ecosystem).each do |package_metric| %>
         <% slug = package_metric.slug %>
         <% metric = package_metric.key.to_sym %>
-        <%= erb :package_ranking_table, locals: { heading_id: "package-ranking-#{slug}", title: t("packages.ranking_title.#{slug}"), rows: @package_rankings.fetch(metric, []), metric: metric, metric_label: package_metric_label(metric), top_path: package_ranking_path(@package_ecosystem, slug) } %>
+        <%= erb :package_ranking_table, locals: { heading_id: "package-ranking-#{slug}", title: package_ranking_title(slug, ecosystem: @package_ecosystem), rows: @package_rankings.fetch(metric, []), metric: metric, metric_label: package_metric_label(metric, ecosystem: @package_ecosystem), top_path: package_ranking_path(@package_ecosystem, slug) } %>
       <% end %>
     </div>
   </div>

@@ -26,6 +26,7 @@ module PolishOpenSourceRank
 
           def parser_for(path, ecosystem)
             return Parsers::RubyGemsGemspecParser.new if ecosystem == 'rubygems'
+            return Parsers::HomebrewFormulaParser.new if ecosystem == 'homebrew'
 
             PARSERS.fetch(File.basename(path)).new
           end

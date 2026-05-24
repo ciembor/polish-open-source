@@ -179,6 +179,8 @@ en:
       downloads:
         30d: "30-day downloads"
         total: "Total downloads"
+      installs:
+        30d: "30-day installs"
       unavailable: "n/a"
     profile:
       lede: "Public package profile with registry metrics and linked repositories."
@@ -205,6 +207,7 @@ en:
     ranking_title:
       dependents: "Top 100 by dependent packages"
       downloads: "Top 100 by total downloads"
+      installs: "Top 100 by 30-day installs"
       top: "Top 100 by 30-day downloads"
   repositories:
     badge:

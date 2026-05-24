@@ -27,22 +27,29 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     seed_package(ecosystem: 'packagist', name: 'vendor/zeta', downloads_30d: 50, downloads_total: 400)
     seed_package(ecosystem: 'packagist', name: 'vendor/alpha', downloads_30d: 60, downloads_total: 300)
     seed_package(ecosystem: 'packagist', name: 'vendor/nil-downloads', downloads_30d: nil, downloads_total: 1)
+    seed_package(ecosystem: 'homebrew', name: 'brew-zeta', downloads_30d: 70)
+    seed_package(ecosystem: 'homebrew', name: 'brew-alpha', downloads_30d: 70)
 
     expect(package_names('npm', :downloads_30d)).to eq(%w[alpha zeta])
     expect(package_names('rubygems', :downloads_total)).to eq(%w[ruby-zeta ruby-alpha])
     expect(package_names('rubygems', :dependents_count)).to eq(%w[ruby-alpha ruby-zeta])
     expect(package_names('packagist', :downloads_30d)).to eq(%w[vendor/alpha vendor/zeta])
     expect(package_names('packagist', :downloads_total)).to eq(%w[vendor/zeta vendor/alpha vendor/nil-downloads])
+    expect(package_names('homebrew', :downloads_30d)).to eq(%w[brew-alpha brew-zeta])
   end
 
   it 'returns ranking metrics supported by the ecosystem' do
     seed_package(ecosystem: 'packagist', name: 'vendor/alpha', downloads_30d: 50, downloads_total: 100)
+    seed_package(ecosystem: 'homebrew', name: 'polish-tool', downloads_30d: 25)
 
     rankings = read_model.rankings(ecosystem: 'packagist', period_start: period)
+    homebrew_rankings = read_model.rankings(ecosystem: 'homebrew', period_start: period)
 
     expect(rankings.keys).to eq(%i[downloads_30d downloads_total])
     expect(rankings.fetch(:downloads_30d).first).to include(package_name: 'vendor/alpha')
     expect(rankings.fetch(:downloads_total).first).to include(package_name: 'vendor/alpha')
+    expect(homebrew_rankings.keys).to eq(%i[downloads_30d])
+    expect(homebrew_rankings.fetch(:downloads_30d).first).to include(package_name: 'polish-tool')
   end
 
   it 'includes repository ownership from user and organization repositories' do
@@ -199,6 +206,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     when 'npm' then "https://www.npmjs.com/package/#{name}"
     when 'rubygems' then "https://rubygems.org/gems/#{name}"
     when 'packagist' then "https://packagist.org/packages/#{name}"
+    when 'homebrew' then "https://formulae.brew.sh/formula/#{name}"
     else "https://example.com/#{ecosystem}/#{name}"
     end
   end

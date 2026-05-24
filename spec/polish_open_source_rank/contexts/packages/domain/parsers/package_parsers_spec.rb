@@ -110,6 +110,29 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
     expect(parse('GoModParser', 'go.mod', 'go 1.22')).to have_attributes(parse_status: 'partial')
   end
 
+  it 'parses Homebrew formulae statically without executing Ruby' do
+    expect(parse('HomebrewFormulaParser', 'Formula/polish-tool.rb', homebrew_formula).to_h).to include(
+      ecosystem: 'homebrew',
+      package_name: 'polish-tool',
+      repository_url: 'https://github.com/acme/polish-tool/archive/v1.0.0.tar.gz',
+      homepage_url: 'https://example.com/polish-tool',
+      license: 'MIT',
+      parse_status: 'parsed',
+      metadata: {
+        path: 'Formula/polish-tool.rb',
+        source_url: 'https://github.com/acme/polish-tool/archive/v1.0.0.tar.gz'
+      }
+    )
+    expect(parse('HomebrewFormulaParser', 'Formula/dynamic.rb', 'system "rm", "-rf", "/"')).to have_attributes(
+      package_name: 'dynamic',
+      parse_status: 'parsed'
+    )
+    expect(parse('HomebrewFormulaParser', 'Formula/multi-license.rb',
+                 'license any_of: ["MIT", "Apache-2.0"]')).to have_attributes(
+                   license: 'MIT, Apache-2.0'
+                 )
+  end
+
   def parse(parser_name, path, content)
     described_class.const_get(parser_name).new.parse(path: path, content: content)
   end
@@ -182,5 +205,15 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
       support: { source: 'https://github.com/vendor/package', issues: 'https://example.com/issues' },
       license: %w[MIT Apache-2.0]
     )
+  end
+
+  def homebrew_formula
+    <<~RUBY
+      class PolishTool < Formula
+        homepage "https://example.com/polish-tool"
+        url "https://github.com/acme/polish-tool/archive/v1.0.0.tar.gz"
+        license "MIT"
+      end
+    RUBY
   end
 end

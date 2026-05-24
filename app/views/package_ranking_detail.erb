@@ -2,7 +2,7 @@
   <div class="hero__inner">
     <div>
       <p class="eyebrow"><%= h t('packages.hero.eyebrow') %></p>
-      <h1><%= h t("packages.ranking_title.#{@package_metric_slug}") %></h1>
+      <h1><%= h package_ranking_title(@package_metric_slug, ecosystem: @package_ecosystem) %></h1>
       <p class="lede"><%= h @package_ecosystem %></p>
       <% if @period %>
         <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @period %>"><%= h period_label(@period) %></time></p>
@@ -15,6 +15,6 @@
 <section class="ranking-band">
   <div class="content">
     <p><a class="muted-link muted-link--standalone" href="<%= h app_path(package_ecosystem_path(@package_ecosystem)) %>"><%= h t('rankings.back') %></a></p>
-    <%= erb :package_ranking_table, locals: { heading_id: "package-ranking-detail-#{@package_metric_slug}", title: t("packages.ranking_title.#{@package_metric_slug}"), rows: @package_ranking, metric: @package_metric.to_sym, metric_label: package_metric_label(@package_metric) } %>
+    <%= erb :package_ranking_table, locals: { heading_id: "package-ranking-detail-#{@package_metric_slug}", title: package_ranking_title(@package_metric_slug, ecosystem: @package_ecosystem), rows: @package_ranking, metric: @package_metric.to_sym, metric_label: package_metric_label(@package_metric, ecosystem: @package_ecosystem) } %>
   </div>
 </section>

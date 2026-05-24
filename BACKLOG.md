@@ -15,7 +15,7 @@ Cel: pokazać więcej sensownych ekosystemów pakietów w publicznym `/packages`
 
 1. [x] Packagist downloads
 2. [x] Hex diagnosis
-3. [ ] Homebrew
+3. [x] Homebrew
 4. [ ] NuGet
 5. [ ] Maven
 
@@ -68,30 +68,32 @@ Wynik produkcji: problemem była normalizacja nazw w parserach `mix.exs` i `reba
 
 Dlaczego: to najlepszy pierwszy systemowy ekosystem. Ma publiczne dane formuł i analytics, a wiele formuł mapuje się na repozytoria GitHub.
 
-- [ ] Dodać nowy ekosystem `homebrew`.
-- [ ] Dodać detekcję manifestów/formuł:
-  - [ ] `Formula/*.rb`,
-  - [ ] `Casks/*.rb`, jeśli zdecydujemy objąć caski,
-  - [ ] lokalne tapy Homebrew, jeśli występują w polskich repozytoriach.
-- [ ] Zaprojektować parser formuły jako bezpieczny parser statyczny, bez wykonywania Ruby.
-- [ ] Wyciągać co najmniej:
-  - [ ] nazwę formuły,
-  - [ ] homepage,
-  - [ ] URL źródłowy,
-  - [ ] GitHub URL, jeśli występuje,
-  - [ ] licencję, jeśli łatwo dostępna.
-- [ ] Dodać klienta Homebrew analytics dla metryk:
-  - [ ] installs 30d,
-  - [ ] installs 90d albo total, jeśli potrzebne.
-- [ ] Zmapować metrykę na `downloads_30d` albo osobną nazwę domenową, jeśli `downloads` byłoby mylące.
-- [ ] Dodać ranking publiczny Homebrew.
-- [ ] Dodać testy parsera, klienta analytics i read modelu.
+- [x] Dodać nowy ekosystem `homebrew`.
+- [x] Dodać detekcję manifestów/formuł:
+  - [x] `Formula/*.rb`,
+  - [x] `Casks/*.rb`, jeśli zdecydujemy objąć caski: decyzja, nie mieszać casków z formułami w tym etapie,
+  - [x] lokalne tapy Homebrew, jeśli występują w polskich repozytoriach.
+- [x] Zaprojektować parser formuły jako bezpieczny parser statyczny, bez wykonywania Ruby.
+- [x] Wyciągać co najmniej:
+  - [x] nazwę formuły,
+  - [x] homepage,
+  - [x] URL źródłowy,
+  - [x] GitHub URL, jeśli występuje,
+  - [x] licencję, jeśli łatwo dostępna.
+- [x] Dodać klienta Homebrew analytics dla metryk:
+  - [x] installs 30d,
+  - [x] installs 90d albo total, jeśli potrzebne.
+- [x] Zmapować metrykę na `downloads_30d` albo osobną nazwę domenową, jeśli `downloads` byłoby mylące.
+- [x] Dodać ranking publiczny Homebrew.
+- [x] Dodać testy parsera, klienta analytics i read modelu.
 
 Definition of Done:
 
-- [ ] Homebrew ma stabilny ranking publiczny.
-- [ ] Nie wykonujemy kodu formuł.
-- [ ] Metryka jest nazwana tak, żeby nie mylić install analytics z registry downloads.
+- [x] Homebrew ma stabilny ranking publiczny.
+- [x] Nie wykonujemy kodu formuł.
+- [x] Metryka jest nazwana tak, żeby nie mylić install analytics z registry downloads.
+
+Wynik implementacji: Homebrew obsługuje formuły `Formula/*.rb` także w lokalnych tapach (`*/Formula/*.rb`). Caski nie są mieszane z formułami w tym etapie, bo mają osobną kategorię analytics. Parser jest statyczny i nie wykonuje Ruby; klient czyta `formulae.brew.sh/api/formula/*.json`, zapisuje 30-dniowe instalacje w polu rankingowym `downloads_30d`, a UI pokazuje je jako „Instalacje 30 dni” / „30-day installs”.
 
 ## 4. NuGet
 

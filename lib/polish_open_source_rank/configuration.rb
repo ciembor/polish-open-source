@@ -60,6 +60,11 @@ module PolishOpenSourceRank
         default: 20,
         constructor: INTEGER_CONSTRUCTOR
       },
+      homebrew_registry_requests_per_minute: {
+        env: 'HOMEBREW_REGISTRY_REQUESTS_PER_MINUTE',
+        default: 20,
+        constructor: INTEGER_CONSTRUCTOR
+      },
       github_base_url: { env: 'GITHUB_BASE_URL', default: 'https://api.github.com' },
       github_oauth_client_id: { env: 'GITHUB_OAUTH_CLIENT_ID', required: true },
       github_oauth_client_secret: { env: 'GITHUB_OAUTH_CLIENT_SECRET', required: true },
@@ -139,7 +144,8 @@ module PolishOpenSourceRank
         pypi: pypi_registry_requests_per_minute,
         hex: hex_registry_requests_per_minute,
         packagist: packagist_registry_requests_per_minute,
-        go: go_registry_requests_per_minute
+        go: go_registry_requests_per_minute,
+        homebrew: homebrew_registry_requests_per_minute
       }
     end
 

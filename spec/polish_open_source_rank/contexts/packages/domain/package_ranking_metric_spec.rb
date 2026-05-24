@@ -11,11 +11,13 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::PackageRankingM
       npm_slugs: described_class.slugs(ecosystem: 'npm'),
       crates_keys: described_class.keys(ecosystem: 'crates'),
       packagist_keys: described_class.keys(ecosystem: 'packagist'),
+      homebrew_slugs: described_class.slugs(ecosystem: 'homebrew'),
       pypi_keys: described_class.keys(ecosystem: 'pypi')
     ).to eq(
       npm_slugs: %w[top],
       crates_keys: %w[downloads_30d downloads_total],
       packagist_keys: %w[downloads_30d downloads_total],
+      homebrew_slugs: %w[top],
       pypi_keys: []
     )
     expect(described_class.supported_for_ecosystem?('npm', 'downloads_total')).to be(false)
