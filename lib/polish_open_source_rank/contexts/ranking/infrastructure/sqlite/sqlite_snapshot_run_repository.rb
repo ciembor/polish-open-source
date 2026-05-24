@@ -120,10 +120,14 @@ module PolishOpenSourceRank
               database.dataset(:sync_runs).where(id: run_id).update(status: 'failed', error: error)
             end
 
-            def retryable_candidates?(period, platforms: nil)
+            def retryable_candidates?(period, platforms: nil, candidate_types: nil)
               return false if platforms&.empty?
 
-              retryable_candidates(period.start_date.to_s, platforms: platforms).any?
+              retryable_candidates(
+                period.start_date.to_s,
+                platforms: platforms,
+                candidate_types: candidate_types
+              ).any?
             end
 
             private
@@ -218,20 +222,32 @@ module PolishOpenSourceRank
               end
             end
 
-            def retryable_candidates(period_start, platforms:)
-              retryable_candidates_in(
-                database.dataset(:candidate_users),
-                period_start,
-                platforms,
-                retryable_candidate_condition
-              ).union(
-                retryable_candidates_in(
-                  database.dataset(:candidate_organizations),
-                  period_start,
-                  platforms,
-                  retryable_organization_candidate_condition
-                )
-              )
+            def retryable_candidates(period_start, platforms:, candidate_types:)
+              retryable_candidate_datasets(period_start, platforms, candidate_types)
+                .reduce { |combined, dataset| combined.union(dataset) } ||
+                database.dataset(:candidate_users).where(false)
+            end
+
+            def retryable_candidate_datasets(period_start, platforms, candidate_types)
+              types = candidate_types || %i[users organizations]
+              [].tap do |datasets|
+                if types.include?(:users)
+                  datasets << retryable_candidates_in(
+                    database.dataset(:candidate_users),
+                    period_start,
+                    platforms,
+                    retryable_candidate_condition
+                  )
+                end
+                if types.include?(:organizations)
+                  datasets << retryable_candidates_in(
+                    database.dataset(:candidate_organizations),
+                    period_start,
+                    platforms,
+                    retryable_organization_candidate_condition
+                  )
+                end
+              end
             end
 
             def retryable_candidate_condition

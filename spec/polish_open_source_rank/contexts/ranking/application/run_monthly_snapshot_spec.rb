@@ -440,6 +440,26 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(fetch_user('polish-org', table: 'organizations')).to include(login: 'polish-org')
   end
 
+  it 'does not fail an organization-scoped run because user candidates remain retryable' do
+    organization_source = FakeOrganizationGitHub.new
+    organization_source.organization_candidates = { 'Poland' => [{ source_id: 9, login: 'polish-org' }] }
+    organization_source.organizations = { 'polish-org' => profile(9, 'polish-org', 'Warsaw, Poland') }
+    organization_source.organization_repositories = { 'polish-org' => [repository(90, 'polish-org/toolkit', 33)] }
+    store.record_candidate(period, platform: 'github', source_id: 1, login: 'alice', source_query: 'Poland')
+
+    described_class.new(store: store, sources: [organization_source], catalog: catalog, logger: StringIO.new).call(
+      period,
+      scope: :organizations
+    )
+
+    expect(fetch_candidate('alice')).to include(status: 'pending')
+    expect(fetch_candidate('polish-org', table: 'candidate_organizations')).to include(status: 'processed', error: nil)
+    expect(fetch_row('SELECT status, error FROM sync_runs WHERE period_start = ?', ['2026-04-01'])).to include(
+      status: 'running',
+      error: nil
+    )
+  end
+
   it 'runs only the user pipeline when scoped to users' do
     organization_source = FakeOrganizationGitHub.new
     organization_source.organization_candidates = { 'Poland' => [{ source_id: 9, login: 'polish-org' }] }
@@ -468,6 +488,23 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(fetch_candidate('alice')).to include(status: 'processed', error: nil)
     expect(fetch_candidate('polish-org', table: 'candidate_organizations')).to be_nil
     expect(fetch_user('polish-org', table: 'organizations')).to be_nil
+  end
+
+  it 'processes existing pending user candidates before discovering more' do
+    source = FakeJobGitHub.new
+    source.candidates = { 'Poland' => [{ source_id: 1, login: 'alice' }] }
+    source.profiles = {
+      'alice' => profile(1, 'alice', 'Krakow, Poland'),
+      'bob' => profile(2, 'bob', 'Warsaw, Poland')
+    }
+    source.repositories = { 'alice' => [], 'bob' => [] }
+    store.record_candidate(period, platform: 'github', source_id: 2, login: 'bob', source_query: 'Poland')
+
+    described_class.new(store: store, sources: [source], catalog: catalog, logger: StringIO.new).call(period)
+
+    expect(source.user_calls).to eq([['bob', 2], ['alice', 1]])
+    expect(fetch_candidate('bob')).to include(status: 'processed', error: nil)
+    expect(fetch_candidate('alice')).to include(status: 'processed', error: nil)
   end
 
   # rubocop:disable RSpec/ExampleLength

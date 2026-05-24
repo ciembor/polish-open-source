@@ -94,6 +94,20 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     expect(repository.retryable_candidates?(period, platforms: [])).to be(false)
   end
 
+  it 'reports retryable candidates with optional candidate type filters' do
+    seed_candidate(login: 'alice', platform: 'github', status: 'pending')
+    seed_organization_candidate(login: 'polish-org', platform: 'github', status: 'pending')
+
+    expect(repository.retryable_candidates?(period, candidate_types: [:users])).to be(true)
+    expect(repository.retryable_candidates?(period, candidate_types: [:organizations])).to be(true)
+
+    database.dataset(:candidate_users).where(login: 'alice').update(status: 'rejected')
+
+    expect(repository.retryable_candidates?(period, candidate_types: [:users])).to be(false)
+    expect(repository.retryable_candidates?(period, candidate_types: [:organizations])).to be(true)
+    expect(repository.retryable_candidates?(period, candidate_types: [])).to be(false)
+  end
+
   def sync_run
     database.fetch_all('SELECT * FROM sync_runs').first
   end
@@ -147,6 +161,31 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       SQL
       ['2026-04-01', platform, github_id, login, 'poland', status, error, updated_at]
+    )
+    github_id
+  end
+
+  def seed_organization_candidate(attributes)
+    defaults = {
+      platform: 'github',
+      error: nil,
+      updated_at: '2026-04-01T00:00:00Z'
+    }
+    attributes = defaults.merge(attributes)
+    login = attributes.fetch(:login)
+    github_id = ((login.hash.abs % 1000) + 1)
+
+    database.execute(
+      <<~SQL,
+        INSERT INTO candidate_organizations(
+          period_start, platform, github_id, login, source_query, status, error, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      SQL
+      [
+        '2026-04-01', attributes.fetch(:platform), github_id, login, 'poland',
+        attributes.fetch(:status), attributes[:error], attributes.fetch(:updated_at)
+      ]
     )
     github_id
   end
