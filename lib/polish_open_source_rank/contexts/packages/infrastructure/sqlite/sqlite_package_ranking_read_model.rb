@@ -6,7 +6,6 @@ module PolishOpenSourceRank
       module Infrastructure
         module SQLite
           class SQLitePackageRankingReadModel
-            METRICS = %w[downloads_30d downloads_total dependents_count].freeze
             DEFAULT_LIMIT = 100
             MAX_LIMIT = 100
 
@@ -27,7 +26,7 @@ module PolishOpenSourceRank
             end
 
             def rankings(ecosystem:, period_start:, limit: DEFAULT_LIMIT)
-              METRICS.to_h do |metric|
+              Domain::PackageRankingMetric.keys.to_h do |metric|
                 [metric.to_sym, ranked_packages(ecosystem: ecosystem, period_start: period_start, metric: metric,
                                                 limit: limit)]
               end
@@ -143,7 +142,7 @@ module PolishOpenSourceRank
             end
 
             def validate_metric!(metric)
-              return if METRICS.include?(metric.to_s)
+              return if Domain::PackageRankingMetric.supported_key?(metric)
 
               raise ArgumentError, "Unsupported package ranking metric: #{metric}"
             end

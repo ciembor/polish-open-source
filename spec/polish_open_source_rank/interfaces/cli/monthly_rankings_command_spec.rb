@@ -72,13 +72,15 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
       fail: nil
     )
     allow(job).to receive(:call).and_raise(
-      PolishOpenSourceRank::Application::MonthlySnapshotInterrupted,
+      PolishOpenSourceRank::Contexts::Operations::Application::MonthlySnapshotInterrupted,
       'Received SIGTERM'
     )
 
+    interrupted_error = PolishOpenSourceRank::Contexts::Operations::Application::MonthlySnapshotInterrupted
+
     expect do
       described_class.call(['--month', '2026-04'], job: job, output: output, crawl_jobs: crawl_jobs)
-    end.to raise_error(PolishOpenSourceRank::Application::MonthlySnapshotInterrupted, 'Received SIGTERM')
+    end.to raise_error(interrupted_error, 'Received SIGTERM')
 
     expect(crawl_jobs).to have_received(:fail).with(19, 'Received SIGTERM', status: 'interrupted')
     expect(crawl_jobs).not_to have_received(:finish)
@@ -119,9 +121,11 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
     end
     allow(job).to receive(:call) { term_handler.call }
 
+    interrupted_error = PolishOpenSourceRank::Contexts::Operations::Application::MonthlySnapshotInterrupted
+
     expect do
       described_class.call(['--month', '2026-04'], job: job, output: output)
-    end.to raise_error(PolishOpenSourceRank::Application::MonthlySnapshotInterrupted, 'Received SIGTERM')
+    end.to raise_error(interrupted_error, 'Received SIGTERM')
 
     expect(job).to have_received(:call).with(have_attributes(key: '2026-04'), refresh: false)
     expect(output.string).to be_empty

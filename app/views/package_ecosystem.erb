@@ -16,7 +16,9 @@
   <div class="content">
     <p><a class="muted-link muted-link--standalone" href="<%= h app_path(package_index_path) %>"><%= h t('packages.back') %></a></p>
     <div class="ranking-grid ranking-grid--compact">
-      <% { "top" => :downloads_30d, "downloads" => :downloads_total, "dependents" => :dependents_count }.each do |slug, metric| %>
+      <% PolishOpenSourceRank::Contexts::Packages::Domain::PackageRankingMetric.all.each do |package_metric| %>
+        <% slug = package_metric.slug %>
+        <% metric = package_metric.key.to_sym %>
         <%= erb :package_ranking_table, locals: { heading_id: "package-ranking-#{slug}", title: t("packages.ranking_title.#{slug}"), rows: @package_rankings.fetch(metric), metric: metric, metric_label: package_metric_label(metric), top_path: package_ranking_path(@package_ecosystem, slug) } %>
       <% end %>
     </div>

@@ -4,12 +4,6 @@ module PolishOpenSourceRank
   module Web
     module Controllers
       module PackageController
-        PACKAGE_RANKING_METRICS = {
-          'top' => 'downloads_30d',
-          'downloads' => 'downloads_total',
-          'dependents' => 'dependents_count'
-        }.freeze
-
         private
 
         def render_package_index(period_slug)
@@ -44,7 +38,7 @@ module PolishOpenSourceRank
         end
 
         def render_package_ranking_detail(period_slug, ecosystem, metric_slug)
-          metric = PACKAGE_RANKING_METRICS[metric_slug]
+          metric = Contexts::Packages::Domain::PackageRankingMetric.key_for_slug(metric_slug)
           halt 404 unless metric
           @period_slug = period_slug
           @period = period_for(period_slug)

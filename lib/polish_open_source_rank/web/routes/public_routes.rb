@@ -47,16 +47,24 @@ module PolishOpenSourceRank
               render_package_profile(params.fetch('ecosystem'), params.fetch('encoded_name'))
             end
             app.get('/latest/packages/:ecosystem') { render_package_ecosystem('latest', params.fetch('ecosystem')) }
-            app.get(%r{/latest/packages/([^/]+)/(top|downloads|dependents)}) do |ecosystem, metric|
+            app.get(Regexp.new("/latest/packages/([^/]+)/(#{package_metric_slugs})")) do |ecosystem, metric|
               render_package_ranking_detail('latest', ecosystem, metric)
             end
             app.get(%r{/(\d{4}-\d{2})/packages}) { |period_slug| render_package_index(period_slug) }
             app.get(%r{/(\d{4}-\d{2})/packages/([^/]+)}) do |period_slug, ecosystem|
               render_package_ecosystem(period_slug, ecosystem)
             end
-            app.get(%r{/(\d{4}-\d{2})/packages/([^/]+)/(top|downloads|dependents)}) do |period_slug, ecosystem, metric|
+            app.get(period_package_metric_route) do |period_slug, ecosystem, metric|
               render_package_ranking_detail(period_slug, ecosystem, metric)
             end
+          end
+
+          def package_metric_slugs
+            Contexts::Packages::Domain::PackageRankingMetric.slugs_pattern
+          end
+
+          def period_package_metric_route
+            Regexp.new("/(\\d{4}-\\d{2})/packages/([^/]+)/(#{package_metric_slugs})")
           end
 
           def register_profile_routes(app)

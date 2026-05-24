@@ -16,7 +16,6 @@ module PolishOpenSourceRank
           %w[organization-repositories top],
           %w[organization-repositories trending]
         ].freeze
-        SITEMAP_PACKAGE_METRICS = %w[top downloads dependents].freeze
 
         private
 
@@ -108,7 +107,7 @@ module PolishOpenSourceRank
 
         def package_ecosystem_paths(prefix, ecosystem)
           path = "#{prefix}/packages/#{ecosystem}"
-          [path] + SITEMAP_PACKAGE_METRICS.map { |metric| "#{path}/#{metric}" }
+          [path] + Contexts::Packages::Domain::PackageRankingMetric.slugs.map { |metric| "#{path}/#{metric}" }
         end
 
         def edition_paths

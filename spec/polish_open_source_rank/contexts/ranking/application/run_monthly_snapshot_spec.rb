@@ -1071,17 +1071,17 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
 
   it 'marks the run as failed when the process is interrupted' do
     allow(store).to receive(:retryable_candidates?).and_raise(
-      PolishOpenSourceRank::Application::MonthlySnapshotInterrupted,
+      PolishOpenSourceRank::Contexts::Operations::Application::MonthlySnapshotInterrupted,
       'Received SIGTERM'
     )
 
     expect { job.call(period) }.to raise_error(
-      PolishOpenSourceRank::Application::MonthlySnapshotInterrupted,
+      PolishOpenSourceRank::Contexts::Operations::Application::MonthlySnapshotInterrupted,
       'Received SIGTERM'
     )
     expect(fetch_row('SELECT status, error FROM sync_runs WHERE period_start = ?', ['2026-04-01'])).to include(
       status: 'failed',
-      error: 'PolishOpenSourceRank::Application::MonthlySnapshotInterrupted: Received SIGTERM'
+      error: 'PolishOpenSourceRank::Contexts::Operations::Application::MonthlySnapshotInterrupted: Received SIGTERM'
     )
   end
 

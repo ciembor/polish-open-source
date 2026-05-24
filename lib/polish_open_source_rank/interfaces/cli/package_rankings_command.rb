@@ -6,8 +6,9 @@ module PolishOpenSourceRank
       class PackageRankingsCommand
         HELP = <<~HELP
           Usage: bin/package_rankings --period YYYY-MM [--ecosystem npm] [--limit N] [--refresh]
-          Supported ecosystems: npm, rubygems, crates, pypi, hex, packagist, go
+          Supported ecosystems: #{Contexts::Packages::Domain::Ecosystem.snapshot_supported_list}
         HELP
+               .freeze
 
         def self.call(argv, job:, output: $stdout, crawl_jobs: nil)
           new(argv: argv, job: job, output: output, crawl_jobs: crawl_jobs).call
