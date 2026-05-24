@@ -606,9 +606,9 @@ module PolishOpenSourceRank
         end
 
         def social_image_path
-          return '/images/pos_cut.png' if about_page?
-          return '/images/polish_open_source_join.webp' if @editions
-          return '/images/pos.png' if profile_page? || repository_page?
+          return '/images/polish_open_source_front.webp' if about_page?
+          return '/images/polish_open_source_front.webp' if @editions
+          return '/images/polish_open_source_front.webp' if profile_page? || repository_page?
 
           '/images/polish_open_source_banner.webp'
         end
