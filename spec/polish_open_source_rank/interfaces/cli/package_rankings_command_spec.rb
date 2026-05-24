@@ -71,4 +71,31 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::PackageRankingsCommand do
       'ArgumentError: Unsupported package ecosystem: unknown'
     )
   end
+
+  it 'marks process stop signals as interrupted' do
+    term_handler = nil
+    previous_handlers = []
+    allow(Signal).to receive(:trap).and_wrap_original do |original, signal, handler = nil, &block|
+      if block
+        term_handler = block if signal == 'TERM'
+        previous_handlers << signal
+        'DEFAULT'
+      else
+        original.call(signal, handler)
+      end
+    end
+    allow(job).to receive(:call) { term_handler.call }
+
+    interrupted_error = PolishOpenSourceRank::Contexts::Operations::Application::PackageSnapshotInterrupted
+
+    expect do
+      described_class.call(%w[--period 2026-04], job: job, output: output, crawl_jobs: crawl_jobs)
+    end.to raise_error(interrupted_error, 'Received SIGTERM')
+
+    expect(crawl_jobs).to have_received(:fail).with(7, 'Received SIGTERM', status: 'interrupted')
+    expect(crawl_jobs).not_to have_received(:finish)
+    expect(Signal).to have_received(:trap).with('INT', 'DEFAULT')
+    expect(Signal).to have_received(:trap).with('TERM', 'DEFAULT')
+    expect(previous_handlers).to eq(%w[INT TERM])
+  end
 end

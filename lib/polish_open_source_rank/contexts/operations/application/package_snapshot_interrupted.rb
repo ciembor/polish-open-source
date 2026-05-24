@@ -4,7 +4,7 @@ module PolishOpenSourceRank
   module Contexts
     module Operations
       module Application
-        class MonthlySnapshotInterrupted < CrawlInterrupted; end
+        class PackageSnapshotInterrupted < CrawlInterrupted; end
       end
     end
   end

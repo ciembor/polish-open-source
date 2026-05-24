@@ -37,13 +37,31 @@ module PolishOpenSourceRank
 
         attr_reader :argv, :crawl_jobs, :job, :output
 
-        def with_crawl_job_tracking
+        def with_crawl_job_tracking(&)
           crawl_job_id = crawl_jobs&.start(command: 'package_rankings', arguments: argv)
-          yield
+          run_interruptible_package_job(&)
           crawl_jobs&.finish(crawl_job_id) if crawl_job_id
-        rescue StandardError => e
-          crawl_jobs&.fail(crawl_job_id, "#{e.class}: #{e.message}") if crawl_job_id
+        rescue Contexts::Operations::Application::CrawlInterrupted => e
+          interrupt_crawl_job(crawl_job_id, e)
           raise
+        rescue StandardError => e
+          fail_crawl_job(crawl_job_id, e)
+          raise
+        end
+
+        def run_interruptible_package_job(&)
+          ProcessInterruptHandler.call(
+            error_class: Contexts::Operations::Application::PackageSnapshotInterrupted,
+            &
+          )
+        end
+
+        def interrupt_crawl_job(crawl_job_id, error)
+          crawl_jobs&.fail(crawl_job_id, error.message, status: 'interrupted') if crawl_job_id
+        end
+
+        def fail_crawl_job(crawl_job_id, error)
+          crawl_jobs&.fail(crawl_job_id, "#{error.class}: #{error.message}") if crawl_job_id
         end
 
         def print_stats(stats)
