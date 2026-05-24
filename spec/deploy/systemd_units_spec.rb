@@ -20,6 +20,18 @@ RSpec.describe File do
     expect(unit).to include('--name=polish-open-source-rank-monthly')
   end
 
+  it 'runs scheduled package crawls after monthly crawls with the shared database volume' do
+    service = described_class.read(described_class.join(root, 'deploy/polish-open-source-rank-packages.service'))
+    timer = described_class.read(described_class.join(root, 'deploy/polish-open-source-rank-packages.timer'))
+
+    expect(service).to include('After=network-online.target polish-open-source-rank-monthly.service')
+    expect(service).to include('/usr/bin/flock -n /home/ciembor/polish-open-source-rank/tmp/crawl.lock')
+    expect(service).to include('-v /home/ciembor/polish-open-source-rank/db:/app/db')
+    expect(service).to include('bundle exec ruby bin/package_rankings')
+    expect(timer).to include('OnCalendar=*-*-02 07:15:00')
+    expect(timer).to include('Persistent=true')
+  end
+
   it 'runs manual crawls with persisted arguments and restart policy' do
     unit = described_class.read(described_class.join(root, 'deploy/polish-open-source-rank-crawl.service'))
 

@@ -6,6 +6,11 @@ namespace :crawl do
     PolishOpenSourceRank::Interfaces::Composition::RankingJobFactory.build(monthly_argv(args)).call
   end
 
+  desc 'Run a package crawl: rake crawl:packages[2026-04,npm,100,false]'
+  task :packages, %i[period ecosystem limit refresh] do |_task, args|
+    PolishOpenSourceRank::Interfaces::Composition::PackageRankingJobFactory.build(package_argv(args)).call
+  end
+
   desc 'Resume interrupted crawl jobs'
   task :resume do
     PolishOpenSourceRank::Interfaces::Composition::CrawlResumerFactory.build.call
@@ -15,6 +20,15 @@ namespace :crawl do
   task :list do
     crawl_job_repository.all.each { |job| puts format_crawl_job(job) }
   end
+end
+
+def package_argv(args)
+  argv = []
+  argv += ['--period', args[:period]] if args[:period]
+  argv += ['--ecosystem', args[:ecosystem]] if args[:ecosystem]
+  argv += ['--limit', args[:limit]] if args[:limit]
+  argv << '--refresh' if args[:refresh] == 'true'
+  argv
 end
 
 def monthly_argv(args)
