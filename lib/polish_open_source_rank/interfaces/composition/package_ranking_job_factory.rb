@@ -92,7 +92,8 @@ module PolishOpenSourceRank
             'packagist' => registry_client(registries::PackagistRegistryClient, :packagist),
             'go' => registry_client(registries::GoRegistryClient, :go),
             'homebrew' => registry_client(registries::HomebrewRegistryClient, :homebrew),
-            'nuget' => registry_client(registries::NuGetRegistryClient, :nuget)
+            'nuget' => registry_client(registries::NuGetRegistryClient, :nuget),
+            'maven' => registry_client(registries::MavenCentralRegistryClient, :maven)
           }
         end
 

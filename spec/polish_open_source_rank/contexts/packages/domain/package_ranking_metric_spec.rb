@@ -13,6 +13,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::PackageRankingM
       packagist_keys: described_class.keys(ecosystem: 'packagist'),
       homebrew_slugs: described_class.slugs(ecosystem: 'homebrew'),
       nuget_keys: described_class.keys(ecosystem: 'nuget'),
+      maven_keys: described_class.keys(ecosystem: 'maven'),
       pypi_keys: described_class.keys(ecosystem: 'pypi')
     ).to eq(
       npm_slugs: %w[top],
@@ -20,6 +21,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::PackageRankingM
       packagist_keys: %w[downloads_30d downloads_total],
       homebrew_slugs: %w[top],
       nuget_keys: %w[downloads_total],
+      maven_keys: [],
       pypi_keys: []
     )
     expect(described_class.supported_for_ecosystem?('npm', 'downloads_total')).to be(false)

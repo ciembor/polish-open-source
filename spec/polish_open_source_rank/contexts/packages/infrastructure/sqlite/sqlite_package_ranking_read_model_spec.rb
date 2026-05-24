@@ -31,6 +31,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     seed_package(ecosystem: 'homebrew', name: 'brew-alpha', downloads_30d: 70)
     seed_package(ecosystem: 'nuget', name: 'NuGet.Zeta', downloads_total: 500)
     seed_package(ecosystem: 'nuget', name: 'NuGet.Alpha', downloads_total: 500)
+    seed_package(ecosystem: 'maven', name: 'pl.example:polish-tool')
 
     expect(package_names('npm', :downloads_30d)).to eq(%w[alpha zeta])
     expect(package_names('rubygems', :downloads_total)).to eq(%w[ruby-zeta ruby-alpha])
@@ -39,6 +40,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     expect(package_names('packagist', :downloads_total)).to eq(%w[vendor/zeta vendor/alpha vendor/nil-downloads])
     expect(package_names('homebrew', :downloads_30d)).to eq(%w[brew-alpha brew-zeta])
     expect(package_names('nuget', :downloads_total)).to eq(%w[NuGet.Alpha NuGet.Zeta])
+    expect(read_model.rankings(ecosystem: 'maven', period_start: period)).to be_empty
   end
 
   it 'returns ranking metrics supported by the ecosystem' do
@@ -215,6 +217,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     when 'packagist' then "https://packagist.org/packages/#{name}"
     when 'homebrew' then "https://formulae.brew.sh/formula/#{name}"
     when 'nuget' then "https://www.nuget.org/packages/#{name}"
+    when 'maven' then "https://central.sonatype.com/artifact/#{name.tr(':', '/')}"
     else "https://example.com/#{ecosystem}/#{name}"
     end
   end

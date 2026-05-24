@@ -16,7 +16,12 @@ module PolishOpenSourceRank
             'rebar.config' => Parsers::RebarConfigParser,
             'composer.json' => Parsers::ComposerJsonParser,
             'go.mod' => Parsers::GoModParser,
-            'Directory.Packages.props' => Parsers::NuGetXmlParser
+            'Directory.Packages.props' => Parsers::NuGetXmlParser,
+            'pom.xml' => Parsers::MavenManifestParser,
+            'build.gradle' => Parsers::MavenManifestParser,
+            'build.gradle.kts' => Parsers::MavenManifestParser,
+            'settings.gradle' => Parsers::MavenManifestParser,
+            'settings.gradle.kts' => Parsers::MavenManifestParser
           }.freeze
 
           def parse(path:, ecosystem:, content:)

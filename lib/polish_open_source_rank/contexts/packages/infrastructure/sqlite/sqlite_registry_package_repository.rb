@@ -16,7 +16,8 @@ module PolishOpenSourceRank
               'packagist' => 'https://packagist.org/packages/%s',
               'go' => 'https://pkg.go.dev/%s',
               'homebrew' => 'https://formulae.brew.sh/formula/%s',
-              'nuget' => 'https://www.nuget.org/packages/%s'
+              'nuget' => 'https://www.nuget.org/packages/%s',
+              'maven' => 'https://central.sonatype.com/artifact/%s'
             }.freeze
 
             def initialize(database, clock: -> { Time.now.utc },
@@ -192,6 +193,8 @@ module PolishOpenSourceRank
             end
 
             def registry_url(ecosystem, package_name)
+              return format(REGISTRY_URLS.fetch(ecosystem), package_name.tr(':', '/')) if ecosystem == 'maven'
+
               format(REGISTRY_URLS.fetch(ecosystem), package_name)
             end
 
