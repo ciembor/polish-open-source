@@ -26,7 +26,7 @@ module PolishOpenSourceRank
             end
 
             def rankings(ecosystem:, period_start:, limit: DEFAULT_LIMIT)
-              Domain::PackageRankingMetric.keys.to_h do |metric|
+              Domain::PackageRankingMetric.keys(ecosystem: ecosystem).to_h do |metric|
                 [metric.to_sym, ranked_packages(ecosystem: ecosystem, period_start: period_start, metric: metric,
                                                 limit: limit)]
               end
@@ -34,6 +34,7 @@ module PolishOpenSourceRank
 
             def ranked_packages(ecosystem:, period_start:, metric:, scope: 'poland', limit: DEFAULT_LIMIT)
               validate_metric!(metric)
+              validate_ecosystem_metric!(ecosystem, metric)
               return [] unless scope == 'poland'
 
               database.fetch_all(ranked_packages_sql(metric, limit), [period_start, ecosystem])
@@ -145,6 +146,12 @@ module PolishOpenSourceRank
               return if Domain::PackageRankingMetric.supported_key?(metric)
 
               raise ArgumentError, "Unsupported package ranking metric: #{metric}"
+            end
+
+            def validate_ecosystem_metric!(ecosystem, metric)
+              return if Domain::PackageRankingMetric.supported_for_ecosystem?(ecosystem, metric)
+
+              raise ArgumentError, "Unsupported package ranking metric for #{ecosystem}: #{metric}"
             end
 
             def bounded_limit(limit)

@@ -64,7 +64,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application::ScanReposi
     seed_scan(full_name: 'alice/app')
     stub_changed_repository
 
-    use_case.call(period, limit: 10)
+    result = use_case.call(period, limit: 10)
 
     expect(manifests.map { |manifest| manifest.slice(:ecosystem, :path, :package_name, :parse_status) }).to eq(
       [
@@ -79,6 +79,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application::ScanReposi
         { full_name: 'alice/app', sha: 'gemspec-sha' }
       ]
     )
+    expect(result).to eq(scanned: 1, failed: 0, manifests: 2)
   end
 
   it 'filters manifests by ecosystem and skips unchanged trees without fetching blobs' do
@@ -97,9 +98,32 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application::ScanReposi
     seed_scan(full_name: 'alice/missing')
     tree_gateway.stub_unavailable('alice/missing')
 
-    use_case.call(period, limit: 10)
+    result = use_case.call(period, limit: 10)
 
     expect(scan).to include(status: 'failed', error: 'missing')
+    expect(result).to eq(scanned: 0, failed: 1, manifests: 0)
+  end
+
+  it 'stores parser failures without aborting the repository scan' do
+    seed_scan(full_name: 'alice/broken')
+    tree_gateway.stub_repository('alice/broken', default_branch: 'main')
+    tree_gateway.stub_tree(
+      'alice/broken',
+      ref: 'main',
+      sha: 'broken-tree-sha',
+      entries: [{ path: 'package.json', sha: 'broken-package-sha' }]
+    )
+    tree_gateway.stub_blob('alice/broken', sha: 'broken-package-sha', content: '{broken')
+
+    use_case.call(period, limit: 10)
+
+    expect(manifests.first).to include(
+      ecosystem: 'npm',
+      path: 'package.json',
+      package_name: nil,
+      parse_status: 'failed'
+    )
+    expect(scan).to include(status: 'scanned', tree_sha: 'broken-tree-sha', manifest_count: 1)
   end
 
   def seed_scan(full_name:, tree_sha: nil, manifest_count: 0)

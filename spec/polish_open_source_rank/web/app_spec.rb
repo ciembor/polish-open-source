@@ -872,8 +872,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(responses.fetch(:shortcut).status).to eq(200)
     expect(responses.fetch(:period_ecosystem).status).to eq(200)
     expect(responses.fetch(:top).body).to include('Top 100 według pobrań z 30 dni')
-    expect(responses.fetch(:downloads).body).to include('Top 100 według pobrań łącznie')
-    expect(responses.fetch(:dependents).body).to include('Top 100 według zależnych pakietów')
+    expect(responses.fetch(:downloads).status).to eq(404)
+    expect(responses.fetch(:dependents).status).to eq(404)
   end
 
   def expect_package_index_page(response)

@@ -5,26 +5,28 @@ module PolishOpenSourceRank
     module Packages
       module Domain
         module PackageRankingMetric
-          Metric = Struct.new(:slug, :key, keyword_init: true)
+          Metric = Struct.new(:slug, :key, :ecosystems, keyword_init: true)
 
           METRICS = [
-            Metric.new(slug: 'top', key: 'downloads_30d'),
-            Metric.new(slug: 'downloads', key: 'downloads_total'),
-            Metric.new(slug: 'dependents', key: 'dependents_count')
+            Metric.new(slug: 'top', key: 'downloads_30d', ecosystems: %w[npm crates]),
+            Metric.new(slug: 'downloads', key: 'downloads_total', ecosystems: %w[crates rubygems hex]),
+            Metric.new(slug: 'dependents', key: 'dependents_count', ecosystems: %w[rubygems])
           ].freeze
 
           module_function
 
-          def all
-            METRICS
+          def all(ecosystem: nil)
+            return METRICS unless ecosystem
+
+            METRICS.select { |metric| metric.ecosystems.include?(ecosystem) }
           end
 
-          def keys
-            METRICS.map(&:key)
+          def keys(ecosystem: nil)
+            all(ecosystem: ecosystem).map(&:key)
           end
 
-          def slugs
-            METRICS.map(&:slug)
+          def slugs(ecosystem: nil)
+            all(ecosystem: ecosystem).map(&:slug)
           end
 
           def key_for_slug(slug)
@@ -34,6 +36,10 @@ module PolishOpenSourceRank
 
           def supported_key?(key)
             keys.include?(key.to_s)
+          end
+
+          def supported_for_ecosystem?(ecosystem, key)
+            keys(ecosystem: ecosystem).include?(key.to_s)
           end
 
           def slugs_pattern

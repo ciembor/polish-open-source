@@ -97,7 +97,7 @@ Run a specific package snapshot:
 
 ```sh
 bin/package_rankings --period 2026-04
-bin/package_rankings --period 2026-04 --ecosystem npm --limit 100
+bin/package_rankings --period 2026-04 --ecosystem npm --repository-limit 5000 --scan-limit 5000 --manifest-limit 10000 --registry-limit 10000
 ```
 
 The package job is deliberately separate from `bin/monthly_rankings`:
@@ -108,6 +108,8 @@ The package job is deliberately separate from `bin/monthly_rankings`:
 - it stores missing registry metrics as `nil`, and the public UI renders those values as `n/a`;
 - it applies per-registry request limits from `*_REGISTRY_REQUESTS_PER_MINUTE`.
 
+Package crawl limits are stage-specific. `--repository-limit` controls how many ranked repositories are enqueued, `--scan-limit` controls how many retryable repository scans run, `--manifest-limit` controls how many parsed manifests are resolved to registry packages, and `--registry-limit` controls how many registry packages are fetched. `--limit` remains a shorthand for small local runs and applies the same value to all four stages.
+
 Supported package ecosystems in the current registry fetcher are npm, RubyGems, crates.io, PyPI, Hex, Packagist, and Go. PyPI downloads are intentionally unavailable until a reliable download source is wired in, so they are stored as `nil`.
 
 Production uses [deploy/polish-open-source-rank-packages.timer](deploy/polish-open-source-rank-packages.timer), scheduled for `07:15` on the second day of each month. The timer starts after the monthly ranking service and both jobs use the same `tmp/crawl.lock`, so a long monthly crawl prevents package crawling from running concurrently.
@@ -117,6 +119,8 @@ Equivalent rake tasks are available for local operations:
 ```sh
 bundle exec rake crawl:monthly[2026-04,github,organizations,false]
 bundle exec rake crawl:packages[2026-04,npm,100,false]
+bundle exec rake crawl:packages[2026-04,npm,,false,5000,5000,10000,10000]
+bundle exec rake crawl:repair_packages[2026-04]
 bundle exec rake crawl:resume
 bundle exec rake crawl:list
 ```
@@ -164,8 +168,15 @@ The package ranking job also resumes at the data level:
 
 - repository scan queue insertion is idempotent;
 - repositories in `pending` or `failed` scan status are retried;
+- stale `processing` package scans are moved back to `failed` at the start of a package run;
 - already stored registry snapshots for the selected period are skipped unless `--refresh` is passed;
 - `--refresh` intentionally rechecks existing manifests and overwrites/upserts package snapshot data for the selected period.
+
+Package runs print a short summary with repository scan counts, detected manifests, registry fetch statuses, and written snapshots. To repair a previous abrupt package interruption before a manual rerun, use:
+
+```sh
+sudo podman exec -w /app polish-open-source-rank bundle exec rake crawl:repair_packages[2026-04]
+```
 
 ### Server Commands
 
@@ -233,7 +244,8 @@ sudo flock -n /home/ciembor/polish-open-source-rank/tmp/crawl.lock \
   -v /home/ciembor/polish-open-source-rank/db:/app/db \
   -v /home/ciembor/polish-open-source-rank/log:/app/log \
   localhost/polish-open-source-rank:latest \
-  bundle exec ruby bin/package_rankings --period 2026-04 --ecosystem npm --limit 100
+  bundle exec ruby bin/package_rankings --period 2026-04 --ecosystem npm \
+    --repository-limit 5000 --scan-limit 5000 --manifest-limit 10000 --registry-limit 10000
 ```
 
 Continue a package crawl with the same command and no `--refresh`, or recompute already stored registry snapshots with `--refresh`:
@@ -247,7 +259,8 @@ sudo flock -n /home/ciembor/polish-open-source-rank/tmp/crawl.lock \
   -v /home/ciembor/polish-open-source-rank/db:/app/db \
   -v /home/ciembor/polish-open-source-rank/log:/app/log \
   localhost/polish-open-source-rank:latest \
-  bundle exec ruby bin/package_rankings --period 2026-04 --ecosystem npm --limit 100 --refresh
+  bundle exec ruby bin/package_rankings --period 2026-04 --ecosystem npm \
+    --repository-limit 5000 --scan-limit 5000 --manifest-limit 10000 --registry-limit 10000 --refresh
 ```
 
 ## Web App

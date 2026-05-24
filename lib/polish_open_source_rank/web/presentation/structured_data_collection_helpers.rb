@@ -28,7 +28,7 @@ module PolishOpenSourceRank
         end
 
         def package_dataset_metrics
-          Contexts::Packages::Domain::PackageRankingMetric.keys.map do |metric|
+          Contexts::Packages::Domain::PackageRankingMetric.keys(ecosystem: @package_ecosystem).map do |metric|
             { '@type' => 'PropertyValue', 'name' => package_metric_label(metric) }
           end
         end

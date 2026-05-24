@@ -5,7 +5,7 @@ module PolishOpenSourceRank
     module CLI
       class PackageRankingsCommand
         HELP = <<~HELP
-          Usage: bin/package_rankings --period YYYY-MM [--ecosystem npm] [--limit N] [--refresh]
+          Usage: bin/package_rankings --period YYYY-MM [--ecosystem npm] [--limit N] [--repository-limit N] [--scan-limit N] [--manifest-limit N] [--registry-limit N] [--refresh]
           Supported ecosystems: #{Contexts::Packages::Domain::Ecosystem.snapshot_supported_list}
         HELP
                .freeze
@@ -25,9 +25,11 @@ module PolishOpenSourceRank
           return output.puts(HELP) if help?
 
           period = Shared::Domain::Period.parse(period_argument || Shared::Domain::Period.previous_month.key)
+          stats = nil
           with_crawl_job_tracking do
-            job.call(period, ecosystem: ecosystem_argument, limit: limit_argument, refresh: refresh?)
+            stats = job.call(period, ecosystem: ecosystem_argument, limits: limit_arguments, refresh: refresh?)
           end
+          print_stats(stats) if stats
           output.puts "Finished package ranking run for #{period.key}"
         end
 
@@ -44,6 +46,11 @@ module PolishOpenSourceRank
           raise
         end
 
+        def print_stats(stats)
+          output.puts 'Package crawl summary:'
+          stats.each { |key, value| output.puts "  #{key}=#{value}" }
+        end
+
         def period_argument
           value_after('--period') || value_after('--month')
         end
@@ -52,8 +59,22 @@ module PolishOpenSourceRank
           value_after('--ecosystem') || value_after('--platform')
         end
 
-        def limit_argument
-          (value_after('--limit') || Contexts::Packages::Application::RunPackageSnapshot::DEFAULT_LIMIT).to_i
+        def limit_arguments
+          global_limit = value_after('--limit')
+          {
+            repository: stage_limit('--repository-limit', global_limit,
+                                    Contexts::Packages::Application::RunPackageSnapshot::DEFAULT_REPOSITORY_LIMIT),
+            scan: stage_limit('--scan-limit', global_limit,
+                              Contexts::Packages::Application::RunPackageSnapshot::DEFAULT_SCAN_LIMIT),
+            manifest: stage_limit('--manifest-limit', global_limit,
+                                  Contexts::Packages::Application::RunPackageSnapshot::DEFAULT_MANIFEST_LIMIT),
+            registry: stage_limit('--registry-limit', global_limit,
+                                  Contexts::Packages::Application::RunPackageSnapshot::DEFAULT_REGISTRY_LIMIT)
+          }
+        end
+
+        def stage_limit(flag, global_limit, default)
+          (value_after(flag) || global_limit || default).to_i
         end
 
         def refresh?

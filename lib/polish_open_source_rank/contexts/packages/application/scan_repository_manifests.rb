@@ -16,9 +16,14 @@ module PolishOpenSourceRank
           end
 
           def call(period, ecosystem: nil, limit: DEFAULT_LIMIT, refresh: false)
+            stats = { scanned: 0, failed: 0, manifests: 0 }
             repository_queue.pending(period, limit: limit, ecosystem: ecosystem).each do |scan|
-              scan_repository(scan, ecosystem: ecosystem, refresh: refresh)
+              result = scan_repository(scan, ecosystem: ecosystem, refresh: refresh)
+              stats[:scanned] += 1 if result.fetch(:status) == :scanned
+              stats[:failed] += 1 if result.fetch(:status) == :failed
+              stats[:manifests] += result.fetch(:manifest_count)
             end
+            stats
           end
 
           private
@@ -39,8 +44,10 @@ module PolishOpenSourceRank
               tree_truncated: tree.truncated,
               manifest_count: manifests.length
             )
+            { status: :scanned, manifest_count: manifests.length }
           rescue RepositoryUnavailable => e
             repository_queue.mark_failed(scan.fetch(:id), e.message)
+            { status: :failed, manifest_count: 0 }
           end
 
           def tree_for(scan)
@@ -64,6 +71,7 @@ module PolishOpenSourceRank
               tree_truncated: tree.truncated,
               manifest_count: scan.fetch(:manifest_count)
             )
+            { status: :scanned, manifest_count: 0 }
           end
 
           def manifest_blobs(full_name, entries, manifests)

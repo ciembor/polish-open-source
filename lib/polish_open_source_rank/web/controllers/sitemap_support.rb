@@ -100,14 +100,22 @@ module PolishOpenSourceRank
         end
 
         def package_scope_paths(prefix, period)
-          package_ranking_read_model.ecosystems(period_start: period).flat_map do |ecosystem|
-            package_ecosystem_paths(prefix, ecosystem)
-          end
+          package_ranking_read_model
+            .ecosystems(period_start: period)
+            .select { |ecosystem| package_ranking_ecosystem?(ecosystem) }
+            .flat_map { |ecosystem| package_ecosystem_paths(prefix, ecosystem) }
         end
 
         def package_ecosystem_paths(prefix, ecosystem)
           path = "#{prefix}/packages/#{ecosystem}"
-          [path] + Contexts::Packages::Domain::PackageRankingMetric.slugs.map { |metric| "#{path}/#{metric}" }
+          metric_paths = Contexts::Packages::Domain::PackageRankingMetric
+                         .slugs(ecosystem: ecosystem)
+                         .map { |metric| "#{path}/#{metric}" }
+          [path] + metric_paths
+        end
+
+        def package_ranking_ecosystem?(ecosystem)
+          Contexts::Packages::Domain::PackageRankingMetric.slugs(ecosystem: ecosystem).any?
         end
 
         def edition_paths

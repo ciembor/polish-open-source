@@ -7,6 +7,7 @@ module PolishOpenSourceRank
         module SQLite
           class SQLitePackageRepositoryQueue
             RETRYABLE_STATUSES = %w[pending failed].freeze
+            STALE_PROCESSING_SECONDS = 60 * 60
 
             def initialize(database, clock: -> { Time.now.utc })
               @database = database
@@ -24,6 +25,18 @@ module PolishOpenSourceRank
                 .order(Sequel.asc(:id))
                 .limit(bounded_limit(limit))
                 .all
+            end
+
+            def reset_stale_processing(period, older_than: STALE_PROCESSING_SECONDS)
+              cutoff = (clock.call - older_than).iso8601
+              package_repository_scans
+                .where(period_start: period_start(period), status: 'processing')
+                .where { updated_at < cutoff }
+                .update(
+                  status: 'failed',
+                  error: 'processing scan was interrupted and will be retried',
+                  updated_at: timestamp
+                )
             end
 
             def mark_processing(scan_id)

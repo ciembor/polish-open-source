@@ -7,7 +7,8 @@ namespace :crawl do
   end
 
   desc 'Run a package crawl: rake crawl:packages[2026-04,npm,100,false]'
-  task :packages, %i[period ecosystem limit refresh] do |_task, args|
+  package_args = %i[period ecosystem limit refresh repository_limit scan_limit manifest_limit registry_limit]
+  task :packages, package_args do |_task, args|
     PolishOpenSourceRank::Interfaces::Composition::PackageRankingJobFactory.build(package_argv(args)).call
   end
 
@@ -20,15 +21,31 @@ namespace :crawl do
   task :list do
     crawl_job_repository.all.each { |job| puts format_crawl_job(job) }
   end
+
+  desc 'Reset interrupted package repository scans: rake crawl:repair_packages[2026-04]'
+  task :repair_packages, [:period] do |_task, args|
+    period = PolishOpenSourceRank::Shared::Domain::Period.parse(args[:period])
+    count = package_repository_queue.reset_stale_processing(period, older_than: 0)
+    puts "Reset #{count} interrupted package repository scans for #{period.key}"
+  end
 end
 
 def package_argv(args)
-  argv = []
-  argv += ['--period', args[:period]] if args[:period]
-  argv += ['--ecosystem', args[:ecosystem]] if args[:ecosystem]
-  argv += ['--limit', args[:limit]] if args[:limit]
+  argv = package_value_arguments(args)
   argv << '--refresh' if args[:refresh] == 'true'
   argv
+end
+
+def package_value_arguments(args)
+  [
+    ['--period', args[:period]],
+    ['--ecosystem', args[:ecosystem]],
+    ['--limit', args[:limit]],
+    ['--repository-limit', args[:repository_limit]],
+    ['--scan-limit', args[:scan_limit]],
+    ['--manifest-limit', args[:manifest_limit]],
+    ['--registry-limit', args[:registry_limit]]
+  ].flat_map { |flag, value| value ? [flag, value] : [] }
 end
 
 def monthly_argv(args)
@@ -41,12 +58,22 @@ def monthly_argv(args)
 end
 
 def crawl_job_repository
-  configuration = PolishOpenSourceRank::Configuration.load
-  database = PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(configuration.database_path)
-  PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration
-    .new(database, PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql)
-    .bootstrap!
   PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteCrawlJobRepository.new(database)
+end
+
+def package_repository_queue
+  PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite::SQLitePackageRepositoryQueue.new(database)
+end
+
+def database
+  @database ||= begin
+    configuration = PolishOpenSourceRank::Configuration.load
+    sqlite = PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(configuration.database_path)
+    PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration
+      .new(sqlite, PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql)
+      .bootstrap!
+    sqlite
+  end
 end
 
 def format_crawl_job(job)

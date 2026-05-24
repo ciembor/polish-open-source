@@ -40,6 +40,7 @@ module PolishOpenSourceRank
         def render_package_ranking_detail(period_slug, ecosystem, metric_slug)
           metric = Contexts::Packages::Domain::PackageRankingMetric.key_for_slug(metric_slug)
           halt 404 unless metric
+          halt 404 unless Contexts::Packages::Domain::PackageRankingMetric.supported_for_ecosystem?(ecosystem, metric)
           @period_slug = period_slug
           @period = period_for(period_slug)
           public_html_cache!(

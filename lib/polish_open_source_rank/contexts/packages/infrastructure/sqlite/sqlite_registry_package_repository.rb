@@ -46,7 +46,13 @@ module PolishOpenSourceRank
 
             def record_fetch_result(period, package_row, result)
               database.transaction do
-                result.ok? ? record_success(period, result) : record_failure(package_row, result)
+                if result.ok?
+                  record_success(period, result)
+                elsif result.package
+                  record_package_context(result.package)
+                else
+                  record_failure(package_row, result)
+                end
               end
             end
 
@@ -109,14 +115,18 @@ module PolishOpenSourceRank
 
             def record_success(period, result)
               package = result.package
-              registry_packages.insert_conflict(
-                target: %i[ecosystem normalized_package_name],
-                update: registry_package_update(package)
-              ).insert(registry_package_insert(package))
+              record_package_context(package)
               registry_package_snapshots.insert_conflict(
                 target: %i[ecosystem normalized_package_name period_start],
                 update: snapshot_update(result.snapshot)
               ).insert(snapshot_insert(period, result.snapshot))
+            end
+
+            def record_package_context(package)
+              registry_packages.insert_conflict(
+                target: %i[ecosystem normalized_package_name],
+                update: registry_package_update(package)
+              ).insert(registry_package_insert(package))
             end
 
             def record_failure(package_row, result)

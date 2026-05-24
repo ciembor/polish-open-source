@@ -4,7 +4,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application do
   let(:read_model) do
     double(
       'PackageRankingReadModel',
-      ecosystems: %w[npm rubygems],
+      ecosystems: %w[npm rubygems pypi],
       rankings: { downloads_30d: [{ package_name: 'tool' }] },
       ranked_packages: [{ package_name: 'tool' }],
       package_profile: { package_name: 'tool' }

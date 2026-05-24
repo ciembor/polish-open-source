@@ -28,6 +28,9 @@ RSpec.describe File do
     expect(service).to include('/usr/bin/flock -n /home/ciembor/polish-open-source-rank/tmp/crawl.lock')
     expect(service).to include('-v /home/ciembor/polish-open-source-rank/db:/app/db')
     expect(service).to include('bundle exec ruby bin/package_rankings')
+    expect(service).to include(
+      '--repository-limit 5000 --scan-limit 5000 --manifest-limit 10000 --registry-limit 10000'
+    )
     expect(timer).to include('OnCalendar=*-*-02 07:15:00')
     expect(timer).to include('Persistent=true')
   end

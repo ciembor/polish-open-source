@@ -50,6 +50,26 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     expect(registry_snapshots).to be_empty
   end
 
+  it 'preserves package metadata when an optional metric fetch fails' do
+    seed_pending_package
+    package = PolishOpenSourceRank::Contexts::Packages::Domain::RegistryPackage.new(
+      ecosystem: 'npm',
+      package_name: 'tool',
+      registry_url: 'https://www.npmjs.com/package/tool',
+      latest_version: '1.2.3'
+    )
+    result = PolishOpenSourceRank::Contexts::Packages::Domain::RegistryFetchResult.new(
+      status: 'rate_limited',
+      package: package,
+      error: 'downloads limited'
+    )
+
+    repository.record_fetch_result(period, registry_packages.first, result)
+
+    expect(registry_packages.first).to include(status: 'active', latest_version: '1.2.3', error: nil)
+    expect(registry_snapshots).to be_empty
+  end
+
   def seed_scan
     database.execute(
       <<~SQL,
