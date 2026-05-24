@@ -168,7 +168,12 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
       license: 'MIT',
       latest_version: '2.1.0'
     )
-    expect(packagist.snapshot.downloads_total).to be_nil
+    expect(packagist.snapshot.to_h).to include(
+      downloads_total: 12_345,
+      downloads_30d: 456,
+      downloads_7d: 17,
+      latest_version: '2.1.0'
+    )
     expect(go.package.to_h).to include(ecosystem: 'go', latest_version: 'v1.2.3')
     expect(go.snapshot.to_h).to include(latest_release_at: '2026-05-01T00:00:00Z', downloads_total: nil)
   end
@@ -281,10 +286,13 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
 
   def packagist_body
     {
-      packages: {
-        'vendor/package' => [
-          { version: '2.1.0', source: { url: 'https://github.com/vendor/package' }, license: ['MIT'] }
-        ]
+      package: {
+        name: 'vendor/package',
+        repository: 'https://github.com/vendor/package',
+        downloads: { total: 12_345, monthly: 456, daily: 17 },
+        versions: {
+          '2.1.0' => { version: '2.1.0', license: ['MIT'] }
+        }
       }
     }
   end

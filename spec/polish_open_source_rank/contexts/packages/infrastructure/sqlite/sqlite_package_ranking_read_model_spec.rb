@@ -24,19 +24,25 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     seed_package(ecosystem: 'rubygems', name: 'ruby-zeta', downloads_total: 100, dependents_count: 5)
     seed_package(ecosystem: 'rubygems', name: 'ruby-alpha', downloads_total: 80, dependents_count: 7)
     seed_package(ecosystem: 'crates', name: 'crate', downloads_30d: 10)
+    seed_package(ecosystem: 'packagist', name: 'vendor/zeta', downloads_30d: 50, downloads_total: 400)
+    seed_package(ecosystem: 'packagist', name: 'vendor/alpha', downloads_30d: 60, downloads_total: 300)
+    seed_package(ecosystem: 'packagist', name: 'vendor/nil-downloads', downloads_30d: nil, downloads_total: 1)
 
     expect(package_names('npm', :downloads_30d)).to eq(%w[alpha zeta])
     expect(package_names('rubygems', :downloads_total)).to eq(%w[ruby-zeta ruby-alpha])
     expect(package_names('rubygems', :dependents_count)).to eq(%w[ruby-alpha ruby-zeta])
+    expect(package_names('packagist', :downloads_30d)).to eq(%w[vendor/alpha vendor/zeta])
+    expect(package_names('packagist', :downloads_total)).to eq(%w[vendor/zeta vendor/alpha vendor/nil-downloads])
   end
 
   it 'returns ranking metrics supported by the ecosystem' do
-    seed_package(ecosystem: 'npm', name: 'alpha', downloads_30d: 50, downloads_total: 100, dependents_count: 5)
+    seed_package(ecosystem: 'packagist', name: 'vendor/alpha', downloads_30d: 50, downloads_total: 100)
 
-    rankings = read_model.rankings(ecosystem: 'npm', period_start: period)
+    rankings = read_model.rankings(ecosystem: 'packagist', period_start: period)
 
-    expect(rankings.keys).to eq(%i[downloads_30d])
-    expect(rankings.fetch(:downloads_30d).first).to include(package_name: 'alpha')
+    expect(rankings.keys).to eq(%i[downloads_30d downloads_total])
+    expect(rankings.fetch(:downloads_30d).first).to include(package_name: 'vendor/alpha')
+    expect(rankings.fetch(:downloads_total).first).to include(package_name: 'vendor/alpha')
   end
 
   it 'includes repository ownership from user and organization repositories' do
@@ -192,6 +198,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     case ecosystem
     when 'npm' then "https://www.npmjs.com/package/#{name}"
     when 'rubygems' then "https://rubygems.org/gems/#{name}"
+    when 'packagist' then "https://packagist.org/packages/#{name}"
     else "https://example.com/#{ecosystem}/#{name}"
     end
   end

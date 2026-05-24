@@ -8,8 +8,8 @@ module PolishOpenSourceRank
           Metric = Struct.new(:slug, :key, :ecosystems, keyword_init: true)
 
           METRICS = [
-            Metric.new(slug: 'top', key: 'downloads_30d', ecosystems: %w[npm crates]),
-            Metric.new(slug: 'downloads', key: 'downloads_total', ecosystems: %w[crates rubygems hex]),
+            Metric.new(slug: 'top', key: 'downloads_30d', ecosystems: %w[npm crates packagist]),
+            Metric.new(slug: 'downloads', key: 'downloads_total', ecosystems: %w[crates rubygems hex packagist]),
             Metric.new(slug: 'dependents', key: 'dependents_count', ecosystems: %w[rubygems])
           ].freeze
 

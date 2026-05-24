@@ -6,7 +6,7 @@ module PolishOpenSourceRank
       module Infrastructure
         module Registries
           class PackagistRegistryClient
-            DEFAULT_BASE_URL = 'https://repo.packagist.org'
+            DEFAULT_BASE_URL = 'https://packagist.org'
             WEB_BASE_URL = 'https://packagist.org/packages'
             Helpers = RegistryClientHelpers
 
@@ -21,33 +21,39 @@ module PolishOpenSourceRank
             end
 
             def fetch(package_name)
-              result = http_client.get_json("/p2/#{package_name}.json")
+              result = http_client.get_json("/packages/#{package_name}.json")
               return Helpers.fetch_error(result) unless result.status == 'ok'
 
-              version = versions(result.body, package_name).first || {}
-              package = registry_package(package_name, version)
+              package_data = result.body.fetch('package', {})
+              version = latest_version(package_data)
+              registry_package = registry_package(package_name, package_data, version)
               snapshot = Domain::RegistryPackageSnapshot.new(
                 ecosystem: 'packagist',
                 package_name: package_name,
-                latest_version: package.latest_version
+                downloads_total: package_data.dig('downloads', 'total'),
+                downloads_30d: package_data.dig('downloads', 'monthly'),
+                downloads_7d: package_data.dig('downloads', 'daily'),
+                latest_version: registry_package.latest_version
               )
-              Domain::RegistryFetchResult.new(status: 'ok', package: package, snapshot: snapshot)
+              Domain::RegistryFetchResult.new(status: 'ok', package: registry_package, snapshot: snapshot)
             end
 
             private
 
             attr_reader :http_client
 
-            def versions(body, package_name)
-              body.fetch('packages', {}).fetch(package_name, [])
+            def latest_version(package_data)
+              versions = package_data.fetch('versions', [])
+              records = versions.is_a?(Hash) ? versions.values : versions
+              records.first || {}
             end
 
-            def registry_package(package_name, version)
+            def registry_package(package_name, package_data, version)
               Domain::RegistryPackage.new(
                 ecosystem: 'packagist',
                 package_name: package_name,
                 registry_url: "#{WEB_BASE_URL}/#{package_name}",
-                repository_url: version.dig('source', 'url'),
+                repository_url: package_data['repository'] || version.dig('source', 'url'),
                 homepage_url: version['homepage'],
                 license: Helpers.license(version['license']),
                 latest_version: version['version']
