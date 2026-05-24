@@ -51,12 +51,12 @@ module PolishOpenSourceRank
 
             def elixir_app_name(content)
               match = content.match(/\bapp:\s*:([a-zA-Z_]\w*)/)
-              match && match[1].tr('_', '-')
+              match && match[1]
             end
 
             def rebar_app_name(content)
               match = content.match(/\{app,\s*([a-zA-Z_]\w*)\}/)
-              match && match[1].tr('_', '-')
+              match && match[1]
             end
           end
         end
