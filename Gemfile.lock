@@ -172,6 +172,7 @@ DEPENDENCIES
   rackup (~> 2.2)
   rake (~> 13.3)
   reek (~> 6.5)
+  rexml (~> 3.4)
   rspec (~> 3.13)
   rubocop (~> 1.81)
   rubocop-rspec (~> 3.7)
