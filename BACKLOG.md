@@ -1,184 +1,169 @@
-# Backlog: lepsze odkrywanie polskich pakietów
+# Backlog: rozszerzenie rankingów pakietów
 
-Cel: zwiększyć liczbę i jakość polskich pakietów w rankingach bez zmiany źródła prawdy o polskości. GitHub pozostaje źródłem atrybucji PL, a registry służą tylko do metryk popularności, wersji i trendów.
+Cel: pokazać więcej sensownych ekosystemów pakietów w publicznym `/packages`, ale tylko wtedy, gdy mamy wiarygodną metrykę rankingową albo świadomie oznaczony etap diagnostyczny. GitHub pozostaje źródłem kwalifikacji polskości; registry i systemy pakietów służą do metryk, wersji i linków.
 
-## Zasady produktu i danych
+## Zasady
 
-- [ ] GitHub jest źródłem prawdy dla polskości repozytorium, właściciela i organizacji.
-- [ ] Registry nie klasyfikuje pakietu jako polskiego.
-- [ ] Manifest w polskim repozytorium łączy GitHub repo z pakietem w registry.
-- [ ] Registry wzbogaca znany polski pakiet o metryki, takie jak downloads, dependents, latest version i registry URL.
-- [ ] Rankingi pakietów pozostają per ecosystem; nie dodajemy globalnego cross-ecosystem rankingu.
-- [ ] Trending packages opierają się na delcie metryk registry, ale kwalifikacja do rankingu nadal pochodzi z GitHuba.
+- [ ] Nie klasyfikować pakietu jako polskiego na podstawie registry.
+- [ ] Pakiet trafia do polskiego rankingu przez manifest w repozytorium zakwalifikowanym przez GitHubowy ranking PL.
+- [ ] Nie pokazywać publicznego rankingu ekosystemu bez stabilnej metryki sortowania.
+- [ ] Zachowywać `nil` dla niedostępnych metryk zamiast udawać zero.
+- [ ] Każdy nowy ekosystem ma testy parsera, klienta registry, read modelu i UI/routingu.
+- [ ] Każda zmiana przechodzi `bin/quality` i jest commitowana bez omijania hooków.
 
-## Milestone 1 - szerokie inventory repozytoriów z GitHuba
+## Kolejność
 
-- [ ] Potwierdzić, które tabele monthly snapshot już przechowują wszystkie publiczne repozytoria zaakceptowanych polskich userów i organizacji.
-- [ ] Jeśli inventory jest obecnie zbyt wąskie, rozszerzyć monthly crawl tak, żeby zapisywał publiczne, niearchiwalne, nieforkowane repozytoria polskich właścicieli niezależnie od liczby gwiazdek.
-- [ ] Zapisać lub udostępnić package crawlowi tanie pola priorytetyzacji: `stargazers_count`, `monthly_stars_delta`, `pushed_at`, `created_at`, `primary_language`, `topics`, `fork`, `archived`, `owner_kind`.
-- [ ] Liczyć `monthly_stars_delta` domyślnie z poprzedniego lokalnego snapshotu, zamiast pytać GitHuba o historię gwiazdek dla każdego repozytorium.
-- [ ] Zostawić droższe GitHub queries tylko dla przypadków, gdzie lokalny diff nie wystarcza i wartość danych uzasadnia koszt.
-- [ ] Dodać testy, że niskogwiazdkowe repozytoria polskich właścicieli trafiają do inventory.
+1. [ ] Packagist downloads
+2. [ ] Hex diagnosis
+3. [ ] Homebrew
+4. [ ] NuGet
+5. [ ] Maven
 
-## Milestone 2 - nowa kolejka package scan
+## 1. Packagist Downloads
 
-- [ ] Usunąć twardy filtr `stars >= 5 OR monthly_stars_delta > 0` jako warunek kwalifikacji do skanowania manifestów.
-- [ ] Zastąpić go priorytetami kolejki:
-  - [ ] priorytet 0: repozytoria już powiązane ze znanymi opublikowanymi pakietami,
-  - [ ] priorytet 1: repozytoria z dodatnim `monthly_stars_delta`, świeżym `pushed_at` albo świeżym `created_at`,
-  - [ ] priorytet 2: repozytoria package-like po języku, topics albo wcześniejszych manifestach,
-  - [ ] priorytet 3: repozytoria z gwiazdkami powyżej niskiego progu,
-  - [ ] priorytet 4: rotacyjna próbka długiego ogona.
-- [ ] Zachować pomijanie forków i repozytoriów zarchiwizowanych.
-- [ ] Dodać rotację długiego ogona, żeby repozytoria z małą liczbą gwiazdek były skanowane okresowo, ale nie blokowały całego joba.
-- [ ] Zapisać powód enqueue i priorytet, żeby można było diagnozować, skąd wzięły się kandydaty.
-- [ ] Dodać statystyki joba pokazujące liczbę repozytoriów per priorytet i status.
+Dlaczego: dane Packagist już są w bazie, ale ekosystem nie jest widoczny, bo obecny klient nie zapisuje liczbowej metryki rankingowej.
 
-## Milestone 3 - cache manifestów między okresami
+- [ ] Sprawdzić oficjalny endpoint Packagist z metrykami downloads dla pakietu.
+- [ ] Rozszerzyć `PackagistRegistryClient`, żeby zapisywał:
+  - [ ] `downloads_total`,
+  - [ ] `downloads_30d` albo najbliższy wiarygodny odpowiednik miesięczny, jeśli API go daje.
+- [ ] Dodać `packagist` do publicznych metryk w `PackageRankingMetric`.
+- [ ] Upewnić się, że `/packages` pokazuje Packagist po pojawieniu się snapshotów z metryką.
+- [ ] Dodać testy dla klienta registry i ranking read modelu.
+- [ ] Uruchomić package crawl dla Packagist lub pełny crawl z obecnymi limitami.
+- [ ] Sprawdzić produkcyjne liczby snapshotów i pozycje rankingowe.
 
-- [ ] Wykorzystać `tree_sha` jako klucz do pomijania skanowania niezmienionych repozytoriów między okresami.
-- [ ] Upewnić się, że cache uwzględnia `parser_version`, żeby zmiana parserów wymusiła ponowne przeliczenie manifestów.
-- [ ] Przenieść ponowne użycie manifestów do adaptera/repozytorium, nie do CLI.
-- [ ] Przy braku zmian w tree kopiować lub materializować poprzednie wyniki manifestów dla nowego okresu.
-- [ ] Dodać testy, że niezmienione repozytorium nie pobiera ponownie blobów manifestów.
-- [ ] Dodać testy, że zmiana `parser_version` wymusza refresh.
+Definition of Done:
 
-## Milestone 4 - znane pakiety i snapshoty registry
+- [ ] Packagist jest widoczny w `/packages`.
+- [ ] Ranking Packagist sortuje po prawdziwej metryce downloads.
+- [ ] Brak metryki w API nie tworzy fałszywych zer.
 
-- [ ] Co miesiąc odświeżać registry snapshots dla pakietów już powiązanych z polskimi repozytoriami, nawet jeśli repozytorium nie zostało ponownie zeskanowane.
-- [ ] Nie usuwać pakietu z rankingu tylko dlatego, że w danym miesiącu repozytorium nie trafiło do budżetu scanów.
-- [ ] Rozróżnić brak pakietu w registry od czasowego błędu registry.
-- [ ] Zachowywać `nil` dla metryk niedostępnych, zamiast używać fałszywego zera.
-- [ ] Dodać raport liczby aktywnych, not_found, failed i rate_limited pakietów per ecosystem.
+## 2. Hex Diagnosis
 
-## Milestone 5 - trending packages
+Dlaczego: Hex ma już obsługiwaną metrykę `downloads_total` i jest dopuszczony w `PackageRankingMetric`, ale produkcja nie pokazuje Hex, bo nie ma aktywnych snapshotów.
 
-- [ ] Dodać metryki trendu per ecosystem, bazujące na porównaniu bieżącego i poprzedniego snapshotu registry.
-- [ ] Obsłużyć `downloads_30d_delta` dla npm i innych registry, które mają wiarygodne okno pobrań.
-- [ ] Obsłużyć `downloads_total_delta` tam, gdzie dostępny jest tylko licznik total.
-- [ ] Dodać minimalne progi bazowe, żeby nie promować szumu typu wzrost z 1 do 12 pobrań.
-- [ ] Dodać per-ecosystem progi i sortowanie, zamiast jednego globalnego algorytmu dla wszystkich rejestrów.
-- [ ] Dodać deterministyczne tie-breakery.
-- [ ] Dodać publiczne lub wewnętrzne widoki trending dopiero po stabilizacji danych z co najmniej dwóch okresów.
+- [ ] Sprawdzić produkcyjne `registry_packages` dla `hex`: statusy `active`, `not_found`, `failed`, `pending`.
+- [ ] Sprawdzić `package_manifests` dla `hex`: `parsed`, `partial`, `failed`, `unpublished`.
+- [ ] Ustalić, czy problemem są:
+  - [ ] nazwy pakietów z parserów `mix.exs` / `rebar.config`,
+  - [ ] błędne mapowanie do Hex API,
+  - [ ] brak opublikowanych pakietów,
+  - [ ] rate limiting albo błędy registry.
+- [ ] Dodać brakujące testy regresyjne dla wykrytego przypadku.
+- [ ] Naprawić parser albo klienta registry, jeśli diagnoza wskaże błąd po naszej stronie.
+- [ ] Uruchomić ograniczony crawl Hex.
 
-## Milestone 6 - ostrożne package-first discovery
+Definition of Done:
 
-- [ ] Traktować registry metadata tylko jako źródło linków do GitHuba, nie jako dowód polskości.
-- [ ] Jeśli registry wskazuje GitHub URL, mapować go do znanego GitHub inventory.
-- [ ] Kwalifikować pakiet jako polski tylko wtedy, gdy repozytorium z registry URL przechodzi przez GitHubową klasyfikację PL.
-- [ ] Oznaczać źródło odkrycia pakietu, np. `manifest_in_polish_repo`, `known_package_refresh`, `registry_source_url_match`.
-- [ ] Nie dodawać GitHub Code Search jako głównego mechanizmu odkrywania manifestów.
-- [ ] Dodać testy, że pakiet znaleziony w registry bez potwierdzonego polskiego repozytorium nie trafia do polskiego rankingu.
+- [ ] Wiemy, dlaczego Hex nie pojawia się w UI.
+- [ ] Jeśli mamy realne aktywne paczki Hex, `/packages` pokazuje Hex.
+- [ ] Jeśli nie mamy realnych aktywnych paczek, mamy udokumentowaną przyczynę w testach lub diagnostyce.
 
-## Milestone 7 - wydajność i budżety jobów
+## 3. Homebrew
 
-- [ ] Nie zwiększać kosztu monthly crawl przez pełne skanowanie manifestów.
-- [ ] Utrzymać package crawl jako osobny, wznawialny job.
-- [ ] Dodać osobne limity dla enqueue, scan, manifest parsing, registry resolution i registry snapshot.
-- [ ] Ustalić produkcyjne budżety tak, żeby high-priority repozytoria kończyły się w jednym przebiegu, a długi ogon rotował.
-- [ ] Upewnić się, że przerwany job można wznowić bez utraty już zapisanych wyników.
+Dlaczego: to najlepszy pierwszy systemowy ekosystem. Ma publiczne dane formuł i analytics, a wiele formuł mapuje się na repozytoria GitHub.
 
-## Milestone 8 - jakość danych i diagnostyka
+- [ ] Dodać nowy ekosystem `homebrew`.
+- [ ] Dodać detekcję manifestów/formuł:
+  - [ ] `Formula/*.rb`,
+  - [ ] `Casks/*.rb`, jeśli zdecydujemy objąć caski,
+  - [ ] lokalne tapy Homebrew, jeśli występują w polskich repozytoriach.
+- [ ] Zaprojektować parser formuły jako bezpieczny parser statyczny, bez wykonywania Ruby.
+- [ ] Wyciągać co najmniej:
+  - [ ] nazwę formuły,
+  - [ ] homepage,
+  - [ ] URL źródłowy,
+  - [ ] GitHub URL, jeśli występuje,
+  - [ ] licencję, jeśli łatwo dostępna.
+- [ ] Dodać klienta Homebrew analytics dla metryk:
+  - [ ] installs 30d,
+  - [ ] installs 90d albo total, jeśli potrzebne.
+- [ ] Zmapować metrykę na `downloads_30d` albo osobną nazwę domenową, jeśli `downloads` byłoby mylące.
+- [ ] Dodać ranking publiczny Homebrew.
+- [ ] Dodać testy parsera, klienta analytics i read modelu.
 
-- [ ] Dodać stronę lub log operacyjny pokazujący, dlaczego liczba pakietów w danym ecosystem jest niska.
-- [ ] Raportować top przyczyny odrzucenia manifestów: private, unpublished, custom registry, parse failed, registry not found.
-- [ ] Raportować repozytoria z manifestami bez opublikowanego pakietu.
-- [ ] Raportować pakiety z metrykami registry, ale bez rankingowej metryki dla danego ecosystem.
-- [ ] Dodać sanity checks po jobie: liczba scanów, manifestów, pakietów, snapshotów i rankingowych pozycji per ecosystem.
+Definition of Done:
 
-## Milestone 9 - architektura i testy
+- [ ] Homebrew ma stabilny ranking publiczny.
+- [ ] Nie wykonujemy kodu formuł.
+- [ ] Metryka jest nazwana tak, żeby nie mylić install analytics z registry downloads.
 
-- [ ] Utrzymać regułę: use case’y packages nie importują szczegółów GitHuba, SQLite, registry ani web layer.
-- [ ] Umieścić priorytetyzację kandydatów w aplikacyjnym use case albo domenowej polityce, nie w SQL rozproszonym po adapterach.
-- [ ] Adapter SQLite może optymalizować zapytania, ale nie powinien być jedynym miejscem, gdzie da się zrozumieć reguły kwalifikacji.
-- [ ] Dodać testy use case dla niskogwiazdkowego repozytorium z package manifestem i wysokimi downloads.
-- [ ] Dodać testy trending z poprzednim i bieżącym snapshotem.
-- [ ] Dodać testy regresyjne dla pakietów bez metryk, błędów registry i niezmienionego `tree_sha`.
-- [ ] `bin/quality` przechodzi.
-- [x] Zmiany są commitowane po przejściu hooków.
+## 4. NuGet
 
-## Milestone 10 - operacyjny monitor jobów i estymacje czasu
+Dlaczego: duży ekosystem .NET/C#, z publicznym registry API i licznikami pobrań.
 
-Cel: `/internal/jobs` ma pomagać w decyzjach operacyjnych, np. ile potrwa zwiększenie liczby zapisywanych repozytoriów albo rozszerzenie package crawl. Monitor nie może mieszać userów, organizacji, repozytoriów i pakietów w jedną liczbę postępu.
+- [ ] Dodać nowy ekosystem `nuget`.
+- [ ] Dodać detekcję manifestów:
+  - [ ] `.csproj`,
+  - [ ] `.fsproj`,
+  - [ ] `.vbproj`,
+  - [ ] `.nuspec`,
+  - [ ] `Directory.Packages.props`.
+- [ ] Dodać parser:
+  - [ ] package id,
+  - [ ] version,
+  - [ ] repository URL,
+  - [ ] project URL,
+  - [ ] license.
+- [ ] Dodać klienta NuGet registry:
+  - [ ] latest version,
+  - [ ] downloads total,
+  - [ ] registry URL,
+  - [ ] repository/project URL, jeśli API daje.
+- [ ] Dodać metrykę rankingową dla NuGet.
+- [ ] Dodać testy XML parserów bez zależności od frameworków webowych.
+- [ ] Uruchomić ograniczony crawl NuGet.
 
-- [x] Rozdzielić monitor na niezależne sekcje:
-  - [x] monthly users,
-  - [x] monthly organizations,
-  - [x] user repositories,
-  - [x] organization repositories,
-  - [x] package repository scans,
-  - [x] package manifests,
-  - [x] registry packages,
-  - [x] registry snapshots per ecosystem.
-- [x] Dodać jawny model etapów joba, zamiast wyprowadzać wszystko pośrednio z `sync_runs`, `crawl_job_runs` i istniejących tabel rankingowych.
-- [x] Notować zdarzenia przetwarzania w osobnej tabeli operacyjnej, np. `job_work_events`:
-  - [x] `job_run_id` albo stabilny identyfikator runu,
-  - [x] `period_start`,
-  - [x] `job_kind`,
-  - [x] `stage`,
-  - [x] `unit_kind`,
-  - [x] `platform`,
-  - [x] `ecosystem`,
-  - [x] `subject_id`,
-  - [x] `subject_label`,
-  - [x] `status`,
-  - [x] `started_at`,
-  - [x] `finished_at`,
-  - [x] `duration_ms`,
-  - [x] `error`.
-- [x] Utrzymać istniejące tabele domenowe jako źródło prawdy dla wyników, a tabelę zdarzeń traktować jako obserwowalność/telemetrię.
-- [x] Mierzyć osobno średni, medianowy i p95 czas:
-  - [x] przetworzenia kandydata-usera,
-  - [x] przetworzenia kandydata-organizacji,
-  - [x] pobrania i zapisania repozytoriów usera,
-  - [x] pobrania i zapisania repozytoriów organizacji,
-  - [x] policzenia delty gwiazdek repozytorium,
-  - [x] zeskanowania repozytorium packages,
-  - [x] sparsowania manifestu,
-  - [x] rozwiązania pakietu w registry,
-  - [x] pobrania snapshotu registry package.
-- [x] Dla każdego etapu pokazywać:
-  - [x] total,
-  - [x] done,
-  - [x] pending,
-  - [x] failed,
-  - [x] skipped,
-  - [x] throughput/min,
-  - [x] średni czas/unit,
-  - [x] medianę,
-  - [x] p95,
-  - [x] ETA według średniej i według p95.
-- [x] Dla packages pokazywać osobne wiersze per ecosystem, żeby npm/crates/RubyGems/PyPI/Packagist/Go nie zasłaniały się nawzajem.
-- [x] Dla package repository scans rozdzielić `repository_kind=user` i `repository_kind=organization`.
-- [x] Dla registry snapshots rozdzielić statusy `active`, `not_found`, `rate_limited`, `failed`, `pending`.
-- [x] Pokazywać, który stage jest aktualnie wykonywany i kiedy ostatnio przesunął licznik.
-- [x] Dodać ostrzeżenie stale progress, jeśli dany etap nie ma nowych zdarzeń przez konfigurowalny czas.
-- [x] Dodać linki lub drill-down do ostatnich błędów per stage i ecosystem.
-- [x] Zachować `/internal/jobs` jako noindex/no-store i nie wystawiać danych operacyjnych do publicznych cache.
-- [x] Dodać testy read modelu monitora bez realnej sieci.
-- [x] Dodać testy, że scoped monthly jobs pokazują userów i organizacje niezależnie.
-- [x] Dodać testy, że package job pokazuje metryki per ecosystem i per stage.
-- [x] `bin/quality` przechodzi.
-- [ ] Zmiany są commitowane po przejściu hooków.
+Definition of Done:
 
-## Proponowana kolejność wdrożenia
+- [ ] NuGet jest widoczny w `/packages`.
+- [ ] `.csproj` i `.nuspec` nie wymagają wykonywania build tooli.
+- [ ] Ranking używa prawdziwych liczników NuGet.
 
-- [ ] PR 1: poszerzyć package queue o niskogwiazdkowe repozytoria z inventory, dodać priorytety i diagnostykę.
-- [ ] PR 2: dodać cache manifestów między okresami po `tree_sha` i `parser_version`.
-- [ ] PR 3: odświeżać znane pakiety niezależnie od ponownego skanowania repozytorium.
-- [ ] PR 4: dodać trending metrics i ranking po deltach registry.
-- [ ] PR 5: dodać ostrożne registry source URL matching do znanego GitHub inventory.
-- [ ] PR 6: zoptymalizować monthly crawl pod lokalne diffy gwiazdek i szerokie repository inventory.
-- [ ] PR 7: przebudować `/internal/jobs` na niezależne sekcje users/orgs/repos/packages z throughput i ETA.
+## 5. Maven
 
-## Definition of Done
+Dlaczego: ważny ekosystem JVM/Java/Kotlin, ale metryki popularności są mniej proste niż w Packagist/NuGet.
 
-- [ ] GitHub pozostaje jedynym źródłem kwalifikacji PL.
-- [ ] Registry służy tylko do metryk i linków pomocniczych.
-- [ ] Niskogwiazdkowe polskie repozytoria mogą trafić do package scan.
-- [ ] Trending packages używają porównania snapshotów, a nie samych gwiazdek.
-- [ ] Joby są wznawialne, limitowane i diagnozowalne.
-- [ ] `/internal/jobs` pokazuje niezależny postęp i ETA dla userów, organizacji, repozytoriów oraz packages per ecosystem.
-- [ ] Testy pokrywają decyzje kwalifikacji, cache, trendy i błędy registry.
-- [ ] `bin/quality` przechodzi.
-- [ ] Zmiany są zacommitowane po przejściu hooków.
+- [ ] Dodać decyzję produktową: czy Maven pokazujemy od razu publicznie, czy najpierw zbieramy dane diagnostycznie.
+- [ ] Dodać nowy ekosystem `maven`.
+- [ ] Dodać detekcję manifestów:
+  - [ ] `pom.xml`,
+  - [ ] `build.gradle`,
+  - [ ] `build.gradle.kts`,
+  - [ ] `settings.gradle`,
+  - [ ] `settings.gradle.kts`.
+- [ ] Dodać parser Maven/Gradle:
+  - [ ] `groupId`,
+  - [ ] `artifactId`,
+  - [ ] version,
+  - [ ] URL projektu,
+  - [ ] SCM URL,
+  - [ ] licencja.
+- [ ] Dodać klienta Maven Central:
+  - [ ] latest version,
+  - [ ] artifact coordinates,
+  - [ ] registry URL.
+- [ ] Sprawdzić dostępne metryki popularności Maven Central.
+- [ ] Jeśli nie ma dobrej metryki downloads, nie pokazywać publicznego rankingu Maven na siłę.
+- [ ] Dodać widok diagnostyczny lub wewnętrzny raport liczby wykrytych artefaktów Maven.
+
+Definition of Done:
+
+- [ ] Maven artefakty są wykrywane i rozwiązywane do Maven Central.
+- [ ] Publiczny ranking pojawia się tylko, jeśli mamy stabilną metrykę.
+- [ ] Brak metryki jest jawnie opisany w kodzie/testach, nie ukryty w pustym UI.
+
+## Operacje Po Każdym Etapie
+
+- [ ] Uruchomić `bin/quality`.
+- [ ] Wdrożyć po przejściu hooków.
+- [ ] Sprawdzić `/packages`.
+- [ ] Sprawdzić produkcyjne liczby:
+  - [ ] `package_repository_scans`,
+  - [ ] `package_manifests`,
+  - [ ] `registry_packages`,
+  - [ ] `registry_package_snapshots`,
+  - [ ] statusy `active`, `not_found`, `failed`, `rate_limited`, `pending`.
+- [ ] Sprawdzić `/internal/jobs` po crawl runie.
+- [ ] Zanotować, czy ekosystem ma publiczny ranking, czy tylko diagnostykę.
