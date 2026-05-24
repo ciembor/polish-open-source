@@ -64,6 +64,15 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
     )
   end
 
+  it 'maps malformed registry responses to failed fetches' do
+    stub_http(raw_response('200', '{broken json'))
+
+    expect(client(:RubyGemsRegistryClient).fetch('malformed')).to have_attributes(
+      status: 'failed',
+      error: include('expected object key')
+    )
+  end
+
   it 'maps RubyGems metadata, totals, latest version, links, and reverse dependencies' do
     stub_http(response('200', rubygems_body))
 
@@ -179,6 +188,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
   end
 
   def response(code, body, headers: {})
+    raw_response(code, JSON.generate(body), headers: headers)
+  end
+
+  def raw_response(code, body, headers: {})
     klass = code.start_with?('2') ? Net::HTTPOK : Net::HTTPResponse
     klass = Net::HTTPNotFound if code == '404'
     klass = Net::HTTPTooManyRequests if code == '429'
@@ -186,7 +199,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
     response = klass.new('1.1', code, 'status')
     headers.each { |key, value| response[key] = value }
     response.instance_variable_set(:@read, true)
-    response.body = JSON.generate(body)
+    response.body = body
     response
   end
 
