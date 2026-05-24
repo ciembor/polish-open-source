@@ -9,6 +9,7 @@ module PolishOpenSourceRank
         module GitHub
           class GitHubRepositoryTreeGateway
             DEFAULT_MAX_BLOB_BYTES = 1_048_576
+            UNAVAILABLE_STATUSES = [404, 409, 451].freeze
 
             def initialize(client, max_blob_bytes: DEFAULT_MAX_BLOB_BYTES)
               @client = client
@@ -16,30 +17,26 @@ module PolishOpenSourceRank
             end
 
             def repository(full_name)
-              body = get(repository_path(full_name)).body
+              body = github_response(full_name) { get(repository_path(full_name)) }.body
               { full_name: body.fetch('full_name'), default_branch: body.fetch('default_branch') }
-            rescue PolishOpenSourceRank::Infrastructure::GitHubClient::NotFound
-              raise_unavailable(full_name)
             end
 
             def tree(full_name, ref:)
-              body = get("#{repository_path(full_name)}/git/trees/#{ref}", params: { recursive: 1 }).body
+              body = github_response(full_name) do
+                get("#{repository_path(full_name)}/git/trees/#{ref}", params: { recursive: 1 })
+              end.body
               Domain::RepositoryTree.new(
                 sha: body.fetch('sha'),
                 entries: tree_entries(body.fetch('tree', [])),
                 truncated: body.fetch('truncated', false)
               )
-            rescue PolishOpenSourceRank::Infrastructure::GitHubClient::NotFound
-              raise_unavailable(full_name)
             end
 
             def blob(full_name, sha:)
-              body = get("#{repository_path(full_name)}/git/blobs/#{sha}").body
+              body = github_response(full_name) { get("#{repository_path(full_name)}/git/blobs/#{sha}") }.body
               return if body.fetch('size', 0).to_i > max_blob_bytes
 
               Base64.decode64(body.fetch('content').to_s.delete("\n"))
-            rescue PolishOpenSourceRank::Infrastructure::GitHubClient::NotFound
-              raise_unavailable(full_name)
             end
 
             private
@@ -48,8 +45,12 @@ module PolishOpenSourceRank
 
             def get(path, params: {})
               client.get(path, params: params)
+            end
+
+            def github_response(full_name)
+              yield
             rescue PolishOpenSourceRank::Infrastructure::GitHubClient::Error => e
-              raise_unavailable(path) if e.status == 451
+              raise_unavailable(full_name) if UNAVAILABLE_STATUSES.include?(e.status)
 
               raise
             end
