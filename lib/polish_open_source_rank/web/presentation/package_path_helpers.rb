@@ -1,0 +1,47 @@
+# frozen_string_literal: true
+
+require 'base64'
+
+module PolishOpenSourceRank
+  module Web
+    module Presentation
+      module PackagePathHelpers
+        def package_index_path(period_slug: @period_slug)
+          path = period_slug.nil? || period_slug == 'latest' ? '/packages' : "/#{period_slug}/packages"
+          localized_public_path(path, locale: current_locale)
+        end
+
+        def package_ecosystem_path(ecosystem, period_slug: @period_slug)
+          prefix = period_slug.nil? || period_slug == 'latest' ? '/latest' : "/#{period_slug}"
+          path = "#{prefix}/packages/#{Rack::Utils.escape_path(ecosystem)}"
+          localized_public_path(path, locale: current_locale)
+        end
+
+        def package_ranking_path(ecosystem, metric_slug, period_slug: @period_slug)
+          "#{package_ecosystem_path(ecosystem, period_slug: period_slug)}/#{metric_slug}"
+        end
+
+        def package_profile_path(package)
+          ecosystem = Rack::Utils.escape_path(package.fetch(:ecosystem))
+          encoded_name = package_name_slug(package.fetch(:package_name))
+          localized_public_path("/packages/#{ecosystem}/names/#{encoded_name}", locale: current_locale)
+        end
+
+        def package_name_slug(package_name)
+          Base64.urlsafe_encode64(package_name, padding: false)
+        end
+
+        def decode_package_name_slug(slug)
+          padding = '=' * ((4 - (slug.length % 4)) % 4)
+          Base64.urlsafe_decode64("#{slug}#{padding}")
+        rescue ArgumentError
+          nil
+        end
+
+        def package_metric_label(metric)
+          t("packages.metric.#{metric.to_s.tr('_', '.')}")
+        end
+      end
+    end
+  end
+end
