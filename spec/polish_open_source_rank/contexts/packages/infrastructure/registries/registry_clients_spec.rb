@@ -21,12 +21,31 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
       latest_version: '1.2.3'
     )
     expect(result.snapshot.to_h).to include(downloads_7d: 7, downloads_30d: 30)
-    expect(request_paths).to eq(
-      ['/%40scope%2Ftool', '/-/api/v1/downloads/point/last-week/%40scope%2Ftool',
-       '/-/api/v1/downloads/point/last-week/%40scope%2Ftool',
-       '/-/api/v1/downloads/point/last-month/%40scope%2Ftool']
+    expect(requests).to eq(
+      [
+        { host: 'registry.npmjs.org', path: '/%40scope%2Ftool' },
+        { host: 'api.npmjs.org', path: '/downloads/point/last-week/%40scope%2Ftool' },
+        { host: 'api.npmjs.org', path: '/downloads/point/last-week/%40scope%2Ftool' },
+        { host: 'api.npmjs.org', path: '/downloads/point/last-month/%40scope%2Ftool' }
+      ]
     )
     expect(sleeps).to include(2.0)
+  end
+
+  it 'fetches unscoped npm downloads from the npm downloads API' do
+    stub_http(
+      response('200', npm_body.merge(name: 'tool')),
+      response('200', { downloads: 11 }),
+      response('200', { downloads: 44 })
+    )
+
+    result = client(:NpmRegistryClient, requests_per_minute: 120).fetch('tool')
+
+    expect(result).to be_ok
+    expect(result.snapshot.to_h).to include(downloads_7d: 11, downloads_30d: 44)
+    expect(requests).to include(
+      { host: 'api.npmjs.org', path: '/downloads/point/last-month/tool' }
+    )
   end
 
   it 'distinguishes not found, rate limited, and failed registry responses' do
@@ -43,16 +62,22 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
     )
   end
 
-  it 'returns a partial npm package context when a download window is rate limited' do
+  it 'keeps npm package metadata when a download window is unavailable' do
     stub_http(
       response('200', npm_body),
-      response('429', {}, headers: { 'retry-after' => '5' })
+      response('404', {}),
+      response('200', { downloads: 30 })
     )
 
     result = client(:NpmRegistryClient, execution: { max_retries: 0 }).fetch('@scope/tool')
 
-    expect(result).to have_attributes(status: 'rate_limited', retry_after: 5.0)
+    expect(result).to be_ok
     expect(result.package.to_h).to include(package_name: '@scope/tool', latest_version: '1.2.3')
+    expect(result.snapshot.to_h).to include(
+      downloads_7d: nil,
+      downloads_30d: 30,
+      metadata: { downloads_7d_status: 'not_found' }
+    )
   end
 
   it 'maps network failures to failed fetches' do
@@ -161,13 +186,13 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
 
   def stub_http(*responses)
     @responses = responses
-    @request_paths = []
+    @requests = []
     @request_headers = []
     @sleeps = []
     allow(Net::HTTP).to receive(:start) do |_host, _port, **_options, &block|
       http = instance_double(Net::HTTP)
       allow(http).to receive(:request) do |request|
-        request_paths << request.uri.request_uri
+        requests << { host: request.uri.host, path: request.uri.request_uri }
         request_headers << request.to_hash.transform_values(&:first)
         @responses.shift
       end
@@ -175,8 +200,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
     end
   end
 
-  def request_paths
-    @request_paths ||= []
+  def requests
+    @requests ||= []
   end
 
   def request_headers

@@ -75,6 +75,21 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     expect(queue.pending(period, limit: 10)).to be_empty
   end
 
+  it 'returns interrupted processing scans to the retryable queue' do
+    seed_processing_scan(full_name: 'alice/stale', updated_at: '2026-05-23T09:59:59Z')
+    seed_processing_scan(full_name: 'alice/current', updated_at: '2026-05-23T10:30:00Z', repository_source_id: 2)
+
+    expect(queue.reset_stale_processing(period)).to eq(1)
+
+    expect(scan_by_name('alice/stale')).to include(
+      status: 'failed',
+      error: 'processing scan was interrupted and will be retried',
+      updated_at: '2026-05-23T11:00:00Z'
+    )
+    expect(scan_by_name('alice/current')).to include(status: 'processing')
+    expect(queue.pending(period, limit: 10).map { |scan| scan.fetch(:full_name) }).to eq(['alice/stale'])
+  end
+
   it 'rejects unsupported ecosystem filters' do
     expect do
       queue.pending(period, limit: 10, ecosystem: 'unknown')
@@ -87,6 +102,22 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
 
   def scan(scan_id)
     database.fetch_all('SELECT * FROM package_repository_scans WHERE id = ?', [scan_id]).first
+  end
+
+  def scan_by_name(full_name)
+    database.fetch_all('SELECT * FROM package_repository_scans WHERE full_name = ?', [full_name]).first
+  end
+
+  def seed_processing_scan(full_name:, updated_at:, repository_source_id: 1)
+    database.execute(
+      <<~SQL,
+        INSERT INTO package_repository_scans(
+          period_start, repository_kind, platform, repository_source_id, full_name, status, updated_at
+        )
+        VALUES (?, 'user', 'github', ?, ?, 'processing', ?)
+      SQL
+      [period.start_date.to_s, repository_source_id, full_name, updated_at]
+    )
   end
 
   def seed_user(id:, login:)

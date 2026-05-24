@@ -66,14 +66,46 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application::RunPackage
   let(:period) { PolishOpenSourceRank::Shared::Domain::Period.parse('2026-04') }
 
   it 'runs the package snapshot flow and records per-package fetch failures without aborting' do
-    use_case.call(period, ecosystem: 'npm', limit: 10, refresh: true)
+    result = use_case.call(
+      period,
+      ecosystem: 'npm',
+      limits: { repository: 100, scan: 20, manifest: 30, registry: 10 },
+      refresh: true
+    )
 
-    expect(repository_queue).to have_received(:enqueue).with(period, limit: 10)
-    expect(manifest_scanner).to have_received(:call).with(period, ecosystem: 'npm', limit: 10, refresh: true)
-    expect(registry_packages.resolved).to eq([{ period: period, ecosystem: 'npm', limit: 10 }])
+    expect(repository_queue).to have_received(:reset_stale_processing).with(period)
+    expect(repository_queue).to have_received(:enqueue).with(period, limit: 100)
+    expect(manifest_scanner).to have_received(:call).with(period, ecosystem: 'npm', limit: 20, refresh: true)
+    expect(registry_packages.resolved).to eq([{ period: period, ecosystem: 'npm', limit: 30 }])
     expect(registry_packages.recorded.map { |record| record.fetch(:result).status }).to eq(%w[ok failed])
     expect(run_repository.finished).to eq(123)
     expect(run_repository.failed).to be_nil
+    expect(result).to include(
+      stale_scans_reset: 0,
+      scanned: 1,
+      failed: 0,
+      manifests: 2,
+      registry_fetched: 2,
+      registry_ok: 1,
+      registry_failed: 1,
+      snapshots_written: 1
+    )
+  end
+
+  it 'keeps --limit as a backwards-compatible shorthand for all stages' do
+    use_case.call(period, ecosystem: 'npm', limit: 10, refresh: false)
+
+    expect(repository_queue).to have_received(:enqueue).with(period, limit: 10)
+    expect(manifest_scanner).to have_received(:call).with(period, ecosystem: 'npm', limit: 10, refresh: false)
+    expect(registry_packages.resolved).to eq([{ period: period, ecosystem: 'npm', limit: 10 }])
+  end
+
+  it 'uses production defaults above the MVP sample size' do
+    use_case.call(period, ecosystem: 'npm', refresh: false)
+
+    expect(repository_queue).to have_received(:enqueue).with(period, limit: 5_000)
+    expect(manifest_scanner).to have_received(:call).with(period, ecosystem: 'npm', limit: 5_000, refresh: false)
+    expect(registry_packages.resolved).to eq([{ period: period, ecosystem: 'npm', limit: 10_000 }])
   end
 
   it 'marks the run failed and reraises store errors' do
@@ -105,11 +137,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application::RunPackage
   end
 
   def repository_queue
-    @repository_queue ||= double('package repository queue', enqueue: nil)
+    @repository_queue ||= double('package repository queue', reset_stale_processing: 0, enqueue: nil)
   end
 
   def manifest_scanner
-    @manifest_scanner ||= double('manifest scanner', call: nil)
+    @manifest_scanner ||= double('manifest scanner', call: { scanned: 1, failed: 0, manifests: 2 })
   end
 
   def registry_packages

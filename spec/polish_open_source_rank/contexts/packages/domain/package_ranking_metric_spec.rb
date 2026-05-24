@@ -7,6 +7,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::PackageRankingM
     expect(described_class.key_for_slug('top')).to eq('downloads_30d')
     expect(described_class.supported_key?(:downloads_total)).to be(true)
     expect(described_class.supported_key?(:unknown)).to be(false)
+    expect(described_class.slugs(ecosystem: 'npm')).to eq(%w[top])
+    expect(described_class.keys(ecosystem: 'crates')).to eq(%w[downloads_30d downloads_total])
+    expect(described_class.keys(ecosystem: 'pypi')).to eq([])
+    expect(described_class.supported_for_ecosystem?('npm', 'downloads_total')).to be(false)
     expect(described_class.slugs_pattern).to eq('top|downloads|dependents')
   end
 end

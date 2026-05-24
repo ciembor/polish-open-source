@@ -12,7 +12,9 @@ module PolishOpenSourceRank
           def call(period_start:)
             return [] unless period_start
 
-            package_ranking_read_model.ecosystems(period_start: period_start)
+            package_ranking_read_model.ecosystems(period_start: period_start).select do |ecosystem|
+              Domain::PackageRankingMetric.slugs(ecosystem: ecosystem).any?
+            end
           end
 
           private

@@ -33,14 +33,14 @@ module PolishOpenSourceRank
                 ecosystem: manifest.ecosystem,
                 content: content
               )
-              package_manifests.insert(manifest_attributes(scan_id, parsed_manifest, content))
+              package_manifests.insert(manifest_attributes(scan_id, manifest, parsed_manifest, content))
             end
 
-            def manifest_attributes(scan_id, parsed_manifest, content)
+            def manifest_attributes(scan_id, manifest, parsed_manifest, content)
               {
                 repository_scan_id: scan_id,
                 ecosystem: parsed_manifest.ecosystem,
-                path: parsed_manifest.metadata.fetch(:path),
+                path: parsed_manifest.metadata.fetch(:path, manifest.path),
                 blob_sha: Digest::SHA256.hexdigest(content.to_s),
                 package_name: parsed_manifest.package_name,
                 normalized_package_name: parsed_manifest.normalized_package_name,
