@@ -14,7 +14,7 @@ Cel: pokazać więcej sensownych ekosystemów pakietów w publicznym `/packages`
 ## Kolejność
 
 1. [x] Packagist downloads
-2. [ ] Hex diagnosis
+2. [x] Hex diagnosis
 3. [ ] Homebrew
 4. [ ] NuGet
 5. [ ] Maven
@@ -45,22 +45,24 @@ Wynik produkcji: Packagist ma publiczny ranking. Refresh `2026-04` zapisał 188 
 
 Dlaczego: Hex ma już obsługiwaną metrykę `downloads_total` i jest dopuszczony w `PackageRankingMetric`, ale produkcja nie pokazuje Hex, bo nie ma aktywnych snapshotów.
 
-- [ ] Sprawdzić produkcyjne `registry_packages` dla `hex`: statusy `active`, `not_found`, `failed`, `pending`.
-- [ ] Sprawdzić `package_manifests` dla `hex`: `parsed`, `partial`, `failed`, `unpublished`.
-- [ ] Ustalić, czy problemem są:
-  - [ ] nazwy pakietów z parserów `mix.exs` / `rebar.config`,
-  - [ ] błędne mapowanie do Hex API,
-  - [ ] brak opublikowanych pakietów,
-  - [ ] rate limiting albo błędy registry.
-- [ ] Dodać brakujące testy regresyjne dla wykrytego przypadku.
-- [ ] Naprawić parser albo klienta registry, jeśli diagnoza wskaże błąd po naszej stronie.
-- [ ] Uruchomić ograniczony crawl Hex.
+- [x] Sprawdzić produkcyjne `registry_packages` dla `hex`: statusy `active`, `not_found`, `failed`, `pending`.
+- [x] Sprawdzić `package_manifests` dla `hex`: `parsed`, `partial`, `failed`, `unpublished`.
+- [x] Ustalić, czy problemem są:
+  - [x] nazwy pakietów z parserów `mix.exs` / `rebar.config`,
+  - [x] błędne mapowanie do Hex API,
+  - [x] brak opublikowanych pakietów,
+  - [x] rate limiting albo błędy registry.
+- [x] Dodać brakujące testy regresyjne dla wykrytego przypadku.
+- [x] Naprawić parser albo klienta registry, jeśli diagnoza wskaże błąd po naszej stronie.
+- [x] Uruchomić ograniczony crawl Hex.
 
 Definition of Done:
 
-- [ ] Wiemy, dlaczego Hex nie pojawia się w UI.
-- [ ] Jeśli mamy realne aktywne paczki Hex, `/packages` pokazuje Hex.
-- [ ] Jeśli nie mamy realnych aktywnych paczek, mamy udokumentowaną przyczynę w testach lub diagnostyce.
+- [x] Wiemy, dlaczego Hex nie pojawia się w UI.
+- [x] Jeśli mamy realne aktywne paczki Hex, `/packages` pokazuje Hex.
+- [x] Jeśli nie mamy realnych aktywnych paczek, mamy udokumentowaną przyczynę w testach lub diagnostyce.
+
+Wynik produkcji: problemem była normalizacja nazw w parserach `mix.exs` i `rebar.config`; zamienialiśmy `_` na `-`, podczas gdy Hex używa nazw z underscore. Po poprawce i celowanym refreshu `2026-04` Hex ma 42 aktywne snapshoty z `downloads_total`, 35 `not_found`, 0 `rate_limited`, 0 `failed`. Publiczny ranking jest widoczny w `/packages`; top po pobraniach zaczyna się od `money`, `req`, `mockery`.
 
 ## 3. Homebrew
 
@@ -161,11 +163,11 @@ Definition of Done:
 - [x] Uruchomić `bin/quality`.
 - [x] Wdrożyć po przejściu hooków.
 - [x] Sprawdzić `/packages`.
-- [ ] Sprawdzić produkcyjne liczby:
-  - [ ] `package_repository_scans`,
-  - [ ] `package_manifests`,
-  - [ ] `registry_packages`,
-  - [ ] `registry_package_snapshots`,
-  - [ ] statusy `active`, `not_found`, `failed`, `rate_limited`, `pending`.
+- [x] Sprawdzić produkcyjne liczby:
+  - [x] `package_repository_scans`,
+  - [x] `package_manifests`,
+  - [x] `registry_packages`,
+  - [x] `registry_package_snapshots`,
+  - [x] statusy `active`, `not_found`, `failed`, `rate_limited`, `pending`.
 - [x] Sprawdzić `/internal/jobs` po crawl runie.
 - [x] Zanotować, czy ekosystem ma publiczny ranking, czy tylko diagnostykę.
