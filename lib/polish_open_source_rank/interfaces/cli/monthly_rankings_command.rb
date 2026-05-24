@@ -50,7 +50,7 @@ module PolishOpenSourceRank
           crawl_job_id = start_crawl_job
           yield
           finish_crawl_job(crawl_job_id)
-        rescue Application::MonthlySnapshotInterrupted => e
+        rescue Contexts::Operations::Application::MonthlySnapshotInterrupted => e
           interrupt_crawl_job(crawl_job_id, e)
           raise
         rescue StandardError => e
@@ -80,7 +80,7 @@ module PolishOpenSourceRank
         def install_interrupt_handlers
           INTERRUPT_SIGNALS.to_h do |signal|
             previous = Signal.trap(signal) do
-              raise Application::MonthlySnapshotInterrupted, "Received SIG#{signal}"
+              raise Contexts::Operations::Application::MonthlySnapshotInterrupted, "Received SIG#{signal}"
             end
             [signal, previous]
           end

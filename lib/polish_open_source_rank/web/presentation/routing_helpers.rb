@@ -243,7 +243,7 @@ module PolishOpenSourceRank
         end
 
         def package_dataset_metrics
-          %w[downloads_30d downloads_total dependents_count].map do |metric|
+          Contexts::Packages::Domain::PackageRankingMetric.keys.map do |metric|
             { '@type' => 'PropertyValue', 'name' => package_metric_label(metric) }
           end
         end

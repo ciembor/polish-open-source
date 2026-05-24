@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe PolishOpenSourceRank::Application::DiscordInviteUseDetector do
+RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::DiscordInviteUseDetector do
   it 'detects increased and consumed one-use Discord invites' do
     detector = described_class.new
 

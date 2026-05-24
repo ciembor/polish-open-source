@@ -179,7 +179,7 @@ module PolishOpenSourceRank
             end
 
             def ecosystems_for(ecosystem)
-              ecosystem || %w[npm rubygems crates pypi hex packagist go]
+              ecosystem || Contexts::Packages::Domain::Ecosystem.snapshot_supported
             end
 
             def package_manifests

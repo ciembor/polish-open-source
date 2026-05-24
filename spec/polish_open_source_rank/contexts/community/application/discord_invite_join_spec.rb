@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe PolishOpenSourceRank::Application::DiscordInviteJoin do
+RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::DiscordInviteJoin do
   # rubocop:disable RSpec/ExampleLength
   around do |example|
     old_env = ENV.to_h

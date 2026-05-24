@@ -31,6 +31,10 @@ RSpec.describe 'architecture dependency rules' do
     end
   end
 
+  it 'keeps application use cases inside bounded contexts' do
+    expect(files_under('lib/polish_open_source_rank/application')).to be_empty
+  end
+
   it 'keeps ranking use cases from speaking SQLite column names', :aggregate_failures do
     forbidden = /\b(github_id|user_github_id|repository_github_id|stargazers_count)\b/
     application_files = files_under('lib/polish_open_source_rank/contexts/ranking/application')

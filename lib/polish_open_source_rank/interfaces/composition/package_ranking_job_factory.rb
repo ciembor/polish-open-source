@@ -4,8 +4,6 @@ module PolishOpenSourceRank
   module Interfaces
     module Composition
       class PackageRankingJobFactory
-        SUPPORTED_ECOSYSTEMS = %w[npm rubygems crates pypi hex packagist go].freeze
-
         def self.build(argv, configuration: Configuration.load, output: $stdout, crawl_jobs: nil)
           new(argv, configuration: configuration, output: output, crawl_jobs: crawl_jobs).build
         end
@@ -33,7 +31,7 @@ module PolishOpenSourceRank
 
         def validate_ecosystem!
           return unless ecosystem_argument
-          return if SUPPORTED_ECOSYSTEMS.include?(ecosystem_argument)
+          return if Contexts::Packages::Domain::Ecosystem.snapshot_supported?(ecosystem_argument)
 
           raise ArgumentError, "Unsupported package ecosystem: #{ecosystem_argument}"
         end

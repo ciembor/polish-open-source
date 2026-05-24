@@ -13,7 +13,7 @@ module PolishOpenSourceRank
               new(
                 guild_id: configuration.discord_guild_id,
                 bot: Discordrb::Bot.new(token: configuration.discord_bot_token, intents: %i[server_invites]),
-                join_handler: PolishOpenSourceRank::Application::DiscordInviteJoin.new(
+                join_handler: Contexts::Community::Application::DiscordInviteJoin.new(
                   discord_gateway: DiscordApiGateway.new(configuration),
                   discord_role_map: DiscordRoleMap.new,
                   invite_repository: invite_repository,
@@ -25,7 +25,7 @@ module PolishOpenSourceRank
             end
 
             def initialize(guild_id:, bot:, join_handler:, logger: $stdout,
-                           detector: PolishOpenSourceRank::Application::DiscordInviteUseDetector.new)
+                           detector: Contexts::Community::Application::DiscordInviteUseDetector.new)
               @bot = bot
               @guild_id = guild_id.to_i
               @join_handler = join_handler
