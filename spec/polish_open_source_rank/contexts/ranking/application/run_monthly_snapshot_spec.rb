@@ -399,7 +399,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(github.activity_periods).to eq([['alice', period]])
   end
 
-  it 'uses previous repository observations and skips empty repositories when calculating star deltas' do
+  it 'uses previous repository observations and skips repositories below the catalog star threshold' do
     previous_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-03')
     seed_previous_repository_observation(previous_period)
     github.candidates = { 'Poland' => [{ source_id: 1, login: 'alice' }] }
@@ -418,7 +418,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(fetch_user_stats('alice')).to include(monthly_stars_delta: 6)
     expect(fetch_repository_stats('alice/app')).to include(monthly_stars_delta: 4)
     expect(fetch_repository_stats('alice/new')).to include(monthly_stars_delta: 2)
-    expect(fetch_repository_stats('alice/empty')).to include(monthly_stars_delta: 0)
+    expect(fetch_repository_stats('alice/empty')).to be_nil
     expect(github.delta_periods).to eq([['alice/new', period]])
   end
 
@@ -800,12 +800,12 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     run_id = store.create_run(period)
     store.record_candidate(period, platform: 'gitlab', source_id: 2, login: 'bob', source_query: 'Poland')
     upsert_user(user_attributes(2, 'bob').merge(platform: 'gitlab'))
-    record_user_stats(user_stats(2, 'bob').merge(platform: 'gitlab', public_repo_count: 1, total_stars: 4))
+    record_user_stats(user_stats(2, 'bob').merge(platform: 'gitlab', public_repo_count: 1, total_stars: 5))
     store.mark_candidate(period, 'gitlab', 'bob', 'processed')
     store.finish_run(run_id)
     gitlab = FakeJobGitLab.new
     gitlab.profiles = { 'bob' => profile(2, 'bob', 'Warsaw, Poland') }
-    gitlab.repositories = { 'bob' => [repository(20, 'bob/tool', 4)] }
+    gitlab.repositories = { 'bob' => [repository(20, 'bob/tool', 5)] }
 
     described_class.new(
       store: store,
@@ -817,7 +817,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(fetch_candidate('bob', platform: 'gitlab')).to include(status: 'processed', error: nil)
     expect(fetch_repository_stats('bob/tool', platform: 'gitlab')).to include(
       owner_login: 'bob',
-      stargazers_count: 4
+      stargazers_count: 5
     )
     expect_finished_run
   end
@@ -913,7 +913,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     gitlab = FakeJobGitLab.new
     gitlab.candidates = { 'Poland' => [{ source_id: 2, login: 'bob' }] }
     gitlab.profiles = { 'bob' => profile(2, 'bob', 'Warsaw, Poland') }
-    gitlab.repositories = { 'bob' => [repository(20, 'bob/tool', 4)] }
+    gitlab.repositories = { 'bob' => [repository(20, 'bob/tool', 5)] }
     thread = Thread.new do
       described_class.new(store: store, sources: [slow_github, gitlab], catalog: catalog, logger: StringIO.new)
                      .call(period)
@@ -1195,7 +1195,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       html_url: 'https://github.com/optional/tool',
       fork: false,
       archived: false,
-      stars: 1
+      stars: 5
     }
   end
 
