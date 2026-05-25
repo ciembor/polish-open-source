@@ -422,6 +422,21 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(github.delta_periods).to eq([['alice/new', period]])
   end
 
+  it 'can recalculate repository star deltas from source history during a refresh' do
+    previous_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-03')
+    seed_previous_repository_observation(previous_period)
+    github.candidates = { 'Poland' => [{ source_id: 1, login: 'alice' }] }
+    github.profiles = { 'alice' => profile(1, 'alice', 'Krakow, Poland') }
+    github.repositories = { 'alice' => [repository(10, 'alice/app', 14)] }
+    github.deltas = { 'alice/app' => 9 }
+
+    job.call(period, refresh: true, recalculate_stars: true)
+
+    expect(fetch_user_stats('alice')).to include(monthly_stars_delta: 9)
+    expect(fetch_repository_stats('alice/app')).to include(monthly_stars_delta: 9)
+    expect(github.delta_periods).to eq([['alice/app', period]])
+  end
+
   it 'runs only the organization pipeline when scoped to organizations' do
     organization_source = FakeOrganizationGitHub.new
     organization_source.organization_candidates = { 'Poland' => [{ source_id: 9, login: 'polish-org' }] }

@@ -8,7 +8,7 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
 
     described_class.call(['--month', '2026-04'], job: job, output: output)
 
-    expect(job).to have_received(:call).with(have_attributes(key: '2026-04'), refresh: false)
+    expect_default_monthly_call(job)
     expect(output.string).to include('Finished monthly ranking run for 2026-04')
   end
 
@@ -19,7 +19,25 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
 
     described_class.call(['--month', '2026-04', '--refresh'], job: job, output: output)
 
-    expect(job).to have_received(:call).with(have_attributes(key: '2026-04'), refresh: true)
+    expect(job).to have_received(:call).with(
+      have_attributes(key: '2026-04'),
+      refresh: true,
+      recalculate_stars: false
+    )
+  end
+
+  it 'passes explicit star recalculation requests to the monthly job' do
+    output = StringIO.new
+    job = instance_double(PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlySnapshot)
+    allow(job).to receive(:call)
+
+    described_class.call(['--month', '2026-04', '--refresh', '--recalculate-stars'], job: job, output: output)
+
+    expect(job).to have_received(:call).with(
+      have_attributes(key: '2026-04'),
+      refresh: true,
+      recalculate_stars: true
+    )
   end
 
   it 'passes an explicit scope to the monthly job' do
@@ -32,6 +50,7 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
     expect(job).to have_received(:call).with(
       have_attributes(key: '2026-04'),
       refresh: false,
+      recalculate_stars: false,
       scope: :organizations
     )
   end
@@ -127,10 +146,18 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
       described_class.call(['--month', '2026-04'], job: job, output: output)
     end.to raise_error(interrupted_error, 'Received SIGTERM')
 
-    expect(job).to have_received(:call).with(have_attributes(key: '2026-04'), refresh: false)
+    expect_default_monthly_call(job)
     expect(output.string).to be_empty
     expect(Signal).to have_received(:trap).with('INT', 'DEFAULT')
     expect(Signal).to have_received(:trap).with('TERM', 'DEFAULT')
     expect(previous_handlers).to eq(%w[INT TERM])
+  end
+
+  def expect_default_monthly_call(job)
+    expect(job).to have_received(:call).with(
+      have_attributes(key: '2026-04'),
+      refresh: false,
+      recalculate_stars: false
+    )
   end
 end

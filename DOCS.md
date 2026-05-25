@@ -73,6 +73,7 @@ Run a specific month:
 
 ```sh
 bin/monthly_rankings --month 2026-04
+bin/monthly_rankings --month 2026-04 --refresh --recalculate-stars
 ```
 
 The job intentionally favors stability over speed:
@@ -163,6 +164,8 @@ The monthly ranking job resumes at the data level:
 - already processed candidates and already written monthly stats are skipped;
 - retryable candidate failures can be picked up on the next attempt;
 - `--refresh` intentionally reprocesses the selected period/platform/scope.
+- `--recalculate-stars` ignores previous stored repository star observations and fetches monthly star
+  history again from the source API; use it with `--refresh` when recomputing an existing month.
 
 The package ranking job also resumes at the data level:
 
@@ -226,10 +229,10 @@ sudo systemctl start polish-open-source-rank-crawl.service
 sudo journalctl -u polish-open-source-rank-crawl.service -f
 ```
 
-Continue the same manual monthly crawl after an interruption by starting the resume service or by starting the same command without `--refresh`. Overwrite/recompute it by adding `--refresh`:
+Continue the same manual monthly crawl after an interruption by starting the resume service or by starting the same command without `--refresh`. Overwrite/recompute it by adding `--refresh`; add `--recalculate-stars` when repository star deltas should be fetched again from source history instead of reused from previous observations:
 
 ```sh
-printf 'CRAWL_ARGS="--month 2026-04 --platform github --scope organizations --refresh"\n' > .crawl.env
+printf 'CRAWL_ARGS="--month 2026-04 --platform github --scope organizations --refresh --recalculate-stars"\n' > .crawl.env
 sudo systemctl start polish-open-source-rank-crawl.service
 ```
 
