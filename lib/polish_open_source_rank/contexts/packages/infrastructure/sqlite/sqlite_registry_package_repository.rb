@@ -7,6 +7,7 @@ module PolishOpenSourceRank
         module SQLite
           class SQLiteRegistryPackageRepository
             FETCHABLE_PARSE_STATUSES = %w[parsed partial].freeze
+            PLACEHOLDER_PACKAGE_NAMES = %w[bar baz dummy example foo src test].freeze
             REGISTRY_URLS = {
               'npm' => 'https://www.npmjs.com/package/%s',
               'rubygems' => 'https://rubygems.org/gems/%s',
@@ -38,6 +39,8 @@ module PolishOpenSourceRank
             def resolve_from_manifests(period, ecosystem: nil, limit: 100)
               database.transaction do
                 fetchable_manifests(period, ecosystem: ecosystem, limit: limit).each do |manifest|
+                  next if placeholder_manifest?(manifest)
+
                   record_resolve_event(period, manifest) do
                     upsert_pending_package(manifest)
                     link_manifest(manifest)
@@ -131,11 +134,23 @@ module PolishOpenSourceRank
 
             def record_success(period, result)
               package = result.package
+              if placeholder_package?(package)
+                record_rejected_package(package, error: 'placeholder package name')
+                return
+              end
+
+              verification = verify_repository_links(package)
+              if verification.fetch(:accepted_links).zero? && verification.fetch(:rejected_links).positive?
+                record_rejected_package(package, error: 'registry repository mismatch')
+                return
+              end
+
+              snapshot = snapshot_with_repository_match(result.snapshot, verification)
               record_package_context(package)
               registry_package_snapshots.insert_conflict(
                 target: %i[ecosystem normalized_package_name period_start],
-                update: snapshot_update(result.snapshot)
-              ).insert(snapshot_insert(period, result.snapshot))
+                update: snapshot_update(snapshot)
+              ).insert(snapshot_insert(period, snapshot))
             end
 
             def record_package_context(package)
@@ -154,6 +169,20 @@ module PolishOpenSourceRank
                 .update(
                   status: result.status,
                   error: result.error,
+                  checked_at: timestamp,
+                  updated_at: timestamp
+                )
+            end
+
+            def record_rejected_package(package, error:)
+              registry_packages
+                .where(ecosystem: package.ecosystem, normalized_package_name: package.normalized_package_name)
+                .update(
+                  repository_url: package.repository_url,
+                  homepage_url: package.homepage_url,
+                  latest_version: package.latest_version,
+                  status: 'not_found',
+                  error: error,
                   checked_at: timestamp,
                   updated_at: timestamp
                 )
@@ -205,6 +234,84 @@ module PolishOpenSourceRank
                 )
                 .where(Sequel[:registry_package_snapshots][:ecosystem] => nil)
                 .select_all(:registry_packages)
+            end
+
+            def verify_repository_links(package)
+              linked_manifests(package).each_with_object(initial_verification) do |manifest, verification|
+                match = Contexts::Packages::Domain::RegistryPackageRepositoryMatch.call(
+                  package: package,
+                  manifest: manifest,
+                  repository_full_name: manifest.fetch(:repository_full_name)
+                )
+                update_link_verification(manifest.fetch(:link_id), match)
+                verification[:accepted_links] += 1 unless match.rejected?
+                verification[:rejected_links] += 1 if match.rejected?
+                verification[:matched_links] += 1 if match.matched?
+              end
+            end
+
+            def initial_verification
+              { accepted_links: 0, rejected_links: 0, matched_links: 0 }
+            end
+
+            def linked_manifests(package)
+              registry_package_links
+                .join(:package_manifests, id: Sequel[:registry_package_links][:manifest_id])
+                .join(:package_repository_scans, id: Sequel[:package_manifests][:repository_scan_id])
+                .where(
+                  Sequel[:registry_package_links][:ecosystem] => package.ecosystem,
+                  Sequel[:registry_package_links][:normalized_package_name] => package.normalized_package_name
+                )
+                .select(
+                  Sequel[:registry_package_links][:id].as(:link_id),
+                  Sequel[:package_repository_scans][:full_name].as(:repository_full_name),
+                  Sequel[:package_manifests][:repository_url],
+                  Sequel[:package_manifests][:homepage_url]
+                )
+                .all
+            end
+
+            def update_link_verification(link_id, match)
+              registry_package_links
+                .where(id: link_id)
+                .update(
+                  match_confidence: match.matched? ? 'high' : 'low',
+                  matched: match.rejected? ? 0 : 1,
+                  checked_at: timestamp
+                )
+            end
+
+            def snapshot_with_repository_match(snapshot, verification)
+              attributes = snapshot.to_h
+              attributes[:metadata] = snapshot.metadata.merge(
+                repository_match: repository_match_status(verification),
+                repository_match_counts: verification
+              )
+
+              Contexts::Packages::Domain::RegistryPackageSnapshot.new(
+                **attributes
+              )
+            end
+
+            def repository_match_status(verification)
+              return 'matched' if verification.fetch(:matched_links).positive?
+              return 'unverified' if verification.fetch(:accepted_links).positive?
+
+              'missing'
+            end
+
+            def placeholder_manifest?(manifest)
+              placeholder_name?(manifest.fetch(:ecosystem), manifest.fetch(:normalized_package_name))
+            end
+
+            def placeholder_package?(package)
+              placeholder_name?(package.ecosystem, package.normalized_package_name)
+            end
+
+            def placeholder_name?(ecosystem, normalized_package_name)
+              return false unless %w[pypi rubygems].include?(ecosystem)
+
+              PLACEHOLDER_PACKAGE_NAMES.include?(normalized_package_name)
             end
 
             def registry_url(ecosystem, package_name)

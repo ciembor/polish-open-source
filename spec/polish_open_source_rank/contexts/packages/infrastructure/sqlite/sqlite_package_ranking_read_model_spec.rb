@@ -70,6 +70,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
                     stats: { stars: 20, delta: 3 })
     link_repository(name: 'shared', scan_id: 20, full_name: 'org/tool', repository_kind: 'organization',
                     stats: { stars: 30, delta: 1 })
+    link_unmatched_repository(name: 'shared', scan_id: 30, full_name: 'other/dependency',
+                              repository_kind: 'organization', stats: { stars: 500, delta: 50 })
 
     row = read_model.ranked_packages(ecosystem: 'npm', period_start: period, metric: 'downloads_30d').first
 
@@ -84,6 +86,14 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
       repository_stars_count: 30,
       repository_stars_delta: 3
     )
+  end
+
+  it 'does not expose inactive packages even when old snapshots remain' do
+    seed_package(ecosystem: 'rubygems', name: 'foo', downloads_30d: 100, status: 'not_found')
+
+    expect(read_model.ecosystems(period_start: period)).to be_empty
+    expect(read_model.ranked_packages(ecosystem: 'rubygems', period_start: period,
+                                      metric: 'downloads_total')).to be_empty
   end
 
   it 'ranks packages by linked repository stars and monthly star trend' do
@@ -181,11 +191,12 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
           ecosystem, package_name, normalized_package_name, registry_url, repository_url, homepage_url,
           license, latest_version, status, updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       SQL
       [
         ecosystem, name, name.downcase, registry_url(ecosystem, name), "https://github.com/#{name}",
-        "https://example.com/#{name}", 'MIT', '1.0.0', '2026-05-23T12:00:00Z'
+        "https://example.com/#{name}", 'MIT', '1.0.0', attributes.fetch(:status, 'active'),
+        '2026-05-23T12:00:00Z'
       ]
     )
     seed_snapshot(attributes)
@@ -222,6 +233,15 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
       SQL
       [manifest_id, ecosystem, name.downcase, '2026-05-23T12:00:00Z']
     )
+    manifest_id
+  end
+
+  def link_unmatched_repository(name:, scan_id:, full_name:, repository_kind:, ecosystem: 'npm', stats: nil)
+    manifest_id = link_repository(name: name, scan_id: scan_id, full_name: full_name, repository_kind: repository_kind,
+                                  ecosystem: ecosystem, stats: stats)
+    database.dataset(:registry_package_links)
+            .where(manifest_id: manifest_id, ecosystem: ecosystem, normalized_package_name: name.downcase)
+            .update(matched: 0)
   end
 
   def seed_repository_stats(scan_id:, full_name:, repository_kind:, stats:)
