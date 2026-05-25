@@ -21,6 +21,10 @@ module PolishOpenSourceRank
           "#{package_ecosystem_path(ecosystem, period_slug: period_slug)}/#{metric_slug}"
         end
 
+        def package_repository_ranking_path(ecosystem, repository_kind, metric_slug, period_slug: @period_slug)
+          "#{package_ecosystem_path(ecosystem, period_slug: period_slug)}/#{repository_kind}s/#{metric_slug}"
+        end
+
         def package_profile_path(package)
           ecosystem = Rack::Utils.escape_path(package.fetch(:ecosystem))
           encoded_name = package_name_slug(package.fetch(:package_name))
@@ -48,6 +52,18 @@ module PolishOpenSourceRank
           return t('packages.ranking_title.installs') if ecosystem == 'homebrew' && metric_slug.to_s == 'top'
 
           t("packages.ranking_title.#{metric_slug}", ecosystem: ecosystem)
+        end
+
+        def package_repository_kind_label(repository_kind)
+          t("packages.repository_kind.#{repository_kind}")
+        end
+
+        def package_repository_ranking_title(metric_slug, ecosystem:, repository_kind:)
+          t(
+            "packages.repository_ranking_title.#{metric_slug}",
+            ecosystem: ecosystem,
+            kind: package_repository_kind_label(repository_kind)
+          )
         end
       end
     end

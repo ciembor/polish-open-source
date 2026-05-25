@@ -37,6 +37,24 @@ module PolishOpenSourceRank
           erb :language_ranking_detail
         end
 
+        def render_language(period_slug, language)
+          @period_slug = period_slug
+          @period = period_for(period_slug)
+          public_html_cache!('language', period_slug, language, @period, public_cache_revision(@period))
+          ranking_groups = show_language.call(language: language, period_start: @period, limit: 10)
+          halt 404 unless ranking_groups.values.any? { |rankings| rankings.values.any?(&:any?) }
+
+          assign_public_page(
+            public_page_state.language(
+              period_slug: period_slug,
+              period_start: @period,
+              language: language,
+              ranking_groups: ranking_groups
+            )
+          )
+          erb :language
+        end
+
         def assign_language_ranking_page(period_slug, metric_slug, metric)
           ranking = show_language_ranking_detail.call(metric: metric, period_start: @period)
           assign_public_page(

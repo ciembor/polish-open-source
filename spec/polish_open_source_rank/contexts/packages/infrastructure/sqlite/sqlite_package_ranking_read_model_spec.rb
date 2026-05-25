@@ -88,6 +88,31 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     )
   end
 
+  it 'filters ecosystems and package rankings by repository ownership kind' do
+    seed_package(ecosystem: 'npm', name: 'user-tool', downloads_30d: 100)
+    seed_package(ecosystem: 'npm', name: 'org-tool', downloads_30d: 200)
+    seed_package(ecosystem: 'rubygems', name: 'ruby-tool', downloads_30d: 300)
+    link_repository(name: 'user-tool', scan_id: 10, full_name: 'alice/app', repository_kind: 'user',
+                    stats: { stars: 20, delta: 3 })
+    link_repository(name: 'org-tool', scan_id: 20, full_name: 'org/tool', repository_kind: 'organization',
+                    stats: { stars: 30, delta: 1 })
+
+    user_rankings = read_model.rankings(
+      ecosystem: 'npm',
+      period_start: period,
+      repository_kind: 'user'
+    )
+    organization_rankings = read_model.rankings(
+      ecosystem: 'npm',
+      period_start: period,
+      repository_kind: 'organization'
+    )
+
+    expect(read_model.ecosystems(period_start: period, repository_kind: 'user')).to eq(['npm'])
+    expect(user_rankings.fetch(:downloads_30d).map { |row| row.fetch(:package_name) }).to eq(['user-tool'])
+    expect(organization_rankings.fetch(:downloads_30d).map { |row| row.fetch(:package_name) }).to eq(['org-tool'])
+  end
+
   it 'does not expose inactive packages even when old snapshots remain' do
     seed_package(ecosystem: 'rubygems', name: 'foo', downloads_30d: 100, status: 'not_found')
 
@@ -150,6 +175,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     expect do
       read_model.ranked_packages(ecosystem: 'npm', period_start: period, metric: 'downloads_total')
     end.to raise_error(ArgumentError, 'Unsupported package ranking metric for npm: downloads_total')
+    expect do
+      read_model.ranked_packages(ecosystem: 'npm', period_start: period, metric: 'downloads_30d',
+                                 repository_kind: 'team')
+    end.to raise_error(ArgumentError, 'Unsupported package repository kind: team')
   end
 
   it 'does not expose non-country package scopes' do

@@ -13,32 +13,29 @@ module PolishOpenSourceRank
               @database = database
             end
 
-            def ecosystems(period_start:)
-              database.fetch_all(<<~SQL, [period_start]).map { |row| row.fetch(:ecosystem) }
-                SELECT DISTINCT snapshots.ecosystem
-                FROM registry_package_snapshots snapshots
-                INNER JOIN registry_packages packages
-                  ON packages.ecosystem = snapshots.ecosystem
-                 AND packages.normalized_package_name = snapshots.normalized_package_name
-                WHERE snapshots.period_start = ?
-                  AND packages.status = 'active'
-                ORDER BY snapshots.ecosystem ASC
-              SQL
+            def ecosystems(period_start:, repository_kind: nil)
+              database.fetch_all(ecosystems_sql(repository_kind), ecosystems_bindings(period_start, repository_kind))
+                      .map { |row| row.fetch(:ecosystem) }
             end
 
-            def rankings(ecosystem:, period_start:, limit: DEFAULT_LIMIT)
+            def rankings(ecosystem:, period_start:, limit: DEFAULT_LIMIT, repository_kind: nil)
               Domain::PackageRankingMetric.keys(ecosystem: ecosystem).to_h do |metric|
                 [metric.to_sym, ranked_packages(ecosystem: ecosystem, period_start: period_start, metric: metric,
-                                                limit: limit)]
+                                                limit: limit, repository_kind: repository_kind)]
               end
             end
 
-            def ranked_packages(ecosystem:, period_start:, metric:, scope: 'poland', limit: DEFAULT_LIMIT)
+            def ranked_packages(ecosystem:, period_start:, metric:, scope: 'poland', limit: DEFAULT_LIMIT,
+                                repository_kind: nil)
               validate_metric!(metric)
               validate_ecosystem_metric!(ecosystem, metric)
+              validate_repository_kind!(repository_kind)
               return [] unless scope == 'poland'
 
-              database.fetch_all(ranked_packages_sql(metric, limit), [period_start, ecosystem])
+              database.fetch_all(
+                ranked_packages_sql(metric, limit, repository_kind),
+                ranked_packages_bindings(period_start, ecosystem, repository_kind)
+              )
             end
 
             def package_profile(ecosystem:, package_name:, period_start:)
@@ -52,7 +49,28 @@ module PolishOpenSourceRank
 
             attr_reader :database
 
-            def ranked_packages_sql(metric, limit)
+            def ecosystems_sql(repository_kind)
+              <<~SQL
+                SELECT DISTINCT snapshots.ecosystem
+                FROM registry_package_snapshots snapshots
+                INNER JOIN registry_packages packages
+                  ON packages.ecosystem = snapshots.ecosystem
+                 AND packages.normalized_package_name = snapshots.normalized_package_name
+                #{repository_link_joins(repository_kind)}
+                WHERE snapshots.period_start = ?
+                  AND packages.status = 'active'
+                  #{repository_kind_filter(repository_kind)}
+                ORDER BY snapshots.ecosystem ASC
+              SQL
+            end
+
+            def ecosystems_bindings(period_start, repository_kind)
+              bindings = [period_start]
+              bindings << repository_kind if repository_kind
+              bindings
+            end
+
+            def ranked_packages_sql(metric, limit, repository_kind)
               <<~SQL
                 SELECT snapshots.ecosystem,
                        packages.package_name,
@@ -97,11 +115,18 @@ module PolishOpenSourceRank
                 WHERE snapshots.period_start = ?
                   AND snapshots.ecosystem = ?
                   AND packages.status = 'active'
+                  #{repository_kind_filter(repository_kind)}
                 GROUP BY snapshots.ecosystem, packages.normalized_package_name
                 HAVING #{metric_filter_sql(metric)}
                 ORDER BY #{metric_expression(metric)} DESC, packages.package_name COLLATE NOCASE ASC
                 LIMIT #{bounded_limit(limit)}
               SQL
+            end
+
+            def ranked_packages_bindings(period_start, ecosystem, repository_kind)
+              bindings = [period_start, ecosystem]
+              bindings << repository_kind if repository_kind
+              bindings
             end
 
             def package_profile_sql
@@ -203,6 +228,29 @@ module PolishOpenSourceRank
               return if Domain::PackageRankingMetric.supported_for_ecosystem?(ecosystem, metric)
 
               raise ArgumentError, "Unsupported package ranking metric for #{ecosystem}: #{metric}"
+            end
+
+            def validate_repository_kind!(repository_kind)
+              return if repository_kind.nil? || %w[user organization].include?(repository_kind)
+
+              raise ArgumentError, "Unsupported package repository kind: #{repository_kind}"
+            end
+
+            def repository_link_joins(repository_kind)
+              return '' unless repository_kind
+
+              <<~SQL
+                INNER JOIN registry_package_links links
+                  ON links.ecosystem = packages.ecosystem
+                 AND links.normalized_package_name = packages.normalized_package_name
+                 AND links.matched = 1
+                INNER JOIN package_manifests manifests ON manifests.id = links.manifest_id
+                INNER JOIN package_repository_scans scans ON scans.id = manifests.repository_scan_id
+              SQL
+            end
+
+            def repository_kind_filter(repository_kind)
+              repository_kind ? 'AND scans.repository_kind = ?' : ''
             end
 
             def bounded_limit(limit)

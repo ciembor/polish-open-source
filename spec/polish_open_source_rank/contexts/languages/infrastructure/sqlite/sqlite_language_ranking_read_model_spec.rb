@@ -27,15 +27,60 @@ RSpec.describe PolishOpenSourceRank::Contexts::Languages::Infrastructure::SQLite
       repository_stars_count: 105,
       repository_stars_delta: 2
     )
+    expect(rankings.fetch(:repository_count).first).not_to include(:sample_repository_full_name)
+  end
+
+  it 'ranks repositories inside a language with a people and organizations split' do
+    seed_language_repository_split
+
+    user_rankings = read_model.repository_rankings(
+      language: 'ruby',
+      period_start: period,
+      limit: 10,
+      repository_kind: 'user'
+    )
+    organization_top = read_model.ranked_repositories(
+      language: 'Ruby',
+      period_start: period,
+      metric: 'repository_stars_count',
+      repository_kind: 'organization'
+    )
+
+    expect(user_rankings.fetch(:repository_stars_count).map { |row| row.fetch(:full_name) }).to eq(
+      ['alice/ruby-a', 'alice/ruby-b']
+    )
+    expect(user_rankings.fetch(:repository_stars_delta).map { |row| row.fetch(:full_name) }).to eq(
+      ['alice/ruby-b', 'alice/ruby-a']
+    )
+    expect(organization_top.first).to include(
+      full_name: 'org/ruby-c',
+      repository_kind: 'organization',
+      repository_stars_count: 90
+    )
   end
 
   it 'bounds limits and rejects unsupported metrics' do
     seed_user_repository(id: 1, full_name: 'alice/ruby-a', language: 'Ruby', stars: 100, delta: 2)
 
     expect(read_model.ranked_languages(period_start: period, metric: 'repository_count', limit: 0).length).to eq(1)
+    expect(read_model.ranked_repositories(period_start: period, language: 'Ruby', metric: 'repository_stars_count',
+                                          limit: 0).length).to eq(1)
     expect do
       read_model.ranked_languages(period_start: period, metric: 'downloads')
     end.to raise_error(ArgumentError, 'Unsupported language ranking metric: downloads')
+    expect do
+      read_model.ranked_repositories(period_start: period, language: 'Ruby', metric: 'repository_count')
+    end.to raise_error(ArgumentError, 'Unsupported language repository ranking metric: repository_count')
+    expect do
+      read_model.ranked_languages(period_start: period, metric: 'repository_count', repository_kind: 'team')
+    end.to raise_error(ArgumentError, 'Unsupported language repository kind: team')
+  end
+
+  def seed_language_repository_split
+    seed_user_repository(id: 1, full_name: 'alice/ruby-a', language: 'Ruby', stars: 100, delta: 2)
+    seed_user_repository(id: 2, full_name: 'alice/ruby-b', language: 'Ruby', stars: 5, delta: 9)
+    seed_organization_repository(id: 3, full_name: 'org/ruby-c', language: 'Ruby', stars: 90, delta: 8)
+    seed_user_repository(id: 4, full_name: 'alice/go-a', language: 'Go', stars: 30, delta: 20)
   end
 
   def seed_user_repository(id:, full_name:, language:, stars:, delta:)

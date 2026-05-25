@@ -15,12 +15,23 @@
 <section class="ranking-band">
   <div class="content">
     <p><a class="muted-link muted-link--standalone" href="<%= h app_path(package_index_path) %>"><%= h t('packages.back') %></a></p>
+    <h2><%= h t('packages.repository_kind.all') %></h2>
     <div class="ranking-grid ranking-grid--compact">
       <% PolishOpenSourceRank::Contexts::Packages::Domain::PackageRankingMetric.all(ecosystem: @package_ecosystem).each do |package_metric| %>
         <% slug = package_metric.slug %>
         <% metric = package_metric.key.to_sym %>
-        <%= erb :package_ranking_table, locals: { heading_id: "package-ranking-#{slug}", title: package_ranking_title(slug, ecosystem: @package_ecosystem), rows: @package_rankings.fetch(metric, []), metric: metric, metric_label: package_metric_label(metric, ecosystem: @package_ecosystem), top_path: package_ranking_path(@package_ecosystem, slug) } %>
+        <%= erb :package_ranking_table, locals: { heading_id: "package-ranking-all-#{slug}", title: package_ranking_title(slug, ecosystem: @package_ecosystem), rows: @package_rankings.fetch(metric, []), metric: metric, metric_label: package_metric_label(metric, ecosystem: @package_ecosystem), top_path: package_ranking_path(@package_ecosystem, slug) } %>
       <% end %>
     </div>
+    <% @package_ranking_groups.each do |repository_kind, rankings| %>
+      <h2><%= h package_repository_kind_label(repository_kind) %></h2>
+      <div class="ranking-grid ranking-grid--compact">
+        <% PolishOpenSourceRank::Contexts::Packages::Domain::PackageRankingMetric.all(ecosystem: @package_ecosystem).each do |package_metric| %>
+          <% slug = package_metric.slug %>
+          <% metric = package_metric.key.to_sym %>
+          <%= erb :package_ranking_table, locals: { heading_id: "package-ranking-#{repository_kind}-#{slug}", title: package_repository_ranking_title(slug, ecosystem: @package_ecosystem, repository_kind: repository_kind), rows: rankings.fetch(metric, []), metric: metric, metric_label: package_metric_label(metric, ecosystem: @package_ecosystem), top_path: package_repository_ranking_path(@package_ecosystem, repository_kind, slug) } %>
+        <% end %>
+      </div>
+    <% end %>
   </div>
 </section>

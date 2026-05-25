@@ -4,15 +4,20 @@
     <ol class="ranking-list" aria-labelledby="<%= h heading_id %>">
       <% rows.each_with_index do |row, index| %>
         <% place_class = { 1 => "first_place", 2 => "second_place", 3 => "third_place" }[index + 1] %>
+        <% repository = { platform: row.fetch(:platform), full_name: row.fetch(:full_name) } %>
+        <% path = row.fetch(:repository_kind) == "organization" ? organization_repository_profile_path(repository) : repository_profile_path(repository) %>
         <li class="ranking-list__item<% if place_class %> <%= h place_class %><% end %>">
           <span class="rank-cell rank-mark"><%= index + 1 %></span>
           <div class="ranking-list__body">
             <div class="ranking-list__title">
-              <a class="primary-link" href="<%= h app_path(language_path(row.fetch(:language))) %>"><%= h row.fetch(:language) %></a>
+              <a class="primary-link" href="<%= h app_path(path) %>"><%= h row.fetch(:full_name) %></a>
             </div>
-            <span class="ranking-list__description">
-              <%= h t('languages.repository_count', count: number(row.fetch(:repository_count))) %>
-            </span>
+            <% if row[:description] && !row[:description].empty? %>
+              <span class="ranking-list__description"><%= h row[:description] %></span>
+            <% end %>
+            <div class="ranking-list__meta">
+              <a class="muted-link muted-link--standalone" href="<%= h row.fetch(:html_url) %>"><%= h t('repositories.links.source_project', platform: platform_name(row.fetch(:platform))) %></a>
+            </div>
           </div>
           <div class="ranking-list__metrics">
             <span class="metric" title="<%= h metric_label %>" aria-label="<%= h metric_label %>: <%= h number(row.fetch(metric)) %>">
