@@ -43,7 +43,8 @@ module PolishOpenSourceRank
         'app/views/organization_repository_profile.erb',
         'app/views/repository_profile.erb',
         'app/views/user_profile.erb',
-        'app/public/css/application.css'
+        'app/public/css/application.css',
+        'app/public/js/navigation.js'
       ].freeze
       set :default_locale, DEFAULT_LOCALE
       set :localized_text,
