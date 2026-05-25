@@ -1,0 +1,127 @@
+/* About Page */
+
+.about-hero .lede {
+  max-width: 700px;
+}
+
+.about-section {
+  padding: 46px 0 54px;
+}
+
+.about-section--alt {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+}
+
+.about-grid {
+  display: grid;
+  gap: 36px;
+  grid-template-columns: minmax(220px, 0.85fr) minmax(0, 1.35fr);
+}
+
+.about-grid--mission {
+  align-items: start;
+}
+
+.about-lead {
+  color: var(--ink);
+  font-size: 1.16rem;
+  margin: 34px 0 0;
+  max-width: 780px;
+}
+
+.rules-grid,
+.platform-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.rules-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.rule-card,
+.platform-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  min-width: 0;
+}
+
+.rule-card {
+  padding: 20px;
+}
+
+.rule-card__number {
+  color: var(--accent-strong);
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 900;
+  margin-bottom: 18px;
+}
+
+.rule-card p,
+.platform-card p,
+.about-author p {
+  color: var(--muted);
+  margin-bottom: 0;
+}
+
+.platform-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.platform-card {
+  overflow: hidden;
+}
+
+.platform-card__link {
+  align-items: center;
+  display: flex;
+  gap: 18px;
+  padding: 24px;
+  text-decoration: none;
+}
+
+.platform-card__link:hover .platform-card__name {
+  color: var(--accent);
+}
+
+.platform-logo {
+  align-items: center;
+  display: flex;
+  height: 72px;
+  flex: 0 0 72px;
+  justify-content: center;
+}
+
+.platform-card__name {
+  color: var(--ink);
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.platform-logo__image {
+  display: block;
+  height: 64px;
+  object-fit: contain;
+  width: 64px;
+}
+
+.about-author {
+  background: #10231f;
+  color: #ffffff;
+}
+
+.about-author .eyebrow,
+.about-author p {
+  color: #b6d6ce;
+}
+
+.about-author__inner {
+  max-width: 820px;
+}
+

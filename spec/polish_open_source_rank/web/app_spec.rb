@@ -631,6 +631,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     expect(response.body).to include('rel="canonical" href="https://rank.example/latest"')
     expect(response.body).to match(%r{href="/css/application\.css\?v=\d+"})
+    expect(response.body).to match(%r{href="/css/components/navigation\.css\?v=\d+"})
+    expect(response.body).to match(%r{href="/css/responsive\.css\?v=\d+"})
     expect(response.body).to match(%r{src="/js/navigation\.js\?v=\d+"})
     expect(response.body).to include('src="/icons/github.svg"')
     expect(response.body).to include('href="/latest/locations/krakow"')
