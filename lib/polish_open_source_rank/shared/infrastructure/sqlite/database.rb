@@ -66,6 +66,7 @@ module PolishOpenSourceRank
           def sequel_connection
             @sequel_connection ||= Sequel.connect(
               "sqlite://#{path}",
+              max_connections: 1,
               after_connect: method(:configure_connection)
             )
           end

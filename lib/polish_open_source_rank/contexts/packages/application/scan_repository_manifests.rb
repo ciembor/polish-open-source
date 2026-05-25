@@ -21,8 +21,9 @@ module PolishOpenSourceRank
             stats = { scanned: 0, failed: 0, manifests: 0 }
             repository_queue.pending(period, limit: limit, ecosystem: ecosystem, refresh: refresh).each do |scan|
               result = scan_repository(scan, ecosystem: ecosystem, refresh: refresh)
-              stats[:scanned] += 1 if result.fetch(:status) == :scanned
-              stats[:failed] += 1 if result.fetch(:status) == :failed
+              status = result.fetch(:status)
+              stats[:scanned] += 1 if status == :scanned
+              stats[:failed] += 1 if failure_status?(status)
               stats[:manifests] += result.fetch(:manifest_count)
             end
             stats
@@ -31,6 +32,10 @@ module PolishOpenSourceRank
           private
 
           attr_reader :detector, :manifest_repository, :repository_queue, :tree_gateway, :work_events
+
+          def failure_status?(status)
+            %i[failed unavailable].include?(status)
+          end
 
           def scan_repository(scan, ecosystem:, refresh:)
             record_work_event(scan, ecosystem: ecosystem) do
@@ -43,8 +48,8 @@ module PolishOpenSourceRank
               end
             end
           rescue RepositoryUnavailable => e
-            repository_queue.mark_failed(scan.fetch(:id), e.message)
-            { status: :failed, manifest_count: 0 }
+            repository_queue.mark_unavailable(scan.fetch(:id), e.message)
+            { status: :unavailable, manifest_count: 0 }
           end
 
           def record_work_event(scan, ecosystem:, &)

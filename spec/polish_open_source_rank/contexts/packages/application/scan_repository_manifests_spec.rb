@@ -94,13 +94,13 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application::ScanReposi
     expect(tree_gateway.blob_calls).to be_empty
   end
 
-  it 'marks unavailable repositories as failed' do
+  it 'marks unavailable repositories without retrying them as transient failures' do
     seed_scan(full_name: 'alice/missing')
     tree_gateway.stub_unavailable('alice/missing')
 
     result = use_case.call(period, limit: 10)
 
-    expect(scan).to include(status: 'failed', error: 'missing')
+    expect(scan).to include(status: 'unavailable', error: 'missing', checked_at: '2026-05-23T12:00:00Z')
     expect(result).to eq(scanned: 0, failed: 1, manifests: 0)
   end
 

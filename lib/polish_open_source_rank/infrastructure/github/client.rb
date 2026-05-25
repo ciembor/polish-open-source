@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'net/http'
+require 'openssl'
 require 'uri'
 
 module PolishOpenSourceRank
@@ -25,6 +26,15 @@ module PolishOpenSourceRank
       API_VERSION = '2022-11-28'
       DEFAULT_ACCEPT = 'application/vnd.github+json'
       RETRYABLE_STATUSES = [403, 429, 500, 502, 503, 504].freeze
+      RETRYABLE_TRANSPORT_ERRORS = [
+        EOFError,
+        Errno::ECONNRESET,
+        Errno::ETIMEDOUT,
+        Net::OpenTimeout,
+        Net::ReadTimeout,
+        OpenSSL::SSL::SSLError,
+        SocketError
+      ].freeze
 
       def initialize(token:, requests_per_minute:, base_url: 'https://api.github.com', http: {}, execution: {})
         @token = token
@@ -47,6 +57,12 @@ module PolishOpenSourceRank
           raise http_error(response) unless wait_seconds && attempts <= max_retries
 
           logger.puts "GitHub API retry in #{wait_seconds.round(2)}s for #{path} (HTTP #{response.code})"
+          sleeper.call(wait_seconds)
+        rescue *RETRYABLE_TRANSPORT_ERRORS => e
+          wait_seconds = transport_error_retry_wait_seconds(attempts)
+          raise unless wait_seconds
+
+          logger.puts "GitHub API retry in #{wait_seconds.round(2)}s for #{path} (#{e.class})"
           sleeper.call(wait_seconds)
         end
       end
@@ -137,6 +153,12 @@ module PolishOpenSourceRank
         return unless RETRYABLE_STATUSES.include?(response.code.to_i)
 
         retry_after(response) || rate_limit_reset_wait(response) || exponential_backoff(attempts)
+      end
+
+      def transport_error_retry_wait_seconds(attempts)
+        return if attempts > max_retries
+
+        exponential_backoff(attempts)
       end
 
       def retry_after(response)

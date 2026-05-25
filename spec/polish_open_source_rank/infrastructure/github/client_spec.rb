@@ -61,6 +61,31 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubClient do
     expect(sleeps.any? { |seconds| seconds.between?(2, 3) }).to be(true)
   end
 
+  it 'retries transient transport errors' do
+    stub_http_start(
+      Net::OpenTimeout.new('execution expired'),
+      ok_response({ 'ok' => true }, 'x-ratelimit-remaining' => '1')
+    )
+
+    expect(client.get('/flaky-network').body).to eq('ok' => true)
+    expect(sleeps.any? { |seconds| seconds.between?(2, 3) }).to be(true)
+  end
+
+  it 'raises transport errors after exhausting retries' do
+    client = described_class.new(
+      token: 'token',
+      requests_per_minute: 600,
+      execution: { sleeper: sleeper, logger: StringIO.new, max_retries: 1 }
+    )
+    stub_http_start(
+      OpenSSL::SSL::SSLError.new('unexpected eof while reading'),
+      OpenSSL::SSL::SSLError.new('unexpected eof while reading')
+    )
+
+    expect { client.get('/broken-network') }.to raise_error(OpenSSL::SSL::SSLError)
+    expect(Net::HTTP).to have_received(:start).twice
+  end
+
   it 'raises typed errors for unretryable statuses and missing resources' do
     stub_http(response('404', 'Not Found', '{}'))
     expect { client.get('/missing') }.to raise_error(described_class::NotFound)
@@ -100,6 +125,17 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubClient do
       http = instance_double(Net::HTTP)
       allow(http).to receive(:request).and_return(*responses)
       allow(Net::HTTP).to receive(:start).and_yield(http)
+    end
+  end
+
+  def stub_http_start(*steps)
+    allow(Net::HTTP).to receive(:start) do |_host, _port, **_options, &net_http_block|
+      step = steps.shift
+      raise step if step.is_a?(Exception)
+
+      http = instance_double(Net::HTTP)
+      allow(http).to receive(:request).and_return(step)
+      net_http_block.call(http)
     end
   end
 
