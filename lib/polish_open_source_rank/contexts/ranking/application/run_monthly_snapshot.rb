@@ -23,8 +23,9 @@ module PolishOpenSourceRank
           end
           # rubocop:enable Metrics/ParameterLists
 
-          def call(period, refresh: false, scope: nil)
+          def call(period, refresh: false, scope: nil, recalculate_stars: false)
             @scope = scope
+            @recalculate_stars = recalculate_stars
             refresh_platforms = refresh ? sources.map(&:platform) : []
             run_id = store.create_run(period, refresh_platforms: refresh_platforms)
             return unless run_id
@@ -220,7 +221,7 @@ module PolishOpenSourceRank
             previous_stars = with_store do
               store.previous_repository_stars(period, source.platform, repository.fetch(:source_id))
             end
-            return [current_stars - previous_stars.to_i, 0].max if previous_stars
+            return [current_stars - previous_stars.to_i, 0].max if previous_stars && !recalculate_stars?
 
             source.repository_stars_delta(repository, period)
           end
@@ -232,7 +233,7 @@ module PolishOpenSourceRank
             previous_stars = with_store do
               store.previous_organization_repository_stars(period, source.platform, repository.fetch(:source_id))
             end
-            return [current_stars - previous_stars.to_i, 0].max if previous_stars
+            return [current_stars - previous_stars.to_i, 0].max if previous_stars && !recalculate_stars?
 
             source.repository_stars_delta(repository, period)
           end
@@ -442,6 +443,10 @@ module PolishOpenSourceRank
 
           def blank_to_nil(value)
             value if value.to_s.match?(/\S/)
+          end
+
+          def recalculate_stars?
+            @recalculate_stars
           end
 
           def run_source_snapshots(period, refresh_platforms:)

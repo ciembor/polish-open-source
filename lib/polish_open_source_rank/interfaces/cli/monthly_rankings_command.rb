@@ -31,7 +31,7 @@ module PolishOpenSourceRank
         end
 
         def job_options
-          options = { refresh: refresh? }
+          options = { refresh: refresh?, recalculate_stars: recalculate_stars? }
           options[:scope] = scope_argument if scope_argument
           options
         end
@@ -77,6 +77,10 @@ module PolishOpenSourceRank
 
         def refresh?
           argv.include?('--refresh')
+        end
+
+        def recalculate_stars?
+          argv.include?('--recalculate-stars')
         end
       end
     end
