@@ -18,6 +18,11 @@
   text-align: center;
   text-decoration: none;
   user-select: none;
+  white-space: nowrap;
+}
+
+.nav-pill {
+  flex: 0 0 auto;
 }
 
 .nav-pill:hover,
@@ -43,10 +48,12 @@
 }
 
 .nav-form {
+  flex: 0 0 auto;
   margin: 0;
 }
 
 .nav-menu {
+  flex: 0 0 auto;
   display: inline-block;
   position: relative;
 }
@@ -175,11 +182,17 @@
   color: var(--accent);
 }
 
+.nav__link {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 .language-switch {
   align-items: center;
   border: 1px solid var(--line);
   border-radius: 6px;
   display: inline-flex;
+  flex: 0 0 auto;
   overflow: hidden;
 }
 
@@ -203,4 +216,3 @@
   background: var(--accent);
   color: #ffffff;
 }
-
