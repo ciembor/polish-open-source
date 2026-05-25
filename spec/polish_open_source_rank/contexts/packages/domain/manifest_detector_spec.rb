@@ -56,6 +56,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::ManifestDetecto
       'vcpkg.json',
       'Package.swift',
       'pubspec.yaml',
+      'debian/control',
+      'packaging/tool.spec',
+      'flake.nix',
+      'default.nix',
+      'shell.nix',
       'target/generated/Cargo.toml',
       'README.md'
     ]
@@ -63,6 +68,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::ManifestDetecto
 
   def expected_manifest_pairs
     [
+      ['apt', 'debian/control'],
       ['conan', 'conanfile.py'],
       ['crates', 'Cargo.toml'],
       ['crates', 'crates/member/Cargo.toml'],
@@ -77,6 +83,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::ManifestDetecto
       ['maven', 'pom.xml'],
       ['maven', 'settings.gradle'],
       ['maven', 'settings.gradle.kts'],
+      ['nix', 'default.nix'],
+      ['nix', 'flake.nix'],
       ['npm', 'apps/web/package.json'],
       ['nuget', 'Directory.Packages.props'],
       ['nuget', 'Polish.Tool.nuspec'],
@@ -88,6 +96,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::ManifestDetecto
       ['pypi', 'pyproject.toml'],
       ['pypi', 'setup.cfg'],
       ['pypi', 'setup.py'],
+      ['rpm', 'packaging/tool.spec'],
       ['rubygems', 'pkg/tool.gemspec'],
       ['swiftpm', 'Package.swift'],
       ['terraform', 'main.tf'],

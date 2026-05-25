@@ -9,7 +9,7 @@ module PolishOpenSourceRank
             module_function
 
             def escaped_segment(value)
-              URI.encode_www_form_component(value).tr('+', '%20')
+              URI.encode_www_form_component(value).gsub('+', '%20')
             end
 
             def fetch_error(result)

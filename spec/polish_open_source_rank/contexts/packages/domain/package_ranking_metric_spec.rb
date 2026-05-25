@@ -22,7 +22,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::PackageRankingM
       nuget_keys: described_class.keys(ecosystem: 'nuget'),
       maven_keys: described_class.keys(ecosystem: 'maven'),
       pypi_keys: described_class.keys(ecosystem: 'pypi'),
-      terraform_slugs: described_class.slugs(ecosystem: 'terraform')
+      terraform_slugs: described_class.slugs(ecosystem: 'terraform'),
+      apt_slugs: described_class.slugs(ecosystem: 'apt')
     ).to eq(
       npm_slugs: %w[top stars trending],
       crates_keys: %w[downloads_30d downloads_total repository_stars_count repository_stars_delta],
@@ -31,7 +32,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::PackageRankingM
       nuget_keys: %w[downloads_total repository_stars_count repository_stars_delta],
       maven_keys: %w[repository_stars_count repository_stars_delta],
       pypi_keys: %w[repository_stars_count repository_stars_delta],
-      terraform_slugs: %w[stars trending]
+      terraform_slugs: %w[stars trending],
+      apt_slugs: %w[stars trending]
     )
   end
 end

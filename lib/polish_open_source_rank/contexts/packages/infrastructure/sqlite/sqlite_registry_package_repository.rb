@@ -22,7 +22,10 @@ module PolishOpenSourceRank
               'conan' => 'https://conan.io/center/recipes/%s',
               'vcpkg' => 'https://vcpkg.io/en/package/%s.html',
               'swiftpm' => 'https://swiftpackageindex.com/search?query=%s',
-              'pub' => 'https://pub.dev/packages/%s'
+              'pub' => 'https://pub.dev/packages/%s',
+              'apt' => 'https://packages.debian.org/search?keywords=%s',
+              'rpm' => 'https://src.fedoraproject.org/rpms/%s',
+              'nix' => 'https://search.nixos.org/packages?query=%s'
             }.freeze
 
             def initialize(database, clock: -> { Time.now.utc },
@@ -207,10 +210,10 @@ module PolishOpenSourceRank
             def registry_url(ecosystem, package_name)
               return format(REGISTRY_URLS.fetch(ecosystem), package_name.tr(':', '/')) if ecosystem == 'maven'
 
-              if %w[terraform conan vcpkg swiftpm pub].include?(ecosystem)
+              if %w[terraform conan vcpkg swiftpm pub apt rpm nix].include?(ecosystem)
                 escaped = ::PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registries::RegistryClientHelpers
                           .escaped_segment(package_name)
-                return format(REGISTRY_URLS.fetch(ecosystem), escaped)
+                return REGISTRY_URLS.fetch(ecosystem).sub('%s', escaped)
               end
 
               format(REGISTRY_URLS.fetch(ecosystem), package_name)

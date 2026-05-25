@@ -19,6 +19,7 @@ Cel: pokazać więcej sensownych ekosystemów pakietów w publicznym `/packages`
 4. [x] NuGet
 5. [x] Maven
 6. [x] Repo stars/trending + Terraform, Conan, vcpkg, SwiftPM, pub.dev
+7. [x] System package ecosystems: APT, RPM, Nix
 
 ## 1. Packagist Downloads
 
@@ -192,6 +193,28 @@ Definition of Done:
 - [x] Ekosystemy bez stabilnych downloads mają ranking publiczny po gwiazdkach/trendzie repozytorium.
 - [x] Brak metryk registry pozostaje jawnie zapisany jako `nil`, bez fałszywych zer.
 - [x] Parsowanie nowych manifestów jest statyczne i nie wykonuje kodu projektu.
+
+## 7. System Package Ecosystems
+
+Dlaczego: Homebrew nie wystarcza do systemowych pakietów. Debian/Ubuntu, RPM i Nix są ważnymi kanałami dystrybucji narzędzi systemowych i developerskich, ale nie mają jednej stabilnej metryki popularności porównywalnej z downloads w npm.
+
+- [x] Dodać APT/Debian:
+  - [x] wykrywanie `debian/control`,
+  - [x] statyczny parser pól `Source`, `Homepage`, `Maintainer`, `Standards-Version`.
+- [x] Dodać RPM:
+  - [x] wykrywanie `*.spec`,
+  - [x] statyczny parser pól `Name`, `Version`, `License`, `URL`, `Source`.
+- [x] Dodać Nix:
+  - [x] wykrywanie `flake.nix`,
+  - [x] wykrywanie `default.nix`,
+  - [x] wykrywanie `package.nix`,
+  - [x] celowo pominąć `shell.nix`, bo opisuje zwykle środowisko developerskie, nie pakiet.
+
+Definition of Done:
+
+- [x] APT, RPM i Nix są widoczne w systemie package crawl.
+- [x] Publiczny ranking działa po `repository_stars_count` i `repository_stars_delta`.
+- [x] Nie zapisujemy fałszywych downloads dla systemowych rejestrów.
 
 ## Operacje Po Każdym Etapie
 

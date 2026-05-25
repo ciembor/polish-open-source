@@ -242,6 +242,34 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
     )
   end
 
+  it 'parses APT, RPM, and Nix package manifests statically' do
+    expect(parse('DebianControlParser', 'debian/control', debian_control).to_h).to include(
+      ecosystem: 'apt',
+      package_name: 'polish-apt',
+      homepage_url: 'https://example.com/polish-apt',
+      parse_status: 'parsed'
+    )
+    expect(parse('RpmSpecParser', 'polish-rpm.spec', rpm_spec).to_h).to include(
+      ecosystem: 'rpm',
+      package_name: 'polish-rpm',
+      repository_url: 'https://github.com/acme/polish-rpm/archive/v1.0.0.tar.gz',
+      homepage_url: 'https://example.com/polish-rpm',
+      license: 'MIT',
+      parse_status: 'parsed'
+    )
+    expect(parse('NixPackageParser', 'default.nix', nix_package).to_h).to include(
+      ecosystem: 'nix',
+      package_name: 'polish-nix',
+      repository_url: 'https://github.com/acme/polish-nix',
+      homepage_url: 'https://github.com/acme/polish-nix',
+      license: 'mit',
+      parse_status: 'parsed'
+    )
+    expect(parse('NixPackageParser', 'flake.nix', 'description = "Polish flake";')).to have_attributes(
+      package_name: 'Polish flake'
+    )
+  end
+
   def parse(parser_name, path, content)
     described_class.const_get(parser_name).new.parse(path: path, content: content)
   end
@@ -451,5 +479,42 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
       homepage: https://example.com/polish_pub
       repository: https://github.com/acme/polish_pub
     YAML
+  end
+
+  def debian_control
+    <<~CONTROL
+      Source: polish-apt
+      Maintainer: Polish Maintainer <maintainer@example.com>
+      Standards-Version: 4.7.0
+      Homepage: https://example.com/polish-apt
+
+      Package: polish-apt
+      Architecture: any
+    CONTROL
+  end
+
+  def rpm_spec
+    <<~SPEC
+      Name: polish-rpm
+      Version: 1.0.0
+      License: MIT
+      URL: https://example.com/polish-rpm
+      Source0: https://github.com/acme/polish-rpm/archive/v1.0.0.tar.gz
+    SPEC
+  end
+
+  def nix_package
+    <<~NIX
+      { lib, stdenv }:
+
+      stdenv.mkDerivation {
+        pname = "polish-nix";
+        version = "1.0.0";
+        meta = {
+          homepage = "https://github.com/acme/polish-nix";
+          license = lib.licenses.mit;
+        };
+      }
+    NIX
   end
 end

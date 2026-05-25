@@ -100,6 +100,21 @@ module PolishOpenSourceRank
         default: 20,
         constructor: INTEGER_CONSTRUCTOR
       },
+      apt_registry_requests_per_minute: {
+        env: 'APT_REGISTRY_REQUESTS_PER_MINUTE',
+        default: 20,
+        constructor: INTEGER_CONSTRUCTOR
+      },
+      rpm_registry_requests_per_minute: {
+        env: 'RPM_REGISTRY_REQUESTS_PER_MINUTE',
+        default: 20,
+        constructor: INTEGER_CONSTRUCTOR
+      },
+      nix_registry_requests_per_minute: {
+        env: 'NIX_REGISTRY_REQUESTS_PER_MINUTE',
+        default: 20,
+        constructor: INTEGER_CONSTRUCTOR
+      },
       github_base_url: { env: 'GITHUB_BASE_URL', default: 'https://api.github.com' },
       github_oauth_client_id: { env: 'GITHUB_OAUTH_CLIENT_ID', required: true },
       github_oauth_client_secret: { env: 'GITHUB_OAUTH_CLIENT_SECRET', required: true },
@@ -187,7 +202,10 @@ module PolishOpenSourceRank
         conan: conan_registry_requests_per_minute,
         vcpkg: vcpkg_registry_requests_per_minute,
         swiftpm: swiftpm_registry_requests_per_minute,
-        pub: pub_registry_requests_per_minute
+        pub: pub_registry_requests_per_minute,
+        apt: apt_registry_requests_per_minute,
+        rpm: rpm_registry_requests_per_minute,
+        nix: nix_registry_requests_per_minute
       }
     end
 
