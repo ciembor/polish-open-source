@@ -21,6 +21,7 @@ module PolishOpenSourceRank
                   ON packages.ecosystem = snapshots.ecosystem
                  AND packages.normalized_package_name = snapshots.normalized_package_name
                 WHERE snapshots.period_start = ?
+                  AND packages.status = 'active'
                 ORDER BY snapshots.ecosystem ASC
               SQL
             end
@@ -80,6 +81,7 @@ module PolishOpenSourceRank
                 LEFT JOIN registry_package_links links
                   ON links.ecosystem = packages.ecosystem
                  AND links.normalized_package_name = packages.normalized_package_name
+                 AND links.matched = 1
                 LEFT JOIN package_manifests manifests ON manifests.id = links.manifest_id
                 LEFT JOIN package_repository_scans scans ON scans.id = manifests.repository_scan_id
                 LEFT JOIN repository_monthly_stats user_stats
@@ -94,6 +96,7 @@ module PolishOpenSourceRank
                  AND organization_stats.repository_github_id = scans.repository_source_id
                 WHERE snapshots.period_start = ?
                   AND snapshots.ecosystem = ?
+                  AND packages.status = 'active'
                 GROUP BY snapshots.ecosystem, packages.normalized_package_name
                 HAVING #{metric_filter_sql(metric)}
                 ORDER BY #{metric_expression(metric)} DESC, packages.package_name COLLATE NOCASE ASC
@@ -129,6 +132,7 @@ module PolishOpenSourceRank
                 LEFT JOIN registry_package_links links
                   ON links.ecosystem = packages.ecosystem
                  AND links.normalized_package_name = packages.normalized_package_name
+                 AND links.matched = 1
                 LEFT JOIN package_manifests manifests ON manifests.id = links.manifest_id
                 LEFT JOIN package_repository_scans scans ON scans.id = manifests.repository_scan_id
                 LEFT JOIN repository_monthly_stats user_stats
@@ -144,6 +148,7 @@ module PolishOpenSourceRank
                 WHERE snapshots.period_start = ?
                   AND snapshots.ecosystem = ?
                   AND packages.normalized_package_name = ?
+                  AND packages.status = 'active'
                 ORDER BY scans.repository_kind ASC, scans.full_name COLLATE NOCASE ASC
               SQL
             end

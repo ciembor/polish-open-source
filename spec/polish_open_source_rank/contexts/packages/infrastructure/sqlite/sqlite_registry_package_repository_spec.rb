@@ -57,6 +57,37 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     expect(registry_snapshots.first).to include(downloads_30d: 55, downloads_7d: nil)
   end
 
+  it 'rejects registry packages whose source repository points elsewhere' do
+    seed_scan
+    seed_manifest(ecosystem: 'packagist', package_name: 'symfony/polyfill-mbstring',
+                  normalized_package_name: 'symfony/polyfill-mbstring')
+    repository.resolve_from_manifests(period, ecosystem: 'packagist', limit: 10)
+    result = successful_result(
+      ecosystem: 'packagist',
+      package_name: 'symfony/polyfill-mbstring',
+      registry_url: 'https://packagist.org/packages/symfony/polyfill-mbstring',
+      repository_url: 'https://github.com/symfony/polyfill'
+    )
+
+    repository.record_fetch_result(period, registry_packages.first, result)
+
+    expect(registry_packages.first).to include(status: 'not_found', error: 'registry repository mismatch')
+    expect(registry_links.first).to include(match_confidence: 'low', matched: 0)
+    expect(registry_snapshots).to be_empty
+  end
+
+  it 'rejects placeholder PyPI and RubyGems package names' do
+    seed_pending_package(ecosystem: 'rubygems', package_name: 'foo',
+                         registry_url: 'https://rubygems.org/gems/foo')
+
+    repository.record_fetch_result(period, registry_packages.first,
+                                   successful_result(ecosystem: 'rubygems', package_name: 'foo',
+                                                     registry_url: 'https://rubygems.org/gems/foo'))
+
+    expect(registry_packages.first).to include(status: 'not_found', error: 'placeholder package name')
+    expect(registry_snapshots).to be_empty
+  end
+
   it 'records failed fetches without creating a snapshot' do
     seed_pending_package
     failure = PolishOpenSourceRank::Contexts::Packages::Domain::RegistryFetchResult.new(
@@ -158,16 +189,19 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     )
   end
 
-  def successful_result
+  def successful_result(attributes = {})
+    ecosystem = attributes.fetch(:ecosystem, 'npm')
+    package_name = attributes.fetch(:package_name, 'tool')
     package = PolishOpenSourceRank::Contexts::Packages::Domain::RegistryPackage.new(
-      ecosystem: 'npm',
-      package_name: 'tool',
-      registry_url: 'https://www.npmjs.com/package/tool',
+      ecosystem: ecosystem,
+      package_name: package_name,
+      registry_url: attributes.fetch(:registry_url, 'https://www.npmjs.com/package/tool'),
+      repository_url: attributes[:repository_url],
       latest_version: '1.2.3'
     )
     snapshot = PolishOpenSourceRank::Contexts::Packages::Domain::RegistryPackageSnapshot.new(
-      ecosystem: 'npm',
-      package_name: 'tool',
+      ecosystem: ecosystem,
+      package_name: package_name,
       downloads_30d: 55,
       latest_version: '1.2.3'
     )
