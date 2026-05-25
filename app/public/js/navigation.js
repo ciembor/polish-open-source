@@ -10,21 +10,17 @@ function moveChildren(children, destination) {
   children.forEach((node) => destination.appendChild(node));
 }
 
-function moveChildrenBefore(children, destination, beforeNode) {
-  children.forEach((node) => destination.insertBefore(node, beforeNode));
-}
-
 function restoreNavItems(nav) {
   const primaryCitySlot = nav.querySelector(".js-primary-city-slot");
-  const secondaryLinksSlot = nav.querySelector(".js-secondary-links-slot");
+  const secondaryControlsSlot = nav.querySelector(".js-secondary-controls-slot");
   const moreCitiesPanel = nav.querySelector(".js-more-cities-panel");
   const hamburgerPanel = nav.querySelector(".js-hamburger-panel");
 
   if (primaryCitySlot) {
     moveChildren(Array.from(nav.querySelectorAll(".js-primary-city")), primaryCitySlot);
   }
-  if (secondaryLinksSlot) {
-    moveChildren(Array.from(nav.querySelectorAll(".js-secondary-link")), secondaryLinksSlot);
+  if (secondaryControlsSlot) {
+    moveChildren(Array.from(nav.querySelectorAll(".js-secondary-control")), secondaryControlsSlot);
   }
   if (moreCitiesPanel) {
     moveChildren(Array.from(moreCitiesPanel.querySelectorAll(".js-secondary-city")), moreCitiesPanel);
@@ -46,27 +42,21 @@ function navOverflows(nav) {
 }
 
 function moveLastPrimaryCity(nav) {
-  const moreCitiesPanel = nav.querySelector(".js-more-cities-panel");
-  const firstSecondaryCity = moreCitiesPanel && moreCitiesPanel.querySelector(".js-secondary-city");
-  const primaryCities = Array.from(nav.querySelectorAll(".js-primary-city"));
+  const overflowCitySlot = nav.querySelector(".js-overflow-city-slot");
+  const primaryCities = Array.from(nav.querySelectorAll(".js-primary-city-slot .js-primary-city"));
   const city = primaryCities[primaryCities.length - 1];
-  if (!city || !moreCitiesPanel) return false;
+  if (!city || !overflowCitySlot) return false;
 
-  if (firstSecondaryCity) {
-    moreCitiesPanel.insertBefore(city, firstSecondaryCity);
-  } else {
-    moreCitiesPanel.appendChild(city);
-  }
+  overflowCitySlot.insertBefore(city, overflowCitySlot.firstChild);
   return true;
 }
 
-function moveSecondaryLinkToHamburger(nav) {
-  const secondaryLinks = Array.from(nav.querySelectorAll(".js-secondary-links-slot .js-secondary-link"));
-  const link = secondaryLinks[secondaryLinks.length - 1];
+function moveSecondaryControlsToHamburger(nav) {
+  const secondaryControlsSlot = nav.querySelector(".js-secondary-controls-slot");
   const hamburgerPanel = nav.querySelector(".js-hamburger-panel");
-  if (!link || !hamburgerPanel) return false;
+  if (!secondaryControlsSlot || !hamburgerPanel || secondaryControlsSlot.children.length === 0) return false;
 
-  hamburgerPanel.insertBefore(link, hamburgerPanel.firstChild);
+  moveChildren(Array.from(secondaryControlsSlot.children), hamburgerPanel);
   return true;
 }
 
@@ -113,7 +103,7 @@ function ensureNavLayout() {
   updateMenuLabels(nav);
   if (navOverflows(nav)) shortenMoreCitiesLabel(nav);
 
-  while (navOverflows(nav) && moveSecondaryLinkToHamburger(nav)) {
+  if (navOverflows(nav) && moveSecondaryControlsToHamburger(nav)) {
     updateHamburger(nav);
   }
 
