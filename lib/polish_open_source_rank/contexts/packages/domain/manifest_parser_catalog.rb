@@ -21,7 +21,13 @@ module PolishOpenSourceRank
             'build.gradle' => Parsers::MavenManifestParser,
             'build.gradle.kts' => Parsers::MavenManifestParser,
             'settings.gradle' => Parsers::MavenManifestParser,
-            'settings.gradle.kts' => Parsers::MavenManifestParser
+            'settings.gradle.kts' => Parsers::MavenManifestParser,
+            'main.tf' => Parsers::TerraformModuleParser,
+            'conanfile.py' => Parsers::ConanManifestParser,
+            'conanfile.txt' => Parsers::ConanManifestParser,
+            'vcpkg.json' => Parsers::VcpkgJsonParser,
+            'Package.swift' => Parsers::SwiftPackageParser,
+            'pubspec.yaml' => Parsers::PubspecYamlParser
           }.freeze
 
           def parse(path:, ecosystem:, content:)

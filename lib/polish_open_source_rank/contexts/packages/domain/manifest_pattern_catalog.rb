@@ -15,7 +15,12 @@ module PolishOpenSourceRank
             'packagist' => ['composer.json'],
             'go' => ['go.mod'],
             'nuget' => ['Directory.Packages.props'],
-            'maven' => %w[pom.xml build.gradle build.gradle.kts settings.gradle settings.gradle.kts]
+            'maven' => %w[pom.xml build.gradle build.gradle.kts settings.gradle settings.gradle.kts],
+            'terraform' => ['main.tf'],
+            'conan' => %w[conanfile.py conanfile.txt],
+            'vcpkg' => ['vcpkg.json'],
+            'swiftpm' => ['Package.swift'],
+            'pub' => ['pubspec.yaml']
           }.freeze
 
           EXTENSIONS = {

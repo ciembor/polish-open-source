@@ -37,6 +37,7 @@ module PolishOpenSourceRank
                   ecosystem: manifest.ecosystem,
                   content: content
                 )
+                parsed_manifest = Domain::RepositoryBackedPackageIdentity.apply(parsed_manifest, context)
                 package_manifests.insert(manifest_attributes(scan_id, manifest, parsed_manifest, content))
                 parsed_manifest.parse_status
               end

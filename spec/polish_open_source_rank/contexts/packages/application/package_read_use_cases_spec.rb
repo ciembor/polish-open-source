@@ -16,7 +16,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application do
       period_start: '2026-04-01'
     )
 
-    expect(result).to eq(%w[npm rubygems])
+    expect(result).to eq(%w[npm rubygems pypi])
   end
 
   it 'returns empty package index for missing period' do

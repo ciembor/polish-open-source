@@ -75,6 +75,31 @@ module PolishOpenSourceRank
         default: 20,
         constructor: INTEGER_CONSTRUCTOR
       },
+      terraform_registry_requests_per_minute: {
+        env: 'TERRAFORM_REGISTRY_REQUESTS_PER_MINUTE',
+        default: 20,
+        constructor: INTEGER_CONSTRUCTOR
+      },
+      conan_registry_requests_per_minute: {
+        env: 'CONAN_REGISTRY_REQUESTS_PER_MINUTE',
+        default: 20,
+        constructor: INTEGER_CONSTRUCTOR
+      },
+      vcpkg_registry_requests_per_minute: {
+        env: 'VCPKG_REGISTRY_REQUESTS_PER_MINUTE',
+        default: 20,
+        constructor: INTEGER_CONSTRUCTOR
+      },
+      swiftpm_registry_requests_per_minute: {
+        env: 'SWIFTPM_REGISTRY_REQUESTS_PER_MINUTE',
+        default: 20,
+        constructor: INTEGER_CONSTRUCTOR
+      },
+      pub_registry_requests_per_minute: {
+        env: 'PUB_REGISTRY_REQUESTS_PER_MINUTE',
+        default: 20,
+        constructor: INTEGER_CONSTRUCTOR
+      },
       github_base_url: { env: 'GITHUB_BASE_URL', default: 'https://api.github.com' },
       github_oauth_client_id: { env: 'GITHUB_OAUTH_CLIENT_ID', required: true },
       github_oauth_client_secret: { env: 'GITHUB_OAUTH_CLIENT_SECRET', required: true },
@@ -157,7 +182,12 @@ module PolishOpenSourceRank
         go: go_registry_requests_per_minute,
         homebrew: homebrew_registry_requests_per_minute,
         nuget: nuget_registry_requests_per_minute,
-        maven: maven_registry_requests_per_minute
+        maven: maven_registry_requests_per_minute,
+        terraform: terraform_registry_requests_per_minute,
+        conan: conan_registry_requests_per_minute,
+        vcpkg: vcpkg_registry_requests_per_minute,
+        swiftpm: swiftpm_registry_requests_per_minute,
+        pub: pub_registry_requests_per_minute
       }
     end
 

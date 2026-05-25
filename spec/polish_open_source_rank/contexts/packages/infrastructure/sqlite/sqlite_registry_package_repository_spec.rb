@@ -25,6 +25,19 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     expect(registry_links.first).to include(match_confidence: 'high', matched: 1)
   end
 
+  it 'resolves repository-signal manifests with escaped registry lookup URLs' do
+    seed_scan
+    seed_manifest(ecosystem: 'terraform', path: 'main.tf', package_name: 'alice/terraform-aws-tool',
+                  normalized_package_name: 'alice/terraform-aws-tool')
+
+    repository.resolve_from_manifests(period, ecosystem: 'terraform', limit: 10)
+
+    expect(registry_packages.first).to include(
+      ecosystem: 'terraform',
+      registry_url: 'https://registry.terraform.io/search/modules?q=alice%2Fterraform-aws-tool'
+    )
+  end
+
   it 'records successful snapshots and skips already snapshotted packages unless refreshed' do
     seed_pending_package
 
@@ -70,6 +83,26 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     expect(registry_snapshots).to be_empty
   end
 
+  it 'keeps manifest context when repository-signal registries do not return their own metadata' do
+    seed_pending_package(
+      ecosystem: 'terraform',
+      package_name: 'alice/terraform-aws-tool',
+      registry_url: 'https://registry.terraform.io/search/modules?q=alice%2Fterraform-aws-tool',
+      repository_url: 'https://github.com/alice/terraform-aws-tool',
+      license: 'MIT'
+    )
+    result = PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registries::RepositorySignalRegistryClient
+             .new(ecosystem: :terraform)
+             .fetch('alice/terraform-aws-tool')
+
+    repository.record_fetch_result(period, registry_packages.first, result)
+
+    expect(registry_packages.first).to include(
+      repository_url: 'https://github.com/alice/terraform-aws-tool',
+      license: 'MIT'
+    )
+  end
+
   def seed_scan
     database.execute(
       <<~SQL,
@@ -82,28 +115,38 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     )
   end
 
-  def seed_manifest(package_name:, normalized_package_name:)
+  def seed_manifest(package_name:, normalized_package_name:, ecosystem: 'npm', path: 'package.json')
     database.execute(
       <<~SQL,
         INSERT INTO package_manifests(
           repository_scan_id, ecosystem, path, package_name, normalized_package_name, confidence, parse_status,
           parser_version, parsed_at
         )
-        VALUES (1, 'npm', 'package.json', ?, ?, 'high', 'parsed', 'test', ?)
+        VALUES (1, ?, ?, ?, ?, 'high', 'parsed', 'test', ?)
       SQL
-      [package_name, normalized_package_name, '2026-05-23T12:00:00Z']
+      [ecosystem, path, package_name, normalized_package_name, '2026-05-23T12:00:00Z']
     )
   end
 
-  def seed_pending_package
+  def seed_pending_package(attributes = {})
+    ecosystem = attributes.fetch(:ecosystem, 'npm')
+    package_name = attributes.fetch(:package_name, 'tool')
     database.execute(
       <<~SQL,
         INSERT INTO registry_packages(
-          ecosystem, package_name, normalized_package_name, registry_url, status, updated_at
+          ecosystem, package_name, normalized_package_name, registry_url, repository_url, license, status, updated_at
         )
-        VALUES ('npm', 'tool', 'tool', 'https://www.npmjs.com/package/tool', 'pending', ?)
+        VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
       SQL
-      ['2026-05-23T12:00:00Z']
+      [
+        ecosystem,
+        package_name,
+        package_name.downcase,
+        attributes.fetch(:registry_url, 'https://www.npmjs.com/package/tool'),
+        attributes[:repository_url],
+        attributes[:license],
+        '2026-05-23T12:00:00Z'
+      ]
     )
   end
 

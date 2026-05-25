@@ -93,7 +93,12 @@ module PolishOpenSourceRank
             'go' => registry_client(registries::GoRegistryClient, :go),
             'homebrew' => registry_client(registries::HomebrewRegistryClient, :homebrew),
             'nuget' => registry_client(registries::NuGetRegistryClient, :nuget),
-            'maven' => registry_client(registries::MavenCentralRegistryClient, :maven)
+            'maven' => registry_client(registries::MavenCentralRegistryClient, :maven),
+            'terraform' => repository_signal_registry_client(:terraform),
+            'conan' => repository_signal_registry_client(:conan),
+            'vcpkg' => repository_signal_registry_client(:vcpkg),
+            'swiftpm' => repository_signal_registry_client(:swiftpm),
+            'pub' => repository_signal_registry_client(:pub)
           }
         end
 
@@ -103,6 +108,14 @@ module PolishOpenSourceRank
 
         def registry_client(klass, key)
           klass.new(
+            requests_per_minute: configuration.package_registry_request_limits.fetch(key),
+            http: configuration.http_timeouts
+          )
+        end
+
+        def repository_signal_registry_client(key)
+          registries::RepositorySignalRegistryClient.new(
+            ecosystem: key,
             requests_per_minute: configuration.package_registry_request_limits.fetch(key),
             http: configuration.http_timeouts
           )

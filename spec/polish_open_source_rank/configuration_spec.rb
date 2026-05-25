@@ -10,7 +10,11 @@ RSpec.describe PolishOpenSourceRank::Configuration do
       NPM_REGISTRY_REQUESTS_PER_MINUTE RUBYGEMS_REGISTRY_REQUESTS_PER_MINUTE
       CRATES_REGISTRY_REQUESTS_PER_MINUTE PYPI_REGISTRY_REQUESTS_PER_MINUTE
       HEX_REGISTRY_REQUESTS_PER_MINUTE PACKAGIST_REGISTRY_REQUESTS_PER_MINUTE
-      GO_REGISTRY_REQUESTS_PER_MINUTE
+      GO_REGISTRY_REQUESTS_PER_MINUTE HOMEBREW_REGISTRY_REQUESTS_PER_MINUTE
+      NUGET_REGISTRY_REQUESTS_PER_MINUTE MAVEN_REGISTRY_REQUESTS_PER_MINUTE
+      TERRAFORM_REGISTRY_REQUESTS_PER_MINUTE CONAN_REGISTRY_REQUESTS_PER_MINUTE
+      VCPKG_REGISTRY_REQUESTS_PER_MINUTE SWIFTPM_REGISTRY_REQUESTS_PER_MINUTE
+      PUB_REGISTRY_REQUESTS_PER_MINUTE
     ]
     old_values = keys.to_h { |key| [key, ENV.fetch(key, nil)] }
     keys.each { |key| ENV.delete(key) }
@@ -137,7 +141,12 @@ RSpec.describe PolishOpenSourceRank::Configuration do
       go: 20,
       homebrew: 20,
       nuget: 20,
-      maven: 20
+      maven: 20,
+      terraform: 20,
+      conan: 20,
+      vcpkg: 20,
+      swiftpm: 20,
+      pub: 20
     )
   end
 
