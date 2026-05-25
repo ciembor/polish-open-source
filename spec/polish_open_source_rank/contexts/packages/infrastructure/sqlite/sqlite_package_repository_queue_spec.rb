@@ -61,6 +61,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     queue.mark_failed(scan_id, 'tree unavailable')
     expect(queue.pending(period, limit: 10, ecosystem: 'npm').map { |scan| scan.fetch(:id) }).to eq([scan_id])
 
+    queue.mark_unavailable(scan_id, 'repository unavailable')
+    expect(queue.pending(period, limit: 10).map { |scan| scan.fetch(:id) }).to be_empty
+    expect(queue.pending(period, limit: 10, refresh: true).map { |scan| scan.fetch(:id) }).to eq([scan_id])
+
     queue.mark_processing(scan_id)
     queue.mark_scanned(scan_id, tree_sha: 'abc123', tree_truncated: true, manifest_count: 2)
 

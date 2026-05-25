@@ -7,7 +7,7 @@ module PolishOpenSourceRank
         module SQLite
           class SQLitePackageRepositoryQueue
             RETRYABLE_STATUSES = %w[pending failed].freeze
-            REFRESHABLE_STATUSES = %w[pending failed scanned].freeze
+            REFRESHABLE_STATUSES = %w[pending failed scanned unavailable].freeze
             STALE_PROCESSING_SECONDS = 60 * 60
 
             def initialize(database, clock: -> { Time.now.utc })
@@ -58,6 +58,10 @@ module PolishOpenSourceRank
 
             def mark_failed(scan_id, error)
               update(scan_id, status: 'failed', error: error)
+            end
+
+            def mark_unavailable(scan_id, error)
+              update(scan_id, status: 'unavailable', error: error, checked_at: timestamp)
             end
 
             private
