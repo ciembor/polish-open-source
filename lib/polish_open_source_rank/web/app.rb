@@ -27,6 +27,19 @@ module PolishOpenSourceRank
       RANKING_DETAIL_SEGMENTS = '(users|repositories|organizations|organization-repositories)/(top|trending|active)'
       SUPPORTED_LOCALES = %w[en pl].freeze
       DEFAULT_LOCALE = 'pl'
+      CSS_ASSET_FILES = [
+        '/css/application.css',
+        '/css/components/navigation.css',
+        '/css/components/hero.css',
+        '/css/components/rankings.css',
+        '/css/pages/editions.css',
+        '/css/pages/about.css',
+        '/css/pages/profiles.css',
+        '/css/components/notices.css',
+        '/css/pages/operations.css',
+        '/css/components/footer.css',
+        '/css/responsive.css'
+      ].freeze
       HTML_REVISION_FILES = [
         'app/views/layout.erb',
         'app/views/about.erb',
@@ -48,10 +61,11 @@ module PolishOpenSourceRank
         'app/views/organization_repository_profile.erb',
         'app/views/repository_profile.erb',
         'app/views/user_profile.erb',
-        'app/public/css/application.css',
+        *CSS_ASSET_FILES.map { |path| "app/public#{path}" },
         'app/public/js/navigation.js'
       ].freeze
       set :default_locale, DEFAULT_LOCALE
+      set :css_asset_files, CSS_ASSET_FILES
       set :localized_text,
           Localization::TranslationCatalog.load(root: PolishOpenSourceRank.root, locales: SUPPORTED_LOCALES)
       set :locale_selector, Localization::LocaleSelector.new(supported: SUPPORTED_LOCALES, default: DEFAULT_LOCALE)

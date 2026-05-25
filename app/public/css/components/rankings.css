@@ -1,0 +1,238 @@
+/* Ranking Lists */
+
+.ranking-band {
+  padding: 38px 0 46px;
+}
+
+.ranking-band--alt {
+  background: #ffffff;
+  border-top: 1px solid var(--line);
+}
+
+.ranking-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.ranking-grid--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ranking-table {
+  min-width: 0;
+}
+
+.ranking-list {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  list-style: none;
+  margin: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+.ranking-list__item {
+  align-items: start;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 34px minmax(0, 1fr) max-content;
+  grid-template-rows: auto auto;
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.ranking-list__item:last-child {
+  border-bottom: 0;
+}
+
+.ranking-list__body,
+.ranking-list__title,
+.ranking-list__meta {
+  min-width: 0;
+}
+
+.ranking-list__body {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+.ranking-list__metrics {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.ranking-list__title {
+  align-items: center;
+  display: flex;
+}
+
+.ranking-list__title .platform-mark {
+  flex: 0 0 auto;
+}
+
+.ranking-list__title .primary-link {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ranking-list__description,
+.ranking-list__meta,
+.ranking-list__empty {
+  font-size: 0.94rem;
+}
+
+.ranking-list__description {
+  color: var(--muted);
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-height: 1.5em;
+}
+
+.ranking-list__meta {
+  align-items: center;
+  color: var(--muted);
+  display: grid;
+  gap: 0 8px;
+  grid-template-columns: minmax(0, 1fr) max-content;
+}
+
+.ranking-list__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  justify-content: flex-end;
+}
+
+.ranking-list__meta span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ranking-list__meta .ranking-list__links {
+  overflow: visible;
+  white-space: normal;
+}
+
+.ranking-list__meta .muted-link--standalone {
+  font-size: inherit;
+}
+
+.ranking-list__links .muted-link {
+  margin-right: 0;
+}
+
+.ranking-list__links--edge {
+  align-self: end;
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.ranking-list__empty {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  margin: 0;
+  padding: 12px 10px;
+}
+
+.primary-link,
+.muted-link {
+  display: inline-block;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.platform-mark {
+  display: inline-block;
+  height: 16px;
+  line-height: 1;
+  margin-right: 6px;
+  vertical-align: -2px;
+  width: 16px;
+}
+
+.platform-mark__icon {
+  display: block;
+  height: 16px;
+  object-fit: contain;
+  width: 16px;
+}
+
+.muted-link {
+  color: var(--muted);
+  font-size: 0.84rem;
+  margin-right: 8px;
+}
+
+.muted-link--standalone {
+  margin-left: 0;
+}
+
+.ranking-action {
+  color: var(--accent);
+  display: inline-block;
+  font-size: 0.92rem;
+  font-weight: 800;
+  margin-top: 12px;
+  text-decoration: none;
+}
+
+.ranking-action:hover {
+  color: var(--accent-strong);
+}
+
+.second_place {
+  background: linear-gradient(130deg, #bbb 0%, #eee 50%);
+}
+
+.first_place {
+  background: linear-gradient(130deg, #d4af37 0%, #fff3b0 50%);
+}
+
+.third_place {
+  background: linear-gradient(130deg, #b87333 0%, #ffd1a3 50%);
+}
+
+.metric {
+  color: var(--accent);
+  font-weight: 900;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.rank-cell {
+  white-space: nowrap;
+}
+
+.rank-mark {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+}
+
+.elite-medal {
+  display: inline-block;
+  height: 22px;
+  object-fit: contain;
+  vertical-align: -5px;
+  width: 22px;
+}
+
+.elite-medal--large {
+  height: 54px;
+  width: 54px;
+}
+
