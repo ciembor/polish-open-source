@@ -194,6 +194,54 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
     expect(parse('MavenManifestParser', 'pom.xml', '<project>')).to have_attributes(parse_status: 'failed')
   end
 
+  it 'parses Terraform and Conan manifests statically' do
+    expect(parse('TerraformModuleParser', 'main.tf', terraform_module).to_h).to include(
+      ecosystem: 'terraform',
+      package_name: nil,
+      parse_status: 'partial',
+      metadata: {
+        path: 'main.tf',
+        required_providers: ['hashicorp/aws']
+      }
+    )
+    expect(parse('ConanManifestParser', 'conanfile.py', conanfile_py).to_h).to include(
+      ecosystem: 'conan',
+      package_name: 'polish-conan',
+      homepage_url: 'https://github.com/acme/polish-conan',
+      license: 'MIT',
+      parse_status: 'parsed'
+    )
+    expect(parse('ConanManifestParser', 'conanfile.txt', "name = polish-txt\n")).to have_attributes(
+      package_name: 'polish-txt'
+    )
+  end
+
+  it 'parses vcpkg manifests statically' do
+    expect(parse('VcpkgJsonParser', 'vcpkg.json', vcpkg_json).to_h).to include(
+      ecosystem: 'vcpkg',
+      package_name: 'polish-vcpkg',
+      homepage_url: 'https://github.com/acme/polish-vcpkg',
+      license: 'MIT',
+      parse_status: 'parsed'
+    )
+    expect(parse('VcpkgJsonParser', 'vcpkg.json', '{')).to have_attributes(parse_status: 'failed')
+  end
+
+  it 'parses SwiftPM and pub.dev manifests statically' do
+    expect(parse('SwiftPackageParser', 'Package.swift', swift_package)).to have_attributes(
+      ecosystem: 'swiftpm',
+      package_name: 'PolishSwift',
+      parse_status: 'parsed'
+    )
+    expect(parse('PubspecYamlParser', 'pubspec.yaml', pubspec_yaml).to_h).to include(
+      ecosystem: 'pub',
+      package_name: 'polish_pub',
+      repository_url: 'https://github.com/acme/polish_pub',
+      homepage_url: 'https://example.com/polish_pub',
+      parse_status: 'parsed'
+    )
+  end
+
   def parse(parser_name, path, content)
     described_class.const_get(parser_name).new.parse(path: path, content: content)
   end
@@ -349,5 +397,59 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
       scm = 'https://github.com/acme/gradle-tool'
       license = 'MIT'
     GRADLE
+  end
+
+  def terraform_module
+    <<~HCL
+      terraform {
+        required_providers {
+          aws = {
+            source = "hashicorp/aws"
+          }
+        }
+      }
+    HCL
+  end
+
+  def conanfile_py
+    <<~PY
+      from conan import ConanFile
+
+      class PolishConan(ConanFile):
+          name = "polish-conan"
+          version = "1.0.0"
+          url = "https://github.com/acme/polish-conan"
+          license = "MIT"
+    PY
+  end
+
+  def vcpkg_json
+    JSON.generate(
+      name: 'polish-vcpkg',
+      version: '1.0.0',
+      homepage: 'https://github.com/acme/polish-vcpkg',
+      license: 'MIT'
+    )
+  end
+
+  def swift_package
+    <<~SWIFT
+      // swift-tools-version: 5.9
+      import PackageDescription
+
+      let package = Package(
+        name: "PolishSwift",
+        platforms: [.iOS(.v15)]
+      )
+    SWIFT
+  end
+
+  def pubspec_yaml
+    <<~YAML
+      name: polish_pub
+      version: 1.0.0
+      homepage: https://example.com/polish_pub
+      repository: https://github.com/acme/polish_pub
+    YAML
   end
 end

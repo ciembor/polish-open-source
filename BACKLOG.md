@@ -18,6 +18,7 @@ Cel: pokazać więcej sensownych ekosystemów pakietów w publicznym `/packages`
 3. [x] Homebrew
 4. [x] NuGet
 5. [x] Maven
+6. [x] Repo stars/trending + Terraform, Conan, vcpkg, SwiftPM, pub.dev
 
 ## 1. Packagist Downloads
 
@@ -162,7 +163,35 @@ Definition of Done:
 - [x] Publiczny ranking pojawia się tylko, jeśli mamy stabilną metrykę.
 - [x] Brak metryki jest jawnie opisany w kodzie/testach, nie ukryty w pustym UI.
 
-Wynik implementacji: Maven działa jako ekosystem diagnostyczny. Wykrywamy `pom.xml`, `build.gradle`, `build.gradle.kts`, `settings.gradle` i `settings.gradle.kts`; parser statycznie wyciąga współrzędne `groupId:artifactId`, wersję, URL projektu, SCM i licencję bez uruchamiania Maven/Gradle. Klient Maven Central rozwiązuje artefakty przez Search API do najnowszej wersji i URL `central.sonatype.com/artifact/...`, ale snapshot jawnie zapisuje brak metryki popularności w `metadata`. UI nie pokazuje Maven w publicznym `/packages`, dopóki nie ma stabilnej metryki rankingowej.
+Wynik implementacji: Maven działa jako ekosystem diagnostyczny dla metryk registry, ale może być publicznie sortowany po gwiazdkach i miesięcznym trendzie powiązanego repozytorium. Wykrywamy `pom.xml`, `build.gradle`, `build.gradle.kts`, `settings.gradle` i `settings.gradle.kts`; parser statycznie wyciąga współrzędne `groupId:artifactId`, wersję, URL projektu, SCM i licencję bez uruchamiania Maven/Gradle. Klient Maven Central rozwiązuje artefakty przez Search API do najnowszej wersji i URL `central.sonatype.com/artifact/...`, ale snapshot jawnie zapisuje brak metryki popularności w `metadata`.
+
+## 6. Repo Stars/Trending + Brakujące Ekosystemy
+
+Dlaczego: języki z top GitHuba i ważne ekosystemy bez stabilnych metryk downloads nie powinny znikać z publicznego UI. Dla nich wspólną metryką rankingową są gwiazdki i miesięczny trend repozytorium, z którego wykryto manifest.
+
+- [x] Dodać publiczne metryki pakietów:
+  - [x] `repository_stars_count`,
+  - [x] `repository_stars_delta`.
+- [x] Pokazywać stars/trending dla wszystkich ekosystemów pakietów.
+- [x] Dodać Terraform/OpenTofu modules:
+  - [x] wykrywanie `main.tf`,
+  - [x] tożsamość pakietu z `owner/repo`,
+  - [x] snapshot bez udawanych downloads.
+- [x] Dodać Conan:
+  - [x] `conanfile.py`,
+  - [x] `conanfile.txt`.
+- [x] Dodać vcpkg:
+  - [x] `vcpkg.json`.
+- [x] Dodać SwiftPM:
+  - [x] `Package.swift`.
+- [x] Dodać pub.dev:
+  - [x] `pubspec.yaml`.
+
+Definition of Done:
+
+- [x] Ekosystemy bez stabilnych downloads mają ranking publiczny po gwiazdkach/trendzie repozytorium.
+- [x] Brak metryk registry pozostaje jawnie zapisany jako `nil`, bez fałszywych zer.
+- [x] Parsowanie nowych manifestów jest statyczne i nie wykonuje kodu projektu.
 
 ## Operacje Po Każdym Etapie
 

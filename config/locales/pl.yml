@@ -181,6 +181,10 @@ pl:
         total: "Pobrania łącznie"
       installs:
         30d: "Instalacje 30 dni"
+      repository:
+        stars:
+          count: "Gwiazdki repozytorium"
+          delta: "Trend gwiazdek"
       unavailable: "n/a"
     profile:
       lede: "Publiczny profil pakietu z metrykami rejestru i powiązanymi repozytoriami."
@@ -208,6 +212,8 @@ pl:
       dependents: "Top 100 według zależnych pakietów"
       downloads: "Top 100 według pobrań łącznie"
       installs: "Top 100 według instalacji z 30 dni"
+      stars: "Top 100 według gwiazdek repozytorium"
+      trending: "Top 100 trendujących pakietów"
       top: "Top 100 według pobrań z 30 dni"
   repositories:
     badge:

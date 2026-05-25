@@ -34,7 +34,7 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::PackageRankingJobF
       http_timeouts: { open_timeout: 5, read_timeout: 30, write_timeout: 30 },
       package_registry_request_limits: {
         npm: 30, rubygems: 20, crates: 10, pypi: 20, hex: 20, packagist: 20, go: 20, homebrew: 20,
-        nuget: 20, maven: 20
+        nuget: 20, maven: 20, terraform: 20, conan: 20, vcpkg: 20, swiftpm: 20, pub: 20
       }
     )
   end
@@ -93,5 +93,7 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::PackageRankingJobF
     ].each do |klass|
       allow(klass).to receive(:new).and_return(instance_double(klass))
     end
+    allow(registries::RepositorySignalRegistryClient)
+      .to receive(:new).and_return(instance_double(registries::RepositorySignalRegistryClient))
   end
 end

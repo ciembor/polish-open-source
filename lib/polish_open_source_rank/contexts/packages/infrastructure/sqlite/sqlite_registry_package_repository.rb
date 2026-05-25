@@ -17,7 +17,12 @@ module PolishOpenSourceRank
               'go' => 'https://pkg.go.dev/%s',
               'homebrew' => 'https://formulae.brew.sh/formula/%s',
               'nuget' => 'https://www.nuget.org/packages/%s',
-              'maven' => 'https://central.sonatype.com/artifact/%s'
+              'maven' => 'https://central.sonatype.com/artifact/%s',
+              'terraform' => 'https://registry.terraform.io/search/modules?q=%s',
+              'conan' => 'https://conan.io/center/recipes/%s',
+              'vcpkg' => 'https://vcpkg.io/en/package/%s.html',
+              'swiftpm' => 'https://swiftpackageindex.com/search?query=%s',
+              'pub' => 'https://pub.dev/packages/%s'
             }.freeze
 
             def initialize(database, clock: -> { Time.now.utc },
@@ -159,10 +164,17 @@ module PolishOpenSourceRank
             end
 
             def registry_package_update(package)
-              registry_package_insert(package).slice(
+              attributes = registry_package_insert(package).slice(
                 :package_name, :registry_url, :repository_url, :homepage_url, :license, :latest_version,
                 :status, :error, :checked_at, :updated_at
               )
+              preserve_existing_context_when_registry_is_silent(attributes)
+            end
+
+            def preserve_existing_context_when_registry_is_silent(attributes)
+              attributes.reject do |key, value|
+                value.nil? && %i[repository_url homepage_url license latest_version].include?(key)
+              end
             end
 
             def snapshot_insert(period, snapshot)
@@ -194,6 +206,12 @@ module PolishOpenSourceRank
 
             def registry_url(ecosystem, package_name)
               return format(REGISTRY_URLS.fetch(ecosystem), package_name.tr(':', '/')) if ecosystem == 'maven'
+
+              if %w[terraform conan vcpkg swiftpm pub].include?(ecosystem)
+                escaped = ::PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registries::RegistryClientHelpers
+                          .escaped_segment(package_name)
+                return format(REGISTRY_URLS.fetch(ecosystem), escaped)
+              end
 
               format(REGISTRY_URLS.fetch(ecosystem), package_name)
             end

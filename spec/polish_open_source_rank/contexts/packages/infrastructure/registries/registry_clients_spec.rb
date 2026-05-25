@@ -264,6 +264,25 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
     )
   end
 
+  it 'creates repository-signal snapshots without pretending registry downloads exist' do
+    result = described_class::RepositorySignalRegistryClient
+             .new(ecosystem: :terraform)
+             .fetch('acme/terraform-aws-polish')
+
+    expect(result).to be_ok
+    expect(result.package.to_h).to include(
+      ecosystem: 'terraform',
+      package_name: 'acme/terraform-aws-polish',
+      registry_url: 'https://registry.terraform.io/search/modules?q=acme%2Fterraform-aws-polish',
+      status: 'active'
+    )
+    expect(result.snapshot.to_h).to include(
+      downloads_total: nil,
+      downloads_30d: nil,
+      metadata: { metric_source: 'terraform_registry_popularity_unavailable' }
+    )
+  end
+
   it 'treats missing Maven Central coordinates as not found' do
     stub_http(response('200', { response: { docs: [] } }))
 

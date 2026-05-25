@@ -51,6 +51,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::ManifestDetecto
       'rebar.config',
       'composer.json',
       'go.mod',
+      'main.tf',
+      'conanfile.py',
+      'vcpkg.json',
+      'Package.swift',
+      'pubspec.yaml',
       'target/generated/Cargo.toml',
       'README.md'
     ]
@@ -58,6 +63,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::ManifestDetecto
 
   def expected_manifest_pairs
     [
+      ['conan', 'conanfile.py'],
       ['crates', 'Cargo.toml'],
       ['crates', 'crates/member/Cargo.toml'],
       ['go', 'go.mod'],
@@ -78,10 +84,14 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::ManifestDetecto
       ['nuget', 'src/Polish.Tool/Polish.Tool.fsproj'],
       ['nuget', 'src/Polish.Tool/Polish.Tool.vbproj'],
       ['packagist', 'composer.json'],
+      ['pub', 'pubspec.yaml'],
       ['pypi', 'pyproject.toml'],
       ['pypi', 'setup.cfg'],
       ['pypi', 'setup.py'],
-      ['rubygems', 'pkg/tool.gemspec']
+      ['rubygems', 'pkg/tool.gemspec'],
+      ['swiftpm', 'Package.swift'],
+      ['terraform', 'main.tf'],
+      ['vcpkg', 'vcpkg.json']
     ]
   end
 end

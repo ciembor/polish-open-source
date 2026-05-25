@@ -910,7 +910,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('href="/latest/packages/npm"')
     expect(response.body).to include('href="/latest/packages/homebrew"')
     expect(response.body).to include('href="/latest/packages/nuget"')
-    expect(response.body).not_to include('href="/latest/packages/maven"')
+    expect(response.body).to include('href="/latest/packages/maven"')
   end
 
   def expect_package_profile_page(response)

@@ -10,7 +10,9 @@ module PolishOpenSourceRank
           METRICS = [
             Metric.new(slug: 'top', key: 'downloads_30d', ecosystems: %w[npm crates packagist homebrew]),
             Metric.new(slug: 'downloads', key: 'downloads_total', ecosystems: %w[crates rubygems hex packagist nuget]),
-            Metric.new(slug: 'dependents', key: 'dependents_count', ecosystems: %w[rubygems])
+            Metric.new(slug: 'dependents', key: 'dependents_count', ecosystems: %w[rubygems]),
+            Metric.new(slug: 'stars', key: 'repository_stars_count', ecosystems: Ecosystem::SUPPORTED),
+            Metric.new(slug: 'trending', key: 'repository_stars_delta', ecosystems: Ecosystem::SUPPORTED)
           ].freeze
 
           module_function
