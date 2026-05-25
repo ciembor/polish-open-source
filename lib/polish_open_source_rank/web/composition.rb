@@ -94,10 +94,23 @@ module PolishOpenSourceRank
         )
       end
 
+      def show_language
+        @show_language ||= Contexts::Languages::Application::ShowLanguage.new(
+          language_ranking_read_model: language_ranking_read_model
+        )
+      end
+
       def show_language_ranking_detail
         @show_language_ranking_detail ||= Contexts::Languages::Application::ShowLanguageRankingDetail.new(
           language_ranking_read_model: language_ranking_read_model
         )
+      end
+
+      def show_language_repository_ranking_detail
+        @show_language_repository_ranking_detail ||=
+          Contexts::Languages::Application::ShowLanguageRepositoryRankingDetail.new(
+            language_ranking_read_model: language_ranking_read_model
+          )
       end
 
       def render_badge

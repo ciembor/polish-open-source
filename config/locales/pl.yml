@@ -195,6 +195,17 @@ pl:
       empty: "Nie zapisano powiązanych repozytoriów dla tego pakietu."
       title: "Powiązane repozytoria"
       unlinked: "Brak powiązanego repozytorium"
+    repository_kind:
+      all: "Wszystkie"
+      organization: "Organizacje"
+      user: "Ludzie"
+    repository_ranking_title:
+      dependents: "Top 100: %{kind}, %{ecosystem}, według zależnych pakietów"
+      downloads: "Top 100: %{kind}, %{ecosystem}, według pobrań łącznie"
+      installs: "Top 100: %{kind}, %{ecosystem}, według instalacji z 30 dni"
+      stars: "Top 100: %{kind}, %{ecosystem}, według gwiazdek repozytorium"
+      trending: "Top 100: %{kind}, %{ecosystem}, trendujące"
+      top: "Top 100: %{kind}, %{ecosystem}, według pobrań z 30 dni"
     seo:
       ecosystem_description: "Rankingi pakietów %{ecosystem} używanych przez polskie repozytoria open source."
       ecosystem_title: "Pakiety %{ecosystem} - Polish Open Source"
@@ -204,6 +215,8 @@ pl:
       profile_title: "%{package} - pakiet open source"
       ranking_description: "Top 100 pakietów %{ecosystem} według metryki %{metric}."
       ranking_title: "Pakiety %{ecosystem}: %{metric}"
+      repository_ranking_description: "Top 100 pakietów %{ecosystem}: %{kind}, według metryki %{metric}."
+      repository_ranking_title: "Pakiety %{ecosystem}: %{kind}, %{metric}"
     table:
       ecosystem: "Ekosystem"
       latest_version: "Najnowsza wersja"
@@ -218,15 +231,23 @@ pl:
       top: "Top 100 według pobrań z 30 dni"
   languages:
     back: "Wróć do języków"
+    back_to_language: "Wróć do %{language}"
     hero:
       eyebrow: "Rankingi języków"
       lede: "Języki programowania w polskich repozytoriach open source według liczby projektów, gwiazdek i trendu."
+    language_lede: "Najmocniejsze repozytoria %{language} w polskim open source."
     metric:
       repository:
         count: "Repozytoria"
         stars:
           count: "Gwiazdki repozytoriów"
           delta: "Nowe gwiazdki"
+    repository_kind:
+      organization: "Organizacje"
+      user: "Ludzie"
+    repository_ranking_title:
+      top: "Top 100: %{kind}, %{language}, według gwiazdek"
+      trending: "Top 100: %{kind}, %{language}, trendujące"
     ranking_title:
       stars: "Top 100 języków według gwiazdek"
       top: "Top 100 języków według liczby repozytoriów"
@@ -235,8 +256,12 @@ pl:
     seo:
       index_description: "Rankingi języków programowania używanych w polskich repozytoriach open source."
       index_title: "Języki open source - Polish Open Source"
+      language_description: "Najpopularniejsze polskie repozytoria open source w języku %{language}, z podziałem na ludzi i organizacje."
+      language_title: "%{language} - polskie repozytoria open source"
       ranking_description: "Top 100 języków programowania według metryki %{metric}."
       ranking_title: "Języki open source: %{metric}"
+      repository_ranking_description: "Top 100 polskich repozytoriów %{language}: %{kind}, według metryki %{metric}."
+      repository_ranking_title: "%{language}: %{kind}, %{metric}"
     title: "Języki"
   repositories:
     badge:

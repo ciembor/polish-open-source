@@ -125,10 +125,40 @@ module PolishOpenSourceRank
           }
         end
 
-        def package_ecosystem(period_slug:, period_start:, ecosystem:, rankings:)
+        def language(period_slug:, period_start:, language:, ranking_groups:)
+          {
+            language: language,
+            language_repository_rankings: ranking_groups,
+            title: t('languages.seo.language_title', language: language),
+            description: t('languages.seo.language_description', language: language),
+            canonical_path: call_view(:language_path, language, period_slug: period_slug),
+            period_start: period_start
+          }
+        end
+
+        def language_repository_ranking_detail(page)
+          language_repository_ranking_detail_state(page)
+        end
+
+        def language_repository_ranking_detail_state(page)
+          {
+            language: page.fetch(:language),
+            language_repository_kind: page.fetch(:repository_kind),
+            language_repository_metric_slug: page.fetch(:metric_slug),
+            language_repository_metric: page.fetch(:metric),
+            language_repository_ranking: page.fetch(:ranking),
+            title: language_repository_ranking_seo_title(page),
+            description: language_repository_ranking_seo_description(page),
+            canonical_path: language_repository_ranking_canonical_path(page),
+            period_start: page.fetch(:period_start)
+          }
+        end
+
+        def package_ecosystem(period_slug:, period_start:, ecosystem:, rankings:, ranking_groups:)
           {
             package_ecosystem: ecosystem,
             package_rankings: rankings,
+            package_ranking_groups: ranking_groups,
             title: t('packages.seo.ecosystem_title', ecosystem: ecosystem),
             description: t('packages.seo.ecosystem_description', ecosystem: ecosystem),
             canonical_path: call_view(:package_ecosystem_path, ecosystem, period_slug: period_slug),
@@ -136,24 +166,21 @@ module PolishOpenSourceRank
           }
         end
 
-        def package_ranking_detail(period_slug:, period_start:, ecosystem:, metric_slug:, metric:, ranking:)
+        def package_ranking_detail(page)
+          package_ranking_detail_state(page)
+        end
+
+        def package_ranking_detail_state(page)
           {
-            package_ecosystem: ecosystem,
-            package_metric_slug: metric_slug,
-            package_metric: metric,
-            package_ranking: ranking,
-            title: t(
-              'packages.seo.ranking_title',
-              ecosystem: ecosystem,
-              metric: call_view(:package_metric_label, metric)
-            ),
-            description: t(
-              'packages.seo.ranking_description',
-              ecosystem: ecosystem,
-              metric: call_view(:package_metric_label, metric)
-            ),
-            canonical_path: call_view(:package_ranking_path, ecosystem, metric_slug, period_slug: period_slug),
-            period_start: period_start
+            package_ecosystem: page.fetch(:ecosystem),
+            package_metric_slug: page.fetch(:metric_slug),
+            package_metric: page.fetch(:metric),
+            package_repository_kind: page.fetch(:repository_kind),
+            package_ranking: page.fetch(:ranking),
+            title: package_ranking_seo_title(page),
+            description: package_ranking_seo_description(page),
+            canonical_path: package_ranking_canonical_path(page),
+            period_start: page.fetch(:period_start)
           }
         end
 
@@ -228,6 +255,79 @@ module PolishOpenSourceRank
 
         def ranking_detail_path(scope, period_slug, kind, metric)
           call_view(:ranking_path, kind, metric, period_slug: period_slug, scope_slug: scope.fetch(:slug))
+        end
+
+        def language_repository_ranking_seo_title(page)
+          t(
+            'languages.seo.repository_ranking_title',
+            language: page.fetch(:language),
+            kind: call_view(:language_repository_kind_label, page.fetch(:repository_kind)),
+            metric: call_view(:language_metric_label, page.fetch(:metric))
+          )
+        end
+
+        def language_repository_ranking_seo_description(page)
+          t(
+            'languages.seo.repository_ranking_description',
+            language: page.fetch(:language),
+            kind: call_view(:language_repository_kind_label, page.fetch(:repository_kind)),
+            metric: call_view(:language_metric_label, page.fetch(:metric))
+          )
+        end
+
+        def language_repository_ranking_canonical_path(page)
+          call_view(
+            :language_repository_ranking_path,
+            page.fetch(:language),
+            page.fetch(:repository_kind),
+            page.fetch(:metric_slug),
+            period_slug: page.fetch(:period_slug)
+          )
+        end
+
+        def package_ranking_seo_title(page)
+          if page.fetch(:repository_kind)
+            return t(
+              'packages.seo.repository_ranking_title',
+              ecosystem: page.fetch(:ecosystem),
+              kind: call_view(:package_repository_kind_label, page.fetch(:repository_kind)),
+              metric: package_metric_text(page)
+            )
+          end
+
+          t('packages.seo.ranking_title', ecosystem: page.fetch(:ecosystem), metric: package_metric_text(page))
+        end
+
+        def package_ranking_seo_description(page)
+          if page.fetch(:repository_kind)
+            return t(
+              'packages.seo.repository_ranking_description',
+              ecosystem: page.fetch(:ecosystem),
+              kind: call_view(:package_repository_kind_label, page.fetch(:repository_kind)),
+              metric: package_metric_text(page)
+            )
+          end
+
+          t('packages.seo.ranking_description', ecosystem: page.fetch(:ecosystem), metric: package_metric_text(page))
+        end
+
+        def package_ranking_canonical_path(page)
+          if page.fetch(:repository_kind)
+            return call_view(
+              :package_repository_ranking_path,
+              page.fetch(:ecosystem),
+              page.fetch(:repository_kind),
+              page.fetch(:metric_slug),
+              period_slug: page.fetch(:period_slug)
+            )
+          end
+
+          call_view(:package_ranking_path, page.fetch(:ecosystem), page.fetch(:metric_slug),
+                    period_slug: page.fetch(:period_slug))
+        end
+
+        def package_metric_text(page)
+          call_view(:package_metric_label, page.fetch(:metric), ecosystem: page.fetch(:ecosystem))
         end
 
         def call_view(method_name, *, **)

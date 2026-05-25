@@ -25,33 +25,18 @@ module PolishOpenSourceRank
           @period = period_for(period_slug)
           public_html_cache!('package-ecosystem', period_slug, ecosystem, @period, public_cache_revision(@period))
           rankings = show_package_ecosystem_rankings.call(ecosystem: ecosystem, period_start: @period, limit: 10)
+          ranking_groups = package_ranking_groups(ecosystem, @period, 10)
           halt 404 if rankings.empty?
           assign_public_page(
             public_page_state.package_ecosystem(
               period_slug: period_slug,
               period_start: @period,
               ecosystem: ecosystem,
-              rankings: rankings
+              rankings: rankings,
+              ranking_groups: ranking_groups
             )
           )
           erb :package_ecosystem
-        end
-
-        def render_package_ranking_detail(period_slug, ecosystem, metric_slug)
-          metric = Contexts::Packages::Domain::PackageRankingMetric.key_for_slug(metric_slug)
-          halt 404 unless metric
-          halt 404 unless Contexts::Packages::Domain::PackageRankingMetric.supported_for_ecosystem?(ecosystem, metric)
-          @period_slug = period_slug
-          @period = period_for(period_slug)
-          public_html_cache!(
-            'package-ranking-detail',
-            period_slug,
-            ecosystem,
-            metric_slug,
-            @period,
-            public_cache_revision(@period)
-          )
-          render_package_ranking_page(period_slug, ecosystem, metric_slug, metric)
         end
 
         def render_package_profile(ecosystem, encoded_name)
@@ -70,19 +55,15 @@ module PolishOpenSourceRank
           erb :package_profile
         end
 
-        def render_package_ranking_page(period_slug, ecosystem, metric_slug, metric)
-          ranking = show_package_ranking_detail.call(ecosystem: ecosystem, metric: metric, period_start: @period)
-          assign_public_page(
-            public_page_state.package_ranking_detail(
-              period_slug: period_slug,
-              period_start: @period,
+        def package_ranking_groups(ecosystem, period, limit)
+          %w[user organization].to_h do |repository_kind|
+            [repository_kind.to_sym, show_package_ecosystem_rankings.call(
               ecosystem: ecosystem,
-              metric_slug: metric_slug,
-              metric: metric,
-              ranking: ranking
-            )
-          )
-          erb :package_ranking_detail
+              period_start: period,
+              limit: limit,
+              repository_kind: repository_kind
+            )]
+          end
         end
       end
     end

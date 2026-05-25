@@ -4,13 +4,15 @@ module PolishOpenSourceRank
   module Contexts
     module Languages
       module Application
-        class ShowLanguageIndex
+        class ShowLanguageRepositoryRankingDetail
           def initialize(language_ranking_read_model:)
             @language_ranking_read_model = language_ranking_read_model
           end
 
-          def call(period_start:, limit: 10, repository_kind: nil)
-            language_ranking_read_model.rankings(
+          def call(language:, metric:, repository_kind:, period_start:, limit: 100)
+            language_ranking_read_model.ranked_repositories(
+              language: language,
+              metric: metric,
               period_start: period_start,
               limit: limit,
               repository_kind: repository_kind

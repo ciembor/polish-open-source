@@ -13,7 +13,9 @@ module PolishOpenSourceRank
       include Controllers::BadgeController
       include Controllers::InternalController
       include Controllers::LanguageController
+      include Controllers::LanguageRepositoryRankingController
       include Controllers::PackageController
+      include Controllers::PackageRankingController
       include Controllers::PublicController
       include Controllers::SharedController
 
@@ -29,6 +31,9 @@ module PolishOpenSourceRank
         'app/views/layout.erb',
         'app/views/about.erb',
         'app/views/editions.erb',
+        'app/views/language.erb',
+        'app/views/language_repository_ranking_detail.erb',
+        'app/views/language_repository_ranking_table.erb',
         'app/views/language_ranking_detail.erb',
         'app/views/language_ranking_table.erb',
         'app/views/languages.erb',
@@ -69,6 +74,7 @@ module PolishOpenSourceRank
       helpers HttpCache
 
       register Routes::LanguageRoutes
+      register Routes::PackageRoutes
       register Routes::PublicRoutes
       register Routes::AuthRoutes
       register Routes::BadgeRoutes
@@ -95,8 +101,10 @@ module PolishOpenSourceRank
                      :resolve_period,
                      :show_discord_panel,
                      :show_job_progress,
+                     :show_language,
                      :show_language_index,
                      :show_language_ranking_detail,
+                     :show_language_repository_ranking_detail,
                      :show_organization_profile,
                      :show_organization_repository_profile,
                      :show_package_ecosystem_rankings,

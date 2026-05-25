@@ -195,6 +195,17 @@ en:
       empty: "No linked repositories were stored for this package."
       title: "Linked repositories"
       unlinked: "No linked repository"
+    repository_kind:
+      all: "All"
+      organization: "Organizations"
+      user: "People"
+    repository_ranking_title:
+      dependents: "Top 100: %{kind}, %{ecosystem}, by dependent packages"
+      downloads: "Top 100: %{kind}, %{ecosystem}, by total downloads"
+      installs: "Top 100: %{kind}, %{ecosystem}, by 30-day installs"
+      stars: "Top 100: %{kind}, %{ecosystem}, by repository stars"
+      trending: "Top 100: %{kind}, %{ecosystem}, trending"
+      top: "Top 100: %{kind}, %{ecosystem}, by 30-day downloads"
     seo:
       ecosystem_description: "%{ecosystem} package rankings for packages used by Polish open-source repositories."
       ecosystem_title: "%{ecosystem} packages - Polish Open Source"
@@ -204,6 +215,8 @@ en:
       profile_title: "%{package} - open-source package"
       ranking_description: "Top 100 %{ecosystem} packages by %{metric}."
       ranking_title: "%{ecosystem} packages: %{metric}"
+      repository_ranking_description: "Top 100 %{ecosystem} packages: %{kind}, by %{metric}."
+      repository_ranking_title: "%{ecosystem} packages: %{kind}, %{metric}"
     table:
       ecosystem: "Ecosystem"
       latest_version: "Latest version"
@@ -218,15 +231,23 @@ en:
       top: "Top 100 by 30-day downloads"
   languages:
     back: "Back to languages"
+    back_to_language: "Back to %{language}"
     hero:
       eyebrow: "Language rankings"
       lede: "Programming languages in Polish open-source repositories by project count, stars, and monthly trend."
+    language_lede: "Top %{language} repositories in Polish open source."
     metric:
       repository:
         count: "Repositories"
         stars:
           count: "Repository stars"
           delta: "New stars"
+    repository_kind:
+      organization: "Organizations"
+      user: "People"
+    repository_ranking_title:
+      top: "Top 100: %{kind}, %{language}, by stars"
+      trending: "Top 100: %{kind}, %{language}, trending"
     ranking_title:
       stars: "Top 100 languages by stars"
       top: "Top 100 languages by repository count"
@@ -235,8 +256,12 @@ en:
     seo:
       index_description: "Rankings of programming languages used in Polish open-source repositories."
       index_title: "Open-source languages - Polish Open Source"
+      language_description: "Top Polish open-source repositories in %{language}, split by people and organizations."
+      language_title: "%{language} - Polish open-source repositories"
       ranking_description: "Top 100 programming languages by %{metric}."
       ranking_title: "Open-source languages: %{metric}"
+      repository_ranking_description: "Top 100 Polish %{language} repositories: %{kind}, by %{metric}."
+      repository_ranking_title: "%{language}: %{kind}, %{metric}"
     title: "Languages"
   repositories:
     badge:

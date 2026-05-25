@@ -856,6 +856,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       shortcut: request.get('/packages/npm'),
       period_ecosystem: request.get('/2026-04/packages/npm'),
       top: request.get('/latest/packages/npm/top'),
+      user_top: request.get('/latest/packages/npm/users/top'),
+      period_user_top: request.get('/2026-04/packages/npm/users/top'),
       downloads: request.get('/2026-04/packages/npm/downloads'),
       dependents: request.get('/latest/packages/npm/dependents'),
       homebrew: request.get('/latest/packages/homebrew'),
@@ -870,6 +872,10 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   def language_responses(request)
     {
       index: request.get('/languages'),
+      language: request.get('/latest/languages/Ruby'),
+      period_language: request.get('/2026-04/languages/Ruby'),
+      language_user_top: request.get('/latest/languages/Ruby/users/top'),
+      language_organization_top: request.get('/2026-04/languages/Ruby/organizations/top'),
       top: request.get('/latest/languages/top'),
       stars: request.get('/2026-04/languages/stars'),
       trending: request.get('/latest/languages/trending'),
@@ -878,12 +884,44 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   end
 
   def expect_language_ranking_pages(responses)
-    expect(responses.fetch(:index).status).to eq(200)
-    expect(responses.fetch(:index).body).to include('<title>Języki open source - Polish Open Source</title>')
-    expect(responses.fetch(:index).body).to include('Ruby')
-    expect(responses.fetch(:index).body).to include('href="/latest/languages/top"')
+    expect_language_index_page(responses.fetch(:index))
+    expect_language_repository_pages(responses)
     expect_language_detail_pages(responses)
     expect(responses.fetch(:invalid).status).to eq(404)
+  end
+
+  def expect_language_index_page(response)
+    expect(response.status).to eq(200)
+    expect(response.body).to include('<title>Języki open source - Polish Open Source</title>')
+    expect(response.body).to include('Ruby')
+    expect(response.body).to include('href="/latest/languages/Ruby"')
+    expect(response.body).to include('href="/latest/languages/top"')
+    expect(response.body).not_to include('00Baarti/Strona-QUIZ')
+  end
+
+  def expect_language_repository_pages(responses)
+    expect_language_page(responses.fetch(:language))
+    expect_period_language_page(responses.fetch(:period_language))
+    expect_language_repository_detail_pages(responses)
+  end
+
+  def expect_language_page(response)
+    expect(response.body).to include('<h1>Ruby</h1>')
+    expect(response.body).to include('Ludzie')
+    expect(response.body).to include('Organizacje')
+    expect(response.body).to include('alice/app')
+    expect(response.body).to include('polish-org/toolkit')
+    expect(response.body).to include('href="/latest/languages/Ruby/users/top"')
+  end
+
+  def expect_period_language_page(response)
+    expect(response.body).to include('rel="canonical" href="https://rank.example/2026-04/languages/Ruby"')
+  end
+
+  def expect_language_repository_detail_pages(responses)
+    expect(responses.fetch(:language_user_top).body).to include('Top 100: Ludzie, Ruby, według gwiazdek')
+    expect(responses.fetch(:language_user_top).body).to include('alice/app')
+    expect(responses.fetch(:language_organization_top).body).to include('polish-org/toolkit')
   end
 
   def expect_language_detail_pages(responses)
@@ -904,6 +942,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.status).to eq(200)
     expect(response.body).to include('@scope/tool')
     expect(response.body).to include("href=\"/packages/npm/names/#{encoded_name}\"")
+    expect(response.body).to include('Ludzie')
+    expect(response.body).to include('Organizacje')
+    expect(response.body).to include('href="/latest/packages/npm/users/top"')
   end
 
   def expect_package_detail_pages(responses)
@@ -913,12 +954,23 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   end
 
   def expect_npm_package_detail_pages(responses)
+    expect_npm_package_route_statuses(responses)
+    expect_npm_package_top_pages(responses)
+  end
+
+  def expect_npm_package_route_statuses(responses)
     expect(responses.fetch(:ecosystem).status).to eq(200)
     expect(responses.fetch(:shortcut).status).to eq(200)
     expect(responses.fetch(:period_ecosystem).status).to eq(200)
-    expect(responses.fetch(:top).body).to include('Top 100 według pobrań z 30 dni')
     expect(responses.fetch(:downloads).status).to eq(404)
     expect(responses.fetch(:dependents).status).to eq(404)
+  end
+
+  def expect_npm_package_top_pages(responses)
+    expect(responses.fetch(:top).body).to include('Top 100 według pobrań z 30 dni')
+    expect(responses.fetch(:user_top).body).to include('Top 100: Ludzie, npm, według pobrań z 30 dni')
+    expect(responses.fetch(:user_top).body).to include('@scope/tool')
+    expect(responses.fetch(:period_user_top).body).to include('Top 100: Ludzie, npm, według pobrań z 30 dni')
   end
 
   def expect_homebrew_package_pages(responses)
