@@ -20,7 +20,7 @@
       <% PolishOpenSourceRank::Contexts::Packages::Domain::PackageRankingMetric.all(ecosystem: @package_ecosystem).each do |package_metric| %>
         <% slug = package_metric.slug %>
         <% metric = package_metric.key.to_sym %>
-        <%= erb :package_ranking_table, locals: { heading_id: "package-ranking-all-#{slug}", title: package_ranking_title(slug, ecosystem: @package_ecosystem), rows: @package_rankings.fetch(metric, []), metric: metric, metric_label: package_metric_label(metric, ecosystem: @package_ecosystem), top_path: package_ranking_path(@package_ecosystem, slug) } %>
+        <%= erb :"packages/ranking_table", locals: { heading_id: "package-ranking-all-#{slug}", title: package_ranking_title(slug, ecosystem: @package_ecosystem), rows: @package_rankings.fetch(metric, []), metric: metric, metric_label: package_metric_label(metric, ecosystem: @package_ecosystem), top_path: package_ranking_path(@package_ecosystem, slug) } %>
       <% end %>
     </div>
     <% @package_ranking_groups.each do |repository_kind, rankings| %>
@@ -29,7 +29,7 @@
         <% PolishOpenSourceRank::Contexts::Packages::Domain::PackageRankingMetric.all(ecosystem: @package_ecosystem).each do |package_metric| %>
           <% slug = package_metric.slug %>
           <% metric = package_metric.key.to_sym %>
-          <%= erb :package_ranking_table, locals: { heading_id: "package-ranking-#{repository_kind}-#{slug}", title: package_repository_ranking_title(slug, ecosystem: @package_ecosystem, repository_kind: repository_kind), rows: rankings.fetch(metric, []), metric: metric, metric_label: package_metric_label(metric, ecosystem: @package_ecosystem), top_path: package_repository_ranking_path(@package_ecosystem, repository_kind, slug) } %>
+          <%= erb :"packages/ranking_table", locals: { heading_id: "package-ranking-#{repository_kind}-#{slug}", title: package_repository_ranking_title(slug, ecosystem: @package_ecosystem, repository_kind: repository_kind), rows: rankings.fetch(metric, []), metric: metric, metric_label: package_metric_label(metric, ecosystem: @package_ecosystem), top_path: package_repository_ranking_path(@package_ecosystem, repository_kind, slug) } %>
         <% end %>
       </div>
     <% end %>

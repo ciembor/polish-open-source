@@ -8,7 +8,7 @@
           <span class="rank-cell rank-mark"><%= index + 1 %></span>
           <div class="ranking-list__body">
             <div class="ranking-list__title">
-              <%= erb :platform_icon, locals: { platform: row.fetch(:platform, "github") } %>
+              <%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %>
               <% if kind == "users" %>
                 <a class="primary-link" href="<%= h app_path(user_profile_path(row)) %>"><%= h row.fetch(:login) %></a>
               <% elsif kind == "repositories" %>

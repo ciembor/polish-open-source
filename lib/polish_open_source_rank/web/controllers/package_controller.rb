@@ -17,7 +17,7 @@ module PolishOpenSourceRank
               ecosystems: show_package_index.call(period_start: @period)
             )
           )
-          erb :packages
+          erb :'packages/index'
         end
 
         def render_package_ecosystem(period_slug, ecosystem)
@@ -36,7 +36,7 @@ module PolishOpenSourceRank
               ranking_groups: ranking_groups
             )
           )
-          erb :package_ecosystem
+          erb :'packages/ecosystem'
         end
 
         def render_package_profile(ecosystem, encoded_name)
@@ -52,7 +52,7 @@ module PolishOpenSourceRank
           halt 404 unless @package_profile
           public_html_cache!('package-profile', ecosystem, encoded_name, @period, public_cache_revision(@period))
           assign_public_page(public_page_state.package_profile(profile: @package_profile))
-          erb :package_profile
+          erb :'packages/profile'
         end
 
         def package_ranking_groups(ecosystem, period, limit)

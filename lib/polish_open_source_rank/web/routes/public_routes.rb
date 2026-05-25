@@ -32,7 +32,7 @@ module PolishOpenSourceRank
               @description = t('about.seo.description')
               @canonical_path = '/about'
               public_html_cache!('about')
-              erb :about
+              erb :'pages/about'
             end
 
             app.get('/editions') { render_editions }

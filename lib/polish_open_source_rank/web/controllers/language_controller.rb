@@ -17,7 +17,7 @@ module PolishOpenSourceRank
               rankings: show_language_index.call(period_start: @period, limit: 10)
             )
           )
-          erb :languages
+          erb :'languages/index'
         end
 
         def render_language_ranking_detail(period_slug, metric_slug)
@@ -34,7 +34,7 @@ module PolishOpenSourceRank
             public_cache_revision(@period)
           )
           assign_language_ranking_page(period_slug, metric_slug, metric)
-          erb :language_ranking_detail
+          erb :'languages/ranking_detail'
         end
 
         def render_language(period_slug, language)
@@ -52,7 +52,7 @@ module PolishOpenSourceRank
               ranking_groups: ranking_groups
             )
           )
-          erb :language
+          erb :'languages/show'
         end
 
         def assign_language_ranking_page(period_slug, metric_slug, metric)

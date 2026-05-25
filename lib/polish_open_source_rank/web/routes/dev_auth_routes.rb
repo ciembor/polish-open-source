@@ -21,7 +21,7 @@ module PolishOpenSourceRank
                      else
                        []
                      end
-            erb :auth_dev
+            erb :'auth/dev'
           end
         end
 

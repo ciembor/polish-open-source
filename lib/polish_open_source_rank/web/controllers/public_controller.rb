@@ -27,7 +27,7 @@ module PolishOpenSourceRank
           assign_public_page(
             public_page_state.rankings(scope: @scope, period_slug: @period_slug, page: page)
           )
-          erb :rankings
+          erb :'pages/rankings'
         end
 
         def render_editions(year = nil)
@@ -35,7 +35,7 @@ module PolishOpenSourceRank
           halt 404 unless page
           public_html_cache!('editions', @year || 'index', latest_public_cache_key)
           assign_public_page(public_page_state.editions(page: page, year: year))
-          erb :editions
+          erb :'pages/editions'
         end
 
         def render_user_profile(platform, login)
@@ -45,7 +45,7 @@ module PolishOpenSourceRank
           halt 404 unless @profile
           profile_cache!(@profile)
           assign_public_page(public_page_state.user_profile(profile: @profile, own_profile: own_profile?(@profile)))
-          erb :user_profile
+          erb :'profiles/user'
         end
 
         def render_repository_profile(platform, owner, name)
@@ -58,7 +58,7 @@ module PolishOpenSourceRank
           assign_public_page(
             public_page_state.repository_profile(repository: @repository, own_repository: own_repository?(@repository))
           )
-          erb :repository_profile
+          erb :'profiles/repository'
         end
 
         def render_organization_profile(platform, login)
@@ -68,7 +68,7 @@ module PolishOpenSourceRank
           halt 404 unless @organization
           profile_cache!(@organization)
           assign_public_page(public_page_state.organization_profile(organization: @organization))
-          erb :organization_profile
+          erb :'profiles/organization'
         end
 
         def render_organization_repository_profile(platform, owner, name)
@@ -83,7 +83,7 @@ module PolishOpenSourceRank
           halt 404 unless @organization_repository
           repository_profile_cache!(@organization_repository)
           assign_public_page(public_page_state.organization_repository_profile(repository: @organization_repository))
-          erb :organization_repository_profile
+          erb :'profiles/organization_repository'
         end
 
         def render_ranking_detail(period_slug, scope, kind, metric)
@@ -104,7 +104,7 @@ module PolishOpenSourceRank
               ranking: show_ranking_detail.call(scope: scope, kind: kind, metric: metric, period_start: @period)
             )
           )
-          erb :ranking_detail
+          erb :'rankings/detail'
         end
 
         def assign_public_page(attributes) = attributes.each { |name, value| instance_variable_set("@#{name}", value) }

@@ -10,7 +10,7 @@
       <div>
         <div class="profile-title-row">
           <h1><%= h(record[:name].to_s.empty? ? record.fetch(:login) : record[:name]) %></h1>
-          <%= erb :elite_medal, locals: { rank: record[:elite_rank], size: "large" } %>
+          <%= erb :"shared/elite_medal", locals: { rank: record[:elite_rank], size: "large" } %>
         </div>
         <p class="profile-login">@<%= h record.fetch(:login) %></p>
         <div class="profile-actions">

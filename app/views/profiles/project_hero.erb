@@ -3,12 +3,12 @@
     <p class="eyebrow"><%= h platform_name(record.fetch(:platform)) %></p>
     <div class="profile-identity profile-identity--project">
       <div class="project-avatar" aria-hidden="true">
-        <%= erb :platform_icon, locals: { platform: record.fetch(:platform, "github") } %>
+        <%= erb :"shared/platform_icon", locals: { platform: record.fetch(:platform, "github") } %>
       </div>
       <div>
         <div class="profile-title-row">
           <h1><%= h record.fetch(:full_name) %></h1>
-          <%= erb :elite_medal, locals: { rank: record[:elite_rank], size: "large" } %>
+          <%= erb :"shared/elite_medal", locals: { rank: record[:elite_rank], size: "large" } %>
         </div>
         <% if record[:description] && !record[:description].empty? %>
           <p class="lede"><%= h record[:description] %></p>

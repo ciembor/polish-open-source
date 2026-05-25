@@ -1,4 +1,4 @@
-<%= erb :profile_subject_hero, locals: { record: @organization, translation_scope: 'organizations', translation_value_key: :organization } %>
+<%= erb :"profiles/subject_hero", locals: { record: @organization, translation_scope: 'organizations', translation_value_key: :organization } %>
 
 <% top_repository = @repositories.first %>
 <% spotlight_items = [
@@ -7,7 +7,7 @@
 <% if @organization[:city] %>
   <% spotlight_items << { label: t('organizations.spotlight.city_rank', city: @organization.fetch(:city)), value: (@organization[:city_rank] ? "##{@organization[:city_rank]}" : '-') } %>
 <% end %>
-<%= erb :profile_spotlight, locals: {
+<%= erb :"profiles/spotlight", locals: {
   heading_id: 'organization-spotlight-heading',
   title: t('organizations.spotlight.title'),
   period_start: @organization[:period_start],
@@ -20,13 +20,13 @@
 <section class="profile-section profile-section--alt" aria-labelledby="organization-badge-heading">
   <div class="content">
     <h2 id="organization-badge-heading"><%= h t('organizations.badge.title') %></h2>
-    <%= erb :badge_preview, locals: { label: @organization.fetch(:login), badge_path: organization_badge_path(@organization), alt_text: t('organizations.badge.alt') } %>
+    <%= erb :"profiles/badge_preview", locals: { label: @organization.fetch(:login), badge_path: organization_badge_path(@organization), alt_text: t('organizations.badge.alt') } %>
   </div>
 </section>
 
 <section class="profile-section" aria-labelledby="organization-summary-heading">
   <div class="content profile-grid">
-    <%= erb :profile_fact_card, locals: {
+    <%= erb :"profiles/fact_card", locals: {
       heading_id: 'organization-summary-heading',
       title: t('organizations.summary.title'),
       items: [
@@ -40,7 +40,7 @@
     <% metric_items << { label: t('rankings.metric.stars'), value: "⭐ #{number(@organization[:total_stars])}" } unless @organization[:total_stars].nil? %>
     <% metric_items << { label: t('rankings.metric.new_stars'), value: "⭐ #{number(@organization[:monthly_stars_delta])}" } unless @organization[:monthly_stars_delta].nil? %>
     <% metric_items << { label: @organization.fetch(:profile_badge).fetch(:label), value: (@organization.fetch(:profile_badge)[:value] || t('users.metrics.outside_ranking')) } %>
-    <%= erb :profile_metric_card, locals: {
+    <%= erb :"profiles/metric_card", locals: {
       title: t('users.metrics.title'),
       period_start: @organization[:period_start],
       empty_message: t('users.metrics.outside_ranking'),
@@ -52,7 +52,7 @@
 <section class="profile-section profile-section--alt" aria-labelledby="organization-repositories-heading">
   <div class="content">
     <h2 id="organization-repositories-heading"><%= h t('organizations.repositories.title') %></h2>
-    <%= erb :profile_repository_grid, locals: {
+    <%= erb :"profiles/repository_grid", locals: {
       repositories: @repositories,
       empty_translation_key: 'organizations.repositories.empty',
       path_builder: method(:organization_repository_profile_path),

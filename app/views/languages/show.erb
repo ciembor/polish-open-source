@@ -21,7 +21,7 @@
         <% PolishOpenSourceRank::Contexts::Languages::Domain::LanguageRepositoryRankingMetric.all.each do |repository_metric| %>
           <% slug = repository_metric.slug %>
           <% metric = repository_metric.key.to_sym %>
-          <%= erb :language_repository_ranking_table, locals: { heading_id: "language-#{repository_kind}-#{slug}", title: language_repository_ranking_title(@language, repository_kind, slug), rows: rankings.fetch(metric, []), metric: metric, metric_label: language_metric_label(metric), top_path: language_repository_ranking_path(@language, repository_kind, slug) } %>
+          <%= erb :"languages/repository_ranking_table", locals: { heading_id: "language-#{repository_kind}-#{slug}", title: language_repository_ranking_title(@language, repository_kind, slug), rows: rankings.fetch(metric, []), metric: metric, metric_label: language_metric_label(metric), top_path: language_repository_ranking_path(@language, repository_kind, slug) } %>
         <% end %>
       </div>
     <% end %>

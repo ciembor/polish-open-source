@@ -18,7 +18,7 @@ module PolishOpenSourceRank
           halt 404 if ranking.empty?
 
           assign_language_repository_ranking_page(period_slug, language, repository_kind, metric_slug, metric, ranking)
-          erb :language_repository_ranking_detail
+          erb :'languages/repository_ranking_detail'
         end
 
         def cache_language_repository_ranking!(period_slug, language, repository_kind_slug, metric_slug)

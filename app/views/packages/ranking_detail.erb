@@ -16,6 +16,6 @@
 <section class="ranking-band">
   <div class="content">
     <p><a class="muted-link muted-link--standalone" href="<%= h app_path(package_ecosystem_path(@package_ecosystem)) %>"><%= h t('rankings.back') %></a></p>
-    <%= erb :package_ranking_table, locals: { heading_id: "package-ranking-detail-#{@package_metric_slug}", title: title, rows: @package_ranking, metric: @package_metric.to_sym, metric_label: package_metric_label(@package_metric, ecosystem: @package_ecosystem) } %>
+    <%= erb :"packages/ranking_table", locals: { heading_id: "package-ranking-detail-#{@package_metric_slug}", title: title, rows: @package_ranking, metric: @package_metric.to_sym, metric_label: package_metric_label(@package_metric, ecosystem: @package_ecosystem) } %>
   </div>
 </section>
