@@ -98,6 +98,7 @@ en:
     country: "Poland"
     editions: "Editions"
     language: "Language"
+    languages: "Languages"
     locations: "Location rankings"
     menu: "Menu"
     more_cities: "More cities"
@@ -215,6 +216,28 @@ en:
       stars: "Top 100 by repository stars"
       trending: "Top 100 trending packages"
       top: "Top 100 by 30-day downloads"
+  languages:
+    back: "Back to languages"
+    hero:
+      eyebrow: "Language rankings"
+      lede: "Programming languages in Polish open-source repositories by project count, stars, and monthly trend."
+    metric:
+      repository:
+        count: "Repositories"
+        stars:
+          count: "Repository stars"
+          delta: "New stars"
+    ranking_title:
+      stars: "Top 100 languages by stars"
+      top: "Top 100 languages by repository count"
+      trending: "Top 100 trending languages"
+    repository_count: "%{count} repositories"
+    seo:
+      index_description: "Rankings of programming languages used in Polish open-source repositories."
+      index_title: "Open-source languages - Polish Open Source"
+      ranking_description: "Top 100 programming languages by %{metric}."
+      ranking_title: "Open-source languages: %{metric}"
+    title: "Languages"
   repositories:
     badge:
       alt: "Polish Repo badge"

@@ -99,6 +99,15 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect_package_ranking_pages(responses, encoded_name)
   end
 
+  it 'renders language ranking pages', :aggregate_failures do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    request = Rack::MockRequest.new(described_class)
+
+    responses = language_responses(request)
+
+    expect_language_ranking_pages(responses)
+  end
+
   it 'renders organization profile pages, organization repository pages, and public organization badges',
      :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
@@ -856,6 +865,31 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       profile: request.get("/packages/npm/names/#{encoded_name}"),
       missing_profile: request.get('/packages/npm/names/not-base64!')
     }
+  end
+
+  def language_responses(request)
+    {
+      index: request.get('/languages'),
+      top: request.get('/latest/languages/top'),
+      stars: request.get('/2026-04/languages/stars'),
+      trending: request.get('/latest/languages/trending'),
+      invalid: request.get('/latest/languages/downloads')
+    }
+  end
+
+  def expect_language_ranking_pages(responses)
+    expect(responses.fetch(:index).status).to eq(200)
+    expect(responses.fetch(:index).body).to include('<title>Języki open source - Polish Open Source</title>')
+    expect(responses.fetch(:index).body).to include('Ruby')
+    expect(responses.fetch(:index).body).to include('href="/latest/languages/top"')
+    expect_language_detail_pages(responses)
+    expect(responses.fetch(:invalid).status).to eq(404)
+  end
+
+  def expect_language_detail_pages(responses)
+    expect(responses.fetch(:top).body).to include('Top 100 języków według liczby repozytoriów')
+    expect(responses.fetch(:stars).body).to include('Top 100 języków według gwiazdek')
+    expect(responses.fetch(:trending).body).to include('Top 100 trendujących języków')
   end
 
   def expect_package_ranking_pages(responses, encoded_name)

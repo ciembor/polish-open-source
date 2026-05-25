@@ -103,6 +103,28 @@ module PolishOpenSourceRank
           }
         end
 
+        def language_index(period_slug:, period_start:, rankings:)
+          {
+            language_rankings: rankings,
+            title: t('languages.seo.index_title'),
+            description: t('languages.seo.index_description'),
+            canonical_path: call_view(:language_index_path, period_slug: period_slug),
+            period_start: period_start
+          }
+        end
+
+        def language_ranking_detail(period_slug:, period_start:, metric_slug:, metric:, ranking:)
+          {
+            language_metric_slug: metric_slug,
+            language_metric: metric,
+            language_ranking: ranking,
+            title: t('languages.seo.ranking_title', metric: call_view(:language_metric_label, metric)),
+            description: t('languages.seo.ranking_description', metric: call_view(:language_metric_label, metric)),
+            canonical_path: call_view(:language_ranking_path, metric_slug, period_slug: period_slug),
+            period_start: period_start
+          }
+        end
+
         def package_ecosystem(period_slug:, period_start:, ecosystem:, rankings:)
           {
             package_ecosystem: ecosystem,

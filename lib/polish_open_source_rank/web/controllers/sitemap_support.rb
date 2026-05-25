@@ -48,8 +48,10 @@ module PolishOpenSourceRank
 
         def sitemap_entries
           lastmod = Time.now.utc.strftime('%Y-%m-%d')
-          static_paths = ['/', '/latest', '/about', '/editions', '/packages']
-          locale_paths = locale_variants(static_paths + ranking_paths + package_paths + edition_paths + profile_paths)
+          static_paths = ['/', '/latest', '/about', '/editions', '/languages', '/packages']
+          locale_paths = locale_variants(
+            static_paths + ranking_paths + language_paths + package_paths + edition_paths + profile_paths
+          )
 
           locale_paths.map do |path|
             { loc: full_url(app_path(path)), lastmod: lastmod }
@@ -84,6 +86,25 @@ module PolishOpenSourceRank
 
         def package_paths
           latest_package_paths + edition_package_paths
+        end
+
+        def language_paths
+          latest_language_paths + edition_language_paths
+        end
+
+        def latest_language_paths
+          period = latest_period
+          return [] unless period
+
+          language_scope_paths('/latest')
+        end
+
+        def edition_language_paths
+          edition_period_slugs.flat_map { |period_slug| language_scope_paths("/#{period_slug}") }
+        end
+
+        def language_scope_paths(prefix)
+          Contexts::Languages::Domain::LanguageRankingMetric.slugs.map { |metric| "#{prefix}/languages/#{metric}" }
         end
 
         def latest_package_paths
