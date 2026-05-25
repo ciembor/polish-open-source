@@ -60,38 +60,38 @@
               data-label-narrow="<%= h t('nav.cities') %>"
             ><%= h t('nav.more_cities') %></summary>
             <div class="nav-menu__panel js-more-cities-panel">
-              <span class="nav-slot js-secondary-city-slot"></span>
+              <span class="nav-slot js-overflow-city-slot"></span>
               <% secondary_city_scopes.each do |scope| %>
                 <a class="nav__link js-secondary-city" href="<%= h app_path(scope_path(scope)) %>"><%= h scope.fetch(:name) %></a>
               <% end %>
             </div>
           </details>
-          <span class="nav-slot js-secondary-links-slot">
-            <a class="nav__link js-secondary-link" href="<%= h app_path(language_index_path(period_slug: 'latest')) %>"><%= h t('nav.languages') %></a>
-            <a class="nav__link js-secondary-link" href="<%= h app_path(package_index_path(period_slug: 'latest')) %>"><%= h t('nav.packages') %></a>
-            <a class="nav__link js-secondary-link" href="<%= h app_path(editions_path) %>"><%= h t('nav.editions') %></a>
-            <a class="nav__link js-secondary-link" href="<%= h app_path('/about') %>"><%= h t('nav.about') %></a>
-          </span>
+          <div class="nav-slot js-secondary-controls-slot">
+            <a class="nav__link js-secondary-control" href="<%= h app_path(language_index_path(period_slug: 'latest')) %>"><%= h t('nav.languages') %></a>
+            <a class="nav__link js-secondary-control" href="<%= h app_path(package_index_path(period_slug: 'latest')) %>"><%= h t('nav.packages') %></a>
+            <a class="nav__link js-secondary-control" href="<%= h app_path(editions_path) %>"><%= h t('nav.editions') %></a>
+            <a class="nav__link js-secondary-control" href="<%= h app_path('/about') %>"><%= h t('nav.about') %></a>
+            <% if current_user %>
+              <a class="nav__link js-secondary-control" href="<%= h app_path(user_profile_path(current_user)) %>"><%= h t('nav.profile') %></a>
+              <form class="nav-form js-secondary-control" method="post" action="<%= h app_path('/logout') %>">
+                <button class="nav-pill" type="submit"><%= h t('auth.logout') %></button>
+              </form>
+            <% else %>
+              <a class="nav-pill nav-pill--github js-secondary-control" href="<%= h app_path('/auth/github') %>" aria-label="<%= h t('auth.login.github') %>">
+                <img class="nav-pill__icon" src="<%= h app_path('/icons/github.svg') %>" alt="" aria-hidden="true" />
+                <span><%= h t('auth.login.github') %></span>
+              </a>
+            <% end %>
+            <div class="language-switch js-secondary-control" role="navigation" aria-label="<%= h t('nav.language') %>">
+              <% SUPPORTED_LOCALES.each do |locale| %>
+                <a class="language-switch__link <%= 'is-active' if current_locale?(locale) %>" href="<%= h locale_path(locale) %>" hreflang="<%= h locale %>" lang="<%= h locale %>"><%= h locale.upcase %></a>
+              <% end %>
+            </div>
+          </div>
           <details class="nav-menu nav-menu--hamburger js-hamburger" hidden>
             <summary class="nav-hamburger" aria-label="<%= h t('nav.menu') %>"></summary>
             <div class="nav-menu__panel js-hamburger-panel"></div>
           </details>
-          <% if current_user %>
-            <a class="nav__link js-secondary-link" href="<%= h app_path(user_profile_path(current_user)) %>"><%= h t('nav.profile') %></a>
-            <form class="nav-form" method="post" action="<%= h app_path('/logout') %>">
-              <button class="nav-pill" type="submit"><%= h t('auth.logout') %></button>
-            </form>
-          <% else %>
-            <a class="nav-pill nav-pill--github" href="<%= h app_path('/auth/github') %>" aria-label="<%= h t('auth.login.github') %>">
-              <img class="nav-pill__icon" src="<%= h app_path('/icons/github.svg') %>" alt="" aria-hidden="true" />
-              <span><%= h t('auth.login.github') %></span>
-            </a>
-          <% end %>
-          <div class="language-switch" role="navigation" aria-label="<%= h t('nav.language') %>">
-            <% SUPPORTED_LOCALES.each do |locale| %>
-              <a class="language-switch__link <%= 'is-active' if current_locale?(locale) %>" href="<%= h locale_path(locale) %>" hreflang="<%= h locale %>" lang="<%= h locale %>"><%= h locale.upcase %></a>
-            <% end %>
-          </div>
         </nav>
       </div>
     </header>

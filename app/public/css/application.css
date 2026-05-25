@@ -240,6 +240,23 @@ a {
   white-space: nowrap;
 }
 
+.nav-menu__panel .nav-form {
+  width: 100%;
+}
+
+.nav-menu__panel .nav-pill {
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.nav-menu__panel .language-switch {
+  width: 100%;
+}
+
+.nav-menu__panel .language-switch__link {
+  flex: 1;
+}
+
 .nav-menu__panel .nav__link:hover {
   background: #eef7f3;
   color: var(--accent);
