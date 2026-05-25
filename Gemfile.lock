@@ -146,9 +146,9 @@ GEM
       rack-protection (= 4.2.1)
       rack-session (>= 2.0.0, < 3)
       tilt (~> 2.0)
-    sqlite3 (2.8.1)
+    sqlite3 (2.9.4)
       mini_portile2 (~> 2.8.0)
-    sqlite3 (2.8.1-x86_64-linux-gnu)
+    sqlite3 (2.9.4-x86_64-linux-gnu)
     tilt (2.7.0)
     unicode-display_width (3.2.0)
       unicode-emoji (~> 4.1)
@@ -159,7 +159,7 @@ GEM
       event_emitter
       mutex_m
       websocket
-    zeitwerk (2.7.5)
+    zeitwerk (2.8.2)
 
 PLATFORMS
   ruby
@@ -179,7 +179,7 @@ DEPENDENCIES
   sequel (~> 5.90)
   simplecov (~> 0.22)
   sinatra (~> 4.1)
-  sqlite3 (~> 2.8.0)
+  sqlite3 (~> 2.9.4)
   zeitwerk (~> 2.7)
 
 RUBY VERSION
