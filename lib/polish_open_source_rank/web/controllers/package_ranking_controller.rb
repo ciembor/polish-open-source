@@ -28,7 +28,7 @@ module PolishOpenSourceRank
           halt 404 if repository_kind && ranking.empty?
 
           assign_package_ranking_page(period_slug, ecosystem, metric_slug, metric, repository_kind, ranking)
-          erb :package_ranking_detail
+          erb :'packages/ranking_detail'
         end
 
         def cache_package_ranking!(period_slug, ecosystem, metric_slug, repository_kind_slug)

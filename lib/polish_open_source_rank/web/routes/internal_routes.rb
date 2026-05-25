@@ -18,7 +18,7 @@ module PolishOpenSourceRank
             @title = 'Job monitor'
             @description = 'Internal monthly ranking job monitor.'
             @canonical_path = '/internal/jobs'
-            erb :job_monitor
+            erb :'internal/job_monitor'
           end
         end
       end

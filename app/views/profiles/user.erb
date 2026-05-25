@@ -1,4 +1,4 @@
-<%= erb :profile_subject_hero, locals: { record: @profile, translation_scope: 'users', translation_value_key: :user } %>
+<%= erb :"profiles/subject_hero", locals: { record: @profile, translation_scope: 'users', translation_value_key: :user } %>
 
 <% top_repository = @repositories.first %>
 <% spotlight_items = [
@@ -7,7 +7,7 @@
 <% if @profile[:city] %>
   <% spotlight_items << { label: t('users.spotlight.city_rank', city: @profile.fetch(:city)), value: (@profile[:city_rank] ? "##{@profile[:city_rank]}" : '-') } %>
 <% end %>
-<%= erb :profile_spotlight, locals: {
+<%= erb :"profiles/spotlight", locals: {
   heading_id: 'profile-spotlight-heading',
   title: t('users.spotlight.title'),
   period_start: @profile[:period_start],
@@ -18,7 +18,7 @@
 } %>
 
 <% if @discord_panel %>
-  <%= erb :discord_panel, locals: { panel: @discord_panel, error: @discord_error } %>
+  <%= erb :"auth/discord_panel", locals: { panel: @discord_panel, error: @discord_error } %>
 <% end %>
 
 <% if @show_profile_badges %>
@@ -26,10 +26,10 @@
     <div class="content">
       <h2 id="profile-badge-heading"><%= h t('users.badge.title') %></h2>
       <% if @profile.fetch(:badges, []).any? %>
-        <%= erb :badge_preview, locals: { label: @profile.fetch(:login), badge_path: user_badge_path(@profile), alt_text: t('users.badge.alt') } %>
+        <%= erb :"profiles/badge_preview", locals: { label: @profile.fetch(:login), badge_path: user_badge_path(@profile), alt_text: t('users.badge.alt') } %>
       <% end %>
       <% @repositories.select { |repository| repository[:polish_repo_badge] && repository[:polish_repo_badge][:value] }.each do |repository| %>
-        <%= erb :badge_preview, locals: { label: repository.fetch(:full_name), badge_path: repository_badge_path(repository), alt_text: t('repositories.badge.alt') } %>
+        <%= erb :"profiles/badge_preview", locals: { label: repository.fetch(:full_name), badge_path: repository_badge_path(repository), alt_text: t('repositories.badge.alt') } %>
       <% end %>
     </div>
   </section>
@@ -37,7 +37,7 @@
 
 <section class="profile-section" aria-labelledby="profile-summary-heading">
   <div class="content profile-grid">
-    <%= erb :profile_fact_card, locals: {
+    <%= erb :"profiles/fact_card", locals: {
       heading_id: 'profile-summary-heading',
       title: t('users.summary.title'),
       items: [
@@ -56,7 +56,7 @@
         <% metric_items << { label: badge.fetch(:label), value: (badge[:value] || t('users.metrics.outside_ranking')) } %>
       <% end %>
     <% end %>
-    <%= erb :profile_metric_card, locals: {
+    <%= erb :"profiles/metric_card", locals: {
       title: t('users.metrics.title'),
       period_start: @profile[:period_start],
       empty_message: t('users.metrics.outside_ranking'),
@@ -68,7 +68,7 @@
 <section class="profile-section profile-section--alt" aria-labelledby="profile-repositories-heading">
   <div class="content">
     <h2 id="profile-repositories-heading"><%= h t('users.repositories.title') %></h2>
-    <%= erb :profile_repository_grid, locals: {
+    <%= erb :"profiles/repository_grid", locals: {
       repositories: @repositories,
       empty_translation_key: 'users.repositories.empty',
       path_builder: method(:repository_profile_path),

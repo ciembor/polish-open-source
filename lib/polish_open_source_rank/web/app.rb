@@ -42,25 +42,38 @@ module PolishOpenSourceRank
       ].freeze
       HTML_REVISION_FILES = [
         'app/views/layout.erb',
-        'app/views/about.erb',
-        'app/views/editions.erb',
-        'app/views/language.erb',
-        'app/views/language_repository_ranking_detail.erb',
-        'app/views/language_repository_ranking_table.erb',
-        'app/views/language_ranking_detail.erb',
-        'app/views/language_ranking_table.erb',
-        'app/views/languages.erb',
-        'app/views/package_ecosystem.erb',
-        'app/views/package_profile.erb',
-        'app/views/package_ranking_detail.erb',
-        'app/views/package_ranking_table.erb',
-        'app/views/packages.erb',
-        'app/views/ranking_detail.erb',
-        'app/views/rankings.erb',
-        'app/views/organization_profile.erb',
-        'app/views/organization_repository_profile.erb',
-        'app/views/repository_profile.erb',
-        'app/views/user_profile.erb',
+        'app/views/auth/discord_panel.erb',
+        'app/views/internal/job_monitor.erb',
+        'app/views/languages/index.erb',
+        'app/views/languages/ranking_detail.erb',
+        'app/views/languages/ranking_table.erb',
+        'app/views/languages/repository_ranking_detail.erb',
+        'app/views/languages/repository_ranking_table.erb',
+        'app/views/languages/show.erb',
+        'app/views/packages/ecosystem.erb',
+        'app/views/packages/index.erb',
+        'app/views/packages/profile.erb',
+        'app/views/packages/ranking_detail.erb',
+        'app/views/packages/ranking_table.erb',
+        'app/views/pages/about.erb',
+        'app/views/pages/editions.erb',
+        'app/views/pages/not_found.erb',
+        'app/views/pages/rankings.erb',
+        'app/views/profiles/badge_preview.erb',
+        'app/views/profiles/fact_card.erb',
+        'app/views/profiles/metric_card.erb',
+        'app/views/profiles/organization.erb',
+        'app/views/profiles/organization_repository.erb',
+        'app/views/profiles/project_hero.erb',
+        'app/views/profiles/repository.erb',
+        'app/views/profiles/repository_grid.erb',
+        'app/views/profiles/spotlight.erb',
+        'app/views/profiles/subject_hero.erb',
+        'app/views/profiles/user.erb',
+        'app/views/rankings/detail.erb',
+        'app/views/rankings/table.erb',
+        'app/views/shared/elite_medal.erb',
+        'app/views/shared/platform_icon.erb',
         *CSS_ASSET_FILES.map { |path| "app/public#{path}" },
         'app/public/js/navigation.js'
       ].freeze
@@ -148,7 +161,7 @@ module PolishOpenSourceRank
         status 404
         @title = t('not_found.title')
         @description = t('not_found.description')
-        erb :not_found
+        erb :'pages/not_found'
       end
 
       private

@@ -5,7 +5,7 @@
     <% repositories.each do |repository| %>
       <article class="project-card">
         <div class="project-card__header">
-          <%= erb :platform_icon, locals: { platform: repository.fetch(:platform, "github") } %>
+          <%= erb :"shared/platform_icon", locals: { platform: repository.fetch(:platform, "github") } %>
           <a class="primary-link" href="<%= h app_path(path_builder.call(repository)) %>"><%= h repository.fetch(:full_name) %></a>
         </div>
         <% if repository[:description] && !repository[:description].empty? %>
