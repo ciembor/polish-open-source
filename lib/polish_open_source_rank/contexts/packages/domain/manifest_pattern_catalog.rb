@@ -22,13 +22,20 @@ module PolishOpenSourceRank
             'swiftpm' => ['Package.swift'],
             'pub' => ['pubspec.yaml'],
             'apt' => ['control'],
-            'nix' => %w[flake.nix default.nix package.nix]
+            'nix' => %w[flake.nix default.nix package.nix],
+            'cran' => ['DESCRIPTION'],
+            'cpan' => %w[META.json META.yml META.yaml cpanfile Makefile.PL Build.PL],
+            'hackage' => ['package.yaml'],
+            'clojars' => %w[deps.edn project.clj build.boot],
+            'julia' => ['Project.toml'],
+            'conda' => %w[meta.yaml environment.yml environment.yaml]
           }.freeze
 
           EXTENSIONS = {
             'rubygems' => ['.gemspec'],
             'nuget' => %w[.csproj .fsproj .vbproj .nuspec],
-            'rpm' => ['.spec']
+            'rpm' => ['.spec'],
+            'hackage' => ['.cabal']
           }.freeze
 
           module_function

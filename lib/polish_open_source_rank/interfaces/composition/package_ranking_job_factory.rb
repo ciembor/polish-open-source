@@ -4,6 +4,22 @@ module PolishOpenSourceRank
   module Interfaces
     module Composition
       class PackageRankingJobFactory
+        DIRECT_REGISTRY_CLIENTS = {
+          'npm' => %i[NpmRegistryClient npm],
+          'rubygems' => %i[RubyGemsRegistryClient rubygems],
+          'crates' => %i[CratesRegistryClient crates],
+          'pypi' => %i[PyPIRegistryClient pypi],
+          'hex' => %i[HexRegistryClient hex],
+          'packagist' => %i[PackagistRegistryClient packagist],
+          'go' => %i[GoRegistryClient go],
+          'homebrew' => %i[HomebrewRegistryClient homebrew],
+          'nuget' => %i[NuGetRegistryClient nuget],
+          'maven' => %i[MavenCentralRegistryClient maven]
+        }.freeze
+        REPOSITORY_SIGNAL_REGISTRIES = %i[
+          terraform conan vcpkg swiftpm pub apt rpm nix cran cpan hackage clojars julia conda
+        ].freeze
+
         def self.build(argv, configuration: Configuration.load, output: $stdout, crawl_jobs: nil)
           new(argv, configuration: configuration, output: output, crawl_jobs: crawl_jobs).build
         end
@@ -83,26 +99,17 @@ module PolishOpenSourceRank
         end
 
         def registry_clients
-          {
-            'npm' => registry_client(registries::NpmRegistryClient, :npm),
-            'rubygems' => registry_client(registries::RubyGemsRegistryClient, :rubygems),
-            'crates' => registry_client(registries::CratesRegistryClient, :crates),
-            'pypi' => registry_client(registries::PyPIRegistryClient, :pypi),
-            'hex' => registry_client(registries::HexRegistryClient, :hex),
-            'packagist' => registry_client(registries::PackagistRegistryClient, :packagist),
-            'go' => registry_client(registries::GoRegistryClient, :go),
-            'homebrew' => registry_client(registries::HomebrewRegistryClient, :homebrew),
-            'nuget' => registry_client(registries::NuGetRegistryClient, :nuget),
-            'maven' => registry_client(registries::MavenCentralRegistryClient, :maven),
-            'terraform' => repository_signal_registry_client(:terraform),
-            'conan' => repository_signal_registry_client(:conan),
-            'vcpkg' => repository_signal_registry_client(:vcpkg),
-            'swiftpm' => repository_signal_registry_client(:swiftpm),
-            'pub' => repository_signal_registry_client(:pub),
-            'apt' => repository_signal_registry_client(:apt),
-            'rpm' => repository_signal_registry_client(:rpm),
-            'nix' => repository_signal_registry_client(:nix)
-          }
+          direct_registry_clients.merge(repository_signal_registry_clients)
+        end
+
+        def direct_registry_clients
+          DIRECT_REGISTRY_CLIENTS.transform_values do |class_name, key|
+            registry_client(registries.const_get(class_name), key)
+          end
+        end
+
+        def repository_signal_registry_clients
+          REPOSITORY_SIGNAL_REGISTRIES.to_h { |key| [key.to_s, repository_signal_registry_client(key)] }
         end
 
         def registries

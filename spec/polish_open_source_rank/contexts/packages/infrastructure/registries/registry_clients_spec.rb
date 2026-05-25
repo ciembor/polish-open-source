@@ -283,6 +283,9 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
     )
     apt = described_class::RepositorySignalRegistryClient.new(ecosystem: :apt).fetch('polish-apt')
     expect(apt.snapshot.metadata).to eq(metric_source: 'apt_popularity_unavailable')
+    cran = described_class::RepositorySignalRegistryClient.new(ecosystem: :cran).fetch('polishcran')
+    expect(cran.package.registry_url).to eq('https://cran.r-project.org/package=polishcran')
+    expect(cran.snapshot.metadata).to eq(metric_source: 'cran_popularity_unavailable')
   end
 
   it 'treats missing Maven Central coordinates as not found' do

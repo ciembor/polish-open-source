@@ -7,7 +7,7 @@ module PolishOpenSourceRank
         module Ecosystem
           SUPPORTED = %w[
             npm rubygems crates pypi hex packagist go homebrew nuget maven terraform conan vcpkg swiftpm pub
-            apt rpm nix
+            apt rpm nix cran cpan hackage clojars julia conda
           ].freeze
           SNAPSHOT_SUPPORTED = SUPPORTED
 

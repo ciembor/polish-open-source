@@ -115,6 +115,36 @@ module PolishOpenSourceRank
         default: 20,
         constructor: INTEGER_CONSTRUCTOR
       },
+      cran_registry_requests_per_minute: {
+        env: 'CRAN_REGISTRY_REQUESTS_PER_MINUTE',
+        default: 20,
+        constructor: INTEGER_CONSTRUCTOR
+      },
+      cpan_registry_requests_per_minute: {
+        env: 'CPAN_REGISTRY_REQUESTS_PER_MINUTE',
+        default: 20,
+        constructor: INTEGER_CONSTRUCTOR
+      },
+      hackage_registry_requests_per_minute: {
+        env: 'HACKAGE_REGISTRY_REQUESTS_PER_MINUTE',
+        default: 20,
+        constructor: INTEGER_CONSTRUCTOR
+      },
+      clojars_registry_requests_per_minute: {
+        env: 'CLOJARS_REGISTRY_REQUESTS_PER_MINUTE',
+        default: 20,
+        constructor: INTEGER_CONSTRUCTOR
+      },
+      julia_registry_requests_per_minute: {
+        env: 'JULIA_REGISTRY_REQUESTS_PER_MINUTE',
+        default: 20,
+        constructor: INTEGER_CONSTRUCTOR
+      },
+      conda_registry_requests_per_minute: {
+        env: 'CONDA_REGISTRY_REQUESTS_PER_MINUTE',
+        default: 20,
+        constructor: INTEGER_CONSTRUCTOR
+      },
       github_base_url: { env: 'GITHUB_BASE_URL', default: 'https://api.github.com' },
       github_oauth_client_id: { env: 'GITHUB_OAUTH_CLIENT_ID', required: true },
       github_oauth_client_secret: { env: 'GITHUB_OAUTH_CLIENT_SECRET', required: true },
@@ -187,31 +217,21 @@ module PolishOpenSourceRank
     end
 
     def package_registry_request_limits
-      {
-        npm: npm_registry_requests_per_minute,
-        rubygems: rubygems_registry_requests_per_minute,
-        crates: crates_registry_requests_per_minute,
-        pypi: pypi_registry_requests_per_minute,
-        hex: hex_registry_requests_per_minute,
-        packagist: packagist_registry_requests_per_minute,
-        go: go_registry_requests_per_minute,
-        homebrew: homebrew_registry_requests_per_minute,
-        nuget: nuget_registry_requests_per_minute,
-        maven: maven_registry_requests_per_minute,
-        terraform: terraform_registry_requests_per_minute,
-        conan: conan_registry_requests_per_minute,
-        vcpkg: vcpkg_registry_requests_per_minute,
-        swiftpm: swiftpm_registry_requests_per_minute,
-        pub: pub_registry_requests_per_minute,
-        apt: apt_registry_requests_per_minute,
-        rpm: rpm_registry_requests_per_minute,
-        nix: nix_registry_requests_per_minute
-      }
+      package_registry_limit_keys.to_h do |key|
+        [key, public_send(:"#{key}_registry_requests_per_minute")]
+      end
     end
 
     private
 
     attr_reader :env_path, :settings
+
+    def package_registry_limit_keys
+      %i[
+        npm rubygems crates pypi hex packagist go homebrew nuget maven terraform conan vcpkg swiftpm pub
+        apt rpm nix cran cpan hackage clojars julia conda
+      ]
+    end
 
     def apply_env_overrides
       DEFINITIONS.each do |name, definition|

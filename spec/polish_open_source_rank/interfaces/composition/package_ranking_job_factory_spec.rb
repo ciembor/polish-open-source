@@ -35,7 +35,7 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::PackageRankingJobF
       package_registry_request_limits: {
         npm: 30, rubygems: 20, crates: 10, pypi: 20, hex: 20, packagist: 20, go: 20, homebrew: 20,
         nuget: 20, maven: 20, terraform: 20, conan: 20, vcpkg: 20, swiftpm: 20, pub: 20,
-        apt: 20, rpm: 20, nix: 20
+        apt: 20, rpm: 20, nix: 20, cran: 20, cpan: 20, hackage: 20, clojars: 20, julia: 20, conda: 20
       }
     )
   end

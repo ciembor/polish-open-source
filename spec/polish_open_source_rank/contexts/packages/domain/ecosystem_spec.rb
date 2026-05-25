@@ -4,6 +4,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Ecosystem do
   it 'owns supported package ecosystems' do
     ecosystems = %w[
       npm rubygems crates pypi hex packagist go homebrew nuget maven terraform conan vcpkg swiftpm pub apt rpm nix
+      cran cpan hackage clojars julia conda
     ]
     expect(described_class::SUPPORTED).to eq(ecosystems)
     expect(described_class.snapshot_supported).to eq(ecosystems)

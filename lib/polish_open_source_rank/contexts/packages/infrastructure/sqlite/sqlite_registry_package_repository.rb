@@ -26,7 +26,13 @@ module PolishOpenSourceRank
               'pub' => 'https://pub.dev/packages/%s',
               'apt' => 'https://packages.debian.org/search?keywords=%s',
               'rpm' => 'https://src.fedoraproject.org/rpms/%s',
-              'nix' => 'https://search.nixos.org/packages?query=%s'
+              'nix' => 'https://search.nixos.org/packages?query=%s',
+              'cran' => 'https://cran.r-project.org/package=%s',
+              'cpan' => 'https://metacpan.org/dist/%s',
+              'hackage' => 'https://hackage.haskell.org/package/%s',
+              'clojars' => 'https://clojars.org/%s',
+              'julia' => 'https://juliahub.com/ui/Packages/General/%s',
+              'conda' => 'https://anaconda.org/search?q=%s'
             }.freeze
 
             def initialize(database, clock: -> { Time.now.utc },
@@ -317,13 +323,19 @@ module PolishOpenSourceRank
             def registry_url(ecosystem, package_name)
               return format(REGISTRY_URLS.fetch(ecosystem), package_name.tr(':', '/')) if ecosystem == 'maven'
 
-              if %w[terraform conan vcpkg swiftpm pub apt rpm nix].include?(ecosystem)
+              if repository_signal_ecosystem?(ecosystem)
                 escaped = ::PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registries::RegistryClientHelpers
                           .escaped_segment(package_name)
                 return REGISTRY_URLS.fetch(ecosystem).sub('%s', escaped)
               end
 
               format(REGISTRY_URLS.fetch(ecosystem), package_name)
+            end
+
+            def repository_signal_ecosystem?(ecosystem)
+              %w[
+                terraform conan vcpkg swiftpm pub apt rpm nix cran cpan hackage clojars julia conda
+              ].include?(ecosystem)
             end
 
             def ecosystems_for(ecosystem)
