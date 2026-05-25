@@ -27,7 +27,11 @@ module PolishOpenSourceRank
             'conanfile.txt' => Parsers::ConanManifestParser,
             'vcpkg.json' => Parsers::VcpkgJsonParser,
             'Package.swift' => Parsers::SwiftPackageParser,
-            'pubspec.yaml' => Parsers::PubspecYamlParser
+            'pubspec.yaml' => Parsers::PubspecYamlParser,
+            'control' => Parsers::DebianControlParser,
+            'flake.nix' => Parsers::NixPackageParser,
+            'default.nix' => Parsers::NixPackageParser,
+            'package.nix' => Parsers::NixPackageParser
           }.freeze
 
           def parse(path:, ecosystem:, content:)
@@ -40,6 +44,7 @@ module PolishOpenSourceRank
             return Parsers::RubyGemsGemspecParser.new if ecosystem == 'rubygems'
             return Parsers::HomebrewFormulaParser.new if ecosystem == 'homebrew'
             return Parsers::NuGetXmlParser.new if ecosystem == 'nuget'
+            return Parsers::RpmSpecParser.new if ecosystem == 'rpm'
 
             PARSERS.fetch(File.basename(path)).new
           end

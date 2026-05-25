@@ -281,6 +281,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
       downloads_30d: nil,
       metadata: { metric_source: 'terraform_registry_popularity_unavailable' }
     )
+    apt = described_class::RepositorySignalRegistryClient.new(ecosystem: :apt).fetch('polish-apt')
+    expect(apt.snapshot.metadata).to eq(metric_source: 'apt_popularity_unavailable')
   end
 
   it 'treats missing Maven Central coordinates as not found' do

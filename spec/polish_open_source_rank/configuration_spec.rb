@@ -14,7 +14,8 @@ RSpec.describe PolishOpenSourceRank::Configuration do
       NUGET_REGISTRY_REQUESTS_PER_MINUTE MAVEN_REGISTRY_REQUESTS_PER_MINUTE
       TERRAFORM_REGISTRY_REQUESTS_PER_MINUTE CONAN_REGISTRY_REQUESTS_PER_MINUTE
       VCPKG_REGISTRY_REQUESTS_PER_MINUTE SWIFTPM_REGISTRY_REQUESTS_PER_MINUTE
-      PUB_REGISTRY_REQUESTS_PER_MINUTE
+      PUB_REGISTRY_REQUESTS_PER_MINUTE APT_REGISTRY_REQUESTS_PER_MINUTE
+      RPM_REGISTRY_REQUESTS_PER_MINUTE NIX_REGISTRY_REQUESTS_PER_MINUTE
     ]
     old_values = keys.to_h { |key| [key, ENV.fetch(key, nil)] }
     keys.each { |key| ENV.delete(key) }
@@ -146,7 +147,10 @@ RSpec.describe PolishOpenSourceRank::Configuration do
       conan: 20,
       vcpkg: 20,
       swiftpm: 20,
-      pub: 20
+      pub: 20,
+      apt: 20,
+      rpm: 20,
+      nix: 20
     )
   end
 

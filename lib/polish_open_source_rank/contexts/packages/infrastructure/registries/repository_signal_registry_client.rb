@@ -28,6 +28,18 @@ module PolishOpenSourceRank
               pub: Registry.new(
                 web_url: 'https://pub.dev/packages/%s',
                 metric_source: 'pub_dev_score_not_mixed_with_rankings'
+              ),
+              apt: Registry.new(
+                web_url: 'https://packages.debian.org/search?keywords=%s',
+                metric_source: 'apt_popularity_unavailable'
+              ),
+              rpm: Registry.new(
+                web_url: 'https://src.fedoraproject.org/rpms/%s',
+                metric_source: 'rpm_popularity_unavailable'
+              ),
+              nix: Registry.new(
+                web_url: 'https://search.nixos.org/packages?query=%s',
+                metric_source: 'nixpkgs_popularity_unavailable'
               )
             }.freeze
 
@@ -56,7 +68,7 @@ module PolishOpenSourceRank
             attr_reader :ecosystem, :registry
 
             def registry_url(package_name)
-              format(registry.web_url, RegistryClientHelpers.escaped_segment(package_name))
+              registry.web_url.sub('%s', RegistryClientHelpers.escaped_segment(package_name))
             end
           end
         end

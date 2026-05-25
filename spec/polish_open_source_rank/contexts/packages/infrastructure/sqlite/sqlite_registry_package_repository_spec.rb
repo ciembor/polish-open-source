@@ -36,6 +36,14 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
       ecosystem: 'terraform',
       registry_url: 'https://registry.terraform.io/search/modules?q=alice%2Fterraform-aws-tool'
     )
+    seed_manifest(ecosystem: 'apt', path: 'debian/control', package_name: 'polish apt',
+                  normalized_package_name: 'polish apt')
+
+    repository.resolve_from_manifests(period, ecosystem: 'apt', limit: 10)
+
+    expect(registry_packages).to include(
+      include(ecosystem: 'apt', registry_url: 'https://packages.debian.org/search?keywords=polish%20apt')
+    )
   end
 
   it 'records successful snapshots and skips already snapshotted packages unless refreshed' do

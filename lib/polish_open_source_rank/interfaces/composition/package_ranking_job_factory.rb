@@ -98,7 +98,10 @@ module PolishOpenSourceRank
             'conan' => repository_signal_registry_client(:conan),
             'vcpkg' => repository_signal_registry_client(:vcpkg),
             'swiftpm' => repository_signal_registry_client(:swiftpm),
-            'pub' => repository_signal_registry_client(:pub)
+            'pub' => repository_signal_registry_client(:pub),
+            'apt' => repository_signal_registry_client(:apt),
+            'rpm' => repository_signal_registry_client(:rpm),
+            'nix' => repository_signal_registry_client(:nix)
           }
         end
 
