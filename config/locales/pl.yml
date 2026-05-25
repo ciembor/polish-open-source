@@ -229,6 +229,13 @@ pl:
       stars: "Top 100 według gwiazdek repozytorium"
       trending: "Top 100 trendujących pakietów"
       top: "Top 100 według pobrań z 30 dni"
+    ranking_preview_title:
+      dependents: "Top 10 według zależnych pakietów"
+      downloads: "Top 10 według pobrań łącznie"
+      installs: "Top 10 według instalacji z 30 dni"
+      stars: "Top 10 repozytoriów według gwiazdek"
+      trending: "Top 10 trendujących w miesiącu"
+      top: "Top 10 według pobrań z 30 dni"
   languages:
     back: "Wróć do języków"
     back_to_language: "Wróć do %{language}"
@@ -248,10 +255,17 @@ pl:
     repository_ranking_title:
       top: "Top 100: %{kind}, %{language}, według gwiazdek"
       trending: "Top 100: %{kind}, %{language}, trendujące"
+    repository_ranking_preview_title:
+      top: "Top 10 według gwiazdek"
+      trending: "Top 10 trendujących w miesiącu"
     ranking_title:
       stars: "Top 100 języków według gwiazdek"
       top: "Top 100 języków według liczby repozytoriów"
       trending: "Top 100 trendujących języków"
+    ranking_preview_title:
+      stars: "Top 10 języków według gwiazdek"
+      top: "Top 10 języków według liczby repozytoriów"
+      trending: "Top 10 trendujących języków"
     repository_count: "%{count} repozytoriów"
     seo:
       index_description: "Rankingi języków programowania używanych w polskich repozytoriach open source."

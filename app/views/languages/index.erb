@@ -12,13 +12,14 @@
   </div>
 </section>
 
-<section class="ranking-band">
+<section class="ranking-band" aria-labelledby="language-rankings-heading">
   <div class="content">
+    <h2 id="language-rankings-heading"><%= h t('languages.title') %></h2>
     <div class="ranking-grid ranking-grid--compact">
       <% PolishOpenSourceRank::Contexts::Languages::Domain::LanguageRankingMetric.all.each do |language_metric| %>
         <% slug = language_metric.slug %>
         <% metric = language_metric.key.to_sym %>
-        <%= erb :"languages/ranking_table", locals: { heading_id: "language-ranking-#{slug}", title: language_ranking_title(slug), rows: @language_rankings.fetch(metric, []), metric: metric, metric_label: language_metric_label(metric), top_path: language_ranking_path(slug) } %>
+        <%= erb :"languages/ranking_table", locals: { heading_id: "language-ranking-#{slug}", title: language_ranking_preview_title(slug), rows: @language_rankings.fetch(metric, []), metric: metric, metric_label: language_metric_label(metric), top_path: language_ranking_path(slug) } %>
       <% end %>
     </div>
   </div>

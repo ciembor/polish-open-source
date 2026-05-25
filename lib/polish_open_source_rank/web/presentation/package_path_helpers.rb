@@ -54,6 +54,12 @@ module PolishOpenSourceRank
           t("packages.ranking_title.#{metric_slug}", ecosystem: ecosystem)
         end
 
+        def package_ranking_preview_title(metric_slug, ecosystem:)
+          return t('packages.ranking_preview_title.installs') if ecosystem == 'homebrew' && metric_slug.to_s == 'top'
+
+          t("packages.ranking_preview_title.#{metric_slug}", ecosystem: ecosystem)
+        end
+
         def package_repository_kind_label(repository_kind)
           t("packages.repository_kind.#{repository_kind}")
         end
@@ -64,6 +70,12 @@ module PolishOpenSourceRank
             ecosystem: ecosystem,
             kind: package_repository_kind_label(repository_kind)
           )
+        end
+
+        def package_repository_ranking_preview_title(metric_slug, ecosystem:)
+          return t('packages.ranking_preview_title.installs') if ecosystem == 'homebrew' && metric_slug.to_s == 'top'
+
+          t("packages.ranking_preview_title.#{metric_slug}", ecosystem: ecosystem)
         end
       end
     end

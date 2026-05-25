@@ -19,6 +19,10 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.ranking-grid--compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .ranking-table {
   min-width: 0;
 }
@@ -235,4 +239,3 @@
   height: 54px;
   width: 54px;
 }
-

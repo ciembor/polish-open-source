@@ -864,6 +864,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.status).to eq(200)
     expect(response.body).to include('<title>Języki open source - Polish Open Source</title>')
     expect(response.body).to include('Ruby')
+    expect(response.body).to include('Top 10 języków według liczby repozytoriów')
     expect(response.body).to include('href="/latest/languages/Ruby"')
     expect(response.body).to include('href="/latest/languages/top"')
     expect(response.body).not_to include('00Baarti/Strona-QUIZ')
@@ -879,6 +880,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('<h1>Ruby</h1>')
     expect(response.body).to include('Ludzie')
     expect(response.body).to include('Organizacje')
+    expect(response.body).to include('Top 10 według gwiazdek')
+    expect(response.body).to include('Top 10 trendujących w miesiącu')
     expect(response.body).to include('alice/app')
     expect(response.body).to include('polish-org/toolkit')
     expect(response.body).to include('href="/latest/languages/Ruby/users/top"')
@@ -914,6 +917,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include("href=\"/packages/npm/names/#{encoded_name}\"")
     expect(response.body).to include('Ludzie')
     expect(response.body).to include('Organizacje')
+    expect(response.body).to include('Top 10 według pobrań z 30 dni')
+    expect(response.body).to include('Top 10 repozytoriów według gwiazdek')
+    expect(response.body).to include('Top 10 trendujących w miesiącu')
     expect(response.body).to include('href="/latest/packages/npm/users/top"')
   end
 

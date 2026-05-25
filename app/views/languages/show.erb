@@ -12,18 +12,20 @@
   </div>
 </section>
 
-<section class="ranking-band">
-  <div class="content">
-    <p><a class="muted-link muted-link--standalone" href="<%= h app_path(language_index_path) %>"><%= h t('languages.back') %></a></p>
-    <% @language_repository_rankings.each do |repository_kind, rankings| %>
-      <h2><%= h language_repository_kind_label(repository_kind) %></h2>
+<% @language_repository_rankings.each_with_index do |(repository_kind, rankings), index| %>
+  <section class="ranking-band<%= index.odd? ? ' ranking-band--alt' : '' %>" aria-labelledby="language-<%= h repository_kind %>-heading">
+    <div class="content">
+      <% if index.zero? %>
+        <p><a class="muted-link muted-link--standalone" href="<%= h app_path(language_index_path) %>"><%= h t('languages.back') %></a></p>
+      <% end %>
+      <h2 id="language-<%= h repository_kind %>-heading"><%= h language_repository_kind_label(repository_kind) %></h2>
       <div class="ranking-grid ranking-grid--compact">
         <% PolishOpenSourceRank::Contexts::Languages::Domain::LanguageRepositoryRankingMetric.all.each do |repository_metric| %>
           <% slug = repository_metric.slug %>
           <% metric = repository_metric.key.to_sym %>
-          <%= erb :"languages/repository_ranking_table", locals: { heading_id: "language-#{repository_kind}-#{slug}", title: language_repository_ranking_title(@language, repository_kind, slug), rows: rankings.fetch(metric, []), metric: metric, metric_label: language_metric_label(metric), top_path: language_repository_ranking_path(@language, repository_kind, slug) } %>
+          <%= erb :"languages/repository_ranking_table", locals: { heading_id: "language-#{repository_kind}-#{slug}", title: language_repository_ranking_preview_title(slug), rows: rankings.fetch(metric, []), metric: metric, metric_label: language_metric_label(metric), top_path: language_repository_ranking_path(@language, repository_kind, slug) } %>
         <% end %>
       </div>
-    <% end %>
-  </div>
-</section>
+    </div>
+  </section>
+<% end %>

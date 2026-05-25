@@ -39,8 +39,16 @@ module PolishOpenSourceRank
           )
         end
 
+        def language_repository_ranking_preview_title(metric_slug)
+          t("languages.repository_ranking_preview_title.#{metric_slug}")
+        end
+
         def language_ranking_title(metric_slug)
           t("languages.ranking_title.#{metric_slug}")
+        end
+
+        def language_ranking_preview_title(metric_slug)
+          t("languages.ranking_preview_title.#{metric_slug}")
         end
       end
     end
