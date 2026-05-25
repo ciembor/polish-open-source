@@ -19,7 +19,7 @@ module PolishOpenSourceRank
 
           def call(period, ecosystem: nil, limit: DEFAULT_LIMIT, refresh: false)
             stats = { scanned: 0, failed: 0, manifests: 0 }
-            repository_queue.pending(period, limit: limit, ecosystem: ecosystem).each do |scan|
+            repository_queue.pending(period, limit: limit, ecosystem: ecosystem, refresh: refresh).each do |scan|
               result = scan_repository(scan, ecosystem: ecosystem, refresh: refresh)
               stats[:scanned] += 1 if result.fetch(:status) == :scanned
               stats[:failed] += 1 if result.fetch(:status) == :failed
