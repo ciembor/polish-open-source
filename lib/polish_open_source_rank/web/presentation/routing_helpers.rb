@@ -4,6 +4,7 @@ module PolishOpenSourceRank
   module Web
     module Presentation
       module RoutingHelpers
+        include LanguagePathHelpers
         include PackagePathHelpers
         include ProfilePathHelpers
         include StructuredDataHelpers

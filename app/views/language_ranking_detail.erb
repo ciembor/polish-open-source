@@ -1,0 +1,20 @@
+<section class="hero">
+  <div class="hero__inner">
+    <div>
+      <p class="eyebrow"><%= h t('languages.hero.eyebrow') %></p>
+      <h1><%= h language_ranking_title(@language_metric_slug) %></h1>
+      <p class="lede"><%= h t('languages.hero.lede') %></p>
+      <% if @period %>
+        <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @period %>"><%= h period_label(@period) %></time></p>
+      <% end %>
+    </div>
+    <img class="hero__image" src="/images/polish_open_source_front.webp" alt="" aria-hidden="true">
+  </div>
+</section>
+
+<section class="ranking-band">
+  <div class="content">
+    <p><a class="muted-link muted-link--standalone" href="<%= h app_path(language_index_path) %>"><%= h t('languages.back') %></a></p>
+    <%= erb :language_ranking_table, locals: { heading_id: "language-ranking-detail-#{@language_metric_slug}", title: language_ranking_title(@language_metric_slug), rows: @language_ranking, metric: @language_metric.to_sym, metric_label: language_metric_label(@language_metric) } %>
+  </div>
+</section>

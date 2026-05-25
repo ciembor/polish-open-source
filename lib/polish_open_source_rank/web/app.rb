@@ -12,6 +12,7 @@ module PolishOpenSourceRank
       include Controllers::AuthController
       include Controllers::BadgeController
       include Controllers::InternalController
+      include Controllers::LanguageController
       include Controllers::PackageController
       include Controllers::PublicController
       include Controllers::SharedController
@@ -24,6 +25,26 @@ module PolishOpenSourceRank
       RANKING_DETAIL_SEGMENTS = '(users|repositories|organizations|organization-repositories)/(top|trending|active)'
       SUPPORTED_LOCALES = %w[en pl].freeze
       DEFAULT_LOCALE = 'pl'
+      HTML_REVISION_FILES = [
+        'app/views/layout.erb',
+        'app/views/about.erb',
+        'app/views/editions.erb',
+        'app/views/language_ranking_detail.erb',
+        'app/views/language_ranking_table.erb',
+        'app/views/languages.erb',
+        'app/views/package_ecosystem.erb',
+        'app/views/package_profile.erb',
+        'app/views/package_ranking_detail.erb',
+        'app/views/package_ranking_table.erb',
+        'app/views/packages.erb',
+        'app/views/ranking_detail.erb',
+        'app/views/rankings.erb',
+        'app/views/organization_profile.erb',
+        'app/views/organization_repository_profile.erb',
+        'app/views/repository_profile.erb',
+        'app/views/user_profile.erb',
+        'app/public/css/application.css'
+      ].freeze
       set :default_locale, DEFAULT_LOCALE
       set :localized_text,
           Localization::TranslationCatalog.load(root: PolishOpenSourceRank.root, locales: SUPPORTED_LOCALES)
@@ -46,6 +67,7 @@ module PolishOpenSourceRank
       helpers Presentation::ViewHelpers
       helpers HttpCache
 
+      register Routes::LanguageRoutes
       register Routes::PublicRoutes
       register Routes::AuthRoutes
       register Routes::BadgeRoutes
@@ -61,6 +83,7 @@ module PolishOpenSourceRank
                      :discord_role_map,
                      :github_oauth_client,
                      :job_progress_read_model,
+                     :language_ranking_read_model,
                      :list_editions,
                      :profile_read_model,
                      :public_profile_repository,
@@ -71,6 +94,8 @@ module PolishOpenSourceRank
                      :resolve_period,
                      :show_discord_panel,
                      :show_job_progress,
+                     :show_language_index,
+                     :show_language_ranking_detail,
                      :show_organization_profile,
                      :show_organization_repository_profile,
                      :show_package_ecosystem_rankings,
@@ -116,21 +141,7 @@ module PolishOpenSourceRank
 
       def html_revision
         files_revision(
-          'app/views/layout.erb',
-          'app/views/about.erb',
-          'app/views/editions.erb',
-          'app/views/package_ecosystem.erb',
-          'app/views/package_profile.erb',
-          'app/views/package_ranking_detail.erb',
-          'app/views/package_ranking_table.erb',
-          'app/views/packages.erb',
-          'app/views/ranking_detail.erb',
-          'app/views/rankings.erb',
-          'app/views/organization_profile.erb',
-          'app/views/organization_repository_profile.erb',
-          'app/views/repository_profile.erb',
-          'app/views/user_profile.erb',
-          'app/public/css/application.css',
+          *HTML_REVISION_FILES,
           "config/locales/#{current_locale}.yml"
         )
       end

@@ -88,6 +88,18 @@ module PolishOpenSourceRank
         )
       end
 
+      def show_language_index
+        @show_language_index ||= Contexts::Languages::Application::ShowLanguageIndex.new(
+          language_ranking_read_model: language_ranking_read_model
+        )
+      end
+
+      def show_language_ranking_detail
+        @show_language_ranking_detail ||= Contexts::Languages::Application::ShowLanguageRankingDetail.new(
+          language_ranking_read_model: language_ranking_read_model
+        )
+      end
+
       def render_badge
         @render_badge ||= Contexts::Publication::Application::RenderBadge.new(profile_read_model: profile_read_model)
       end
@@ -152,6 +164,11 @@ module PolishOpenSourceRank
       def package_ranking_read_model
         @package_ranking_read_model ||=
           Contexts::Packages::Infrastructure::SQLite::SQLitePackageRankingReadModel.new(database)
+      end
+
+      def language_ranking_read_model
+        @language_ranking_read_model ||=
+          Contexts::Languages::Infrastructure::SQLite::SQLiteLanguageRankingReadModel.new(database)
       end
 
       def public_profile_repository

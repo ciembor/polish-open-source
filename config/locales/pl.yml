@@ -98,6 +98,7 @@ pl:
     country: "Polska"
     editions: "Edycje"
     language: "Język"
+    languages: "Języki"
     locations: "Rankingi lokalizacji"
     menu: "Menu"
     more_cities: "Więcej miast"
@@ -215,6 +216,28 @@ pl:
       stars: "Top 100 według gwiazdek repozytorium"
       trending: "Top 100 trendujących pakietów"
       top: "Top 100 według pobrań z 30 dni"
+  languages:
+    back: "Wróć do języków"
+    hero:
+      eyebrow: "Rankingi języków"
+      lede: "Języki programowania w polskich repozytoriach open source według liczby projektów, gwiazdek i trendu."
+    metric:
+      repository:
+        count: "Repozytoria"
+        stars:
+          count: "Gwiazdki repozytoriów"
+          delta: "Nowe gwiazdki"
+    ranking_title:
+      stars: "Top 100 języków według gwiazdek"
+      top: "Top 100 języków według liczby repozytoriów"
+      trending: "Top 100 trendujących języków"
+    repository_count: "%{count} repozytoriów"
+    seo:
+      index_description: "Rankingi języków programowania używanych w polskich repozytoriach open source."
+      index_title: "Języki open source - Polish Open Source"
+      ranking_description: "Top 100 języków programowania według metryki %{metric}."
+      ranking_title: "Języki open source: %{metric}"
+    title: "Języki"
   repositories:
     badge:
       alt: "Badge Polish Repo"
