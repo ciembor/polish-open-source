@@ -10,6 +10,17 @@ function moveChildren(children, destination) {
   children.forEach((node) => destination.appendChild(node));
 }
 
+let resizeFrame = 0;
+let originalSecondaryControls = null;
+
+function secondaryControls(nav) {
+  if (!originalSecondaryControls) {
+    originalSecondaryControls = Array.from(nav.querySelectorAll(".js-secondary-control"));
+  }
+
+  return originalSecondaryControls;
+}
+
 function restoreNavItems(nav) {
   const primaryCitySlot = nav.querySelector(".js-primary-city-slot");
   const secondaryControlsSlot = nav.querySelector(".js-secondary-controls-slot");
@@ -20,7 +31,7 @@ function restoreNavItems(nav) {
     moveChildren(Array.from(nav.querySelectorAll(".js-primary-city")), primaryCitySlot);
   }
   if (secondaryControlsSlot) {
-    moveChildren(Array.from(nav.querySelectorAll(".js-secondary-control")), secondaryControlsSlot);
+    moveChildren(secondaryControls(nav), secondaryControlsSlot);
   }
   if (moreCitiesPanel) {
     moveChildren(Array.from(moreCitiesPanel.querySelectorAll(".js-secondary-city")), moreCitiesPanel);
@@ -28,17 +39,21 @@ function restoreNavItems(nav) {
   if (hamburgerPanel) hamburgerPanel.replaceChildren();
 }
 
+function visibleNavItems(nav) {
+  return [
+    ...nav.querySelectorAll(":scope > .nav__link"),
+    ...nav.querySelectorAll(".js-primary-city-slot > .js-primary-city"),
+    nav.querySelector(".js-more-cities"),
+    ...nav.querySelectorAll(".js-secondary-controls-slot > .js-secondary-control"),
+    nav.querySelector(".js-hamburger:not([hidden])")
+  ].filter(Boolean);
+}
+
 function navOverflows(nav) {
-  const header = nav.closest(".site-header__inner");
-  if (!header) return nav.scrollWidth > nav.clientWidth;
+  const navRect = nav.getBoundingClientRect();
+  const childRects = visibleNavItems(nav).map((child) => child.getBoundingClientRect());
 
-  const headerStyle = window.getComputedStyle(header);
-  const columnGap = parseFloat(headerStyle.columnGap || headerStyle.gap || "0") || 0;
-  const brand = header.querySelector(".brand");
-  const brandWidth = brand ? brand.getBoundingClientRect().width : 0;
-  const availableWidth = header.clientWidth - brandWidth - columnGap;
-
-  return nav.scrollWidth > Math.floor(availableWidth);
+  return childRects.some((rect) => rect.left < navRect.left - 1 || rect.right > navRect.right + 1);
 }
 
 function moveLastPrimaryCity(nav) {
@@ -51,12 +66,16 @@ function moveLastPrimaryCity(nav) {
   return true;
 }
 
-function moveSecondaryControlsToHamburger(nav) {
+function moveCollapsibleControlToHamburger(nav) {
   const secondaryControlsSlot = nav.querySelector(".js-secondary-controls-slot");
   const hamburgerPanel = nav.querySelector(".js-hamburger-panel");
-  if (!secondaryControlsSlot || !hamburgerPanel || secondaryControlsSlot.children.length === 0) return false;
+  if (!secondaryControlsSlot || !hamburgerPanel) return false;
 
-  moveChildren(Array.from(secondaryControlsSlot.children), hamburgerPanel);
+  const controls = Array.from(secondaryControlsSlot.querySelectorAll(".js-collapsible-control"));
+  const control = controls[controls.length - 1];
+  if (!control) return false;
+
+  hamburgerPanel.insertBefore(control, hamburgerPanel.firstChild);
   return true;
 }
 
@@ -103,17 +122,25 @@ function ensureNavLayout() {
   updateMenuLabels(nav);
   if (navOverflows(nav)) shortenMoreCitiesLabel(nav);
 
-  if (navOverflows(nav) && moveSecondaryControlsToHamburger(nav)) {
+  while (navOverflows(nav) && moveCollapsibleControlToHamburger(nav)) {
     updateHamburger(nav);
   }
 
   updateHamburger(nav);
 }
 
-window.addEventListener("resize", () => {
-  window.requestAnimationFrame(ensureNavLayout);
-});
+function scheduleNavLayout() {
+  if (resizeFrame) window.cancelAnimationFrame(resizeFrame);
+  resizeFrame = window.requestAnimationFrame(() => {
+    resizeFrame = 0;
+    ensureNavLayout();
+  });
+}
+
+window.addEventListener("resize", scheduleNavLayout);
 
 window.addEventListener("DOMContentLoaded", () => {
   ensureNavLayout();
 });
+
+window.addEventListener("load", ensureNavLayout);

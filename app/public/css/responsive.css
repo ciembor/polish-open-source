@@ -68,6 +68,16 @@
   }
 }
 
+@media (max-width: 600px) {
+  .brand {
+    font-size: 0;
+  }
+
+  .brand img {
+    margin-right: 0;
+  }
+}
+
 @media (max-width: 680px) {
   .hero__inner {
     grid-template-columns: 1fr;
@@ -90,5 +100,15 @@
 
   .profile-identity {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 440px) {
+  .nav-pill--github .nav-pill__icon {
+    margin-right: 0;
+  }
+
+  .nav-pill--github span {
+    display: none;
   }
 }
