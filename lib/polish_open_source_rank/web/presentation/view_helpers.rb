@@ -4,12 +4,30 @@ module PolishOpenSourceRank
   module Web
     module Presentation
       module ViewHelpers
+        METRIC_ICONS = {
+          total_stars: '⭐',
+          monthly_stars_delta: '⭐',
+          stargazers_count: '⭐',
+          repository_stars_count: '⭐',
+          repository_stars_delta: '⭐',
+          downloads_30d: '📥',
+          downloads_7d: '📥',
+          downloads_total: '📥',
+          public_activity_count: '🔧'
+        }.freeze
+
         def h(value)
           Rack::Utils.escape_html(value.to_s)
         end
 
         def number(value)
           value.to_i.to_s.reverse.gsub(/(\d{3})(?=\d)/, '\1 ').reverse
+        end
+
+        def metric_value(metric, value)
+          icon = METRIC_ICONS[metric.to_sym]
+          formatted = number(value)
+          icon ? "#{icon} #{formatted}" : formatted
         end
 
         def t(key, values = {})

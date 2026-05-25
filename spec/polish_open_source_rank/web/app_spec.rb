@@ -865,6 +865,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('<title>Języki open source - Polish Open Source</title>')
     expect(response.body).to include('Ruby')
     expect(response.body).to include('Top 10 języków według liczby repozytoriów')
+    expect(response.body).to include('⭐ 31 110')
     expect(response.body).to include('href="/latest/languages/Ruby"')
     expect(response.body).to include('href="/latest/languages/top"')
     expect(response.body).not_to include('00Baarti/Strona-QUIZ')
@@ -882,6 +883,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('Organizacje')
     expect(response.body).to include('Top 10 według gwiazdek')
     expect(response.body).to include('Top 10 trendujących w miesiącu')
+    expect(response.body).to include('⭐ 12 345')
     expect(response.body).to include('alice/app')
     expect(response.body).to include('polish-org/toolkit')
     expect(response.body).to include('href="/latest/languages/Ruby/users/top"')
@@ -920,6 +922,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('Top 10 według pobrań z 30 dni')
     expect(response.body).to include('Top 10 repozytoriów według gwiazdek')
     expect(response.body).to include('Top 10 trendujących w miesiącu')
+    expect(response.body).to include('📥 1 000')
+    expect(response.body).to include('⭐ 12 345')
     expect(response.body).to include('href="/latest/packages/npm/users/top"')
   end
 
@@ -981,6 +985,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('rel="canonical" href="https://rank.example/packages/npm/names/')
     expect(response.body).to include('"@type": "SoftwareApplication"')
     expect(response.body).to include('n/a')
+    expect(response.body).to include('📥 1 000')
+    expect(response.body).to include('⭐ 12 345')
     expect(response.body).to include('href="/repositories/github/alice/app"')
   end
 
@@ -997,6 +1003,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   def expect_primary_ranking_pages(responses)
     expect(responses.fetch(:user).status).to eq(200)
     expect(responses.fetch(:user).body).to include('Top 100 aktywnych użytkowników')
+    expect(responses.fetch(:user).body).to include('🔧 8')
     expect(responses.fetch(:repository).status).to eq(200)
     expect(responses.fetch(:repository).body).to include('Top 100 trendujących repozytoriów')
     expect(responses.fetch(:organization).status).to eq(200)
@@ -1317,6 +1324,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       '"@type": "WebSite"',
       '"@type": "CollectionPage"',
       '"name": "Top 10 według gwiazdek"',
+      '⭐ 12 345',
+      '🔧 8',
       'alice/app',
       'polish-org/toolkit',
       'href="/latest/users/top"',

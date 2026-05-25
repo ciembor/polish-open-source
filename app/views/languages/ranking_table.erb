@@ -16,7 +16,7 @@
           </div>
           <div class="ranking-list__metrics">
             <span class="metric" title="<%= h metric_label %>" aria-label="<%= h metric_label %>: <%= h number(row.fetch(metric)) %>">
-              <%= h number(row.fetch(metric)) %>
+              <%= h metric_value(metric, row.fetch(metric)) %>
             </span>
           </div>
         </li>
