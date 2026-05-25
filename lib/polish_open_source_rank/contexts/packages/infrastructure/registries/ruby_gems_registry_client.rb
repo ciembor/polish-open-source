@@ -24,11 +24,12 @@ module PolishOpenSourceRank
               return Helpers.fetch_error(result) unless result.status == 'ok'
 
               package = registry_package(package_name, result.body)
+              dependents_count = reverse_dependencies_count(package_name)
               snapshot = Domain::RegistryPackageSnapshot.new(
                 ecosystem: 'rubygems',
                 package_name: package_name,
                 downloads_total: result.body['downloads'],
-                dependents_count: result.body['reverse_dependencies_count'],
+                dependents_count: dependents_count,
                 latest_version: package.latest_version
               )
               Domain::RegistryFetchResult.new(status: 'ok', package: package, snapshot: snapshot)
@@ -37,6 +38,14 @@ module PolishOpenSourceRank
             private
 
             attr_reader :http_client
+
+            def reverse_dependencies_count(package_name)
+              path = "/api/v1/gems/#{Helpers.escaped_segment(package_name)}/reverse_dependencies.json"
+              result = http_client.get_json(path)
+              return result.body.length if result.status == 'ok' && result.body.is_a?(Array)
+
+              nil
+            end
 
             def registry_package(package_name, body)
               Domain::RegistryPackage.new(

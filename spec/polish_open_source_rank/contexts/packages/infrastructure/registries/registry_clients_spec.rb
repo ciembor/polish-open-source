@@ -99,7 +99,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
   end
 
   it 'maps RubyGems metadata, totals, latest version, links, and reverse dependencies' do
-    stub_http(response('200', rubygems_body))
+    stub_http(response('200', rubygems_body), response('200', %w[app plugin cli]))
 
     result = client(:RubyGemsRegistryClient).fetch('polish-tool')
 
@@ -110,7 +110,19 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
       license: 'MIT',
       latest_version: '2.0.0'
     )
-    expect(result.snapshot.to_h).to include(downloads_total: 12_345, dependents_count: 8)
+    expect(result.snapshot.to_h).to include(downloads_total: 12_345, dependents_count: 3)
+    expect(requests).to include(
+      { host: 'rubygems.org', path: '/api/v1/gems/polish-tool/reverse_dependencies.json' }
+    )
+  end
+
+  it 'keeps RubyGems metadata when reverse dependencies are unavailable' do
+    stub_http(response('200', rubygems_body), response('500', {}))
+
+    result = client(:RubyGemsRegistryClient, execution: { max_retries: 0 }).fetch('polish-tool')
+
+    expect(result).to be_ok
+    expect(result.snapshot.to_h).to include(downloads_total: 12_345, dependents_count: nil)
   end
 
   it 'maps crates.io metadata and sends an explicit user agent' do
@@ -365,8 +377,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
       version: '2.0.0',
       source_code_uri: 'https://github.com/acme/polish-tool',
       homepage_uri: 'https://example.com/polish-tool',
-      licenses: ['MIT'],
-      reverse_dependencies_count: 8
+      licenses: ['MIT']
     }
   end
 
