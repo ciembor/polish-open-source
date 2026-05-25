@@ -75,6 +75,17 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     expect(queue.pending(period, limit: 10)).to be_empty
   end
 
+  it 'includes already scanned repositories when refreshing manifest detection' do
+    seed_user(id: 1, login: 'alice')
+    seed_user_repository(id: 101, owner_id: 1, owner: 'alice', full_name: 'alice/app', stars: 20, delta: 0)
+    queue.enqueue(period, limit: 10)
+    scan_id = scans.first.fetch(:id)
+    queue.mark_scanned(scan_id, tree_sha: 'abc123', tree_truncated: false, manifest_count: 1)
+
+    expect(queue.pending(period, limit: 10)).to be_empty
+    expect(queue.pending(period, limit: 10, refresh: true).map { |scan| scan.fetch(:id) }).to eq([scan_id])
+  end
+
   it 'returns interrupted processing scans to the retryable queue' do
     seed_processing_scan(full_name: 'alice/stale', updated_at: '2026-05-23T09:59:59Z')
     seed_processing_scan(full_name: 'alice/current', updated_at: '2026-05-23T10:30:00Z', repository_source_id: 2)

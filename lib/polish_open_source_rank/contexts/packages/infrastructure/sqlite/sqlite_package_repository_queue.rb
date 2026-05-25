@@ -7,6 +7,7 @@ module PolishOpenSourceRank
         module SQLite
           class SQLitePackageRepositoryQueue
             RETRYABLE_STATUSES = %w[pending failed].freeze
+            REFRESHABLE_STATUSES = %w[pending failed scanned].freeze
             STALE_PROCESSING_SECONDS = 60 * 60
 
             def initialize(database, clock: -> { Time.now.utc })
@@ -18,10 +19,10 @@ module PolishOpenSourceRank
               insert_scans(period_start(period), bounded_limit(limit), include_forks)
             end
 
-            def pending(period, limit:, ecosystem: nil)
+            def pending(period, limit:, ecosystem: nil, refresh: false)
               validate_ecosystem!(ecosystem)
               package_repository_scans
-                .where(period_start: period_start(period), status: RETRYABLE_STATUSES)
+                .where(period_start: period_start(period), status: statuses_for(refresh))
                 .order(Sequel.asc(:id))
                 .limit(bounded_limit(limit))
                 .all
@@ -62,6 +63,10 @@ module PolishOpenSourceRank
             private
 
             attr_reader :clock, :database
+
+            def statuses_for(refresh)
+              refresh ? REFRESHABLE_STATUSES : RETRYABLE_STATUSES
+            end
 
             def validate_ecosystem!(ecosystem)
               return if Contexts::Packages::Domain::Ecosystem.supported?(ecosystem)
