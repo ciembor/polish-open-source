@@ -64,7 +64,6 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     expect(repository.previous_organization_repository_stargazers_count(period, 'github', 200)).to eq(17)
   end
 
-  # rubocop:disable RSpec/ExampleLength
   it 'retries snapshot writes as an update when the insert races with another writer' do
     initial_scope = double('initial scope')
     dataset = double('dataset')
@@ -107,7 +106,6 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
       }
     ).twice
   end
-  # rubocop:enable RSpec/ExampleLength
 
   def row(table)
     database.fetch_all("SELECT * FROM #{table}").first

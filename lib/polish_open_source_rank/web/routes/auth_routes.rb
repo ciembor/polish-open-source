@@ -14,80 +14,25 @@ module PolishOpenSourceRank
         class << self
           private
 
-          # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
           def register_github_routes(app)
             app.get '/auth/github' do
-              session[:github_oauth_state] = SecureRandom.hex(24)
-              redirect github_oauth_client.authorize_url(
-                state: session.fetch(:github_oauth_state),
-                redirect_uri: oauth_callback_url('/auth/github/callback')
-              )
+              Routes::AuthFlow.new(self).start_github_oauth
             end
 
             app.get '/auth/github/callback' do
-              halt 400 unless secure_oauth_state?(:github_oauth_state)
-
-              access_token = github_oauth_client.exchange_code(
-                code: params.fetch('code'),
-                redirect_uri: oauth_callback_url('/auth/github/callback')
-              )
-              github_user = github_oauth_client.user(access_token)
-              profile = public_github_profile(github_user.fetch('login')) ||
-                        register_public_github_profile.call(github_profile: github_user, period_start: latest_period)
-
-              session[:current_user] = {
-                platform: 'github',
-                login: profile.fetch(:login),
-                github_id: profile.fetch(:github_id)
-              }
-              redirect app_path(user_profile_path(profile))
-            rescue Contexts::Publication::Application::RegisterPublicGitHubProfile::IneligibleLocation
-              session[:current_user] = nil
-              session[:auth_notice] = 'missing_location'
-              redirect app_path('/latest')
+              Routes::AuthFlow.new(self).finish_github_oauth
             end
           end
 
-          # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
-
-          # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
           def register_discord_routes(app)
             app.get '/auth/discord' do
-              redirect app_path('/auth/github') unless current_user
-
-              session[:discord_oauth_state] = SecureRandom.hex(24)
-              redirect discord_oauth_client.authorize_url(
-                state: session.fetch(:discord_oauth_state),
-                redirect_uri: oauth_callback_url('/auth/discord/callback')
-              )
+              Routes::AuthFlow.new(self).start_discord_oauth
             end
 
             app.get '/auth/discord/callback' do
-              redirect app_path('/auth/github') unless current_user
-              halt 400 unless secure_oauth_state?(:discord_oauth_state)
-
-              token = discord_oauth_client.exchange_code(
-                code: params.fetch('code'),
-                redirect_uri: oauth_callback_url('/auth/discord/callback')
-              )
-              discord_user = discord_oauth_client.user(token.fetch('access_token'))
-              connect_discord_account.call(
-                current_user: current_user,
-                discord_user: discord_user,
-                access_token: token.fetch('access_token'),
-                period_start: latest_period,
-                welcome_channel_id: discord_welcome_channel_id
-              )
-              redirect discord_channel_url || app_path(user_profile_path(current_user))
-            rescue Auth::DiscordOAuthClient::Error
-              redirect_to_profile_after_discord_error('oauth')
-            rescue Contexts::Community::Application::ConnectDiscordAccount::PublicProfileNotFound
-              halt 404
-            rescue StandardError
-              redirect_to_profile_after_discord_error('sync')
+              Routes::AuthFlow.new(self).finish_discord_oauth
             end
           end
-          # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
           def register_session_routes(app)
             app.post '/logout' do

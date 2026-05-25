@@ -4,7 +4,6 @@ require 'sequel'
 
 module PolishOpenSourceRank
   module Infrastructure
-    # rubocop:disable Metrics/ClassLength
     class SQLiteJobProgress
       STALE_SECONDS = 10 * 60
       MONTHLY_PLATFORM_ORDER = %w[github gitlab codeberg].freeze
@@ -177,147 +176,10 @@ module PolishOpenSourceRank
       end
 
       def package_sections(period_start, now)
-        repository_scan_sections(period_start, now) +
-          manifest_sections(period_start, now) +
-          registry_package_sections(period_start, now) +
-          registry_snapshot_sections(period_start, now)
+        SQLitePackageJobProgressSections
+          .new(database: database, section_builder: method(:section))
+          .call(period_start, now)
       end
-
-      # rubocop:disable Metrics/MethodLength
-      def repository_scan_sections(period_start, now)
-        rows = fetch_all(<<~SQL, [period_start])
-          SELECT repository_kind,
-                 COUNT(*) AS total,
-                 SUM(CASE WHEN status = 'scanned' THEN 1 ELSE 0 END) AS done,
-                 SUM(CASE WHEN status IN ('pending', 'processing') THEN 1 ELSE 0 END) AS pending,
-                 SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed
-          FROM package_repository_scans
-          WHERE period_start = ?
-          GROUP BY repository_kind
-          ORDER BY repository_kind
-        SQL
-        rows.map do |row|
-          section(
-            label: "package repository scans / #{row.fetch(:repository_kind)}",
-            period_start: period_start,
-            job_kind: 'packages',
-            stage: 'repository_scan',
-            unit_kind: 'package_repository_scan',
-            total: row.fetch(:total).to_i,
-            done: row.fetch(:done).to_i,
-            pending: row.fetch(:pending).to_i,
-            failed: row.fetch(:failed).to_i,
-            skipped: 0,
-            status_detail: nil,
-            now: now
-          )
-        end
-      end
-
-      def manifest_sections(period_start, now)
-        rows = fetch_all(<<~SQL, [period_start])
-          SELECT package_manifests.ecosystem,
-                 COUNT(*) AS total,
-                 SUM(CASE WHEN package_manifests.parse_status = 'failed' THEN 0 ELSE 1 END) AS done,
-                 SUM(CASE WHEN package_manifests.parse_status = 'failed' THEN 1 ELSE 0 END) AS failed,
-                 SUM(CASE WHEN package_manifests.parse_status IN ('private', 'unpublished', 'custom_registry')
-                          THEN 1 ELSE 0 END) AS skipped
-          FROM package_manifests
-          INNER JOIN package_repository_scans
-            ON package_repository_scans.id = package_manifests.repository_scan_id
-          WHERE package_repository_scans.period_start = ?
-          GROUP BY package_manifests.ecosystem
-          ORDER BY package_manifests.ecosystem
-        SQL
-        rows.map do |row|
-          section(
-            label: "package manifests / #{row.fetch(:ecosystem)}",
-            period_start: period_start,
-            job_kind: 'packages',
-            stage: 'manifest_parse',
-            unit_kind: 'package_manifest',
-            ecosystem: row.fetch(:ecosystem),
-            total: row.fetch(:total).to_i,
-            done: row.fetch(:done).to_i,
-            pending: 0,
-            failed: row.fetch(:failed).to_i,
-            skipped: row.fetch(:skipped).to_i,
-            status_detail: nil,
-            now: now
-          )
-        end
-      end
-
-      def registry_package_sections(period_start, now)
-        rows = fetch_all(<<~SQL)
-          SELECT ecosystem,
-                 COUNT(*) AS total,
-                 SUM(CASE WHEN status = 'pending' THEN 0 ELSE 1 END) AS done,
-                 SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
-                 SUM(CASE WHEN status IN ('failed', 'rate_limited') THEN 1 ELSE 0 END) AS failed,
-                 SUM(CASE WHEN status = 'not_found' THEN 1 ELSE 0 END) AS skipped
-          FROM registry_packages
-          GROUP BY ecosystem
-          ORDER BY ecosystem
-        SQL
-        rows.map do |row|
-          section(
-            label: "registry packages / #{row.fetch(:ecosystem)}",
-            period_start: period_start,
-            job_kind: 'packages',
-            stage: 'registry_resolve',
-            unit_kind: 'registry_package',
-            ecosystem: row.fetch(:ecosystem),
-            total: row.fetch(:total).to_i,
-            done: row.fetch(:done).to_i,
-            pending: row.fetch(:pending).to_i,
-            failed: row.fetch(:failed).to_i,
-            skipped: row.fetch(:skipped).to_i,
-            status_detail: nil,
-            now: now
-          )
-        end
-      end
-
-      def registry_snapshot_sections(period_start, now)
-        rows = fetch_all(<<~SQL, [period_start])
-          SELECT registry_packages.ecosystem,
-                 COUNT(*) AS total,
-                 COUNT(registry_package_snapshots.normalized_package_name) AS done,
-                 SUM(CASE WHEN registry_packages.status = 'active' THEN 1 ELSE 0 END) AS active,
-                 SUM(CASE WHEN registry_packages.status = 'pending' THEN 1 ELSE 0 END) AS pending,
-                 SUM(CASE WHEN registry_packages.status = 'not_found' THEN 1 ELSE 0 END) AS not_found,
-                 SUM(CASE WHEN registry_packages.status = 'rate_limited' THEN 1 ELSE 0 END) AS rate_limited,
-                 SUM(CASE WHEN registry_packages.status = 'failed' THEN 1 ELSE 0 END) AS failed
-          FROM registry_packages
-          LEFT JOIN registry_package_snapshots
-            ON registry_package_snapshots.ecosystem = registry_packages.ecosystem
-           AND registry_package_snapshots.normalized_package_name = registry_packages.normalized_package_name
-           AND registry_package_snapshots.period_start = ?
-          GROUP BY registry_packages.ecosystem
-          ORDER BY registry_packages.ecosystem
-        SQL
-        rows.map do |row|
-          done = row.fetch(:done).to_i
-          total = row.fetch(:total).to_i
-          section(
-            label: "registry snapshots / #{row.fetch(:ecosystem)}",
-            period_start: period_start,
-            job_kind: 'packages',
-            stage: 'registry_snapshot',
-            unit_kind: 'registry_snapshot',
-            ecosystem: row.fetch(:ecosystem),
-            total: total,
-            done: done,
-            pending: row.fetch(:pending).to_i,
-            failed: row.fetch(:failed).to_i + row.fetch(:rate_limited).to_i,
-            skipped: row.fetch(:not_found).to_i,
-            status_detail: registry_snapshot_detail(row),
-            now: now
-          )
-        end
-      end
-      # rubocop:enable Metrics/MethodLength
 
       def section(attributes)
         event_stats = work_event_stats(attributes)
@@ -403,16 +265,6 @@ module PolishOpenSourceRank
         'complete'
       end
 
-      def registry_snapshot_detail(row)
-        {
-          active: row.fetch(:active),
-          pending: row.fetch(:pending),
-          not_found: row.fetch(:not_found),
-          rate_limited: row.fetch(:rate_limited),
-          failed: row.fetch(:failed)
-        }.map { |status, count| "#{status}=#{count.to_i}" }.join(', ')
-      end
-
       def candidate_counts(table, period_start, platform)
         rows = database.dataset(table).where(period_start: period_start, platform: platform)
         total = rows.count
@@ -486,6 +338,5 @@ module PolishOpenSourceRank
         database.dataset(:job_work_events)
       end
     end
-    # rubocop:enable Metrics/ClassLength
   end
 end

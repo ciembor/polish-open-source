@@ -1,7 +1,68 @@
 # frozen_string_literal: true
 
+class FakeDiscordBot
+  def initialize
+    @handlers = {}
+    @server = FakeDiscordServer.new
+  end
+
+  def server(_id = nil)
+    @server
+  end
+
+  def ready(&block)
+    @handlers[:ready] = block
+  end
+
+  def invite_create(&block)
+    @handlers[:invite_create] = block
+  end
+
+  def invite_delete(&block)
+    @handlers[:invite_delete] = block
+  end
+
+  def member_join(&block)
+    @handlers[:member_join] = block
+  end
+
+  def run; end
+
+  def trigger(name, event = nil)
+    @handlers.fetch(name).call(event)
+  end
+end
+
+class FakeDiscordServer
+  attr_writer :invite_sets
+
+  def invites
+    invite_set = @invite_sets.shift
+    raise invite_set if invite_set.is_a?(StandardError)
+
+    invite_set
+  end
+end
+
+class JoinHandlerSpy
+  attr_reader :calls
+
+  def initialize
+    @calls = []
+  end
+
+  def call(**attributes)
+    calls << attributes
+    true
+  end
+end
+
+class FailingJoinHandler
+  def call(**_attributes)
+    raise 'sync failed'
+  end
+end
 RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordInviteBot do
-  # rubocop:disable RSpec/ExampleLength
   it 'builds production collaborators from configuration' do
     discord_bot = FakeDiscordBot.new
     database = instance_double(PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database)
@@ -40,7 +101,6 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::Discor
 
     expect(bot).to be_a(described_class)
   end
-  # rubocop:enable RSpec/ExampleLength
 
   it 'syncs a joined Discord member through the invite that changed', :aggregate_failures do
     discord_bot = FakeDiscordBot.new
@@ -118,7 +178,6 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::Discor
     expect(logger.string).to include('discord invite join failed for discord-1: RuntimeError: sync failed')
   end
 
-  # rubocop:disable Lint/ConstantDefinitionInBlock
   def invite(code, uses)
     instance_double(Discordrb::Invite, code: code, uses: uses)
   end
@@ -127,68 +186,4 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::Discor
     user = instance_double(Discordrb::User, id: user_id, global_name: username, username: username)
     instance_double(Discordrb::Events::ServerMemberAddEvent, user: user)
   end
-
-  class FakeDiscordBot
-    def initialize
-      @handlers = {}
-      @server = FakeDiscordServer.new
-    end
-
-    def server(_id = nil)
-      @server
-    end
-
-    def ready(&block)
-      @handlers[:ready] = block
-    end
-
-    def invite_create(&block)
-      @handlers[:invite_create] = block
-    end
-
-    def invite_delete(&block)
-      @handlers[:invite_delete] = block
-    end
-
-    def member_join(&block)
-      @handlers[:member_join] = block
-    end
-
-    def run; end
-
-    def trigger(name, event = nil)
-      @handlers.fetch(name).call(event)
-    end
-  end
-
-  class FakeDiscordServer
-    attr_writer :invite_sets
-
-    def invites
-      invite_set = @invite_sets.shift
-      raise invite_set if invite_set.is_a?(StandardError)
-
-      invite_set
-    end
-  end
-
-  class JoinHandlerSpy
-    attr_reader :calls
-
-    def initialize
-      @calls = []
-    end
-
-    def call(**attributes)
-      calls << attributes
-      true
-    end
-  end
-
-  class FailingJoinHandler
-    def call(**_attributes)
-      raise 'sync failed'
-    end
-  end
-  # rubocop:enable Lint/ConstantDefinitionInBlock
 end

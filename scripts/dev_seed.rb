@@ -7,140 +7,185 @@ require_relative '../lib/polish_open_source_rank'
 
 module PolishOpenSourceRank
   module Scripts
-    # rubocop:disable Metrics/ModuleLength
     module DevSeed
       module_function
 
-      USER_COUNT = 100
-      REPOS_PER_USER = 3
-
       def call(now: Time.now.utc)
-        configuration = Configuration.load
-        database = Shared::Infrastructure::SQLite::Database.open(configuration.database_path)
-        Infrastructure::PlatformSchemaMigration.new(database, Infrastructure::SQLiteSchema.sql).bootstrap!
+        Seeder.new(now: now).call
+      end
 
-        period = Shared::Domain::Period.previous_month(now.to_date)
-        period_start = period.start_date.to_s
-        period_end = period.end_date.to_s
-        timestamp = now.iso8601
+      class Seeder
+        USER_COUNT = 100
+        REPOS_PER_USER = 3
 
-        database.transaction do
-          ensure_finished_run(database, period_start, period_end, timestamp)
-          ensure_seeded_data(database, period_start, timestamp)
+        def initialize(now:)
+          @now = now
+          @configuration = Configuration.load
+          @database = Shared::Infrastructure::SQLite::Database.open(configuration.database_path)
         end
 
-        puts "Seeded #{USER_COUNT} demo users for period #{period_start} into #{configuration.database_path}"
-      end
+        def call
+          Infrastructure::PlatformSchemaMigration.new(database, Infrastructure::SQLiteSchema.sql).bootstrap!
+          database.transaction do
+            ensure_finished_run
+            ensure_seeded_data
+          end
+          puts "Seeded #{USER_COUNT} demo users for period #{period_start} into #{configuration.database_path}"
+        end
 
-      def ensure_finished_run(database, period_start, period_end, timestamp)
-        sync_runs = database.dataset(:sync_runs)
-        existing = sync_runs.where(period_start: period_start).first
-        return if existing
+        private
 
-        sync_runs.insert(
-          period_start: period_start,
-          period_end: period_end,
-          status: 'finished',
-          started_at: timestamp,
-          finished_at: timestamp,
-          error: nil
-        )
-      end
+        attr_reader :configuration, :database, :now
 
-      # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/BlockLength
-      def ensure_seeded_data(database, period_start, timestamp)
-        return if database.dataset(:users).count >= USER_COUNT
+        def ensure_finished_run
+          sync_runs = database.dataset(:sync_runs)
+          return if sync_runs.where(period_start: period_start).first
 
-        city_names = Contexts::Ranking::Domain::LocationCatalog::CITIES.map { |city| city.fetch(:name) }
-        city_names = %w[Krakow Warsaw Wroclaw Gdansk Poznan] if city_names.empty?
+          sync_runs.insert(
+            period_start: period_start,
+            period_end: period.end_date.to_s,
+            status: 'finished',
+            started_at: timestamp,
+            finished_at: timestamp,
+            error: nil
+          )
+        end
 
-        users = database.dataset(:users)
-        user_stats = database.dataset(:user_monthly_stats)
-        repositories = database.dataset(:repositories)
-        repo_stats = database.dataset(:repository_monthly_stats)
+        def ensure_seeded_data
+          return if database.dataset(:users).count >= USER_COUNT
 
-        seeded = 0
-        USER_COUNT.times do |index|
-          github_id = 10_000 + index
+          USER_COUNT.times { |index| seed_user(index) }
+        end
+
+        def seed_user(index)
+          user = demo_user(index)
+          database.dataset(:users).insert(user_record(user))
+          database.dataset(:user_monthly_stats).insert(user_stats_record(user))
+          seed_repositories(user)
+        end
+
+        def seed_repositories(user)
+          REPOS_PER_USER.times do |repo_index|
+            repository = demo_repository(user, repo_index)
+            database.dataset(:repositories).insert(repository_record(repository))
+            database.dataset(:repository_monthly_stats).insert(repository_stats_record(repository))
+          end
+        end
+
+        def demo_user(index)
           login = format('demo%03d', index + 1)
-          city = city_names[index % city_names.length]
           total_stars = ((USER_COUNT - index) * 25) + ((index % 7) * 3)
-          delta = [index % 9, 0].max
-          activity = (index % 13) + 1
-
-          users.insert(
-            platform: 'github',
-            github_id: github_id,
+          {
+            github_id: 10_000 + index,
             login: login,
             name: "Demo #{index + 1}",
-            location_raw: "#{city}, Poland",
-            city: city,
-            country: 'Poland',
-            email: nil,
-            homepage: "https://example.com/#{login}",
-            html_url: "https://github.com/#{login}",
-            avatar_url: "https://avatars.example/#{login}.png",
-            updated_at: timestamp
-          )
-
-          user_stats.insert(
-            period_start: period_start,
-            platform: 'github',
-            user_github_id: github_id,
-            login: login,
-            city: city,
-            country: 'Poland',
-            public_repo_count: REPOS_PER_USER,
+            city: city_names[index % city_names.length],
             total_stars: total_stars,
-            monthly_stars_delta: delta,
-            public_activity_count: activity,
-            updated_at: timestamp
-          )
-
-          REPOS_PER_USER.times do |repo_index|
-            repo_id = (github_id * 100) + repo_index + 1
-            name = "repo#{repo_index + 1}"
-            full_name = "#{login}/#{name}"
-            stars = [total_stars - (repo_index * 7), 1].max
-
-            repositories.insert(
-              platform: 'github',
-              github_id: repo_id,
-              owner_github_id: github_id,
-              owner_login: login,
-              name: name,
-              full_name: full_name,
-              description: "Demo repository #{repo_index + 1} for #{login}",
-              html_url: "https://github.com/#{full_name}",
-              homepage: nil,
-              language: %w[Ruby JavaScript Go].fetch((index + repo_index) % 3),
-              fork: 0,
-              archived: 0,
-              updated_at: timestamp
-            )
-
-            repo_stats.insert(
-              period_start: period_start,
-              platform: 'github',
-              repository_github_id: repo_id,
-              owner_github_id: github_id,
-              owner_login: login,
-              owner_city: city,
-              owner_country: 'Poland',
-              stargazers_count: stars,
-              monthly_stars_delta: [delta - repo_index, 0].max,
-              updated_at: timestamp
-            )
-          end
-
-          seeded += 1
+            delta: index % 9,
+            activity: (index % 13) + 1
+          }
         end
 
-        seeded
+        def demo_repository(user, repo_index)
+          name = "repo#{repo_index + 1}"
+          {
+            id: (user.fetch(:github_id) * 100) + repo_index + 1,
+            owner: user,
+            name: name,
+            full_name: "#{user.fetch(:login)}/#{name}",
+            stars: [user.fetch(:total_stars) - (repo_index * 7), 1].max,
+            delta: [user.fetch(:delta) - repo_index, 0].max,
+            language: %w[Ruby JavaScript Go].fetch((user.fetch(:github_id) + repo_index) % 3)
+          }
+        end
+
+        def user_record(user)
+          {
+            platform: 'github',
+            github_id: user.fetch(:github_id),
+            login: user.fetch(:login),
+            name: user.fetch(:name),
+            location_raw: "#{user.fetch(:city)}, Poland",
+            city: user.fetch(:city),
+            country: 'Poland',
+            email: nil,
+            homepage: "https://example.com/#{user.fetch(:login)}",
+            html_url: "https://github.com/#{user.fetch(:login)}",
+            avatar_url: "https://avatars.example/#{user.fetch(:login)}.png",
+            updated_at: timestamp
+          }
+        end
+
+        def user_stats_record(user)
+          {
+            period_start: period_start,
+            platform: 'github',
+            user_github_id: user.fetch(:github_id),
+            login: user.fetch(:login),
+            city: user.fetch(:city),
+            country: 'Poland',
+            public_repo_count: REPOS_PER_USER,
+            total_stars: user.fetch(:total_stars),
+            monthly_stars_delta: user.fetch(:delta),
+            public_activity_count: user.fetch(:activity),
+            updated_at: timestamp
+          }
+        end
+
+        def repository_record(repository)
+          owner = repository.fetch(:owner)
+          {
+            platform: 'github',
+            github_id: repository.fetch(:id),
+            owner_github_id: owner.fetch(:github_id),
+            owner_login: owner.fetch(:login),
+            name: repository.fetch(:name),
+            full_name: repository.fetch(:full_name),
+            description: "Demo repository #{repository.fetch(:name)} for #{owner.fetch(:login)}",
+            html_url: "https://github.com/#{repository.fetch(:full_name)}",
+            homepage: nil,
+            language: repository.fetch(:language),
+            fork: 0,
+            archived: 0,
+            updated_at: timestamp
+          }
+        end
+
+        def repository_stats_record(repository)
+          owner = repository.fetch(:owner)
+          {
+            period_start: period_start,
+            platform: 'github',
+            repository_github_id: repository.fetch(:id),
+            owner_github_id: owner.fetch(:github_id),
+            owner_login: owner.fetch(:login),
+            owner_city: owner.fetch(:city),
+            owner_country: 'Poland',
+            stargazers_count: repository.fetch(:stars),
+            monthly_stars_delta: repository.fetch(:delta),
+            updated_at: timestamp
+          }
+        end
+
+        def city_names
+          @city_names ||= Contexts::Ranking::Domain::LocationCatalog::CITIES
+                          .map { |city| city.fetch(:name) }
+                          .then { |names| names.empty? ? %w[Krakow Warsaw Wroclaw Gdansk Poznan] : names }
+        end
+
+        def period
+          @period ||= Shared::Domain::Period.previous_month(now.to_date)
+        end
+
+        def period_start
+          period.start_date.to_s
+        end
+
+        def timestamp
+          now.iso8601
+        end
       end
-      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength, Metrics/BlockLength
     end
-    # rubocop:enable Metrics/ModuleLength
   end
 end
 

@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
-# rubocop:disable RSpec/DescribeClass
+module ArchitectureDependencyRules
+end
 
-RSpec.describe 'architecture dependency rules' do
+RSpec.describe ArchitectureDependencyRules do
   def files_under(path)
     Dir[File.join(PolishOpenSourceRank.root, path, '**/*.rb')]
   end
@@ -128,5 +129,3 @@ RSpec.describe 'architecture dependency rules' do
     end
   end
 end
-
-# rubocop:enable RSpec/DescribeClass

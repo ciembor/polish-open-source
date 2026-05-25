@@ -1,7 +1,14 @@
 # frozen_string_literal: true
 
+class GatewaySpy
+  attr_reader :synced
+
+  def sync_joined_member(**attributes)
+    @synced = attributes
+  end
+end
+
 RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::DiscordInviteJoin do
-  # rubocop:disable RSpec/ExampleLength
   around do |example|
     old_env = ENV.to_h
     ENV['DISCORD_ROLE_TOP_10_PL'] = 'role-top-10'
@@ -14,41 +21,19 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::DiscordIn
   end
 
   it 'syncs a Discord member from a used invite code mapped to a ranked profile', :aggregate_failures do
-    setup = migrated_database
-    database = setup.fetch(:database)
-    invite_repository = PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite::SQLiteDiscordInviteRepository.new(database)
-    connection_repository =
-      PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite::SQLiteDiscordConnectionRepository.new(database)
-    access_read_model =
-      PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite::SQLiteContributorAccessReadModel.new(database)
-    period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-04')
-    run_repository = PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteSnapshotRunRepository.new(
-      database
-    )
-    snapshot_repository =
-      PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteSnapshotRepository.new(database)
-    run_id = run_repository.create(period)
-    snapshot_repository.upsert_user(user_attributes)
-    snapshot_repository.record_user_stats(user_stats(period))
-    invite_repository.record(
-      platform: 'github',
-      source_id: 1,
-      code: 'invite-for-alice',
-      url: 'https://discord.gg/invite-for-alice'
-    )
-    run_repository.finish(run_id)
+    dependencies = ranked_invite_dependencies
     gateway = GatewaySpy.new
 
     synced = described_class.new(
-      invite_repository: invite_repository,
-      connection_repository: connection_repository,
-      access_read_model: access_read_model,
+      invite_repository: dependencies.fetch(:invite_repository),
+      connection_repository: dependencies.fetch(:connection_repository),
+      access_read_model: dependencies.fetch(:access_read_model),
       discord_gateway: gateway,
       discord_role_map: PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordRoleMap.new
     ).call(invite_code: 'invite-for-alice', discord_user_id: 'discord-1', discord_username: 'Alice D')
 
     expect(synced).to be(true)
-    expect(connection_repository.find('github', 1)).to include(
+    expect(dependencies.fetch(:connection_repository).find('github', 1)).to include(
       discord_user_id: 'discord-1',
       discord_username: 'Alice D'
     )
@@ -61,7 +46,48 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::DiscordIn
     )
   end
 
-  # rubocop:enable RSpec/ExampleLength
+  def ranked_invite_dependencies
+    database = migrated_database.fetch(:database)
+    period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-04')
+    invite_repository = invite_repository(database)
+    run_repository = snapshot_run_repository(database)
+    snapshot_repository = snapshot_repository(database)
+    run_id = run_repository.create(period)
+    snapshot_repository.upsert_user(user_attributes)
+    snapshot_repository.record_user_stats(user_stats(period))
+    invite_repository.record(
+      platform: 'github',
+      source_id: 1,
+      code: 'invite-for-alice',
+      url: 'https://discord.gg/invite-for-alice'
+    )
+    run_repository.finish(run_id)
+    {
+      invite_repository: invite_repository,
+      connection_repository: connection_repository(database),
+      access_read_model: access_read_model(database)
+    }
+  end
+
+  def invite_repository(database)
+    PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite::SQLiteDiscordInviteRepository.new(database)
+  end
+
+  def connection_repository(database)
+    PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite::SQLiteDiscordConnectionRepository.new(database)
+  end
+
+  def access_read_model(database)
+    PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite::SQLiteContributorAccessReadModel.new(database)
+  end
+
+  def snapshot_run_repository(database)
+    PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteSnapshotRunRepository.new(database)
+  end
+
+  def snapshot_repository(database)
+    PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteSnapshotRepository.new(database)
+  end
 
   it 'ignores unknown invite codes' do
     database = migrated_database.fetch(:database)
@@ -119,14 +145,4 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::DiscordIn
     ).bootstrap!
     { database: database }
   end
-
-  # rubocop:disable Lint/ConstantDefinitionInBlock
-  class GatewaySpy
-    attr_reader :synced
-
-    def sync_joined_member(**attributes)
-      @synced = attributes
-    end
-  end
-  # rubocop:enable Lint/ConstantDefinitionInBlock
 end

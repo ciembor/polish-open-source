@@ -4,24 +4,23 @@ module PolishOpenSourceRank
   module Contexts
     module Ranking
       module Application
-        # rubocop:disable Metrics/ClassLength
         class RunMonthlySnapshot
+          include MonthlySnapshotWorkflow
+
           BATCH_SIZE = 50
           MINIMUM_REPOSITORY_STARS = 5
-
-          # rubocop:disable Metrics/ParameterLists
-          def initialize(store:, github: nil, sources: nil, classifier: Domain::LocationClassifier.new,
+          def initialize(store:, sources:, classifier: Domain::LocationClassifier.new,
                          catalog: Domain::LocationCatalog, logger: $stdout,
                          work_events: Operations::Application::JobWorkEventRecorder.new)
             @store = store
-            @sources = sources || [github]
+            @sources = sources
             @classifier = classifier
             @catalog = catalog
             @logger = logger
             @store_mutex = Mutex.new
             @work_events = work_events
+            @snapshot_factory = MonthlySnapshotFactory.new
           end
-          # rubocop:enable Metrics/ParameterLists
 
           def call(period, refresh: false, scope: nil, recalculate_stars: false)
             @scope = scope
@@ -40,7 +39,7 @@ module PolishOpenSourceRank
 
           private
 
-          attr_reader :catalog, :classifier, :logger, :sources, :store, :store_mutex, :work_events
+          attr_reader :catalog, :classifier, :logger, :snapshot_factory, :sources, :store, :store_mutex, :work_events
 
           def discover_source_candidates(period, source)
             catalog.search_terms.each do |term|
@@ -199,18 +198,21 @@ module PolishOpenSourceRank
           end
 
           def persist_profile(period, source, profile, location)
-            with_store { store.record_contributor_profile(contributor_profile(period, source, profile, location)) }
+            with_store do
+              store.record_contributor_profile(snapshot_factory.contributor_profile(period, source, profile, location))
+            end
             repository_metrics = persist_repositories(period, source, profile, location)
 
-            snapshot = contributor_snapshot(period, source, profile, location, repository_metrics)
+            snapshot = snapshot_factory.contributor_snapshot(period, source, profile, location, repository_metrics)
             with_store { store.record_contributor_snapshot(snapshot) }
           end
 
           def persist_organization_profile(period, source, profile, location)
-            with_store { store.record_organization_profile(organization_profile(period, source, profile, location)) }
+            profile_snapshot = snapshot_factory.organization_profile(period, source, profile, location)
+            with_store { store.record_organization_profile(profile_snapshot) }
             repository_metrics = persist_organization_repositories(period, source, profile, location)
 
-            snapshot = organization_snapshot(period, source, profile, location, repository_metrics)
+            snapshot = snapshot_factory.organization_snapshot(period, source, profile, location, repository_metrics)
             with_store { store.record_organization_snapshot(snapshot) }
           end
 
@@ -286,15 +288,21 @@ module PolishOpenSourceRank
             ) do
               next 'skipped' unless catalog_repository?(repository)
 
-              monthly_stars_delta = repository_delta(source, repository, period)
-              metrics.add(repository, monthly_stars_delta)
-              with_store do
-                store.record_repository_snapshot(
-                  repository_snapshot(period, source, profile, location, repository, monthly_stars_delta)
-                )
-              end
-              'stored'
+              store_repository(period, source, profile, location, repository, metrics)
             end
+          end
+
+          def store_repository(period, source, profile, location, repository, metrics)
+            monthly_stars_delta = repository_delta(source, repository, period)
+            metrics.add(repository, monthly_stars_delta)
+            with_store do
+              store.record_repository_snapshot(
+                snapshot_factory.repository_snapshot(
+                  period, source, profile, location, repository, monthly_stars_delta
+                )
+              )
+            end
+            'stored'
           end
 
           def persist_organization_repository(period, source, profile, location, repository, metrics)
@@ -309,101 +317,25 @@ module PolishOpenSourceRank
             ) do
               next 'skipped' unless catalog_repository?(repository)
 
-              monthly_stars_delta = organization_repository_delta(source, repository, period)
-              metrics.add(repository, monthly_stars_delta)
-              with_store do
-                store.record_organization_repository_snapshot(
-                  organization_repository_snapshot(period, source, profile, location, repository, monthly_stars_delta)
-                )
-              end
-              'stored'
+              store_organization_repository(period, source, profile, location, repository, metrics)
             end
+          end
+
+          def store_organization_repository(period, source, profile, location, repository, metrics)
+            monthly_stars_delta = organization_repository_delta(source, repository, period)
+            metrics.add(repository, monthly_stars_delta)
+            with_store do
+              store.record_organization_repository_snapshot(
+                snapshot_factory.organization_repository_snapshot(
+                  period, source, profile, location, repository, monthly_stars_delta
+                )
+              )
+            end
+            'stored'
           end
 
           def catalog_repository?(repository)
             repository.fetch(:stars) >= MINIMUM_REPOSITORY_STARS
-          end
-
-          def contributor_snapshot(period, source, profile, location, repository_metrics)
-            Domain::ContributorSnapshot.new(
-              **profile_snapshot_attributes(period, source, profile, location),
-              public_repository_count: repository_metrics.public_repository_count,
-              total_stars: repository_metrics.total_stars,
-              monthly_stars_delta: repository_metrics.monthly_stars_delta,
-              public_activity_count: source.public_activity_count(profile, period)
-            )
-          end
-
-          def contributor_profile(period, source, profile, location)
-            Domain::ContributorSnapshot.new(
-              **profile_snapshot_attributes(period, source, profile, location),
-              public_repository_count: 0,
-              total_stars: 0,
-              monthly_stars_delta: 0,
-              public_activity_count: 0
-            )
-          end
-
-          def repository_snapshot(period, source, profile, location, repository, monthly_stars_delta)
-            Domain::RepositorySnapshot.new(
-              period: period,
-              platform: source.platform,
-              source_id: repository.fetch(:source_id),
-              owner_source_id: profile.fetch(:source_id),
-              owner_login: profile.fetch(:login),
-              owner_city: location.city,
-              owner_country: location.country,
-              name: repository.fetch(:name),
-              full_name: repository.fetch(:full_name),
-              description: repository[:description],
-              html_url: repository.fetch(:html_url),
-              homepage: blank_to_nil(repository[:homepage]),
-              language: repository[:language],
-              fork: repository.fetch(:fork),
-              archived: repository.fetch(:archived),
-              stars: repository.fetch(:stars),
-              monthly_stars_delta: monthly_stars_delta
-            )
-          end
-
-          def organization_snapshot(period, source, profile, location, repository_metrics)
-            Domain::OrganizationSnapshot.new(
-              **profile_snapshot_attributes(period, source, profile, location),
-              public_repository_count: repository_metrics.public_repository_count,
-              total_stars: repository_metrics.total_stars,
-              monthly_stars_delta: repository_metrics.monthly_stars_delta
-            )
-          end
-
-          def organization_profile(period, source, profile, location)
-            Domain::OrganizationSnapshot.new(
-              **profile_snapshot_attributes(period, source, profile, location),
-              public_repository_count: 0,
-              total_stars: 0,
-              monthly_stars_delta: 0
-            )
-          end
-
-          def organization_repository_snapshot(period, source, profile, location, repository, monthly_stars_delta)
-            Domain::OrganizationRepositorySnapshot.new(
-              period: period,
-              platform: source.platform,
-              source_id: repository.fetch(:source_id),
-              organization_source_id: profile.fetch(:source_id),
-              organization_login: profile.fetch(:login),
-              organization_city: location.city,
-              organization_country: location.country,
-              name: repository.fetch(:name),
-              full_name: repository.fetch(:full_name),
-              description: repository[:description],
-              html_url: repository.fetch(:html_url),
-              homepage: blank_to_nil(repository[:homepage]),
-              language: repository[:language],
-              fork: repository.fetch(:fork),
-              archived: repository.fetch(:archived),
-              stars: repository.fetch(:stars),
-              monthly_stars_delta: monthly_stars_delta
-            )
           end
 
           def each_repository_for(source, profile, &)
@@ -420,106 +352,12 @@ module PolishOpenSourceRank
             source.repositories_for_organization(profile).each(&)
           end
 
-          def profile_snapshot_attributes(period, source, profile, location)
-            {
-              period: period,
-              platform: source.platform,
-              source_id: profile.fetch(:source_id),
-              login: profile.fetch(:login),
-              name: profile[:name],
-              location_raw: location.raw,
-              city: location.city,
-              country: location.country,
-              email: profile[:email],
-              homepage: blank_to_nil(profile[:homepage]),
-              html_url: profile.fetch(:html_url),
-              avatar_url: profile[:avatar_url]
-            }
-          end
-
           def candidate_login(candidate)
             candidate.fetch(:login)
           end
 
-          def blank_to_nil(value)
-            value if value.to_s.match?(/\S/)
-          end
-
           def recalculate_stars?
             @recalculate_stars
-          end
-
-          def run_source_snapshots(period, refresh_platforms:)
-            threads = sources.map do |source|
-              Thread.new { run_source_snapshot(period, source, refresh: refresh_platforms.include?(source.platform)) }
-            end
-            threads.each(&:join)
-            errors = threads.filter_map { |thread| thread[:error] }
-            raise errors.first if errors.length == sources.length
-          end
-
-          def complete_run(period, run_id)
-            return store.fail_run(run_id, 'Retryable candidates remain') if source_retryable_candidates?(period)
-            return if store.retryable_candidates?(period)
-
-            store.prune_rankings(period)
-            store.finish_run(run_id)
-          end
-
-          def source_retryable_candidates?(period)
-            store.retryable_candidates?(
-              period,
-              platforms: sources.map(&:platform),
-              candidate_types: active_candidate_types
-            )
-          end
-
-          def active_candidate_types
-            case @scope
-            when :users
-              [:users]
-            when :organizations
-              [:organizations]
-            else
-              %i[users organizations]
-            end
-          end
-
-          def run_source_snapshot(period, source, refresh:)
-            errors = []
-            errors.concat(run_user_source_snapshot(period, source, refresh: refresh)) unless @scope == :organizations
-            errors.concat(run_organization_source_snapshot(period, source, refresh: refresh)) unless @scope == :users
-            Thread.current[:error] = errors.compact.first
-          end
-
-          def run_user_source_snapshot(period, source, refresh:)
-            [
-              run_source_stage(source, 'process existing candidates') do
-                process_source_candidates(period, source, refresh: refresh)
-              end,
-              run_source_stage(source, 'discover') { discover_source_candidates(period, source) },
-              run_source_stage(source, 'process') { process_source_candidates(period, source, refresh: refresh) }
-            ]
-          end
-
-          def run_organization_source_snapshot(period, source, refresh:)
-            [
-              run_source_stage(source, 'process existing organizations') do
-                process_source_organizations(period, source, refresh: refresh)
-              end,
-              run_source_stage(source, 'discover organizations') { discover_source_organizations(period, source) },
-              run_source_stage(source, 'process organizations') do
-                process_source_organizations(period, source, refresh: refresh)
-              end
-            ]
-          end
-
-          def run_source_stage(source, stage)
-            yield
-            nil
-          rescue StandardError => e
-            log(source, "#{stage} failed: #{e.class}: #{e.message}")
-            e
           end
 
           def with_store(&)
@@ -538,7 +376,6 @@ module PolishOpenSourceRank
             )
           end
         end
-        # rubocop:enable Metrics/ClassLength
       end
     end
   end

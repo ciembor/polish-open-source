@@ -18,6 +18,8 @@ Metrics/BlockLength:
 
 Metrics/AbcSize:
   Max: 30
+  Exclude:
+    - "spec/**/*"
 
 Metrics/ClassLength:
   Max: 350
@@ -31,7 +33,7 @@ Metrics/ParameterLists:
   Max: 6
 
 RSpec/ExampleLength:
-  Max: 25
+  Max: 40
 
 RSpec/MultipleExpectations:
   Max: 10
