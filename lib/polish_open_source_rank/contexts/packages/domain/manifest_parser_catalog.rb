@@ -31,7 +31,22 @@ module PolishOpenSourceRank
             'control' => Parsers::DebianControlParser,
             'flake.nix' => Parsers::NixPackageParser,
             'default.nix' => Parsers::NixPackageParser,
-            'package.nix' => Parsers::NixPackageParser
+            'package.nix' => Parsers::NixPackageParser,
+            'DESCRIPTION' => Parsers::CranDescriptionParser,
+            'META.json' => Parsers::CpanManifestParser,
+            'META.yml' => Parsers::CpanManifestParser,
+            'META.yaml' => Parsers::CpanManifestParser,
+            'cpanfile' => Parsers::CpanManifestParser,
+            'Makefile.PL' => Parsers::CpanManifestParser,
+            'Build.PL' => Parsers::CpanManifestParser,
+            'package.yaml' => Parsers::HackageManifestParser,
+            'deps.edn' => Parsers::ClojarsManifestParser,
+            'project.clj' => Parsers::ClojarsManifestParser,
+            'build.boot' => Parsers::ClojarsManifestParser,
+            'Project.toml' => Parsers::JuliaProjectTomlParser,
+            'meta.yaml' => Parsers::CondaManifestParser,
+            'environment.yml' => Parsers::CondaManifestParser,
+            'environment.yaml' => Parsers::CondaManifestParser
           }.freeze
 
           def parse(path:, ecosystem:, content:)
@@ -45,6 +60,7 @@ module PolishOpenSourceRank
             return Parsers::HomebrewFormulaParser.new if ecosystem == 'homebrew'
             return Parsers::NuGetXmlParser.new if ecosystem == 'nuget'
             return Parsers::RpmSpecParser.new if ecosystem == 'rpm'
+            return Parsers::HackageManifestParser.new if ecosystem == 'hackage'
 
             PARSERS.fetch(File.basename(path)).new
           end

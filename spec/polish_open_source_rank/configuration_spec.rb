@@ -16,6 +16,9 @@ RSpec.describe PolishOpenSourceRank::Configuration do
       VCPKG_REGISTRY_REQUESTS_PER_MINUTE SWIFTPM_REGISTRY_REQUESTS_PER_MINUTE
       PUB_REGISTRY_REQUESTS_PER_MINUTE APT_REGISTRY_REQUESTS_PER_MINUTE
       RPM_REGISTRY_REQUESTS_PER_MINUTE NIX_REGISTRY_REQUESTS_PER_MINUTE
+      CRAN_REGISTRY_REQUESTS_PER_MINUTE CPAN_REGISTRY_REQUESTS_PER_MINUTE
+      HACKAGE_REGISTRY_REQUESTS_PER_MINUTE CLOJARS_REGISTRY_REQUESTS_PER_MINUTE
+      JULIA_REGISTRY_REQUESTS_PER_MINUTE CONDA_REGISTRY_REQUESTS_PER_MINUTE
     ]
     old_values = keys.to_h { |key| [key, ENV.fetch(key, nil)] }
     keys.each { |key| ENV.delete(key) }
@@ -132,7 +135,11 @@ RSpec.describe PolishOpenSourceRank::Configuration do
 
     expect(configuration.npm_registry_requests_per_minute).to eq(11)
     expect(configuration.crates_registry_requests_per_minute).to eq(7)
-    expect(configuration.package_registry_request_limits).to include(
+    expect(configuration.package_registry_request_limits).to include(expected_package_registry_limits)
+  end
+
+  def expected_package_registry_limits
+    {
       npm: 11,
       rubygems: 20,
       crates: 7,
@@ -150,8 +157,14 @@ RSpec.describe PolishOpenSourceRank::Configuration do
       pub: 20,
       apt: 20,
       rpm: 20,
-      nix: 20
-    )
+      nix: 20,
+      cran: 20,
+      cpan: 20,
+      hackage: 20,
+      clojars: 20,
+      julia: 20,
+      conda: 20
+    }
   end
 
   it 'requires a session secret in production' do

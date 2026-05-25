@@ -270,6 +270,75 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
     )
   end
 
+  it 'parses CRAN and CPAN manifests statically' do
+    expect(parse('CranDescriptionParser', 'DESCRIPTION', cran_description).to_h).to include(
+      ecosystem: 'cran',
+      package_name: 'polishcran',
+      homepage_url: 'https://github.com/acme/polishcran',
+      license: 'MIT',
+      parse_status: 'parsed'
+    )
+    expect(parse('CpanManifestParser', 'META.json', cpan_meta_json).to_h).to include(
+      ecosystem: 'cpan',
+      package_name: 'Acme-Polish',
+      repository_url: 'https://github.com/acme/acme-polish',
+      license: 'perl_5',
+      parse_status: 'parsed'
+    )
+    expect(parse('CpanManifestParser', 'Makefile.PL',
+                 "WriteMakefile(NAME => 'Acme::Polish', LICENSE => 'perl')")).to have_attributes(
+                   package_name: 'Acme-Polish',
+                   parse_status: 'partial'
+                 )
+    expect(parse('CpanManifestParser', 'META.yml', "name: Acme-Yaml\nversion: 1.0.0")).to have_attributes(
+      package_name: 'Acme-Yaml'
+    )
+    expect(parse('CpanManifestParser', 'META.json', '{')).to have_attributes(parse_status: 'failed')
+  end
+
+  it 'parses Hackage manifests statically' do
+    expect(parse('HackageManifestParser', 'polish.cabal', hackage_cabal).to_h).to include(
+      ecosystem: 'hackage',
+      package_name: 'polish-hackage',
+      repository_url: 'https://github.com/acme/polish-hackage',
+      license: 'BSD-3-Clause',
+      parse_status: 'parsed'
+    )
+  end
+
+  it 'parses Clojars manifests statically' do
+    expect(parse('ClojarsManifestParser', 'project.clj', clojars_project).to_h).to include(
+      ecosystem: 'clojars',
+      package_name: 'pl.example/polish-clj',
+      repository_url: 'https://github.com/acme/polish-clj',
+      license: 'EPL-2.0',
+      parse_status: 'parsed'
+    )
+    expect(parse('ClojarsManifestParser', 'deps.edn', '{:project/name "pl.example/deps"}')).to have_attributes(
+      package_name: 'pl.example/deps',
+      parse_status: 'partial'
+    )
+    expect(parse('ClojarsManifestParser', 'build.boot', "(def project 'pl.example/boot)")).to have_attributes(
+      package_name: 'pl.example/boot'
+    )
+  end
+
+  it 'parses Julia and Conda manifests statically' do
+    expect(parse('JuliaProjectTomlParser', 'Project.toml', julia_project).to_h).to include(
+      ecosystem: 'julia',
+      package_name: 'PolishJulia',
+      repository_url: 'https://github.com/acme/PolishJulia.jl',
+      parse_status: 'parsed'
+    )
+    expect(parse('CondaManifestParser', 'meta.yaml', conda_meta).to_h).to include(
+      ecosystem: 'conda',
+      package_name: 'polish-conda',
+      homepage_url: 'https://example.com/polish-conda',
+      license: 'BSD-3-Clause',
+      parse_status: 'parsed'
+    )
+  end
+
   def parse(parser_name, path, content)
     described_class.const_get(parser_name).new.parse(path: path, content: content)
   end
@@ -516,5 +585,67 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
         };
       }
     NIX
+  end
+
+  def cran_description
+    <<~DESCRIPTION
+      Package: polishcran
+      Version: 1.0.0
+      URL: https://github.com/acme/polishcran
+      License: MIT
+    DESCRIPTION
+  end
+
+  def cpan_meta_json
+    JSON.generate(
+      name: 'Acme-Polish',
+      version: '1.0.0',
+      license: ['perl_5'],
+      resources: {
+        repository: { url: 'https://github.com/acme/acme-polish' },
+        homepage: 'https://example.com/acme-polish'
+      }
+    )
+  end
+
+  def hackage_cabal
+    <<~CABAL
+      name: polish-hackage
+      version: 0.1.0.0
+      homepage: https://example.com/polish-hackage
+      license: BSD-3-Clause
+      source-repository head
+        type: git
+        location: https://github.com/acme/polish-hackage
+    CABAL
+  end
+
+  def clojars_project
+    <<~CLOJURE
+      (defproject pl.example/polish-clj "1.0.0"
+        :url "https://github.com/acme/polish-clj"
+        :license {:name "EPL-2.0"})
+    CLOJURE
+  end
+
+  def julia_project
+    <<~TOML
+      name = "PolishJulia"
+      uuid = "11111111-1111-1111-1111-111111111111"
+      version = "1.0.0"
+      repo = "https://github.com/acme/PolishJulia.jl"
+    TOML
+  end
+
+  def conda_meta
+    <<~YAML
+      package:
+        name: polish-conda
+        version: 1.0.0
+      about:
+        home: https://example.com/polish-conda
+        dev_url: https://github.com/acme/polish-conda
+        license: BSD-3-Clause
+    YAML
   end
 end

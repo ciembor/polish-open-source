@@ -40,6 +40,30 @@ module PolishOpenSourceRank
               nix: Registry.new(
                 web_url: 'https://search.nixos.org/packages?query=%s',
                 metric_source: 'nixpkgs_popularity_unavailable'
+              ),
+              cran: Registry.new(
+                web_url: 'https://cran.r-project.org/package=%s',
+                metric_source: 'cran_popularity_unavailable'
+              ),
+              cpan: Registry.new(
+                web_url: 'https://metacpan.org/dist/%s',
+                metric_source: 'cpan_popularity_unavailable'
+              ),
+              hackage: Registry.new(
+                web_url: 'https://hackage.haskell.org/package/%s',
+                metric_source: 'hackage_popularity_unavailable'
+              ),
+              clojars: Registry.new(
+                web_url: 'https://clojars.org/%s',
+                metric_source: 'clojars_popularity_unavailable'
+              ),
+              julia: Registry.new(
+                web_url: 'https://juliahub.com/ui/Packages/General/%s',
+                metric_source: 'julia_registry_popularity_unavailable'
+              ),
+              conda: Registry.new(
+                web_url: 'https://anaconda.org/search?q=%s',
+                metric_source: 'conda_popularity_unavailable'
               )
             }.freeze
 
