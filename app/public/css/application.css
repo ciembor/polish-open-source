@@ -44,7 +44,7 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   min-height: 72px;
   gap: 24px;
 }
@@ -65,7 +65,7 @@ a {
 .nav {
   align-items: center;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-end;
   gap: 8px 14px;
   flex: 1 1 auto;
