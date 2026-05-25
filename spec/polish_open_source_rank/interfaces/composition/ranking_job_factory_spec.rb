@@ -107,7 +107,6 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::RankingJobFactory 
       .and_return(migration)
   end
 
-  # rubocop:disable Metrics/AbcSize
   def stub_ranking_adapters(database, source_request_log)
     snapshot_run_repository =
       instance_double(PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteSnapshotRunRepository)
@@ -144,5 +143,4 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::RankingJobFactory 
     allow(PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteCrawlJobRepository)
       .to receive(:new).with(database).and_return(crawl_job_repository)
   end
-  # rubocop:enable Metrics/AbcSize
 end

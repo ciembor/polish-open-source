@@ -522,15 +522,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(fetch_candidate('alice')).to include(status: 'processed', error: nil)
   end
 
-  # rubocop:disable RSpec/ExampleLength
   it 'discovers organizations, stores organization rankings, and persists organization repositories' do
-    organization_source = FakeOrganizationGitHub.new
-    organization_source.organization_candidates = { 'Poland' => [{ source_id: 9, login: 'polish-org' }] }
-    organization_source.organizations = { 'polish-org' => profile(9, 'polish-org', 'Warsaw, Poland') }
-    organization_source.organization_repositories = {
-      'polish-org' => [repository(90, 'polish-org/toolkit', 33)]
-    }
-    organization_source.deltas = { 'polish-org/toolkit' => 6 }
+    organization_source = ranked_organization_source
 
     run_job_with(source: organization_source)
 
@@ -553,7 +546,15 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     )
     expect(organization_source.organization_calls).to eq([['polish-org', 9]])
   end
-  # rubocop:enable RSpec/ExampleLength
+
+  def ranked_organization_source
+    FakeOrganizationGitHub.new.tap do |source|
+      source.organization_candidates = { 'Poland' => [{ source_id: 9, login: 'polish-org' }] }
+      source.organizations = { 'polish-org' => profile(9, 'polish-org', 'Warsaw, Poland') }
+      source.organization_repositories = { 'polish-org' => [repository(90, 'polish-org/toolkit', 33)] }
+      source.deltas = { 'polish-org/toolkit' => 6 }
+    end
+  end
 
   it 'streams organization repositories while calculating organization metrics' do
     organization_source = StreamingOrganizationGitHub.new
@@ -722,7 +723,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
 
   it 'uses production defaults for catalog and logger' do
     expect do
-      described_class.new(store: store, github: github).call(period)
+      described_class.new(store: store, sources: [github]).call(period)
     end.to output(/\[github\] candidate discovery finished/).to_stdout
   end
 
@@ -853,7 +854,9 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     github.fail_errors = { 'broken' => DistinctToStringError.new('boom') }
     logger = StringIO.new
 
-    expect { described_class.new(store: store, github: github, catalog: catalog, logger: logger).call(period) }.not_to(
+    expect do
+      described_class.new(store: store, sources: [github], catalog: catalog, logger: logger).call(period)
+    end.not_to(
       raise_error
     )
     expect(store.pending_candidates(period)).to be_empty
@@ -873,7 +876,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     github.profiles = { 'alice' => profile(1, 'alice', 'Krakow, Poland') }
     logger = StringIO.new
 
-    described_class.new(store: store, github: github, catalog: catalog, logger: logger).call(period)
+    described_class.new(store: store, sources: [github], catalog: catalog, logger: logger).call(period)
 
     expect(logger.string).to include('[github] processing 2 candidates')
     expect(logger.string).to include('[github] candidate processing finished')
@@ -893,7 +896,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
 
     described_class.new(
       store: fake_store,
-      github: github,
+      sources: [github],
       catalog: double('catalog', search_terms: []),
       logger: StringIO.new
     ).call(period)
@@ -947,7 +950,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
   it 'flushes job logs as they are written' do
     logger = FlushTrackingLogger.new
 
-    described_class.new(store: store, github: github, catalog: catalog, logger: logger).call(period)
+    described_class.new(store: store, sources: [github], catalog: catalog, logger: logger).call(period)
 
     expect(logger.lines).not_to be_empty
     expect(logger.flushes).to eq(logger.lines.length)
@@ -955,7 +958,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
 
   it 'accepts loggers without flush support' do
     expect do
-      described_class.new(store: store, github: github, catalog: catalog, logger: NoFlushLogger.new).call(period)
+      described_class.new(store: store, sources: [github], catalog: catalog, logger: NoFlushLogger.new).call(period)
     end.not_to raise_error
   end
 
@@ -1260,7 +1263,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
   end
 
   def job
-    described_class.new(store: store, github: github, catalog: catalog, logger: StringIO.new)
+    described_class.new(store: store, sources: [github], catalog: catalog, logger: StringIO.new)
   end
 
   def upsert_user(attributes)

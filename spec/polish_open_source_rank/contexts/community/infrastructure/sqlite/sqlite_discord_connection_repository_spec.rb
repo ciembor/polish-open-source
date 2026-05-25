@@ -34,7 +34,6 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
     )
   end
 
-  # rubocop:disable RSpec/ExampleLength
   it 'retries as an update when the insert races with another writer' do
     initial_scope = double('initial scope')
     dataset = double('dataset')
@@ -68,7 +67,6 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
       }
     ).twice
   end
-  # rubocop:enable RSpec/ExampleLength
 
   def seed_user
     database.execute(

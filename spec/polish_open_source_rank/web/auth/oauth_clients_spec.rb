@@ -190,7 +190,6 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
     )
   end
 
-  # rubocop:disable RSpec/ExampleLength
   it 'treats missing Discord invites as unavailable and raises typed errors' do
     configuration = PolishOpenSourceRank::Configuration.load
     gateway = PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway.new(configuration)
@@ -224,7 +223,6 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
       )
     end.to raise_error(PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway::Error)
   end
-  # rubocop:enable RSpec/ExampleLength
 
   it 'maps configured Discord role keys to role IDs' do
     ENV['DISCORD_ROLE_TOP_10_PL'] = 'top-10-role'

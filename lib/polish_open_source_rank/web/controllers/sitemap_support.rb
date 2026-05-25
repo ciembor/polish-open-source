@@ -3,20 +3,7 @@
 module PolishOpenSourceRank
   module Web
     module Controllers
-      # rubocop:disable Metrics/ModuleLength
       module SitemapSupport
-        SITEMAP_RANKING_SEGMENTS = [
-          %w[users top],
-          %w[users trending],
-          %w[users active],
-          %w[repositories top],
-          %w[repositories trending],
-          %w[organizations top],
-          %w[organizations trending],
-          %w[organization-repositories top],
-          %w[organization-repositories trending]
-        ].freeze
-
         private
 
         def render_robots_txt
@@ -47,145 +34,9 @@ module PolishOpenSourceRank
         end
 
         def sitemap_entries
-          lastmod = Time.now.utc.strftime('%Y-%m-%d')
-          static_paths = ['/', '/latest', '/about', '/editions', '/languages', '/packages']
-          locale_paths = locale_variants(
-            static_paths + ranking_paths + language_paths + package_paths + edition_paths + profile_paths
-          )
-
-          locale_paths.map do |path|
-            { loc: full_url(app_path(path)), lastmod: lastmod }
-          end
-        end
-
-        def ranking_paths
-          latest_paths = SITEMAP_RANKING_SEGMENTS.map { |kind, metric| "/latest/#{kind}/#{metric}" }
-          city_paths = Contexts::Ranking::Domain::LocationCatalog.city_slugs.flat_map do |slug|
-            ["/locations/#{slug}", "/latest/locations/#{slug}"] + city_ranking_scope_paths("/latest/locations/#{slug}")
-          end
-
-          edition_period_slugs.each_with_object(latest_paths + city_paths) do |period_slug, paths|
-            paths << "/#{period_slug}"
-            paths.concat(Contexts::Ranking::Domain::LocationCatalog.city_slugs.map do |slug|
-              "/#{period_slug}/locations/#{slug}"
-            end)
-            paths.concat(ranking_scope_paths("/#{period_slug}"))
-            paths.concat(Contexts::Ranking::Domain::LocationCatalog.city_slugs.flat_map do |slug|
-              city_ranking_scope_paths("/#{period_slug}/locations/#{slug}")
-            end)
-          end
-        end
-
-        def ranking_scope_paths(prefix)
-          SITEMAP_RANKING_SEGMENTS.map { |kind, metric| "#{prefix}/#{kind}/#{metric}" }
-        end
-
-        def city_ranking_scope_paths(prefix)
-          ranking_scope_paths(prefix)
-        end
-
-        def package_paths
-          latest_package_paths + edition_package_paths
-        end
-
-        def language_paths
-          latest_language_paths + edition_language_paths
-        end
-
-        def latest_language_paths
-          period = latest_period
-          return [] unless period
-
-          language_scope_paths('/latest')
-        end
-
-        def edition_language_paths
-          edition_period_slugs.flat_map { |period_slug| language_scope_paths("/#{period_slug}") }
-        end
-
-        def language_scope_paths(prefix)
-          Contexts::Languages::Domain::LanguageRankingMetric.slugs.map { |metric| "#{prefix}/languages/#{metric}" }
-        end
-
-        def latest_package_paths
-          period = latest_period
-          return [] unless period
-
-          package_scope_paths('/latest', period)
-        end
-
-        def edition_package_paths
-          edition_period_slugs.flat_map do |period_slug|
-            package_scope_paths("/#{period_slug}", "#{period_slug}-01")
-          end
-        end
-
-        def package_scope_paths(prefix, period)
-          package_ranking_read_model
-            .ecosystems(period_start: period)
-            .select { |ecosystem| package_ranking_ecosystem?(ecosystem) }
-            .flat_map { |ecosystem| package_ecosystem_paths(prefix, ecosystem) }
-        end
-
-        def package_ecosystem_paths(prefix, ecosystem)
-          path = "#{prefix}/packages/#{ecosystem}"
-          metric_paths = Contexts::Packages::Domain::PackageRankingMetric
-                         .slugs(ecosystem: ecosystem)
-                         .map { |metric| "#{path}/#{metric}" }
-          [path] + metric_paths
-        end
-
-        def package_ranking_ecosystem?(ecosystem)
-          Contexts::Packages::Domain::PackageRankingMetric.slugs(ecosystem: ecosystem).any?
-        end
-
-        def edition_paths
-          years = list_editions.call&.years || []
-          years.map { |year| "/editions/#{year}" }
-        end
-
-        def profile_paths
-          users = identity_paths(profile_read_model.public_user_identities, '/users')
-          organizations = identity_paths(profile_read_model.public_organization_identities, '/organizations')
-          period = latest_period
-          return users + organizations unless period
-
-          page = show_rankings.call(scope: 'poland', period_start: period)
-          repositories = repository_paths(page.repository_rankings, '/repositories')
-          organization_repositories = repository_paths(
-            page.organization_repository_rankings,
-            '/organization-repositories'
-          )
-
-          users + organizations + repositories + organization_repositories
-        end
-
-        def identity_paths(rows, prefix)
-          rows.map { |row| "#{prefix}/#{row.fetch(:platform)}/#{row.fetch(:login)}" }
-        end
-
-        def repository_paths(rankings, prefix)
-          rankings.values.flatten.map do |row|
-            platform = row.fetch(:platform, 'github')
-            owner, name = row.fetch(:full_name).split('/', 2)
-            "#{prefix}/#{platform}/#{owner}/#{name}"
-          end
-        end
-
-        def edition_period_slugs
-          years = list_editions.call&.years || []
-          years.flat_map do |year|
-            list_editions.call(year: year).editions.map { |edition| edition.fetch(:period_start)[0, 7] }
-          end
-        end
-
-        def locale_variants(paths)
-          paths.flat_map do |path|
-            [path, localized_public_path(path, locale: 'en')]
-          end
+          SitemapEntries.new(self).call
         end
       end
-      # rubocop:enable Metrics/ModuleLength
     end
   end
 end

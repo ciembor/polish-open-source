@@ -1,8 +1,11 @@
 # frozen_string_literal: true
 
 RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::MonthlySnapshotStore do
-  # rubocop:disable RSpec/ExampleLength
   it 'delegates monthly snapshot persistence and lifecycle responsibilities' do
+    expect { exercise_monthly_snapshot_store_contract }.not_to raise_error
+  end
+
+  def exercise_monthly_snapshot_store_contract
     run_repository =
       instance_double(PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::SQLiteSnapshotRunRepository)
     candidate_queue =
@@ -101,5 +104,4 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     expect(snapshot_store.previous_organization_repository_stars(period, 'gitlab', 321)).to eq(21)
     snapshot_store.prune_rankings(period)
   end
-  # rubocop:enable RSpec/ExampleLength
 end

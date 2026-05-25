@@ -1,5 +1,111 @@
 # frozen_string_literal: true
 
+class FakeGitHubOAuthClient
+  attr_reader :exchanged
+
+  def initialize(login, id: 1, location: 'Krakow, Poland')
+    @login = login
+    @id = id
+    @location = location
+    @exchanged = []
+  end
+
+  def authorize_url(state:, redirect_uri:)
+    "https://github.example/oauth?state=#{state}&redirect_uri=#{Rack::Utils.escape(redirect_uri)}"
+  end
+
+  def exchange_code(code:, redirect_uri:)
+    exchanged << code
+    "token-for-#{redirect_uri}"
+  end
+
+  def user(_access_token)
+    {
+      'id' => @id,
+      'login' => @login,
+      'name' => @login.capitalize,
+      'location' => @location,
+      'email' => "#{@login}@example.com",
+      'homepage' => "https://#{@login}.example",
+      'html_url' => "https://github.com/#{@login}",
+      'avatar_url' => "https://avatars.example/#{@login}.png"
+    }
+  end
+end
+
+class FakeDiscordOAuthClient
+  attr_reader :exchanged
+
+  def initialize
+    @exchanged = []
+  end
+
+  def authorize_url(state:, redirect_uri:)
+    "https://discord.example/oauth?state=#{state}&redirect_uri=#{Rack::Utils.escape(redirect_uri)}"
+  end
+
+  def exchange_code(code:, redirect_uri:)
+    exchanged << code
+    { 'access_token' => 'discord-access', 'redirect_uri' => redirect_uri }
+  end
+
+  def user(_access_token)
+    { 'id' => 'discord-1', 'username' => 'alice-discord', 'global_name' => 'Alice Discord' }
+  end
+end
+
+class FakeDiscordGateway
+  attr_reader :synced, :welcome
+
+  def invite_available?(_code)
+    false
+  end
+
+  def create_invite(channel_id:)
+    { code: "#{channel_id}-once", url: "https://discord.gg/#{channel_id}-once" }
+  end
+
+  def sync_member(**attributes)
+    @synced = attributes
+  end
+
+  def sync_joined_member(**attributes)
+    @synced = attributes
+  end
+
+  def post_welcome_message(**attributes)
+    @welcome = attributes
+  end
+end
+
+class FailingDiscordGateway
+  def invite_available?(_code)
+    raise PolishOpenSourceRank::Web::Auth::DiscordGateway::Error
+  end
+
+  def create_invite(channel_id:)
+    raise PolishOpenSourceRank::Web::Auth::DiscordGateway::Error, channel_id
+  end
+end
+
+class FailingWelcomeDiscordGateway < FakeDiscordGateway
+  def post_welcome_message(**_attributes)
+    raise PolishOpenSourceRank::Web::Auth::DiscordGateway::Error
+  end
+end
+
+class FailingMemberSyncDiscordGateway < FakeDiscordGateway
+  def sync_member(**_attributes)
+    raise PolishOpenSourceRank::Web::Auth::DiscordGateway::Error
+  end
+end
+
+class FailingDiscordOAuthClient < FakeDiscordOAuthClient
+  def exchange_code(code:, redirect_uri:)
+    super
+    raise PolishOpenSourceRank::Web::Auth::DiscordOAuthClient::Error, '400 invalid_grant'
+  end
+end
 RSpec.describe PolishOpenSourceRank::Web::App do
   around do |example|
     old_env = ENV.to_h
@@ -17,31 +123,13 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     reset_app_memoized_dependencies
   end
 
-  # rubocop:disable RSpec/MultipleExpectations
   it 'renders the Poland ranking with SEO metadata' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
 
     response = Rack::MockRequest.new(described_class).get('/')
 
-    expect(response.status).to eq(200)
-    expect(response.body).to include('<title>Polska open-source ranking</title>')
-    expect(response.body).to include('rel="canonical" href="https://rank.example/latest"')
-    expect(response.body).to include('rel="alternate" hreflang="en" href="https://rank.example/en/latest"')
-    expect(response.body).to include('property="og:title" content="Polska open-source ranking"')
-    expect(response.body).to include('property="og:image" content="https://rank.example/images/polish_open_source_banner.webp"')
-    expect(response.body).to include('"@type": "WebSite"')
-    expect(response.body).to include('"@type": "CollectionPage"')
-    expect(response.body).to include('"name": "Top 10 według gwiazdek"')
-    expect(response.body).to include('alice/app')
-    expect(response.body).to include('polish-org/toolkit')
-    expect(response.body).to include('href="/latest/users/top"')
-    expect(response.body).to include('href="/latest/organizations/top"')
-    expect(response.body).to include('href="/latest/organization-repositories/top"')
-    expect(response.body).to include('Zobacz top 100')
-    expect(response.body).to include('href="/editions"')
-    expect(response.body).to include('application/ld+json')
+    expect_poland_ranking_page(response)
   end
-  # rubocop:enable RSpec/MultipleExpectations
 
   it 'renders city rankings and empty databases' do
     ENV['DATABASE_URL'] = "sqlite://#{empty_database}"
@@ -156,7 +244,6 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('polish-org/toolkit')
   end
 
-  # rubocop:disable RSpec/ExampleLength
   it 'renders user profile pages from ranking users', :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     request = Rack::MockRequest.new(described_class)
@@ -166,40 +253,14 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     badge_response = request.get('/badges/users/github/alice.svg')
     missing_response = request.get('/users/github/missing')
 
-    expect(ranking_response.body).to include('href="/users/github/alice"')
-    expect(profile_response.status).to eq(200)
-    expect(profile_response.body).to include('<title>Alice - profil GitHub</title>')
-    expect(profile_response.body).to include('rel="canonical" href="https://rank.example/users/github/alice"')
-    expect(profile_response.body).to include('src="https://avatars.example/alice.png"')
-    expect(profile_response.body).to include('Profil na GitHub')
-    expect(profile_response.body).to include('"@type": "ProfilePage"')
-    expect(profile_response.body).to include('"@type": "Person"')
-    expect(profile_response.body).to include('"@type": "BreadcrumbList"')
-    expect(profile_response.body).to include('Profil w rankingu')
-    expect(profile_response.body).to include('Pozycja w rankingu Polski')
-    expect(profile_response.body).to include('Pozycja w Kraków')
-    expect(profile_response.body).to include('Najmocniejsze repozytorium')
-    expect(profile_response.body).to include('href="/repositories/github/alice/app"')
-    expect(profile_response.body).to include('#1')
-    expect(profile_response.body).to include('Najlepsze projekty')
-    expect(profile_response.body).not_to include('/badges/users/github/alice.svg')
-    expect(profile_response.body).not_to include(
-      '[![Polish Open Source badge](https://rank.example/badges/users/github/alice.svg)]'
+    expect_user_profile_page(
+      ranking_response: ranking_response,
+      profile_response: profile_response,
+      badge_response: badge_response,
+      missing_response: missing_response
     )
-    expect(profile_response.body).to include('alice/app')
-    expect(profile_response.body).to include('/icons/medal-gold.svg')
-    expect(profile_response.body).to include('href="/repositories/github/alice/app"')
-    expect(profile_response.body).to include('12 345')
-    expect(badge_response.status).to eq(200)
-    expect(badge_response.content_type).to include('image/svg+xml')
-    expect(badge_response.body).to include('Polish Open Source')
-    expect(badge_response.body).to include('1st')
-    expect(badge_response.body).to include('href="https://rank.example/latest"')
-    expect(missing_response.status).to eq(404)
   end
-  # rubocop:enable RSpec/ExampleLength
 
-  # rubocop:disable RSpec/ExampleLength
   it 'logs public GitHub users in and syncs their Discord account', :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     ENV['DISCORD_INVITE_CHANNEL_ID'] = 'invite-channel'
@@ -216,66 +277,17 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     described_class.set :discord_gateway, discord_gateway
     request = Rack::MockRequest.new(described_class)
 
-    github_start = request.get('/auth/github')
-    github_state = Rack::Utils.parse_query(URI(github_start.location).query).fetch('state')
-    github_callback = request.get(
-      "/auth/github/callback?code=github-code&state=#{github_state}",
-      'HTTP_COOKIE' => cookie_header(github_start)
-    )
+    github_callback = sign_in_with_github(request)
     profile = request.get('/users/github/alice', 'HTTP_COOKIE' => cookie_header(github_callback))
 
-    expect(github_callback.status).to eq(302)
-    expect(github_callback.location).to eq('http://example.org/users/github/alice')
-    expect(profile.body).to include('Twój dostęp Discord')
-    expect(profile.body).to include('Dołącz do Elite Discorda')
-    expect(profile.body).to include('href="/auth/discord"')
-    expect(profile.body).to include('Kanały do pisania')
-    expect(profile.body).to include('general')
-    expect(profile.body).to include('Top 10 PL')
-    expect(profile.body).to include('Top 100 PL')
-    expect(profile.body).to include('Top 100 Kraków')
-    expect(profile.body).not_to include('Ranking Polski')
-    expect(profile.body).not_to include('Ranking Kraków')
-    expect(profile.body).to include('/badges/users/github/alice.svg')
-    expect(profile.body).to include('/badges/repositories/github/alice/app.svg')
-    expect(profile.body).to include('Polish Open Source')
-    expect(profile.body.index('id="profile-discord-heading"')).to be < profile.body.index('id="profile-badge-heading"')
-    # "Profile" also appears in the navbar label for logged-in users. Assert using stable section markers
-    # instead of the translated heading text.
-    expect(profile.body.index('id="profile-badge-heading"')).to be < profile.body.index('id="profile-summary-heading"')
-    expect(profile.body).not_to include('Discord niepołączony')
+    expect_signed_in_profile(github_callback, profile)
 
-    discord_start = request.get('/auth/discord', 'HTTP_COOKIE' => cookie_header(github_callback))
-    discord_state = Rack::Utils.parse_query(URI(discord_start.location).query).fetch('state')
-    discord_callback = request.get(
-      "/auth/discord/callback?code=discord-code&state=#{discord_state}",
-      'HTTP_COOKIE' => cookie_header(discord_start)
-    )
+    discord_callback = finish_discord_auth(request, github_callback)
 
-    expect(discord_callback.status).to eq(302)
-    expect(discord_callback.location).to eq('https://discord.com/channels/guild-1/invite-channel')
-    expect(discord_gateway.synced).to include(
-      discord_user_id: 'discord-1',
-      access_token: 'discord-access',
-      github_login: 'alice'
-    )
-    expect(discord_gateway.welcome).to include(channel_id: 'invite-channel', discord_user_id: 'discord-1')
-    expect(discord_gateway.welcome.fetch(:profile)).to include(
-      login: 'alice',
-      html_url: 'https://github.com/alice'
-    )
-    expect(discord_gateway.welcome.fetch(:profile).fetch(:repositories).first).to include(
-      full_name: 'alice/app',
-      html_url: 'https://github.com/alice/app',
-      stargazers_count: 12_345
-    )
-    expect(discord_gateway.welcome.fetch(:access)).to include(country_rank: 1, city_rank: 1)
-    expect(discord_gateway.welcome.fetch(:role_ids)).to include('role-top-10', 'role-top-100', 'role-krakow')
-    expect(discord_gateway.synced.fetch(:desired_role_ids)).to include('role-top-10', 'role-top-100', 'role-krakow')
+    expect_synced_discord(discord_callback, discord_gateway)
     expect(github_client.exchanged).to eq(['github-code'])
     expect(discord_client.exchanged).to eq(['discord-code'])
   end
-  # rubocop:enable RSpec/ExampleLength
 
   it 'creates a public profile for GitHub users with a supported location' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
@@ -283,12 +295,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     described_class.set :github_oauth_client, github_client
     request = Rack::MockRequest.new(described_class)
 
-    github_start = request.get('/auth/github')
-    github_state = Rack::Utils.parse_query(URI(github_start.location).query).fetch('state')
-    github_callback = request.get(
-      "/auth/github/callback?code=github-code&state=#{github_state}",
-      'HTTP_COOKIE' => cookie_header(github_start)
-    )
+    github_callback = sign_in_with_github(request)
     profile = request.get('/users/github/outsider', 'HTTP_COOKIE' => cookie_header(github_callback))
 
     expect(github_callback.location).to eq('http://example.org/users/github/outsider')
@@ -458,7 +465,6 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(request.get('/users/github/carol').body).to include('/icons/medal-bronze.svg')
   end
 
-  # rubocop:disable RSpec/ExampleLength
   it 'renders repository profile pages and GitHub badges from ranking projects', :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     request = Rack::MockRequest.new(described_class)
@@ -480,47 +486,22 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'HTTP_COOKIE' => cookie_header(github_callback)
     )
 
-    expect(ranking_response.body).to include('href="/repositories/github/alice/app"')
-    expect(profile_response.status).to eq(200)
-    expect(profile_response.body).to include('<title>alice/app - projekt GitHub</title>')
-    expect(profile_response.body).to include('rel="canonical" href="https://rank.example/repositories/github/alice/app"')
-    expect(profile_response.body).to include('"@type": "SoftwareSourceCode"')
-    expect(profile_response.body).to include('/icons/medal-gold.svg')
-    expect(profile_response.body).not_to include('Odznaka na GitHub')
-    expect(profile_response.body).not_to include('/badges/repositories/github/alice/app.svg')
-    expect(owner_profile_response.body).to include('Odznaka na GitHub')
-    expect(owner_profile_response.body).to include('/badges/repositories/github/alice/app.svg')
-    expect(owner_profile_response.body).to include(
-      '[![Badge Polish Repo](https://rank.example/badges/repositories/github/alice/app.svg)]'
+    expect_repository_profile_page(
+      ranking_response: ranking_response,
+      profile_response: profile_response,
+      owner_profile_response: owner_profile_response,
+      badge_response: badge_response,
+      short_badge_response: short_badge_response,
+      missing_response: missing_response
     )
-    expect(badge_response.status).to eq(200)
-    expect(badge_response.content_type).to include('image/svg+xml')
-    expect(badge_response.body).to include('Polish Repo')
-    expect(badge_response.body).to include('1st')
-    expect(badge_response.body).to include('#dc143c')
-    expect(badge_response.body).to include('href="https://rank.example/latest"')
-    expect(short_badge_response.status).to eq(200)
-    expect(missing_response.status).to eq(404)
   end
-  # rubocop:enable RSpec/ExampleLength
 
-  # rubocop:disable RSpec/MultipleExpectations
   it 'renders editions with year pagination' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
 
     response = Rack::MockRequest.new(described_class).get('/editions')
 
-    expect(response.status).to eq(200)
-    expect(response.body).to include('<title>Edycje rankingu open source</title>')
-    expect(response.body).to include('>Edycje</h1>')
-    expect(response.body).to include('"@type": "CollectionPage"')
-    expect(response.body).to include('property="og:image" content="https://rank.example/images/polish_open_source_front.webp"')
-    expect(response.body).to include('kwiecień 2026')
-    expect(response.body).to include('Top projekty')
-    expect(response.body).to include('Top użytkownicy: gwiazdki')
-    expect(response.body).to include('Top użytkownicy: aktywność')
-    expect(response.body).to include('href="/2026-04"')
-    expect(response.body).to include('href="/editions/2025"')
+    expect_editions_page(response)
   end
 
   it 'renders edition archive year pages and missing years' do
@@ -538,19 +519,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   it 'renders the about page' do
     response = Rack::MockRequest.new(described_class).get('/about')
 
-    expect(response.status).to eq(200)
-    expect(response.body).to include('<title>O Polish Open Source Rank</title>')
-    expect(response.body).to include('"@type": "AboutPage"')
-    expect(response.body).to include('"@type": "WebSite"')
-    expect(response.body).to include('property="og:image" content="https://rank.example/images/polish_open_source_front.webp"')
-    expect(response.body).to include('Misja')
-    expect(response.body).to include('Zakres danych')
-    expect(response.body).to include('GitHub')
-    expect(response.body).to include('GitLab')
-    expect(response.body).to include('Codeberg')
-    expect(response.body).to include('Maciej Ciemborowicz')
-    expect(response.body).to include('href="/latest/locations/krakow"')
-    expect(response.body).not_to include('//locations')
+    expect_about_page(response)
   end
 
   it 'keeps core public pages semantically structured', :aggregate_failures do
@@ -578,7 +547,6 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(html_element(rankings.body, "//article[@class='ranking-table' and @aria-labelledby='ranking-users-top']"))
       .not_to be_nil
   end
-  # rubocop:enable RSpec/MultipleExpectations
 
   it 'links about platform cards to source platforms' do
     response = Rack::MockRequest.new(described_class).get('/about')
@@ -1018,7 +986,6 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(responses.fetch(:invalid_city_organization).status).to eq(404)
   end
 
-  # rubocop:disable Metrics/AbcSize
   def expect_primary_ranking_pages(responses)
     expect(responses.fetch(:user).status).to eq(200)
     expect(responses.fetch(:user).body).to include('Top 100 aktywnych użytkowników')
@@ -1044,8 +1011,6 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(podium_classes).to include('ranking-list__item third_place')
     expect(response.body).not_to include('<table>')
   end
-
-  # rubocop:enable Metrics/AbcSize
 
   def expect_latest_city_repository_ranking_page(response)
     expect(response.status).to eq(200)
@@ -1332,6 +1297,163 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     end
   end
 
+  def expect_poland_ranking_page(response)
+    expect(response.status).to eq(200)
+    expect_body_to_include(
+      response,
+      '<title>Polska open-source ranking</title>',
+      'rel="canonical" href="https://rank.example/latest"',
+      'rel="alternate" hreflang="en" href="https://rank.example/en/latest"',
+      'property="og:title" content="Polska open-source ranking"',
+      'property="og:image" content="https://rank.example/images/polish_open_source_banner.webp"',
+      '"@type": "WebSite"',
+      '"@type": "CollectionPage"',
+      '"name": "Top 10 według gwiazdek"',
+      'alice/app',
+      'polish-org/toolkit',
+      'href="/latest/users/top"',
+      'href="/latest/organizations/top"',
+      'href="/latest/organization-repositories/top"',
+      'Zobacz top 100',
+      'href="/editions"',
+      'application/ld+json'
+    )
+  end
+
+  def expect_user_profile_page(ranking_response:, profile_response:, badge_response:, missing_response:)
+    expect(ranking_response.body).to include('href="/users/github/alice"')
+    expect(profile_response.status).to eq(200)
+    expect_body_to_include(
+      profile_response,
+      '<title>Alice - profil GitHub</title>',
+      'rel="canonical" href="https://rank.example/users/github/alice"',
+      'src="https://avatars.example/alice.png"',
+      '"@type": "ProfilePage"',
+      'Profil w rankingu',
+      'Pozycja w rankingu Polski',
+      'Pozycja w Kraków',
+      'Najmocniejsze repozytorium',
+      '#1',
+      'Najlepsze projekty',
+      'alice/app',
+      '/icons/medal-gold.svg',
+      '12 345'
+    )
+    expect(profile_response.body).not_to include('/badges/users/github/alice.svg')
+    expect(badge_response.status).to eq(200)
+    expect(badge_response.content_type).to include('image/svg+xml')
+    expect_body_to_include(badge_response, 'Polish Open Source', '1st', 'href="https://rank.example/latest"')
+    expect(missing_response.status).to eq(404)
+  end
+
+  def expect_signed_in_profile(github_callback, profile)
+    expect(github_callback.status).to eq(302)
+    expect(github_callback.location).to eq('http://example.org/users/github/alice')
+    expect_body_to_include(
+      profile,
+      'Twój dostęp Discord',
+      'Dołącz do Elite Discorda',
+      'href="/auth/discord"',
+      'Kanały do pisania',
+      'general',
+      'Top 10 PL',
+      'Top 100 PL',
+      'Top 100 Kraków',
+      '/badges/users/github/alice.svg',
+      '/badges/repositories/github/alice/app.svg'
+    )
+    expect(profile.body).not_to include('Ranking Polski')
+    expect(profile.body).not_to include('Ranking Kraków')
+    expect(profile.body.index('id="profile-discord-heading"')).to be < profile.body.index('id="profile-badge-heading"')
+    expect(profile.body.index('id="profile-badge-heading"')).to be < profile.body.index('id="profile-summary-heading"')
+    expect(profile.body).not_to include('Discord niepołączony')
+  end
+
+  def expect_synced_discord(discord_callback, discord_gateway)
+    expect(discord_callback.status).to eq(302)
+    expect(discord_callback.location).to eq('https://discord.com/channels/guild-1/invite-channel')
+    expect(discord_gateway.synced).to include(
+      discord_user_id: 'discord-1',
+      access_token: 'discord-access',
+      github_login: 'alice'
+    )
+    expect(discord_gateway.welcome).to include(channel_id: 'invite-channel', discord_user_id: 'discord-1')
+    expect(discord_gateway.welcome.fetch(:profile)).to include(login: 'alice', html_url: 'https://github.com/alice')
+    expect(discord_gateway.welcome.fetch(:profile).fetch(:repositories).first).to include(
+      full_name: 'alice/app',
+      html_url: 'https://github.com/alice/app',
+      stargazers_count: 12_345
+    )
+    expect(discord_gateway.welcome.fetch(:access)).to include(country_rank: 1, city_rank: 1)
+    expect(discord_gateway.welcome.fetch(:role_ids)).to include('role-top-10', 'role-top-100', 'role-krakow')
+    expect(discord_gateway.synced.fetch(:desired_role_ids)).to include('role-top-10', 'role-top-100', 'role-krakow')
+  end
+
+  def expect_repository_profile_page(**responses)
+    ranking_response = responses.fetch(:ranking_response)
+    profile_response = responses.fetch(:profile_response)
+    owner_profile_response = responses.fetch(:owner_profile_response)
+    badge_response = responses.fetch(:badge_response)
+    expect(ranking_response.body).to include('href="/repositories/github/alice/app"')
+    expect(profile_response.status).to eq(200)
+    expect(profile_response.body).to include('<title>alice/app - projekt GitHub</title>')
+    expect(profile_response.body).to include('rel="canonical" href="https://rank.example/repositories/github/alice/app"')
+    expect(profile_response.body).to include('"@type": "SoftwareSourceCode"')
+    expect(profile_response.body).to include('/icons/medal-gold.svg')
+    expect(profile_response.body).not_to include('Odznaka na GitHub')
+    expect(profile_response.body).not_to include('/badges/repositories/github/alice/app.svg')
+    expect(owner_profile_response.body).to include('Odznaka na GitHub')
+    expect(owner_profile_response.body).to include('/badges/repositories/github/alice/app.svg')
+    expect(owner_profile_response.body).to include(
+      '[![Badge Polish Repo](https://rank.example/badges/repositories/github/alice/app.svg)]'
+    )
+    expect(badge_response.status).to eq(200)
+    expect(badge_response.content_type).to include('image/svg+xml')
+    expect_body_to_include(badge_response, 'Polish Repo', '1st', '#dc143c', 'href="https://rank.example/latest"')
+    expect(responses.fetch(:short_badge_response).status).to eq(200)
+    expect(responses.fetch(:missing_response).status).to eq(404)
+  end
+
+  def expect_editions_page(response)
+    expect(response.status).to eq(200)
+    expect_body_to_include(
+      response,
+      '<title>Edycje rankingu open source</title>',
+      '>Edycje</h1>',
+      '"@type": "CollectionPage"',
+      'property="og:image" content="https://rank.example/images/polish_open_source_front.webp"',
+      'kwiecień 2026',
+      'Top projekty',
+      'Top użytkownicy: gwiazdki',
+      'Top użytkownicy: aktywność',
+      'href="/2026-04"',
+      'href="/editions/2025"'
+    )
+  end
+
+  def expect_about_page(response)
+    expect(response.status).to eq(200)
+    expect_body_to_include(
+      response,
+      '<title>O Polish Open Source Rank</title>',
+      '"@type": "AboutPage"',
+      '"@type": "WebSite"',
+      'property="og:image" content="https://rank.example/images/polish_open_source_front.webp"',
+      'Misja',
+      'Zakres danych',
+      'GitHub',
+      'GitLab',
+      'Codeberg',
+      'Maciej Ciemborowicz',
+      'href="/latest/locations/krakow"'
+    )
+    expect(response.body).not_to include('//locations')
+  end
+
+  def expect_body_to_include(response, *fragments)
+    fragments.each { |fragment| expect(response.body).to include(fragment) }
+  end
+
   def stub_discord_invite_response(body)
     response = Net::HTTPOK.new('1.1', '200', 'OK')
     response.body = body
@@ -1340,113 +1462,4 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     allow(http).to receive(:request).and_return(response)
     allow(Net::HTTP).to receive(:start).and_yield(http)
   end
-
-  # rubocop:disable Lint/ConstantDefinitionInBlock
-  class FakeGitHubOAuthClient
-    attr_reader :exchanged
-
-    def initialize(login, id: 1, location: 'Krakow, Poland')
-      @login = login
-      @id = id
-      @location = location
-      @exchanged = []
-    end
-
-    def authorize_url(state:, redirect_uri:)
-      "https://github.example/oauth?state=#{state}&redirect_uri=#{Rack::Utils.escape(redirect_uri)}"
-    end
-
-    def exchange_code(code:, redirect_uri:)
-      exchanged << code
-      "token-for-#{redirect_uri}"
-    end
-
-    def user(_access_token)
-      {
-        'id' => @id,
-        'login' => @login,
-        'name' => @login.capitalize,
-        'location' => @location,
-        'email' => "#{@login}@example.com",
-        'homepage' => "https://#{@login}.example",
-        'html_url' => "https://github.com/#{@login}",
-        'avatar_url' => "https://avatars.example/#{@login}.png"
-      }
-    end
-  end
-
-  class FakeDiscordOAuthClient
-    attr_reader :exchanged
-
-    def initialize
-      @exchanged = []
-    end
-
-    def authorize_url(state:, redirect_uri:)
-      "https://discord.example/oauth?state=#{state}&redirect_uri=#{Rack::Utils.escape(redirect_uri)}"
-    end
-
-    def exchange_code(code:, redirect_uri:)
-      exchanged << code
-      { 'access_token' => 'discord-access', 'redirect_uri' => redirect_uri }
-    end
-
-    def user(_access_token)
-      { 'id' => 'discord-1', 'username' => 'alice-discord', 'global_name' => 'Alice Discord' }
-    end
-  end
-
-  class FakeDiscordGateway
-    attr_reader :synced, :welcome
-
-    def invite_available?(_code)
-      false
-    end
-
-    def create_invite(channel_id:)
-      { code: "#{channel_id}-once", url: "https://discord.gg/#{channel_id}-once" }
-    end
-
-    def sync_member(**attributes)
-      @synced = attributes
-    end
-
-    def sync_joined_member(**attributes)
-      @synced = attributes
-    end
-
-    def post_welcome_message(**attributes)
-      @welcome = attributes
-    end
-  end
-
-  class FailingDiscordGateway
-    def invite_available?(_code)
-      raise PolishOpenSourceRank::Web::Auth::DiscordGateway::Error
-    end
-
-    def create_invite(channel_id:)
-      raise PolishOpenSourceRank::Web::Auth::DiscordGateway::Error, channel_id
-    end
-  end
-
-  class FailingWelcomeDiscordGateway < FakeDiscordGateway
-    def post_welcome_message(**_attributes)
-      raise PolishOpenSourceRank::Web::Auth::DiscordGateway::Error
-    end
-  end
-
-  class FailingMemberSyncDiscordGateway < FakeDiscordGateway
-    def sync_member(**_attributes)
-      raise PolishOpenSourceRank::Web::Auth::DiscordGateway::Error
-    end
-  end
-
-  class FailingDiscordOAuthClient < FakeDiscordOAuthClient
-    def exchange_code(code:, redirect_uri:)
-      super
-      raise PolishOpenSourceRank::Web::Auth::DiscordOAuthClient::Error, '400 invalid_grant'
-    end
-  end
-  # rubocop:enable Lint/ConstantDefinitionInBlock
 end

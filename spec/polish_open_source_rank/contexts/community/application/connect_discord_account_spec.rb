@@ -41,7 +41,6 @@ class FailingWelcomeMemberGateway < RecordingMemberGateway
 end
 
 RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::ConnectDiscordAccount do
-  # rubocop:disable RSpec/ExampleLength
   it 'links Discord, syncs member roles, and posts a welcome message' do
     profile_read_model = instance_double(
       ProfileReadModel,
@@ -53,8 +52,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::ConnectDi
     )
     connection_repository = RecordingConnectionRepository.new
     member_gateway = RecordingMemberGateway.new
-    role_map = instance_double(RoleMap, role_ids: %w[role-top role-city],
-                                        managed_role_ids: %w[role-top role-city old])
+    role_map = ranking_role_map
 
     result = described_class.new(
       profile_read_model: profile_read_model,
@@ -70,10 +68,18 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::ConnectDi
       welcome_channel_id: 'welcome'
     )
 
+    expect_connected_discord(result, connection_repository, member_gateway)
+  end
+
+  def expect_connected_discord(result, connection_repository, member_gateway)
     expect(result.role_ids).to eq(%w[role-top role-city])
     expect(connection_repository.connection).to include(discord_username: 'Alice Discord')
     expect(member_gateway.synced).to include(github_login: 'alice', desired_role_ids: %w[role-top role-city])
     expect(member_gateway.welcome).to include(channel_id: 'welcome', role_ids: %w[role-top role-city])
+  end
+
+  def ranking_role_map
+    instance_double(RoleMap, role_ids: %w[role-top role-city], managed_role_ids: %w[role-top role-city old])
   end
 
   it 'rejects Discord connection when the current user has no public profile' do
@@ -141,5 +147,4 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::ConnectDi
       )
     end.not_to raise_error
   end
-  # rubocop:enable RSpec/ExampleLength
 end
