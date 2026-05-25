@@ -12,8 +12,9 @@
   </div>
 </section>
 
-<section class="ranking-band">
+<section class="ranking-band" aria-labelledby="package-ecosystems-heading">
   <div class="content">
+    <h2 id="package-ecosystems-heading"><%= h t('packages.title') %></h2>
     <% if @package_ecosystems.any? %>
       <div class="ranking-grid ranking-grid--compact">
         <% @package_ecosystems.each do |ecosystem| %>

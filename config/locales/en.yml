@@ -229,6 +229,13 @@ en:
       stars: "Top 100 by repository stars"
       trending: "Top 100 trending packages"
       top: "Top 100 by 30-day downloads"
+    ranking_preview_title:
+      dependents: "Top 10 by dependent packages"
+      downloads: "Top 10 by total downloads"
+      installs: "Top 10 by 30-day installs"
+      stars: "Top 10 repositories by stars"
+      trending: "Top 10 trending this month"
+      top: "Top 10 by 30-day downloads"
   languages:
     back: "Back to languages"
     back_to_language: "Back to %{language}"
@@ -248,10 +255,17 @@ en:
     repository_ranking_title:
       top: "Top 100: %{kind}, %{language}, by stars"
       trending: "Top 100: %{kind}, %{language}, trending"
+    repository_ranking_preview_title:
+      top: "Top 10 by stars"
+      trending: "Top 10 trending this month"
     ranking_title:
       stars: "Top 100 languages by stars"
       top: "Top 100 languages by repository count"
       trending: "Top 100 trending languages"
+    ranking_preview_title:
+      stars: "Top 10 languages by stars"
+      top: "Top 10 languages by repository count"
+      trending: "Top 10 trending languages"
     repository_count: "%{count} repositories"
     seo:
       index_description: "Rankings of programming languages used in Polish open-source repositories."
