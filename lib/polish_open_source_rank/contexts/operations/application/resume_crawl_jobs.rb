@@ -20,7 +20,9 @@ module PolishOpenSourceRank
 
           def call
             crawl_jobs.resumable.each do |job|
-              runner_for(job.fetch(:command)).call(resume_arguments(job))
+              arguments = resume_arguments(job)
+              runner_for(job.fetch(:command)).call(arguments)
+              finish_superseded_job(job, arguments)
             end
           end
 
@@ -63,6 +65,12 @@ module PolishOpenSourceRank
             return unless index
 
             arguments[index + 1] = [arguments[index + 1].to_i, limit].min.to_s
+          end
+
+          def finish_superseded_job(job, arguments)
+            return if arguments == job.fetch(:arguments)
+
+            crawl_jobs.finish(job.fetch(:id))
           end
         end
       end
