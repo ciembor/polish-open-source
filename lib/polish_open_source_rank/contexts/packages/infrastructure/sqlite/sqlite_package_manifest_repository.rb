@@ -21,6 +21,7 @@ module PolishOpenSourceRank
             def replace_detected(scan_id, manifests:, blobs:)
               context = scan_context(scan_id)
               database.transaction do
+                delete_registry_package_links(scan_id)
                 package_manifests.where(repository_scan_id: scan_id).delete
                 manifests.each { |manifest| insert_manifest(scan_id, manifest, blobs.fetch(manifest.path), context) }
               end
@@ -66,6 +67,19 @@ module PolishOpenSourceRank
 
             def package_manifests
               database.dataset(:package_manifests)
+            end
+
+            def delete_registry_package_links(scan_id)
+              database.execute(
+                <<~SQL,
+                  DELETE FROM registry_package_links
+                  WHERE manifest_id IN (
+                    SELECT id FROM package_manifests
+                    WHERE repository_scan_id = ?
+                  )
+                SQL
+                [scan_id]
+              )
             end
 
             def scan_context(scan_id)
