@@ -90,8 +90,8 @@ en:
   footer:
     data_source: "Data comes from the public APIs of GitHub, GitLab and Codeberg and is refreshed monthly."
   github_ribbon:
-    label: "Open the project on GitHub"
-    text: "Project on GitHub"
+    label: "Open the repository on GitHub"
+    text: "Repository"
   site_author:
     label: "Project author"
     link_text:
