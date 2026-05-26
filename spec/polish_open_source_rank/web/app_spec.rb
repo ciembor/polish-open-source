@@ -1318,6 +1318,15 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       '🔧 8',
       'alice/app',
       'polish-org/toolkit',
+      'Maciej Ciemborowicz',
+      'href="https://maciej-ciemborowicz.eu/"',
+      'href="https://github.com/ciembor"',
+      'href="https://www.linkedin.com/in/maciej-ciemborowicz/"',
+      'href="https://x.com/ciembor"',
+      '>homepage</span>',
+      '>github</span>',
+      '>x</span>',
+      '>linkedin</span>',
       'href="/latest/users/top"',
       'href="/latest/organizations/top"',
       'href="/latest/organization-repositories/top"',
@@ -1454,8 +1463,10 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'GitLab',
       'Codeberg',
       'Maciej Ciemborowicz',
+      'src="/images/maciej-ciemborowicz.jpg"',
       'href="/latest/locations/krakow"'
     )
+    expect(response.body).not_to include('Programista i autor projektu')
     expect(response.body).not_to include('//locations')
   end
 
