@@ -41,19 +41,13 @@ RSpec.describe PolishOpenSourceRank::Contexts::Languages::Infrastructure::SQLite
           language: 'Ruby',
           repository_count: 2,
           repository_stars_count: 105,
-          repository_stars_delta: 2,
-          repository_full_name: 'alice/ruby-a',
-          repository_kind: 'user',
-          repository_platform: 'github'
+          repository_stars_delta: 2
         },
         {
           language: 'TypeScript',
           repository_count: 1,
           repository_stars_count: 90,
-          repository_stars_delta: 8,
-          repository_full_name: 'org/typescript-a',
-          repository_kind: 'organization',
-          repository_platform: 'github'
+          repository_stars_delta: 8
         }
       ]
     )

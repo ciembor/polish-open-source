@@ -172,34 +172,16 @@ module PolishOpenSourceRank
                          SUM(repository_stars_count) AS repository_stars_count
                   FROM linked_repositories
                   GROUP BY ecosystem
-                ),
-                ranked_repositories AS (
-                  SELECT ecosystem,
-                         repository_kind,
-                         platform AS repository_platform,
-                         full_name AS repository_full_name,
-                         repository_stars_count,
-                         ROW_NUMBER() OVER (
-                           PARTITION BY ecosystem
-                           ORDER BY repository_stars_count DESC, full_name COLLATE NOCASE ASC
-                         ) AS repository_rank
-                  FROM linked_repositories
                 )
                 SELECT snapshots.ecosystem,
                        COUNT(DISTINCT snapshots.normalized_package_name) AS package_count,
                        COALESCE(ecosystem_totals.repository_count, 0) AS repository_count,
-                       COALESCE(ecosystem_totals.repository_stars_count, 0) AS repository_stars_count,
-                       ranked_repositories.repository_full_name,
-                       ranked_repositories.repository_kind,
-                       ranked_repositories.repository_platform
+                       COALESCE(ecosystem_totals.repository_stars_count, 0) AS repository_stars_count
                 FROM registry_package_snapshots snapshots
                 INNER JOIN registry_packages packages
                   ON packages.ecosystem = snapshots.ecosystem
                  AND packages.normalized_package_name = snapshots.normalized_package_name
                 LEFT JOIN ecosystem_totals ON ecosystem_totals.ecosystem = snapshots.ecosystem
-                LEFT JOIN ranked_repositories
-                  ON ranked_repositories.ecosystem = snapshots.ecosystem
-                 AND ranked_repositories.repository_rank = 1
                 WHERE snapshots.period_start = ?
                   AND packages.status = 'active'
                 GROUP BY snapshots.ecosystem

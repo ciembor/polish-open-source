@@ -98,23 +98,6 @@
   margin: 2px 0 0;
 }
 
-.index-card__repository {
-  color: var(--muted);
-  display: grid;
-  font-size: 0.9rem;
-  gap: 2px;
-  margin: auto 0 0;
-  min-width: 0;
-}
-
-.index-card__repository .muted-link,
-.index-card__repository span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .ranking-list {
   width: 100%;
   background: var(--surface);
