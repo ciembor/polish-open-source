@@ -39,9 +39,16 @@ module PolishOpenSourceRank
 
           def resume_arguments(job)
             arguments = job.fetch(:arguments)
+            return bounded_monthly_arguments(arguments) if job.fetch(:command) == 'monthly_rankings'
             return arguments unless job.fetch(:command) == 'package_rankings'
 
             bounded_package_arguments(arguments)
+          end
+
+          def bounded_monthly_arguments(arguments)
+            arguments
+              .reject { |argument| %w[--refresh --recalculate-stars].include?(argument) }
+              .then { |bounded| bounded.include?('--existing-only') ? bounded : bounded + ['--existing-only'] }
           end
 
           def bounded_package_arguments(arguments)
