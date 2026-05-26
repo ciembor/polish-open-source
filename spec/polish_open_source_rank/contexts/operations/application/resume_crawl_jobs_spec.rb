@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe PolishOpenSourceRank::Contexts::Operations::Application::ResumeCrawlJobs do
-  it 'replays each interrupted monthly crawl with its tracked arguments' do
+  it 'resumes interrupted monthly crawls in existing-only mode' do
     crawl_jobs = instance_double(
       PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteCrawlJobRepository,
       resumable: [
@@ -15,7 +15,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Operations::Application::ResumeCr
 
     described_class.new(crawl_jobs: crawl_jobs, monthly_runner: monthly_runner, package_runner: package_runner).call
 
-    expect(monthly_runner).to have_received(:call).with(['--month', '2026-04']).ordered
+    expect(monthly_runner).to have_received(:call).with(['--month', '2026-04', '--existing-only']).ordered
     expect(package_runner).to have_received(:call).with(
       [
         '--period', '2026-04',
@@ -26,7 +26,28 @@ RSpec.describe PolishOpenSourceRank::Contexts::Operations::Application::ResumeCr
         '--registry-limit', '2000'
       ]
     ).ordered
+    expect(crawl_jobs).to have_received(:finish).with(1)
     expect(crawl_jobs).to have_received(:finish).with(2)
+  end
+
+  it 'removes refresh flags from resumed monthly crawls' do
+    crawl_jobs = instance_double(
+      PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteCrawlJobRepository,
+      resumable: [
+        {
+          id: 1,
+          command: 'monthly_rankings',
+          arguments: ['--month', '2026-04', '--refresh', '--recalculate-stars', '--existing-only']
+        }
+      ]
+    )
+    allow(crawl_jobs).to receive(:finish)
+    monthly_runner = instance_double(Proc, call: nil)
+
+    described_class.new(crawl_jobs: crawl_jobs, monthly_runner: monthly_runner).call
+
+    expect(monthly_runner).to have_received(:call).with(['--month', '2026-04', '--existing-only'])
+    expect(crawl_jobs).to have_received(:finish).with(1)
   end
 
   it 'bounds resumed package crawl limits to production-safe batches' do

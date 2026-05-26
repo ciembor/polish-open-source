@@ -32,7 +32,7 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::CrawlResumerFactor
     allow(PolishOpenSourceRank::Interfaces::Composition::RankingJobFactory)
       .to receive(:build)
       .with(
-        ['--month', '2026-04', '--platform', 'github'],
+        ['--month', '2026-04', '--platform', 'github', '--existing-only'],
         configuration: configuration,
         output: output,
         crawl_jobs: crawl_jobs
