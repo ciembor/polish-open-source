@@ -22,9 +22,10 @@ module PolishOpenSourceRank
             @snapshot_factory = MonthlySnapshotFactory.new
           end
 
-          def call(period, refresh: false, scope: nil, recalculate_stars: false)
+          def call(period, refresh: false, scope: nil, recalculate_stars: false, existing_only: false)
             @scope = scope
             @recalculate_stars = recalculate_stars
+            @existing_only = existing_only
             refresh_platforms = refresh ? sources.map(&:platform) : []
             run_id = store.create_run(period, refresh_platforms: refresh_platforms)
             return unless run_id

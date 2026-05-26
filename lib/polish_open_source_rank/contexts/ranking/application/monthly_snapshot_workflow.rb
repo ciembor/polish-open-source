@@ -48,20 +48,28 @@ module PolishOpenSourceRank
           end
 
           def run_user_source_snapshot(period, source, refresh:)
-            [
+            stages = [
               run_source_stage(source, 'process existing candidates') do
                 process_source_candidates(period, source, refresh: refresh)
-              end,
+              end
+            ]
+            return stages if @existing_only
+
+            stages + [
               run_source_stage(source, 'discover') { discover_source_candidates(period, source) },
               run_source_stage(source, 'process') { process_source_candidates(period, source, refresh: refresh) }
             ]
           end
 
           def run_organization_source_snapshot(period, source, refresh:)
-            [
+            stages = [
               run_source_stage(source, 'process existing organizations') do
                 process_source_organizations(period, source, refresh: refresh)
-              end,
+              end
+            ]
+            return stages if @existing_only
+
+            stages + [
               run_source_stage(source, 'discover organizations') { discover_source_organizations(period, source) },
               run_source_stage(source, 'process organizations') do
                 process_source_organizations(period, source, refresh: refresh)
