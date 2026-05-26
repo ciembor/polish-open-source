@@ -868,6 +868,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('<dd>31 110</dd>')
     expect(response.body).to include('href="/latest/languages/Ruby"')
     expect(response.body).to include('Zobacz ranking')
+    expect(response.body).not_to include('index-card__repository')
+    expect(response.body).not_to include('michalsnik/aos')
     expect(response.body).not_to include('00Baarti/Strona-QUIZ')
   end
 
@@ -969,6 +971,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.status).to eq(200)
     expect(response.body).to include('<title>Pakiety open source - Polish Open Source</title>')
     expect(response.body).to include('rel="canonical" href="https://rank.example/packages"')
+    expect(response.body).not_to include('index-card__repository')
     expect_public_package_index_links(response)
     expect(response.body).to include('"@type": "Dataset"')
   end

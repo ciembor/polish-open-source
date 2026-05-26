@@ -34,19 +34,13 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
           ecosystem: 'npm',
           package_count: 2,
           repository_count: 2,
-          repository_stars_count: 50,
-          repository_full_name: 'org/tool',
-          repository_kind: 'organization',
-          repository_platform: 'github'
+          repository_stars_count: 50
         },
         {
           ecosystem: 'rubygems',
           package_count: 1,
           repository_count: 1,
-          repository_stars_count: 100,
-          repository_full_name: 'ruby/gem',
-          repository_kind: 'organization',
-          repository_platform: 'github'
+          repository_stars_count: 100
         }
       ]
     )

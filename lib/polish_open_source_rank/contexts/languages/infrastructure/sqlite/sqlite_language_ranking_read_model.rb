@@ -96,30 +96,12 @@ module PolishOpenSourceRank
 
             def language_cards_sql(limit, repository_kind)
               <<~SQL
-                WITH language_repositories AS (#{repository_union_sql(repository_kind)}),
-                ranked_repositories AS (
-                  SELECT language,
-                         full_name AS repository_full_name,
-                         repository_kind,
-                         platform AS repository_platform,
-                         stargazers_count AS top_repository_stars_count,
-                         ROW_NUMBER() OVER (
-                           PARTITION BY language
-                           ORDER BY stargazers_count DESC, full_name COLLATE NOCASE ASC
-                         ) AS repository_rank
-                  FROM language_repositories
-                )
+                WITH language_repositories AS (#{repository_union_sql(repository_kind)})
                 SELECT language_repositories.language,
                        COUNT(*) AS repository_count,
                        SUM(language_repositories.stargazers_count) AS repository_stars_count,
-                       SUM(language_repositories.monthly_stars_delta) AS repository_stars_delta,
-                       ranked_repositories.repository_full_name,
-                       ranked_repositories.repository_kind,
-                       ranked_repositories.repository_platform
+                       SUM(language_repositories.monthly_stars_delta) AS repository_stars_delta
                 FROM language_repositories
-                LEFT JOIN ranked_repositories
-                  ON ranked_repositories.language = language_repositories.language
-                 AND ranked_repositories.repository_rank = 1
                 GROUP BY language_repositories.language
                 ORDER BY repository_count DESC, language_repositories.language COLLATE NOCASE ASC
                 LIMIT #{bounded_limit(limit)}

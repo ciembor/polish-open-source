@@ -24,7 +24,7 @@
           <article class="index-card">
             <div class="index-card__header">
               <img class="index-card__icon" src="<%= h package_ecosystem_icon_path(ecosystem) %>" alt="" aria-hidden="true">
-              <h3><%= h package_ecosystem_name(ecosystem) %></h3>
+              <h3><a class="primary-link" href="<%= h app_path(package_ecosystem_path(ecosystem)) %>"><%= h package_ecosystem_name(ecosystem) %></a></h3>
             </div>
             <p class="index-card__description"><%= h package_ecosystem_description(ecosystem) %></p>
             <dl class="index-card__metrics">
@@ -37,16 +37,6 @@
                 <dd><%= h number(card.fetch(:repository_stars_count)) %></dd>
               </div>
             </dl>
-            <p class="index-card__repository">
-              <span><%= h t('rankings.repository') %></span>
-              <% if card[:repository_full_name] %>
-                <% repository = { platform: card.fetch(:repository_platform), full_name: card.fetch(:repository_full_name) } %>
-                <% path = card[:repository_kind] == "organization" ? organization_repository_profile_path(repository) : repository_profile_path(repository) %>
-                <a class="muted-link muted-link--standalone" href="<%= h app_path(path) %>"><%= h card.fetch(:repository_full_name) %></a>
-              <% else %>
-                <span><%= h t('packages.repository.unlinked') %></span>
-              <% end %>
-            </p>
             <a class="ranking-action" href="<%= h app_path(package_ecosystem_path(ecosystem)) %>"><%= h t('packages.ecosystem.action') %></a>
           </article>
         <% end %>
