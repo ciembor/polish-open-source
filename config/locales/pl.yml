@@ -178,7 +178,7 @@ pl:
     back: "Wróć do pakietów"
     ecosystem:
       action: "Zobacz ranking"
-      card_description: "Pakiety %{ecosystem} dla %{scope}, wykryte w polskich repozytoriach open source."
+      card_description: "Pakiety %{ecosystem} dla %{scope}."
       description: "Pakiety powiązane z polskimi repozytoriami open source."
       lede: "Najpopularniejsze pakiety ekosystemu według pobrań i liczby zależnych projektów."
       scope:
@@ -283,7 +283,7 @@ pl:
     action: "Zobacz ranking"
     back: "Wróć do języków"
     back_to_language: "Wróć do %{language}"
-    card_description: "Repozytoria w języku %{language} w polskim open source."
+    card_description: "Repozytoria w języku %{language}."
     hero:
       eyebrow: "Rankingi języków"
       lede: "Języki programowania w polskich repozytoriach open source według liczby projektów, gwiazdek i trendu."
