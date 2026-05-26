@@ -73,13 +73,15 @@
             <a class="nav__link js-secondary-control js-collapsible-control" href="<%= h app_path(package_index_path(period_slug: 'latest')) %>"><%= h t('nav.packages') %></a>
             <a class="nav__link js-secondary-control js-collapsible-control" href="<%= h app_path(editions_path) %>"><%= h t('nav.editions') %></a>
             <a class="nav__link js-secondary-control js-collapsible-control" href="<%= h app_path('/about') %>"><%= h t('nav.about') %></a>
+            <% if current_user %>
+              <a class="nav__link js-secondary-control js-collapsible-control" href="<%= h app_path(user_profile_path(current_user)) %>"><%= h t('nav.profile') %></a>
+            <% end %>
           </div>
           <details class="nav-menu nav-menu--hamburger js-hamburger" hidden>
             <summary class="nav-hamburger" aria-label="<%= h t('nav.menu') %>"></summary>
             <div class="nav-menu__panel js-hamburger-panel"></div>
           </details>
           <% if current_user %>
-            <a class="nav__link js-fixed-control" href="<%= h app_path(user_profile_path(current_user)) %>"><%= h t('nav.profile') %></a>
             <form class="nav-form js-fixed-control" method="post" action="<%= h app_path('/logout') %>">
               <button class="nav-pill" type="submit"><%= h t('auth.logout') %></button>
             </form>
