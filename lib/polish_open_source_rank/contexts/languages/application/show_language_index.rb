@@ -9,8 +9,8 @@ module PolishOpenSourceRank
             @language_ranking_read_model = language_ranking_read_model
           end
 
-          def call(period_start:, limit: 10, repository_kind: nil)
-            language_ranking_read_model.rankings(
+          def call(period_start:, limit: 100, repository_kind: nil)
+            language_ranking_read_model.language_cards(
               period_start: period_start,
               limit: limit,
               repository_kind: repository_kind

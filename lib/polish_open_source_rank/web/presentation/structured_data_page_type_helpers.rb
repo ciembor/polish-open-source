@@ -40,7 +40,7 @@ module PolishOpenSourceRank
         end
 
         def package_collection?
-          @package_ecosystems || @package_rankings || @package_ranking
+          @package_cards || @package_rankings || @package_ranking
         end
 
         def package_page?

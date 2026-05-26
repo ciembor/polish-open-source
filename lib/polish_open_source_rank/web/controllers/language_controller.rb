@@ -14,7 +14,7 @@ module PolishOpenSourceRank
             public_page_state.language_index(
               period_slug: period_slug,
               period_start: @period,
-              rankings: show_language_index.call(period_start: @period, limit: 10)
+              cards: show_language_index.call(period_start: @period)
             )
           )
           erb :'languages/index'

@@ -30,6 +30,35 @@ RSpec.describe PolishOpenSourceRank::Contexts::Languages::Infrastructure::SQLite
     expect(rankings.fetch(:repository_count).first).not_to include(:sample_repository_full_name)
   end
 
+  it 'returns language cards ordered by repository count' do
+    seed_user_repository(id: 1, full_name: 'alice/ruby-a', language: 'Ruby', stars: 100, delta: 2)
+    seed_user_repository(id: 2, full_name: 'alice/ruby-b', language: 'Ruby', stars: 5, delta: 0)
+    seed_organization_repository(id: 3, full_name: 'org/typescript-a', language: 'TypeScript', stars: 90, delta: 8)
+
+    expect(read_model.language_cards(period_start: period)).to eq(
+      [
+        {
+          language: 'Ruby',
+          repository_count: 2,
+          repository_stars_count: 105,
+          repository_stars_delta: 2,
+          repository_full_name: 'alice/ruby-a',
+          repository_kind: 'user',
+          repository_platform: 'github'
+        },
+        {
+          language: 'TypeScript',
+          repository_count: 1,
+          repository_stars_count: 90,
+          repository_stars_delta: 8,
+          repository_full_name: 'org/typescript-a',
+          repository_kind: 'organization',
+          repository_platform: 'github'
+        }
+      ]
+    )
+  end
+
   it 'ranks repositories inside a language with a people and organizations split' do
     seed_language_repository_split
 

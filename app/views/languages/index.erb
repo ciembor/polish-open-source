@@ -17,12 +17,38 @@
 <section class="ranking-band" aria-labelledby="language-rankings-heading">
   <div class="content">
     <h2 id="language-rankings-heading"><%= h t('languages.title') %></h2>
-    <div class="ranking-grid ranking-grid--compact">
-      <% PolishOpenSourceRank::Contexts::Languages::Domain::LanguageRankingMetric.all.each do |language_metric| %>
-        <% slug = language_metric.slug %>
-        <% metric = language_metric.key.to_sym %>
-        <%= erb :"languages/ranking_table", locals: { heading_id: "language-ranking-#{slug}", title: language_ranking_preview_title(slug), rows: @language_rankings.fetch(metric, []), metric: metric, metric_label: language_metric_label(metric), top_path: language_ranking_path(slug) } %>
-      <% end %>
-    </div>
+    <% if @language_cards.any? %>
+      <div class="index-card-grid">
+        <% @language_cards.each do |card| %>
+          <% language = card.fetch(:language) %>
+          <article class="index-card">
+            <div class="index-card__header">
+              <img class="index-card__icon" src="<%= h language_icon_path(language) %>" alt="" aria-hidden="true">
+              <h3><%= h language %></h3>
+            </div>
+            <p class="index-card__description"><%= h language_description(language) %></p>
+            <dl class="index-card__metrics">
+              <div>
+                <dt><%= h t('languages.metric.repository.count') %></dt>
+                <dd><%= h number(card.fetch(:repository_count)) %></dd>
+              </div>
+              <div>
+                <dt><%= h t('rankings.metric.stars') %></dt>
+                <dd><%= h number(card.fetch(:repository_stars_count)) %></dd>
+              </div>
+            </dl>
+            <p class="index-card__repository">
+              <span><%= h t('rankings.repository') %></span>
+              <% repository = { platform: card.fetch(:repository_platform), full_name: card.fetch(:repository_full_name) } %>
+              <% path = card[:repository_kind] == "organization" ? organization_repository_profile_path(repository) : repository_profile_path(repository) %>
+              <a class="muted-link muted-link--standalone" href="<%= h app_path(path) %>"><%= h card.fetch(:repository_full_name) %></a>
+            </p>
+            <a class="ranking-action" href="<%= h app_path(language_path(language)) %>"><%= h t('languages.action') %></a>
+          </article>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="ranking-list__empty"><%= h t('rankings.empty.records') %></p>
+    <% end %>
   </div>
 </section>

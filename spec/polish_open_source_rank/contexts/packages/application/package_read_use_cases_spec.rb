@@ -4,7 +4,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application do
   let(:read_model) do
     double(
       'PackageRankingReadModel',
-      ecosystems: %w[npm rubygems pypi],
+      ecosystem_cards: [
+        { ecosystem: 'npm' },
+        { ecosystem: 'rubygems' },
+        { ecosystem: 'pypi' }
+      ],
       rankings: { downloads_30d: [{ package_name: 'tool' }] },
       ranked_packages: [{ package_name: 'tool' }],
       package_profile: { package_name: 'tool' }
@@ -16,7 +20,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application do
       period_start: '2026-04-01'
     )
 
-    expect(result).to eq(%w[npm rubygems pypi])
+    expect(result).to eq([{ ecosystem: 'npm' }, { ecosystem: 'rubygems' }, { ecosystem: 'pypi' }])
   end
 
   it 'returns empty package index for missing period' do
