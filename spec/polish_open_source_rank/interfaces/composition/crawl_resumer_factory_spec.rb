@@ -54,7 +54,14 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::CrawlResumerFactor
     allow(PolishOpenSourceRank::Interfaces::Composition::PackageRankingJobFactory)
       .to receive(:build)
       .with(
-        ['--period', '2026-04', '--ecosystem', 'npm'],
+        [
+          '--period', '2026-04',
+          '--ecosystem', 'npm',
+          '--repository-limit', '1000',
+          '--scan-limit', '1000',
+          '--manifest-limit', '2000',
+          '--registry-limit', '2000'
+        ],
         configuration: configuration,
         output: output,
         crawl_jobs: crawl_jobs

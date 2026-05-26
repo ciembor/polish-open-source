@@ -126,6 +126,28 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application::ScanReposi
     expect(scan).to include(status: 'scanned', tree_sha: 'broken-tree-sha', manifest_count: 1)
   end
 
+  it 'replaces manifests that already have registry package links' do
+    seed_scan(full_name: 'alice/app')
+    stub_changed_repository
+    use_case.call(period, limit: 10)
+    seed_registry_package_link(manifests.first.fetch(:id))
+    tree_gateway.stub_tree(
+      'alice/app',
+      ref: 'main',
+      sha: 'updated-tree-sha',
+      truncated: false,
+      entries: [{ path: 'package.json', sha: 'updated-package-sha' }]
+    )
+    tree_gateway.stub_blob('alice/app', sha: 'updated-package-sha', content: '{"name":"updated-app"}')
+
+    use_case.call(period, limit: 10, refresh: true)
+
+    expect(manifests.map { |manifest| manifest.slice(:package_name, :path) }).to eq(
+      [{ package_name: 'updated-app', path: 'package.json' }]
+    )
+    expect(database.fetch_value('SELECT COUNT(*) FROM registry_package_links')).to eq(0)
+  end
+
   def seed_scan(full_name:, tree_sha: nil, manifest_count: 0)
     database.execute(
       <<~SQL,
@@ -136,6 +158,27 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application::ScanReposi
         VALUES (?, 'user', 'github', 1, ?, ?, ?, 'pending', ?)
       SQL
       [period.start_date.to_s, full_name, tree_sha, manifest_count, '2026-05-23T11:00:00Z']
+    )
+  end
+
+  def seed_registry_package_link(manifest_id)
+    database.execute(
+      <<~SQL,
+        INSERT INTO registry_packages(
+          ecosystem, package_name, normalized_package_name, registry_url, status, updated_at
+        )
+        VALUES ('npm', 'app', 'app', 'https://www.npmjs.com/package/app', 'ok', ?)
+      SQL
+      ['2026-05-23T11:30:00Z']
+    )
+    database.execute(
+      <<~SQL,
+        INSERT INTO registry_package_links(
+          manifest_id, ecosystem, normalized_package_name, match_confidence, matched, checked_at
+        )
+        VALUES (?, 'npm', 'app', 'exact', 1, ?)
+      SQL
+      [manifest_id, '2026-05-23T11:30:00Z']
     )
   end
 
