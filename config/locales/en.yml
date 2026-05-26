@@ -92,6 +92,9 @@ en:
       - "December"
   footer:
     data_source: "Data comes from the public APIs of GitHub, GitLab and Codeberg and is refreshed monthly."
+  github_ribbon:
+    label: "Open the project on GitHub"
+    text: "Project on GitHub"
   nav:
     about: "About"
     cities: "Cities"

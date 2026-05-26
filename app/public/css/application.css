@@ -130,3 +130,36 @@ h3 {
   text-align: center;
   text-decoration: none;
 }
+
+.github-ribbon {
+  align-items: center;
+  background: var(--ink);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  bottom: 34px;
+  box-shadow: 0 10px 24px rgba(29, 37, 33, 0.24);
+  color: #ffffff;
+  display: flex;
+  font-size: 0.78rem;
+  font-weight: 800;
+  gap: 8px;
+  justify-content: center;
+  line-height: 1;
+  padding: 10px 0;
+  position: fixed;
+  right: -58px;
+  text-decoration: none;
+  transform: rotate(-45deg);
+  transform-origin: center;
+  width: 220px;
+  z-index: 40;
+}
+
+.github-ribbon:hover {
+  background: var(--accent);
+}
+
+.github-ribbon__icon {
+  filter: brightness(0) invert(1);
+  height: 16px;
+  width: 16px;
+}
