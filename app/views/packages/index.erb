@@ -17,12 +17,36 @@
 <section class="ranking-band" aria-labelledby="package-ecosystems-heading">
   <div class="content">
     <h2 id="package-ecosystems-heading"><%= h t('packages.title') %></h2>
-    <% if @package_ecosystems.any? %>
-      <div class="ranking-grid ranking-grid--compact">
-        <% @package_ecosystems.each do |ecosystem| %>
-          <article class="ranking-table">
-            <h3><%= h ecosystem %></h3>
-            <p class="ranking-list__description"><%= h t('packages.ecosystem.description') %></p>
+    <% if @package_cards.any? %>
+      <div class="index-card-grid">
+        <% @package_cards.each do |card| %>
+          <% ecosystem = card.fetch(:ecosystem) %>
+          <article class="index-card">
+            <div class="index-card__header">
+              <img class="index-card__icon" src="<%= h package_ecosystem_icon_path(ecosystem) %>" alt="" aria-hidden="true">
+              <h3><%= h package_ecosystem_name(ecosystem) %></h3>
+            </div>
+            <p class="index-card__description"><%= h package_ecosystem_description(ecosystem) %></p>
+            <dl class="index-card__metrics">
+              <div>
+                <dt><%= h t('languages.metric.repository.count') %></dt>
+                <dd><%= h number(card.fetch(:repository_count)) %></dd>
+              </div>
+              <div>
+                <dt><%= h t('rankings.metric.stars') %></dt>
+                <dd><%= h number(card.fetch(:repository_stars_count)) %></dd>
+              </div>
+            </dl>
+            <p class="index-card__repository">
+              <span><%= h t('rankings.repository') %></span>
+              <% if card[:repository_full_name] %>
+                <% repository = { platform: card.fetch(:repository_platform), full_name: card.fetch(:repository_full_name) } %>
+                <% path = card[:repository_kind] == "organization" ? organization_repository_profile_path(repository) : repository_profile_path(repository) %>
+                <a class="muted-link muted-link--standalone" href="<%= h app_path(path) %>"><%= h card.fetch(:repository_full_name) %></a>
+              <% else %>
+                <span><%= h t('packages.repository.unlinked') %></span>
+              <% end %>
+            </p>
             <a class="ranking-action" href="<%= h app_path(package_ecosystem_path(ecosystem)) %>"><%= h t('packages.ecosystem.action') %></a>
           </article>
         <% end %>

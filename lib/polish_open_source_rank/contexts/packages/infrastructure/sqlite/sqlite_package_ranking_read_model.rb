@@ -18,6 +18,10 @@ module PolishOpenSourceRank
                       .map { |row| row.fetch(:ecosystem) }
             end
 
+            def ecosystem_cards(period_start:)
+              database.fetch_all(ecosystem_cards_sql, [period_start, period_start])
+            end
+
             def rankings(ecosystem:, period_start:, limit: DEFAULT_LIMIT, repository_kind: nil)
               Domain::PackageRankingMetric.keys(ecosystem: ecosystem).to_h do |metric|
                 [metric.to_sym, ranked_packages(ecosystem: ecosystem, period_start: period_start, metric: metric,
@@ -127,6 +131,80 @@ module PolishOpenSourceRank
               bindings = [period_start, ecosystem]
               bindings << repository_kind if repository_kind
               bindings
+            end
+
+            def ecosystem_cards_sql
+              <<~SQL
+                WITH linked_repositories AS (
+                  SELECT DISTINCT snapshots.ecosystem,
+                         scans.repository_kind,
+                         scans.platform,
+                         scans.repository_source_id,
+                         scans.full_name,
+                         COALESCE(user_stats.stargazers_count, organization_stats.stargazers_count, 0)
+                           AS repository_stars_count
+                  FROM registry_package_snapshots snapshots
+                  INNER JOIN registry_packages packages
+                    ON packages.ecosystem = snapshots.ecosystem
+                   AND packages.normalized_package_name = snapshots.normalized_package_name
+                  INNER JOIN registry_package_links links
+                    ON links.ecosystem = packages.ecosystem
+                   AND links.normalized_package_name = packages.normalized_package_name
+                   AND links.matched = 1
+                  INNER JOIN package_manifests manifests ON manifests.id = links.manifest_id
+                  INNER JOIN package_repository_scans scans ON scans.id = manifests.repository_scan_id
+                  LEFT JOIN repository_monthly_stats user_stats
+                    ON scans.repository_kind = 'user'
+                   AND user_stats.period_start = snapshots.period_start
+                   AND user_stats.platform = scans.platform
+                   AND user_stats.repository_github_id = scans.repository_source_id
+                  LEFT JOIN organization_repository_monthly_stats organization_stats
+                    ON scans.repository_kind = 'organization'
+                   AND organization_stats.period_start = snapshots.period_start
+                   AND organization_stats.platform = scans.platform
+                   AND organization_stats.repository_github_id = scans.repository_source_id
+                  WHERE snapshots.period_start = ?
+                    AND packages.status = 'active'
+                ),
+                ecosystem_totals AS (
+                  SELECT ecosystem,
+                         COUNT(*) AS repository_count,
+                         SUM(repository_stars_count) AS repository_stars_count
+                  FROM linked_repositories
+                  GROUP BY ecosystem
+                ),
+                ranked_repositories AS (
+                  SELECT ecosystem,
+                         repository_kind,
+                         platform AS repository_platform,
+                         full_name AS repository_full_name,
+                         repository_stars_count,
+                         ROW_NUMBER() OVER (
+                           PARTITION BY ecosystem
+                           ORDER BY repository_stars_count DESC, full_name COLLATE NOCASE ASC
+                         ) AS repository_rank
+                  FROM linked_repositories
+                )
+                SELECT snapshots.ecosystem,
+                       COUNT(DISTINCT snapshots.normalized_package_name) AS package_count,
+                       COALESCE(ecosystem_totals.repository_count, 0) AS repository_count,
+                       COALESCE(ecosystem_totals.repository_stars_count, 0) AS repository_stars_count,
+                       ranked_repositories.repository_full_name,
+                       ranked_repositories.repository_kind,
+                       ranked_repositories.repository_platform
+                FROM registry_package_snapshots snapshots
+                INNER JOIN registry_packages packages
+                  ON packages.ecosystem = snapshots.ecosystem
+                 AND packages.normalized_package_name = snapshots.normalized_package_name
+                LEFT JOIN ecosystem_totals ON ecosystem_totals.ecosystem = snapshots.ecosystem
+                LEFT JOIN ranked_repositories
+                  ON ranked_repositories.ecosystem = snapshots.ecosystem
+                 AND ranked_repositories.repository_rank = 1
+                WHERE snapshots.period_start = ?
+                  AND packages.status = 'active'
+                GROUP BY snapshots.ecosystem
+                ORDER BY repository_count DESC, snapshots.ecosystem COLLATE NOCASE ASC
+              SQL
             end
 
             def package_profile_sql

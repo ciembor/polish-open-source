@@ -12,8 +12,8 @@ module PolishOpenSourceRank
           def call(period_start:)
             return [] unless period_start
 
-            package_ranking_read_model.ecosystems(period_start: period_start).select do |ecosystem|
-              Domain::PackageRankingMetric.slugs(ecosystem: ecosystem).any?
+            package_ranking_read_model.ecosystem_cards(period_start: period_start).select do |card|
+              Domain::PackageRankingMetric.slugs(ecosystem: card.fetch(:ecosystem)).any?
             end
           end
 

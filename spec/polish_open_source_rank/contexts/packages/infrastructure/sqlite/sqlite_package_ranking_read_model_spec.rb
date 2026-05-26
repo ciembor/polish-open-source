@@ -17,6 +17,41 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     expect(read_model.ecosystems(period_start: period)).to eq(%w[npm rubygems])
   end
 
+  it 'returns ecosystem cards ordered by linked repository count' do
+    seed_package(ecosystem: 'npm', name: 'alpha', downloads_30d: 10)
+    seed_package(ecosystem: 'npm', name: 'beta', downloads_30d: 20)
+    seed_package(ecosystem: 'rubygems', name: 'tool', downloads_30d: 30)
+    link_repository(name: 'alpha', scan_id: 10, full_name: 'alice/app', repository_kind: 'user',
+                    stats: { stars: 20, delta: 3 })
+    link_repository(name: 'beta', scan_id: 20, full_name: 'org/tool', repository_kind: 'organization',
+                    stats: { stars: 30, delta: 1 })
+    link_repository(name: 'tool', scan_id: 30, full_name: 'ruby/gem', repository_kind: 'organization',
+                    ecosystem: 'rubygems', stats: { stars: 100, delta: 5 })
+
+    expect(read_model.ecosystem_cards(period_start: period)).to eq(
+      [
+        {
+          ecosystem: 'npm',
+          package_count: 2,
+          repository_count: 2,
+          repository_stars_count: 50,
+          repository_full_name: 'org/tool',
+          repository_kind: 'organization',
+          repository_platform: 'github'
+        },
+        {
+          ecosystem: 'rubygems',
+          package_count: 1,
+          repository_count: 1,
+          repository_stars_count: 100,
+          repository_full_name: 'ruby/gem',
+          repository_kind: 'organization',
+          repository_platform: 'github'
+        }
+      ]
+    )
+  end
+
   it 'ranks packages per ecosystem and metric with deterministic tie breakers' do
     seed_package(ecosystem: 'npm', name: 'zeta', downloads_30d: 50, downloads_total: 100, dependents_count: 5)
     seed_package(ecosystem: 'npm', name: 'alpha', downloads_30d: 50, downloads_total: 80, dependents_count: 7)

@@ -95,7 +95,7 @@ module PolishOpenSourceRank
 
         def package_index(period_slug:, period_start:, ecosystems:)
           {
-            package_ecosystems: ecosystems,
+            package_cards: ecosystems,
             title: t('packages.seo.index_title'),
             description: t('packages.seo.index_description'),
             canonical_path: call_view(:package_index_path, period_slug: period_slug),
@@ -103,9 +103,9 @@ module PolishOpenSourceRank
           }
         end
 
-        def language_index(period_slug:, period_start:, rankings:)
+        def language_index(period_slug:, period_start:, cards:)
           {
-            language_rankings: rankings,
+            language_cards: cards,
             title: t('languages.seo.index_title'),
             description: t('languages.seo.index_description'),
             canonical_path: call_view(:language_index_path, period_slug: period_slug),
