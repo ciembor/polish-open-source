@@ -62,8 +62,7 @@
 }
 
 .rule-card p,
-.platform-card p,
-.about-author p {
+.platform-card p {
   color: var(--muted);
   margin-bottom: 0;
 }
@@ -110,18 +109,3 @@
   object-fit: contain;
   width: 64px;
 }
-
-.about-author {
-  background: #10231f;
-  color: #ffffff;
-}
-
-.about-author .eyebrow,
-.about-author p {
-  color: #b6d6ce;
-}
-
-.about-author__inner {
-  max-width: 820px;
-}
-

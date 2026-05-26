@@ -1,8 +1,5 @@
 pl:
   about:
-    author:
-      body: "Programista i autor projektu. Buduję narzędzia, aplikacje i projekty open source, które porządkują dane i ułatwiają odkrywanie wartościowej pracy technicznej."
-      eyebrow: "Autor"
     hero:
       eyebrow: "O projekcie"
       lede: "Ranking pokazuje publiczną pracę osób związanych z Polską na platformach open source."
@@ -95,6 +92,18 @@ pl:
   github_ribbon:
     label: "Otwórz projekt na GitHubie"
     text: "Projekt na GitHubie"
+  site_author:
+    label: "Autor projektu"
+    link_text:
+      github: "github"
+      homepage: "homepage"
+      linkedin: "linkedin"
+      x: "x"
+    links:
+      github: "Otwórz profil Macieja Ciemborowicza na GitHubie"
+      homepage: "Otwórz stronę Macieja Ciemborowicza"
+      linkedin: "Otwórz profil Macieja Ciemborowicza na LinkedIn"
+      x: "Otwórz profil Macieja Ciemborowicza na X"
   nav:
     about: "O projekcie"
     cities: "Miasta"

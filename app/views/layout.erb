@@ -109,6 +109,33 @@
       <%= yield %>
     </main>
 
+    <section class="site-author" aria-label="<%= h t('site_author.label') %>">
+      <div class="content site-author__inner">
+        <img class="site-author__avatar" src="/images/maciej-ciemborowicz.jpg" alt="" aria-hidden="true" width="56" height="56">
+        <div class="site-author__identity">
+          <span class="site-author__name">Maciej Ciemborowicz</span>
+          <span class="site-author__links">
+            <a class="site-author__link" href="https://maciej-ciemborowicz.eu/" aria-label="<%= h t('site_author.links.homepage') %>">
+              <img src="<%= h app_path('/icons/home.svg') %>" alt="" aria-hidden="true">
+              <span><%= h t('site_author.link_text.homepage') %></span>
+            </a>
+            <a class="site-author__link" href="https://github.com/ciembor" aria-label="<%= h t('site_author.links.github') %>">
+              <img src="<%= h app_path('/icons/github.svg') %>" alt="" aria-hidden="true">
+              <span><%= h t('site_author.link_text.github') %></span>
+            </a>
+            <a class="site-author__link" href="https://x.com/ciembor" aria-label="<%= h t('site_author.links.x') %>">
+              <img src="<%= h app_path('/icons/x.svg') %>" alt="" aria-hidden="true">
+              <span><%= h t('site_author.link_text.x') %></span>
+            </a>
+            <a class="site-author__link" href="https://www.linkedin.com/in/maciej-ciemborowicz/" aria-label="<%= h t('site_author.links.linkedin') %>">
+              <img src="<%= h app_path('/icons/linkedin.svg') %>" alt="" aria-hidden="true">
+              <span><%= h t('site_author.link_text.linkedin') %></span>
+            </a>
+          </span>
+        </div>
+      </div>
+    </section>
+
     <footer class="site-footer">
       <p><%= h t('footer.data_source') %></p>
     </footer>

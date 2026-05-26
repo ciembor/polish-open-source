@@ -1,8 +1,5 @@
 en:
   about:
-    author:
-      body: "Software developer and project author. I build tools, apps and open source projects that organize data and make valuable technical work easier to discover."
-      eyebrow: "Author"
     hero:
       eyebrow: "About"
       lede: "The ranking shows public work by people connected with Poland across open source platforms."
@@ -95,6 +92,18 @@ en:
   github_ribbon:
     label: "Open the project on GitHub"
     text: "Project on GitHub"
+  site_author:
+    label: "Project author"
+    link_text:
+      github: "github"
+      homepage: "homepage"
+      linkedin: "linkedin"
+      x: "x"
+    links:
+      github: "Open Maciej Ciemborowicz on GitHub"
+      homepage: "Open Maciej Ciemborowicz homepage"
+      linkedin: "Open Maciej Ciemborowicz on LinkedIn"
+      x: "Open Maciej Ciemborowicz on X"
   nav:
     about: "About"
     cities: "Cities"
