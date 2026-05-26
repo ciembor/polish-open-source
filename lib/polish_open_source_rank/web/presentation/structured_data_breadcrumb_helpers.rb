@@ -60,7 +60,6 @@ module PolishOpenSourceRank
             breadcrumbs << { name: @package_ecosystem, path: package_ecosystem_path(@package_ecosystem) }
           end
           breadcrumbs << { name: package_metric_label(@package_metric), path: canonical_path } if @package_ranking
-          breadcrumbs << { name: @package_profile.fetch(:package_name), path: canonical_path } if @package_profile
           breadcrumbs
         end
 

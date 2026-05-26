@@ -7,9 +7,6 @@ module PolishOpenSourceRank
         def self.registered(app)
           app.get('/packages') { render_package_index('latest') }
           app.get('/packages/:ecosystem') { render_package_ecosystem('latest', params.fetch('ecosystem')) }
-          app.get('/packages/:ecosystem/names/:encoded_name') do
-            render_package_profile(params.fetch('ecosystem'), params.fetch('encoded_name'))
-          end
           register_latest_routes(app)
           register_period_routes(app)
         end

@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'base64'
-
 module PolishOpenSourceRank
   module Web
     module Presentation
@@ -23,23 +21,6 @@ module PolishOpenSourceRank
 
         def package_repository_ranking_path(ecosystem, repository_kind, metric_slug, period_slug: @period_slug)
           "#{package_ecosystem_path(ecosystem, period_slug: period_slug)}/#{repository_kind}s/#{metric_slug}"
-        end
-
-        def package_profile_path(package)
-          ecosystem = Rack::Utils.escape_path(package.fetch(:ecosystem))
-          encoded_name = package_name_slug(package.fetch(:package_name))
-          localized_public_path("/packages/#{ecosystem}/names/#{encoded_name}", locale: current_locale)
-        end
-
-        def package_name_slug(package_name)
-          Base64.urlsafe_encode64(package_name, padding: false)
-        end
-
-        def decode_package_name_slug(slug)
-          padding = '=' * ((4 - (slug.length % 4)) % 4)
-          Base64.urlsafe_decode64("#{slug}#{padding}")
-        rescue ArgumentError
-          nil
         end
 
         def package_metric_label(metric, ecosystem: nil)

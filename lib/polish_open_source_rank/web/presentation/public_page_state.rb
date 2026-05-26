@@ -184,18 +184,6 @@ module PolishOpenSourceRank
           }
         end
 
-        def package_profile(profile:)
-          {
-            title: t('packages.seo.profile_title', package: profile.fetch(:package_name)),
-            description: t(
-              'packages.seo.profile_description',
-              package: profile.fetch(:package_name),
-              ecosystem: profile.fetch(:ecosystem)
-            ),
-            canonical_path: call_view(:package_profile_path, profile)
-          }
-        end
-
         def ranking_detail(scope:, period_slug:, kind:, metric:, ranking:)
           ranking_name = call_view(:ranking_title, kind, metric)
           scope_name = call_view(:scope_name, scope)

@@ -70,7 +70,6 @@ module PolishOpenSourceRank
         def page_schema_details
           return { 'about' => { '@type' => 'Organization', 'name' => 'Polish Open Source Rank' } } if about_page?
           return { 'mainEntity' => collection_schema } if collection_page?
-          return { 'mainEntity' => package_profile_schema } if @package_profile
           return { 'mainEntity' => profile_schema } if profile_page?
           return repository_schema if repository_page?
 

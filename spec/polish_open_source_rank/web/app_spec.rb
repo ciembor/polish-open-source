@@ -177,7 +177,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect_rankings_detail_pages(responses)
   end
 
-  it 'renders package ranking pages and package profiles', :aggregate_failures do
+  it 'renders package ranking pages without package profiles', :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     request = Rack::MockRequest.new(described_class)
     encoded_name = Base64.urlsafe_encode64('@scope/tool', padding: false)
@@ -834,7 +834,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       homebrew_top: request.get('/latest/packages/homebrew/top'),
       nuget: request.get('/latest/packages/nuget'),
       nuget_downloads: request.get('/latest/packages/nuget/downloads'),
-      profile: request.get("/packages/npm/names/#{encoded_name}"),
+      package_profile: request.get("/packages/npm/names/#{encoded_name}"),
       missing_profile: request.get('/packages/npm/names/not-base64!')
     }
   end
@@ -909,14 +909,15 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect_package_index_page(responses.fetch(:index))
     expect_package_ecosystem_page(responses.fetch(:ecosystem), encoded_name)
     expect_package_detail_pages(responses)
-    expect_package_profile_page(responses.fetch(:profile))
+    expect(responses.fetch(:package_profile).status).to eq(404)
     expect(responses.fetch(:missing_profile).status).to eq(404)
   end
 
   def expect_package_ecosystem_page(response, encoded_name)
     expect(response.status).to eq(200)
     expect(response.body).to include('@scope/tool')
-    expect(response.body).to include("href=\"/packages/npm/names/#{encoded_name}\"")
+    expect(response.body).not_to include("href=\"/packages/npm/names/#{encoded_name}\"")
+    expect(response.body).to include('href="https://github.com/scope/tool"')
     expect(response.body).to include('Ludzie')
     expect(response.body).to include('Organizacje')
     expect(response.body).to include('Top 10 według pobrań z 30 dni')
@@ -977,17 +978,6 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('href="/latest/packages/homebrew"')
     expect(response.body).to include('href="/latest/packages/nuget"')
     expect(response.body).to include('href="/latest/packages/maven"')
-  end
-
-  def expect_package_profile_page(response)
-    expect(response.status).to eq(200)
-    expect(response.body).to include('<title>@scope/tool - pakiet open source</title>')
-    expect(response.body).to include('rel="canonical" href="https://rank.example/packages/npm/names/')
-    expect(response.body).to include('"@type": "SoftwareApplication"')
-    expect(response.body).to include('n/a')
-    expect(response.body).to include('📥 1 000')
-    expect(response.body).to include('⭐ 12 345')
-    expect(response.body).to include('href="/repositories/github/alice/app"')
   end
 
   def expect_rankings_detail_pages(responses)
