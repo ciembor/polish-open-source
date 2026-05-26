@@ -1,4 +1,4 @@
-FROM docker.io/library/ruby:3.4-slim
+FROM docker.io/library/ruby:4.0-slim
 
 ENV APP_HOME=/app \
     BUNDLE_WITHOUT=development:test \
