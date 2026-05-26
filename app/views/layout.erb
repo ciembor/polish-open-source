@@ -112,5 +112,15 @@
     <footer class="site-footer">
       <p><%= h t('footer.data_source') %></p>
     </footer>
+    <a
+      class="github-ribbon"
+      href="https://github.com/ciembor/polish-open-source"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="<%= h t('github_ribbon.label') %>"
+    >
+      <img class="github-ribbon__icon" src="<%= h app_path('/icons/github.svg') %>" alt="" aria-hidden="true">
+      <span><%= h t('github_ribbon.text') %></span>
+    </a>
   </body>
 </html>

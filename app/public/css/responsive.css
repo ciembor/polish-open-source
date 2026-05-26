@@ -112,4 +112,10 @@
   .nav-pill--github span {
     display: none;
   }
+
+  .github-ribbon {
+    bottom: 24px;
+    font-size: 0.72rem;
+    right: -68px;
+  }
 }

@@ -1321,6 +1321,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'href="/latest/users/top"',
       'href="/latest/organizations/top"',
       'href="/latest/organization-repositories/top"',
+      'href="https://github.com/ciembor/polish-open-source"',
+      'Projekt na GitHubie',
       'Zobacz top 100',
       'href="/editions"',
       'application/ld+json'
