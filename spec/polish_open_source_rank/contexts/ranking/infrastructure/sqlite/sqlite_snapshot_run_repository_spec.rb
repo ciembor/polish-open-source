@@ -73,6 +73,26 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     expect(sync_run).to include(status: 'failed', error: 'GitHubClient::Forbidden: blocked')
   end
 
+  it 'restores completed pending candidates when a refresh run fails', :aggregate_failures do
+    allow(Time).to receive(:now) { Time.new(2026, 4, 1, 12, 0, 0, '+02:00') }
+    run_id = seed_run
+    seed_candidate(login: 'alice', status: 'pending')
+    seed_complete_processed_candidate('alice', platform: 'github')
+    seed_candidate(login: 'bob', status: 'pending')
+    seed_organization_candidate(login: 'polish-org', status: 'pending')
+    seed_complete_processed_organization_candidate('polish-org', platform: 'github')
+
+    repository.fail(run_id, 'Received SIGTERM')
+
+    expect(candidate('alice')).to include(status: 'processed', error: nil, updated_at: '2026-04-01T10:00:00Z')
+    expect(candidate('bob')).to include(status: 'pending')
+    expect(organization_candidate('polish-org')).to include(
+      status: 'processed',
+      error: nil,
+      updated_at: '2026-04-01T10:00:00Z'
+    )
+  end
+
   it 'marks runs as finished with a UTC timestamp' do
     allow(Time).to receive(:now) { Time.new(2026, 4, 1, 12, 0, 0, '+02:00') }
     run_id = seed_run
@@ -114,6 +134,13 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
 
   def candidate(login, platform: 'github')
     database.fetch_all('SELECT * FROM candidate_users WHERE login = ? AND platform = ?', [login, platform]).first
+  end
+
+  def organization_candidate(login, platform: 'github')
+    database.fetch_all(
+      'SELECT * FROM candidate_organizations WHERE login = ? AND platform = ?',
+      [login, platform]
+    ).first
   end
 
   def seed_run(attributes = {})
@@ -206,6 +233,25 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       SQL
       ['2026-04-01', platform, github_id, login, 0, 0, 0, 0, '2026-04-01T00:00:00Z']
+    )
+  end
+
+  def seed_complete_processed_organization_candidate(login, platform:)
+    github_id = ((login.hash.abs % 1000) + 1)
+
+    database.execute(
+      'INSERT INTO organizations(platform, github_id, login, html_url, updated_at) VALUES (?, ?, ?, ?, ?)',
+      [platform, github_id, login, "https://#{platform}.example.com/#{login}", '2026-04-01T00:00:00Z']
+    )
+    database.execute(
+      <<~SQL,
+        INSERT INTO organization_monthly_stats(
+          period_start, platform, organization_github_id, login, public_repo_count,
+          total_stars, monthly_stars_delta, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      SQL
+      ['2026-04-01', platform, github_id, login, 0, 0, 0, '2026-04-01T00:00:00Z']
     )
   end
 end

@@ -38,9 +38,8 @@ module PolishOpenSourceRank
                 existing_run.fetch(:status) == 'running' ? existing_run.fetch(:started_at) : started_at
               end
             end
-            INCOMPLETE_PROCESSED_CANDIDATE_CONDITION = <<~SQL
-              status = 'processed'
-              AND NOT EXISTS (
+            COMPLETED_USER_CANDIDATE_CONDITION = <<~SQL
+              EXISTS (
                 SELECT 1
                 FROM user_monthly_stats user_stats
                 WHERE user_stats.period_start = candidate_users.period_start
@@ -58,9 +57,12 @@ module PolishOpenSourceRank
                   )
               )
             SQL
-            INCOMPLETE_PROCESSED_ORGANIZATION_CANDIDATE_CONDITION = <<~SQL
+            INCOMPLETE_PROCESSED_CANDIDATE_CONDITION = <<~SQL.freeze
               status = 'processed'
-              AND NOT EXISTS (
+              AND NOT (#{COMPLETED_USER_CANDIDATE_CONDITION})
+            SQL
+            COMPLETED_ORGANIZATION_CANDIDATE_CONDITION = <<~SQL
+              EXISTS (
                 SELECT 1
                 FROM organization_monthly_stats organization_stats
                 WHERE organization_stats.period_start = candidate_organizations.period_start
@@ -77,6 +79,10 @@ module PolishOpenSourceRank
                     )
                   )
               )
+            SQL
+            INCOMPLETE_PROCESSED_ORGANIZATION_CANDIDATE_CONDITION = <<~SQL.freeze
+              status = 'processed'
+              AND NOT (#{COMPLETED_ORGANIZATION_CANDIDATE_CONDITION})
             SQL
             RETRYABLE_CANDIDATES_SQL = <<~SQL.freeze
               SELECT 1
@@ -117,7 +123,11 @@ module PolishOpenSourceRank
             end
 
             def fail(run_id, error)
-              database.dataset(:sync_runs).where(id: run_id).update(status: 'failed', error: error)
+              database.transaction do
+                run = database.dataset(:sync_runs).where(id: run_id).first
+                restore_completed_pending_candidates(run.fetch(:period_start)) if run
+                database.dataset(:sync_runs).where(id: run_id).update(status: 'failed', error: error)
+              end
             end
 
             def retryable_candidates?(period, platforms: nil, candidate_types: nil)
@@ -220,6 +230,25 @@ module PolishOpenSourceRank
                   .exclude(status: 'pending')
                   .update(status: 'pending', error: nil, updated_at: updated_at)
               end
+            end
+
+            def restore_completed_pending_candidates(period_start)
+              restore_completed_user_candidates(period_start)
+              restore_completed_organization_candidates(period_start)
+            end
+
+            def restore_completed_user_candidates(period_start)
+              database.dataset(:candidate_users)
+                      .where(period_start: period_start, status: 'pending')
+                      .where(Sequel.lit(COMPLETED_USER_CANDIDATE_CONDITION))
+                      .update(status: 'processed', error: nil, updated_at: timestamp)
+            end
+
+            def restore_completed_organization_candidates(period_start)
+              database.dataset(:candidate_organizations)
+                      .where(period_start: period_start, status: 'pending')
+                      .where(Sequel.lit(COMPLETED_ORGANIZATION_CANDIDATE_CONDITION))
+                      .update(status: 'processed', error: nil, updated_at: timestamp)
             end
 
             def retryable_candidates(period_start, platforms:, candidate_types:)
