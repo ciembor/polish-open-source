@@ -92,6 +92,11 @@ en:
   github_ribbon:
     label: "Open the repository on GitHub"
     text: "Repository"
+  ranking_location_notice:
+    action: "Change your location"
+    label: "Ranking inclusion information"
+    prefix: "Not in the ranking?"
+    suffix: " to Polska, Poland or a Polish city above 100,000 residents."
   site_author:
     label: "Project author"
     link_text:

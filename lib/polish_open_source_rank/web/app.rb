@@ -72,6 +72,7 @@ module PolishOpenSourceRank
         'app/views/rankings/detail.erb',
         'app/views/rankings/table.erb',
         'app/views/shared/elite_medal.erb',
+        'app/views/shared/location_notice.erb',
         'app/views/shared/platform_icon.erb',
         *CSS_ASSET_FILES.map { |path| "app/public#{path}" },
         'app/public/js/navigation.js'

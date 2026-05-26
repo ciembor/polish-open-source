@@ -92,6 +92,11 @@ pl:
   github_ribbon:
     label: "Otwórz repozytorium na GitHubie"
     text: "Repozytorium"
+  ranking_location_notice:
+    action: "Zmień lokalizację"
+    label: "Informacja o dołączeniu do rankingu"
+    prefix: "Nie ma cię w rankingu?"
+    suffix: " na Polska, Poland lub polskie miasto powyżej 100 000 mieszkańców."
   site_author:
     label: "Autor projektu"
     link_text:

@@ -15,3 +15,27 @@
   margin: 0;
 }
 
+.location-notice {
+  background: #d30218;
+  color: #ffffff;
+}
+
+.location-notice .content {
+  padding: 13px 0;
+}
+
+.location-notice p {
+  font-weight: 650;
+  margin: 0;
+  text-align: center;
+}
+
+.location-notice a {
+  color: #ffffff;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.location-notice strong {
+  font-weight: 900;
+}

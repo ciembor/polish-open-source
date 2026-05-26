@@ -12,6 +12,8 @@
   </div>
 </section>
 
+<%= erb :"shared/location_notice" %>
+
 <% @language_repository_rankings.each_with_index do |(repository_kind, rankings), index| %>
   <section class="ranking-band<%= index.odd? ? ' ranking-band--alt' : '' %>" aria-labelledby="language-<%= h repository_kind %>-heading">
     <div class="content">
