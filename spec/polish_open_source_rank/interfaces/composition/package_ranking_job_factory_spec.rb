@@ -68,6 +68,8 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::PackageRankingJobF
       .to receive(:new).with(database, work_events: anything).and_return(double('package manifest repository'))
     allow(PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite::SQLiteRegistryPackageRepository)
       .to receive(:new).with(database, work_events: anything).and_return(double('registry package repository'))
+    allow(PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite::SQLiteMonthlySnapshotCompletion)
+      .to receive(:new).with(database).and_return(double('monthly completion'))
   end
 
   def stub_operations_sqlite_collaborators(database, crawl_jobs)

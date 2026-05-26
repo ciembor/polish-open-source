@@ -35,13 +35,13 @@ RSpec.describe File do
       'Nice=10',
       'CPUWeight=20',
       'IOWeight=20',
-      '/usr/bin/flock -n /home/ciembor/polish-open-source-rank/tmp/crawl.lock',
+      '/usr/bin/flock /home/ciembor/polish-open-source-rank/tmp/crawl.lock',
       '-v /home/ciembor/polish-open-source-rank/db:/app/db'
     )
     expect(service).to include(
       '--memory=768m --memory-swap=768m --memory-reservation=512m --cpus=0.5 --cpu-shares=128 --pids-limit=256'
     )
-    expect(service).to include('bundle exec ruby bin/package_rankings')
+    expect(service).to include('bundle exec ruby bin/package_rankings --require-monthly-complete')
     expect(service).to include(
       '--repository-limit 1000 --scan-limit 1000 --manifest-limit 2000 --registry-limit 2000'
     )
