@@ -18,10 +18,34 @@
 .location-notice {
   background: #d30218;
   color: #ffffff;
+  overflow: hidden;
+  position: relative;
+}
+
+.location-notice::before,
+.location-notice::after {
+  content: "";
+  inset-block: 0;
+  pointer-events: none;
+  position: absolute;
+  width: min(18vw, 180px);
+  z-index: 1;
+}
+
+.location-notice::before {
+  background: linear-gradient(90deg, var(--bg) 0%, rgba(211, 2, 24, 0) 100%);
+  left: 0;
+}
+
+.location-notice::after {
+  background: linear-gradient(270deg, var(--bg) 0%, rgba(211, 2, 24, 0) 100%);
+  right: 0;
 }
 
 .location-notice .content {
   padding: 13px 0;
+  position: relative;
+  z-index: 2;
 }
 
 .location-notice p {
