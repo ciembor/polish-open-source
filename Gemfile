@@ -5,7 +5,7 @@ source 'https://rubygems.org'
 ruby '>= 3.2'
 
 gem 'dry-configurable', '~> 1.4'
-gem 'puma', '~> 7.0'
+gem 'puma', '~> 8.0'
 gem 'rackup', '~> 2.2'
 gem 'rake', '~> 13.3'
 gem 'rexml', '~> 3.4'
