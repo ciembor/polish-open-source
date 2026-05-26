@@ -13,6 +13,8 @@ RSpec.describe PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database do
     expect(row).to include(name: 'alice')
     expect(database.fetch_value('PRAGMA foreign_keys')).to eq(1)
     expect(database.fetch_value('PRAGMA busy_timeout')).to eq(120_000)
+    expect(database.fetch_value('PRAGMA journal_mode')).to eq('wal')
+    expect(database.fetch_value('PRAGMA synchronous')).to eq(1)
   end
 
   it 'rolls transactions back on failure' do

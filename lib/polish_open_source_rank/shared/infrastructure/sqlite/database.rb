@@ -74,6 +74,8 @@ module PolishOpenSourceRank
           def configure_connection(connection)
             connection.busy_timeout = 120_000
             connection.execute('PRAGMA foreign_keys = ON')
+            connection.execute('PRAGMA journal_mode = WAL')
+            connection.execute('PRAGMA synchronous = NORMAL')
           end
 
           def with_hash_results
