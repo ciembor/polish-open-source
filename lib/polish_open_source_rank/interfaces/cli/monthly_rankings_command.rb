@@ -33,6 +33,7 @@ module PolishOpenSourceRank
         def job_options
           options = { refresh: refresh?, recalculate_stars: recalculate_stars? }
           options[:scope] = scope_argument if scope_argument
+          options[:existing_only] = true if existing_only?
           options
         end
 
@@ -81,6 +82,10 @@ module PolishOpenSourceRank
 
         def recalculate_stars?
           argv.include?('--recalculate-stars')
+        end
+
+        def existing_only?
+          argv.include?('--existing-only')
         end
       end
     end

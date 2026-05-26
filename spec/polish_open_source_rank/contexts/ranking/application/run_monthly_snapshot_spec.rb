@@ -522,6 +522,24 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(fetch_candidate('alice')).to include(status: 'processed', error: nil)
   end
 
+  it 'can process existing pending user candidates without discovering more' do
+    source = FakeJobGitHub.new
+    source.candidates = { 'Poland' => [{ source_id: 1, login: 'alice' }] }
+    source.profiles = { 'bob' => profile(2, 'bob', 'Warsaw, Poland') }
+    source.repositories = { 'bob' => [] }
+    store.record_candidate(period, platform: 'github', source_id: 2, login: 'bob', source_query: 'Poland')
+
+    described_class.new(store: store, sources: [source], catalog: catalog, logger: StringIO.new).call(
+      period,
+      existing_only: true
+    )
+
+    expect(source.searched_terms).to be_empty
+    expect(source.user_calls).to eq([['bob', 2]])
+    expect(fetch_candidate('bob')).to include(status: 'processed', error: nil)
+    expect(fetch_candidate('alice')).to be_nil
+  end
+
   it 'discovers organizations, stores organization rankings, and persists organization repositories' do
     organization_source = ranked_organization_source
 

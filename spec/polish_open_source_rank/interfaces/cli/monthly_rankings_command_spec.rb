@@ -55,6 +55,21 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
     )
   end
 
+  it 'passes existing-only repair requests to the monthly job' do
+    output = StringIO.new
+    job = instance_double(PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlySnapshot)
+    allow(job).to receive(:call)
+
+    described_class.call(['--month', '2026-04', '--existing-only'], job: job, output: output)
+
+    expect(job).to have_received(:call).with(
+      have_attributes(key: '2026-04'),
+      refresh: false,
+      recalculate_stars: false,
+      existing_only: true
+    )
+  end
+
   it 'tracks crawl jobs through success, failure, and interruption boundaries' do
     output = StringIO.new
     job = instance_double(PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlySnapshot)
