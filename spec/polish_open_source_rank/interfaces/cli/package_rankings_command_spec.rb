@@ -49,6 +49,45 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::PackageRankingsCommand do
     )
   end
 
+  it 'does not run package rankings before monthly rankings finish for the period' do
+    monthly_completion =
+      instance_double(
+        PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite::SQLiteMonthlySnapshotCompletion,
+        complete?: false
+      )
+
+    expect do
+      described_class.call(
+        %w[--period 2026-04 --require-monthly-complete],
+        job: job,
+        output: output,
+        monthly_completion: monthly_completion
+      )
+    end.to raise_error(described_class::MonthlySnapshotIncomplete, 'Monthly rankings are not complete for 2026-04')
+
+    expect(monthly_completion).to have_received(:complete?).with(
+      PolishOpenSourceRank::Shared::Domain::Period.parse('2026-04')
+    )
+    expect(job).not_to have_received(:call)
+  end
+
+  it 'runs package rankings after monthly rankings finish for the period' do
+    monthly_completion =
+      instance_double(
+        PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite::SQLiteMonthlySnapshotCompletion,
+        complete?: true
+      )
+
+    described_class.call(
+      %w[--period 2026-04 --require-monthly-complete],
+      job: job,
+      output: output,
+      monthly_completion: monthly_completion
+    )
+
+    expect(job).to have_received(:call)
+  end
+
   it 'prints help with supported ecosystems' do
     described_class.call(%w[--help], job: job, output: output)
 

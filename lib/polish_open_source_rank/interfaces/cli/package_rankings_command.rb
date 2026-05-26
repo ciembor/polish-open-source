@@ -10,21 +10,31 @@ module PolishOpenSourceRank
         HELP
                .freeze
 
-        def self.call(argv, job:, output: $stdout, crawl_jobs: nil)
-          new(argv: argv, job: job, output: output, crawl_jobs: crawl_jobs).call
+        class MonthlySnapshotIncomplete < StandardError; end
+
+        def self.call(argv, job:, output: $stdout, crawl_jobs: nil, monthly_completion: nil)
+          new(
+            argv: argv,
+            job: job,
+            output: output,
+            crawl_jobs: crawl_jobs,
+            monthly_completion: monthly_completion
+          ).call
         end
 
-        def initialize(argv:, job:, output:, crawl_jobs: nil)
+        def initialize(argv:, job:, output:, crawl_jobs: nil, monthly_completion: nil)
           @argv = argv
           @job = job
           @output = output
           @crawl_jobs = crawl_jobs
+          @monthly_completion = monthly_completion
         end
 
         def call
           return output.puts(HELP) if help?
 
           period = Shared::Domain::Period.parse(period_argument || Shared::Domain::Period.previous_month.key)
+          require_monthly_complete!(period)
           stats = nil
           with_crawl_job_tracking do
             stats = job.call(period, ecosystem: ecosystem_argument, limits: limit_arguments, refresh: refresh?)
@@ -35,7 +45,14 @@ module PolishOpenSourceRank
 
         private
 
-        attr_reader :argv, :crawl_jobs, :job, :output
+        attr_reader :argv, :crawl_jobs, :job, :monthly_completion, :output
+
+        def require_monthly_complete!(period)
+          return unless require_monthly_complete?
+          return if monthly_completion&.complete?(period)
+
+          raise MonthlySnapshotIncomplete, "Monthly rankings are not complete for #{period.key}"
+        end
 
         def with_crawl_job_tracking(&)
           crawl_job_id = crawl_jobs&.start(command: 'package_rankings', arguments: argv)
@@ -101,6 +118,10 @@ module PolishOpenSourceRank
 
         def help?
           argv.include?('--help') || argv.include?('-h')
+        end
+
+        def require_monthly_complete?
+          argv.include?('--require-monthly-complete')
         end
 
         def value_after(flag)

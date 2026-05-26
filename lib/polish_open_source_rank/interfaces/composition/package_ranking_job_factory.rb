@@ -37,7 +37,8 @@ module PolishOpenSourceRank
             argv: argv,
             job: job,
             output: output,
-            crawl_jobs: crawl_jobs || crawl_job_repository
+            crawl_jobs: crawl_jobs || crawl_job_repository,
+            monthly_completion: monthly_completion
           )
         end
 
@@ -133,6 +134,10 @@ module PolishOpenSourceRank
 
         def package_crawl_runs
           @package_crawl_runs ||= Contexts::Packages::Infrastructure::SQLite::SQLitePackageCrawlRunRepository.new(database)
+        end
+
+        def monthly_completion
+          @monthly_completion ||= Contexts::Packages::Infrastructure::SQLite::SQLiteMonthlySnapshotCompletion.new(database)
         end
 
         def package_repository_queue
