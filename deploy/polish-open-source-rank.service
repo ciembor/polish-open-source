@@ -9,6 +9,9 @@ EnvironmentFile=/home/ciembor/polish-open-source-rank/.env.local
 Restart=always
 RestartSec=5
 TimeoutStartSec=90
+CPUWeight=200
+IOWeight=200
+OOMScoreAdjust=-500
 
 ExecStartPre=-/usr/bin/podman rm -f polish-open-source-rank
 ExecStart=/usr/bin/podman run --name=polish-open-source-rank -p 127.0.0.1:9293:9293 --env-file /home/ciembor/polish-open-source-rank/.env.local -e RACK_ENV=production -e APP_BASE_PATH=/ -e BASE_URL=https://polish-open-source.pl -v /home/ciembor/polish-open-source-rank/db:/app/db -v /home/ciembor/polish-open-source-rank/log:/app/log localhost/polish-open-source-rank:latest
