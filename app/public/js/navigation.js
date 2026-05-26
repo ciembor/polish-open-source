@@ -138,9 +138,29 @@ function scheduleNavLayout() {
   });
 }
 
+function revealFirstVisitNotices() {
+  document.querySelectorAll(".js-first-visit-notice").forEach((notice) => {
+    const storageKey = notice.dataset.storageKey;
+    if (!storageKey) return;
+
+    try {
+      if (window.localStorage.getItem(storageKey)) {
+        notice.remove();
+        return;
+      }
+
+      window.localStorage.setItem(storageKey, "1");
+      notice.hidden = false;
+    } catch (_error) {
+      notice.remove();
+    }
+  });
+}
+
 window.addEventListener("resize", scheduleNavLayout);
 
 window.addEventListener("DOMContentLoaded", () => {
+  revealFirstVisitNotices();
   ensureNavLayout();
 });
 

@@ -1318,6 +1318,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       '🔧 8',
       'alice/app',
       'polish-org/toolkit',
+      'class="location-notice js-first-visit-notice"',
+      'data-storage-key="polishOpenSourceRank.locationNoticeSeen"',
+      'hidden',
       'Nie ma cię w rankingu?',
       'href="https://github.com/settings/profile#user_profile_location"',
       '<strong>Zmień lokalizację</strong>',
@@ -1385,6 +1388,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     )
     expect(profile.body).not_to include('Ranking Polski')
     expect(profile.body).not_to include('Ranking Kraków')
+    expect(profile.body).not_to include('Nie ma cię w rankingu?')
+    expect(profile.body).not_to include('polishOpenSourceRank.locationNoticeSeen')
     expect(profile.body.index('id="profile-discord-heading"')).to be < profile.body.index('id="profile-badge-heading"')
     expect(profile.body.index('id="profile-badge-heading"')).to be < profile.body.index('id="profile-summary-heading"')
     expect(profile.body).not_to include('Discord niepołączony')
