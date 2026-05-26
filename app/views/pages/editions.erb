@@ -11,6 +11,8 @@
   </div>
 </section>
 
+<%= erb :"shared/location_notice" %>
+
 <% if @editions.empty? %>
   <section class="empty-state" aria-live="polite">
     <h2><%= h t('editions.empty.title') %></h2>

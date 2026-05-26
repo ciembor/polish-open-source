@@ -20,6 +20,8 @@
   </div>
 </section>
 
+<%= erb :"shared/location_notice" %>
+
 <% unless @period %>
   <section class="empty-state" aria-live="polite">
     <h2><%= h t('rankings.empty.title') %></h2>
