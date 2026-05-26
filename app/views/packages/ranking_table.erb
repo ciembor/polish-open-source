@@ -8,7 +8,11 @@
           <span class="rank-cell rank-mark"><%= index + 1 %></span>
           <div class="ranking-list__body">
             <div class="ranking-list__title">
-              <a class="primary-link" href="<%= h app_path(package_profile_path(row)) %>"><%= h row.fetch(:package_name) %></a>
+              <% if row[:repository_url] && !row[:repository_url].empty? %>
+                <a class="primary-link" href="<%= h row[:repository_url] %>"><%= h row.fetch(:package_name) %></a>
+              <% else %>
+                <span><%= h row.fetch(:package_name) %></span>
+              <% end %>
             </div>
             <span class="ranking-list__description"><%= h row.fetch(:ecosystem) %></span>
             <div class="ranking-list__meta">

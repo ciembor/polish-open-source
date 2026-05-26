@@ -76,23 +76,6 @@ module PolishOpenSourceRank
         def repository_owner_profile_path
           user_profile_path(platform: @repository.fetch(:platform), login: @repository.fetch(:owner_login))
         end
-
-        def package_profile_schema
-          {
-            '@type' => 'SoftwareApplication',
-            'name' => @package_profile.fetch(:package_name),
-            'applicationCategory' => @package_profile.fetch(:ecosystem),
-            'url' => canonical_url
-          }.tap do |package|
-            if present_value?(@package_profile[:latest_version])
-              package['softwareVersion'] = @package_profile[:latest_version]
-            end
-            package['license'] = @package_profile[:license] if present_value?(@package_profile[:license])
-            if present_value?(@package_profile[:repository_url])
-              package['codeRepository'] = @package_profile[:repository_url]
-            end
-          end
-        end
       end
     end
   end

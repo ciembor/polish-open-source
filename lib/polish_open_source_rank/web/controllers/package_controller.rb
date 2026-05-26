@@ -39,22 +39,6 @@ module PolishOpenSourceRank
           erb :'packages/ecosystem'
         end
 
-        def render_package_profile(ecosystem, encoded_name)
-          @period_slug = 'latest'
-          @period = latest_period
-          package_name = decode_package_name_slug(encoded_name)
-          halt 404 unless package_name
-          @package_profile = show_package_profile.call(
-            ecosystem: ecosystem,
-            package_name: package_name,
-            period_start: @period
-          )
-          halt 404 unless @package_profile
-          public_html_cache!('package-profile', ecosystem, encoded_name, @period, public_cache_revision(@period))
-          assign_public_page(public_page_state.package_profile(profile: @package_profile))
-          erb :'packages/profile'
-        end
-
         def package_ranking_groups(ecosystem, period, limit)
           %w[user organization].to_h do |repository_kind|
             [repository_kind.to_sym, show_package_ecosystem_rankings.call(

@@ -82,12 +82,6 @@ module PolishOpenSourceRank
         )
       end
 
-      def show_package_profile
-        @show_package_profile ||= Contexts::Packages::Application::ShowPackageProfile.new(
-          package_ranking_read_model: package_ranking_read_model
-        )
-      end
-
       def show_language_index
         @show_language_index ||= Contexts::Languages::Application::ShowLanguageIndex.new(
           language_ranking_read_model: language_ranking_read_model

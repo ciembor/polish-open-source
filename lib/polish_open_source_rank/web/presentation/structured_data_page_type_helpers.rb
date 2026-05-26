@@ -44,7 +44,7 @@ module PolishOpenSourceRank
         end
 
         def package_page?
-          package_collection? || @package_profile
+          package_collection?
         end
 
         def repository_resource?

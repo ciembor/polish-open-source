@@ -45,7 +45,8 @@ function visibleNavItems(nav) {
     ...nav.querySelectorAll(".js-primary-city-slot > .js-primary-city"),
     nav.querySelector(".js-more-cities"),
     ...nav.querySelectorAll(".js-secondary-controls-slot > .js-secondary-control"),
-    nav.querySelector(".js-hamburger:not([hidden])")
+    nav.querySelector(".js-hamburger:not([hidden])"),
+    ...nav.querySelectorAll(":scope > .js-fixed-control")
   ].filter(Boolean);
 }
 
