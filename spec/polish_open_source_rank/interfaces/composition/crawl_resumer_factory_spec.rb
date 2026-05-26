@@ -79,7 +79,7 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::CrawlResumerFactor
     migration = instance_double(PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration, bootstrap!: nil)
     crawl_jobs = instance_double(
       PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteCrawlJobRepository,
-      resumable: [{ command: command, arguments: arguments }]
+      resumable: [{ id: 1, command: command, arguments: arguments }]
     )
 
     allow(PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database)
@@ -90,6 +90,7 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::CrawlResumerFactor
       .and_return(migration)
     allow(PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteCrawlJobRepository)
       .to receive(:new).with(database).and_return(crawl_jobs)
+    allow(crawl_jobs).to receive(:finish)
 
     [configuration, crawl_jobs]
   end
