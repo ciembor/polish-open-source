@@ -178,7 +178,7 @@ en:
     back: "Back to packages"
     ecosystem:
       action: "View ranking"
-      card_description: "%{ecosystem} packages for %{scope}, detected in Polish open-source repositories."
+      card_description: "%{ecosystem} packages for %{scope}."
       description: "Packages connected to Polish open-source repositories."
       lede: "Top ecosystem packages by downloads and dependent projects."
       scope:
@@ -283,7 +283,7 @@ en:
     action: "View ranking"
     back: "Back to languages"
     back_to_language: "Back to %{language}"
-    card_description: "%{language} repositories in Polish open source."
+    card_description: "%{language} repositories."
     hero:
       eyebrow: "Language rankings"
       lede: "Programming languages in Polish open-source repositories by project count, stars, and monthly trend."
