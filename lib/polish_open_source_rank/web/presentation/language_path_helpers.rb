@@ -19,7 +19,6 @@ module PolishOpenSourceRank
           'Ren\'Py' => 'ren_py',
           'Vim Script' => 'vim_script',
           'Visual Basic .NET' => 'visual_basic_dot_net'
-
         }.freeze
         LANGUAGE_ICON_EXTENSIONS = {
           'Apex' => 'ico',
@@ -27,8 +26,9 @@ module PolishOpenSourceRank
           'Freemarker' => 'png',
           'Haxe' => 'ico',
           'LabVIEW' => 'png',
-          'Open Policy Agent' => 'ico',
+          'Odin' => 'png',
           'Objective-C' => 'ico',
+          'Open Policy Agent' => 'ico',
           'Ren\'Py' => 'ico',
           'RobotFramework' => 'ico'
         }.freeze
@@ -46,6 +46,17 @@ module PolishOpenSourceRank
         def language_path(language, period_slug: @period_slug)
           prefix = period_slug.nil? || period_slug == 'latest' ? '/latest' : "/#{period_slug}"
           localized_public_path("#{prefix}/languages/#{Rack::Utils.escape_path(language)}", locale: current_locale)
+        end
+
+        def language_icon_exists?(language)
+          extension = LANGUAGE_ICON_EXTENSIONS.fetch(language, 'svg')
+          PolishOpenSourceRank.root
+                              .join('app/public/icons/languages', "#{language_icon_slug(language)}.#{extension}")
+                              .file?
+        end
+
+        def language_initial(language)
+          language.to_s.strip[0]&.upcase || '?'
         end
 
         def language_repository_ranking_path(language, repository_kind, metric_slug, period_slug: @period_slug)

@@ -23,7 +23,13 @@
           <% language = card.fetch(:language) %>
           <article class="index-card">
             <div class="index-card__header">
+            <% if language_icon_exists?(language) %>
               <img class="index-card__icon" src="<%= h language_icon_path(language) %>" alt="" aria-hidden="true">
+            <% else %>
+              <span class="index-card__icon index-card__icon--fallback" aria-hidden="true">
+                <%= h language_initial(language) %>
+              </span>
+            <% end %>
               <h3><a class="primary-link" href="<%= h app_path(language_path(language)) %>"><%= h language %></a></h3>
             </div>
             <dl class="index-card__metrics">

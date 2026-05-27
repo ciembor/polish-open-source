@@ -310,3 +310,31 @@
   height: 54px;
   width: 54px;
 }
+
+.language-icon,
+.index-card__icon {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  object-fit: contain;
+}
+
+.language-icon--fallback,
+.index-card__icon--fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #000;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.ranking-list__title,
+.index-card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
