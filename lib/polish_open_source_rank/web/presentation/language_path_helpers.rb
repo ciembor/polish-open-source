@@ -60,10 +60,6 @@ module PolishOpenSourceRank
           "/icons/languages/#{language_icon_slug(language)}.#{extension}"
         end
 
-        def language_description(language)
-          t('languages.card_description', language: language)
-        end
-
         def language_icon_slug(language)
           LANGUAGE_ICON_OVERRIDES.fetch(language) do
             language.downcase.tr('#+', '').gsub(/[^a-z0-9]+/, '_').delete_suffix('_')

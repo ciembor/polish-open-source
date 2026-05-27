@@ -12,9 +12,9 @@
             <div class="ranking-list__title">
               <a class="primary-link" href="<%= h app_path(path) %>"><%= h row.fetch(:full_name) %></a>
             </div>
-            <% if row[:description] && !row[:description].empty? %>
-              <span class="ranking-list__description"><%= h row[:description] %></span>
-            <% end %>
+            # <% if row[:description] && !row[:description].empty? %>
+            #   <span class="ranking-list__description"><%= h row[:description] %></span>
+            # <% end %>
             <div class="ranking-list__meta">
               <a class="muted-link muted-link--standalone" href="<%= h row.fetch(:html_url) %>"><%= h t('repositories.links.source_project', platform: platform_name(row.fetch(:platform))) %></a>
             </div>

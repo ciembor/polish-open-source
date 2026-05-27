@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
+require 'fileutils'
 require 'timeout'
+require 'tmpdir'
 
 class FakeJobGitHub
   attr_accessor :activities, :candidates, :deltas, :fail_errors, :fail_logins, :missing_logins, :profiles,
@@ -362,7 +364,6 @@ end
 
 RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlySnapshot do
   let(:period) { PolishOpenSourceRank::Shared::Domain::Period.parse('2026-04') }
-  let(:path) { File.join(Dir.mktmpdir, 'job.sqlite3') }
   let(:store) do
     PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::MonthlySnapshotStore.new(
       run_repository: run_repository,
@@ -373,6 +374,15 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
   end
   let(:catalog) { double('catalog', search_terms: ['Poland']) }
   let(:github) { FakeJobGitHub.new }
+  let(:path) { File.join(@tmpdir, 'job.sqlite3') }
+
+  before do
+    @tmpdir = Dir.mktmpdir('polish-open-source-rank-spec-')
+  end
+
+  after do
+    FileUtils.remove_entry(@tmpdir) if @tmpdir && File.directory?(@tmpdir)
+  end
 
   it 'discovers candidates, rejects non-Polish profiles, and stores Polish snapshots' do
     seed_alice_and_bob_discovery
