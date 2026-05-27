@@ -1,6 +1,12 @@
 #!/bin/sh
 set -eu
 
+bundle exec rubocop -a --cache-root tmp/rubocop_cache
+
+if ! git diff --quiet; then
+  git add -u
+fi
+
 bundle exec rubocop --cache-root tmp/rubocop_cache
 bundle exec reek
 bundle exec rspec
