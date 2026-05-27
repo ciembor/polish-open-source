@@ -44,6 +44,7 @@
 }
 
 .index-card__header {
+  margin-bottom: 10px;
   align-items: center;
   display: grid;
   gap: 10px;
@@ -261,8 +262,8 @@
   display: inline-block;
   font-size: 0.92rem;
   font-weight: 800;
-  margin-top: 12px;
   text-decoration: none;
+  text-align: center;
 }
 
 .ranking-action:hover {
@@ -311,16 +312,14 @@
   width: 54px;
 }
 
-.language-icon,
-.index-card__icon {
+.logo-icon {
   width: 32px;
   height: 32px;
   flex: 0 0 32px;
   object-fit: contain;
 }
 
-.language-icon--fallback,
-.index-card__icon--fallback {
+.logo-icon--fallback {
   display: inline-flex;
   align-items: center;
   justify-content: center;

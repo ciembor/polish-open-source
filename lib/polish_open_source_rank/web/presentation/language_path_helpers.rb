@@ -49,14 +49,11 @@ module PolishOpenSourceRank
         end
 
         def language_icon_exists?(language)
-          extension = LANGUAGE_ICON_EXTENSIONS.fetch(language, 'svg')
-          PolishOpenSourceRank.root
-                              .join('app/public/icons/languages', "#{language_icon_slug(language)}.#{extension}")
-                              .file?
+          logo_icon_exists?(language_icon_path(language))
         end
 
         def language_initial(language)
-          language.to_s.strip[0]&.upcase || '?'
+          logo_icon_initial(language)
         end
 
         def language_repository_ranking_path(language, repository_kind, metric_slug, period_slug: @period_slug)

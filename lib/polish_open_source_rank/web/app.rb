@@ -95,6 +95,7 @@ module PolishOpenSourceRank
           path: '/',
           same_site: :lax,
           secret: Configuration.load.session_secret
+      helpers Presentation::LogoIconHelpers
       helpers Presentation::RoutingHelpers
       helpers Presentation::BadgeHelpers
       helpers Presentation::ViewHelpers
