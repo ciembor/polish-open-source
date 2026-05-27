@@ -10,22 +10,23 @@ module PolishOpenSourceRank
           'Emacs Lisp' => 'emacs_lisp',
           'F#' => 'f_sharp',
           'Game Maker Language' => 'game_maker_language',
+          'Go Template' => 'go_template',
           'Jupyter Notebook' => 'jupyter_notebook',
           'Objective-C' => 'objective_c',
+          'Objective-C++' => 'objective_c_plus_plus',
           'Open Policy Agent' => 'open_policy_agent',
           'PLpgSQL' => 'plpgsql',
           'Ren\'Py' => 'ren_py',
           'Vim Script' => 'vim_script',
           'Visual Basic .NET' => 'visual_basic_dot_net'
+
         }.freeze
         LANGUAGE_ICON_EXTENSIONS = {
           'Apex' => 'ico',
           'Common Lisp' => 'ico',
-          'CUDA' => 'ico',
           'Freemarker' => 'png',
           'Haxe' => 'ico',
           'LabVIEW' => 'png',
-          'MATLAB' => 'png',
           'Open Policy Agent' => 'ico',
           'Objective-C' => 'ico',
           'Ren\'Py' => 'ico',
