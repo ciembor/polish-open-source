@@ -3,6 +3,7 @@
 RSpec.describe PolishOpenSourceRank::Web::Presentation::LanguagePathHelpers do
   subject(:helper) do
     Class.new do
+      include PolishOpenSourceRank::Web::Presentation::LogoIconHelpers
       include PolishOpenSourceRank::Web::Presentation::LanguagePathHelpers
     end.new
   end

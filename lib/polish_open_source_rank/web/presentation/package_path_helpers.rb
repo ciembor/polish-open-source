@@ -66,6 +66,14 @@ module PolishOpenSourceRank
           "/icons/package_ecosystems/#{ecosystem}.#{extension}"
         end
 
+        def package_ecosystem_icon_exists?(ecosystem)
+          logo_icon_exists?(package_ecosystem_icon_path(ecosystem))
+        end
+
+        def package_ecosystem_initial(ecosystem)
+          logo_icon_initial(package_ecosystem_name(ecosystem))
+        end
+
         def package_ranking_title(metric_slug, ecosystem:)
           return t('packages.ranking_title.installs') if ecosystem == 'homebrew' && metric_slug.to_s == 'top'
 

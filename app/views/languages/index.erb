@@ -35,11 +35,11 @@
             <dl class="index-card__metrics">
               <div>
                 <dt><%= h t('languages.metric.repository.count') %></dt>
-                <dd><%= h number(card.fetch(:repository_count)) %></dd>
+                <dd>🗂️ <%= h number(card.fetch(:repository_count)) %></dd>
               </div>
               <div>
                 <dt><%= h t('rankings.metric.stars') %></dt>
-                <dd><%= h number(card.fetch(:repository_stars_count)) %></dd>
+                <dd>⭐ <%= h number(card.fetch(:repository_stars_count)) %></dd>
               </div>
             </dl>
             <a class="ranking-action" href="<%= h app_path(language_path(language)) %>"><%= h t('languages.action') %></a>
