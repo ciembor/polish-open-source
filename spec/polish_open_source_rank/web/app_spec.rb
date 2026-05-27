@@ -864,7 +864,6 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.status).to eq(200)
     expect(response.body).to include('<title>Języki open source - Polish Open Source</title>')
     expect(response.body).to include('Ruby')
-    expect(response.body).to include('Repozytoria w języku Ruby.')
     expect(response.body).to include('<dd>31 110</dd>')
     expect(response.body).to include('href="/latest/languages/Ruby"')
     expect(response.body).to include('Zobacz ranking')

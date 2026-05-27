@@ -26,7 +26,6 @@
               <img class="index-card__icon" src="<%= h package_ecosystem_icon_path(ecosystem) %>" alt="" aria-hidden="true">
               <h3><a class="primary-link" href="<%= h app_path(package_ecosystem_path(ecosystem)) %>"><%= h package_ecosystem_name(ecosystem) %></a></h3>
             </div>
-            <p class="index-card__description"><%= h package_ecosystem_description(ecosystem) %></p>
             <dl class="index-card__metrics">
               <div>
                 <dt><%= h t('languages.metric.repository.count') %></dt>

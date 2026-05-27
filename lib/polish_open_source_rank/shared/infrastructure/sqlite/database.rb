@@ -21,6 +21,11 @@ module PolishOpenSourceRank
             self
           end
 
+          def close
+            @sequel_connection&.disconnect
+            @sequel_connection = nil
+          end
+
           def execute(sql, params = [])
             sequel_connection.fetch(sql, *params).delete
           end
