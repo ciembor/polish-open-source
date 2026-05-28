@@ -75,6 +75,37 @@ RSpec.describe PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLit
     )
   end
 
+  it 'reports package backlog as failed when the latest package run failed' do
+    database = open_database
+    seed_package_run(database, status: 'finished', started_at: '2026-05-01T00:00:00Z')
+    seed_package_run(database, status: 'failed', started_at: '2026-05-01T00:10:00Z')
+    database.execute(package_scan_sql, ['2026-04-01', 'user', 'github', 10, 'alice/app', 'scanned'])
+    database.execute(package_scan_sql, ['2026-04-01', 'user', 'github', 11, 'alice/lib', 'pending'])
+    seed_work_events(database)
+
+    progress = described_class.new(database).job_progress(now: Time.parse('2026-05-01T00:20:00Z'))
+
+    expect(section(progress, 'package repository scans / user')).to include(
+      pending: 1,
+      state: 'failed'
+    )
+  end
+
+  it 'reports package backlog as pending when no package run is active' do
+    database = open_database
+    seed_package_run(database, status: 'finished', started_at: '2026-05-01T00:00:00Z')
+    database.execute(package_scan_sql, ['2026-04-01', 'user', 'github', 10, 'alice/app', 'scanned'])
+    database.execute(package_scan_sql, ['2026-04-01', 'user', 'github', 11, 'alice/lib', 'pending'])
+    seed_work_events(database)
+
+    progress = described_class.new(database).job_progress(now: Time.parse('2026-05-01T00:20:00Z'))
+
+    expect(section(progress, 'package repository scans / user')).to include(
+      pending: 1,
+      state: 'pending'
+    )
+  end
+
   def expect_section_labels(progress)
     expect(progress.fetch(:sections).map { |section| section.fetch(:label) }).to include(
       'monthly users / github',
@@ -132,16 +163,27 @@ RSpec.describe PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLit
   end
 
   def seed_package_progress(database)
-    database.execute(
-      'INSERT INTO package_crawl_runs(period_start, status, refresh, started_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-      ['2026-04-01', 'running', 0, '2026-05-01T00:00:00Z', '2026-05-01T00:00:00Z']
-    )
+    seed_package_run(database, status: 'running', started_at: '2026-05-01T00:00:00Z')
     database.execute(package_scan_sql, ['2026-04-01', 'user', 'github', 10, 'alice/app', 'scanned'])
     database.execute(package_scan_sql, ['2026-04-01', 'user', 'github', 11, 'alice/lib', 'pending'])
     database.execute(package_manifest_sql, [1, 'npm', 'package.json', 'pkg', 'pkg', 'parsed'])
     database.execute(registry_package_sql, %w[npm pkg pkg active])
     database.execute(registry_package_sql, %w[npm missing missing pending])
     database.execute(registry_snapshot_sql, %w[npm pkg 2026-04-01])
+  end
+
+  def seed_package_run(database, status:, started_at:)
+    database.execute(
+      <<~SQL,
+        INSERT INTO package_crawl_runs(period_start, status, refresh, started_at, finished_at, updated_at)
+        VALUES (?, ?, 0, ?, ?, ?)
+      SQL
+      ['2026-04-01', status, started_at, finished_at_for(status, started_at), started_at]
+    )
+  end
+
+  def finished_at_for(status, started_at)
+    status == 'running' ? nil : started_at
   end
 
   def seed_work_events(database)
