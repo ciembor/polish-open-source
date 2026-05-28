@@ -50,6 +50,9 @@ module PolishOpenSourceRank
           rescue RepositoryUnavailable => e
             repository_queue.mark_unavailable(scan.fetch(:id), e.message)
             { status: :unavailable, manifest_count: 0 }
+          rescue RetryableRepositoryScanFailure => e
+            repository_queue.mark_failed(scan.fetch(:id), e.message)
+            { status: :failed, manifest_count: 0 }
           end
 
           def record_work_event(scan, ecosystem:, &)

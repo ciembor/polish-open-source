@@ -8,6 +8,8 @@ module PolishOpenSourceRank
       module Infrastructure
         module SQLite
           class SQLitePackageManifestRepository
+            include SQLiteRetryableErrors
+
             PARSER_VERSION = 'manifest-parser-v1'
 
             def initialize(database, clock: -> { Time.now.utc }, parser_catalog: Domain::ManifestParserCatalog.new,
@@ -19,11 +21,13 @@ module PolishOpenSourceRank
             end
 
             def replace_detected(scan_id, manifests:, blobs:)
-              context = scan_context(scan_id)
-              database.transaction do
-                delete_registry_package_links(scan_id)
-                package_manifests.where(repository_scan_id: scan_id).delete
-                manifests.each { |manifest| insert_manifest(scan_id, manifest, blobs.fetch(manifest.path), context) }
+              translate_retryable_sqlite_failure do
+                context = scan_context(scan_id)
+                database.transaction do
+                  delete_registry_package_links(scan_id)
+                  package_manifests.where(repository_scan_id: scan_id).delete
+                  manifests.each { |manifest| insert_manifest(scan_id, manifest, blobs.fetch(manifest.path), context) }
+                end
               end
             end
 

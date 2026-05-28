@@ -13,7 +13,15 @@ module PolishOpenSourceRank
             end
 
             def record(**attributes)
-              job_work_events.insert(
+              database.transaction { job_work_events.insert(row(attributes)) }
+            end
+
+            private
+
+            attr_reader :database
+
+            def row(attributes)
+              {
                 job_run_id: attributes[:job_run_id],
                 period_start: attributes.fetch(:period_start),
                 job_kind: attributes.fetch(:job_kind),
@@ -28,12 +36,8 @@ module PolishOpenSourceRank
                 finished_at: attributes.fetch(:finished_at),
                 duration_ms: attributes.fetch(:duration_ms).to_i,
                 error: attributes[:error]
-              )
+              }
             end
-
-            private
-
-            attr_reader :database
 
             def job_work_events
               database.dataset(:job_work_events)

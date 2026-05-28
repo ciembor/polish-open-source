@@ -43,6 +43,30 @@ RSpec.describe PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database do
     expect(database.table_info('records').map { |column| column.fetch('name') }).to include('name')
   end
 
+  it 'retries transient SQLite transaction locks' do
+    database = described_class.open(File.join(Dir.mktmpdir, 'rank.sqlite3'))
+    connection = Class.new do
+      attr_reader :attempts
+
+      def initialize
+        @attempts = 0
+      end
+
+      def transaction(*)
+        @attempts += 1
+        raise Sequel::DatabaseError, 'SQLite3::BusyException: database is locked' if attempts == 1
+
+        yield
+      end
+    end.new
+
+    allow(database).to receive(:sequel_connection).and_return(connection)
+    allow(database).to receive(:sleep)
+
+    expect(database.transaction { :committed }).to eq(:committed)
+    expect(connection.attempts).to eq(2)
+  end
+
   it 'keeps Sequel dataset reads working for text columns' do
     database = described_class.open(File.join(Dir.mktmpdir, 'rank.sqlite3'))
     database.execute('CREATE TABLE records(name TEXT)')
