@@ -61,6 +61,24 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubClient do
     expect(sleeps.any? { |seconds| seconds.between?(2, 3) }).to be(true)
   end
 
+  it 'retries public organization policy failures without the token' do
+    authorizations = []
+    policy_error = JSON.generate(
+      'message' => 'The organization forbids access via a fine-grained personal access tokens'
+    )
+    stub_http(
+      response('403', 'Forbidden', policy_error),
+      ok_response({ 'login' => 'blocked-org' }, 'x-ratelimit-remaining' => '59')
+    ) do |request, _options|
+      authorizations << request['Authorization']
+    end
+
+    response = client.get('/orgs/blocked-org')
+
+    expect(response.body).to eq('login' => 'blocked-org')
+    expect(authorizations).to eq(['Bearer token', nil])
+  end
+
   it 'retries transient transport errors' do
     stub_http_start(
       Net::OpenTimeout.new('execution expired'),

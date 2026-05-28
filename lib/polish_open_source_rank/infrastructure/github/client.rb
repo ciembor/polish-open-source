@@ -50,7 +50,8 @@ module PolishOpenSourceRank
 
         loop do
           attempts += 1
-          response = perform_get(path, params, accept)
+          response = perform_get(path, params, accept, authenticated: true)
+          response = retry_without_token(path, params, accept) if token_lifetime_policy_forbidden?(response)
           return parsed_success(response) if response.is_a?(Net::HTTPSuccess)
 
           wait_seconds = retry_wait_seconds(response, attempts)
@@ -71,10 +72,10 @@ module PolishOpenSourceRank
 
       attr_reader :base_url, :execution, :http, :request_interval, :request_log, :token
 
-      def perform_get(path, params, accept)
+      def perform_get(path, params, accept, authenticated:)
         throttle
         uri = build_uri(path, params)
-        request = Net::HTTP::Get.new(uri, request_headers(accept))
+        request = Net::HTTP::Get.new(uri, request_headers(accept, authenticated))
         Net::HTTP.start(uri.hostname, uri.port, **http_options(uri)) do |http|
           http.request(request).tap { |response| record_request(path, response) }
         end
@@ -131,13 +132,14 @@ module PolishOpenSourceRank
         uri
       end
 
-      def request_headers(accept)
-        {
+      def request_headers(accept, authenticated)
+        headers = {
           'Accept' => accept,
-          'Authorization' => "Bearer #{token}",
           'User-Agent' => 'polish-open-source-rank',
           'X-GitHub-Api-Version' => API_VERSION
         }
+        headers['Authorization'] = "Bearer #{token}" if authenticated
+        headers
       end
 
       def parsed_success(response)
@@ -153,6 +155,16 @@ module PolishOpenSourceRank
         return unless RETRYABLE_STATUSES.include?(response.code.to_i)
 
         retry_after(response) || rate_limit_reset_wait(response) || exponential_backoff(attempts)
+      end
+
+      def retry_without_token(path, params, accept)
+        logger.puts "GitHub API retry without token for #{path} (organization token policy)"
+        perform_get(path, params, accept, authenticated: false)
+      end
+
+      def token_lifetime_policy_forbidden?(response)
+        response.code.to_i == 403 &&
+          response.body.to_s.include?('forbids access via a fine-grained personal access tokens')
       end
 
       def transport_error_retry_wait_seconds(attempts)
