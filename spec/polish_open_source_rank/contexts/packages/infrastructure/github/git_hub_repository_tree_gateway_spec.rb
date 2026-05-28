@@ -88,11 +88,24 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::GitHub:
     )
   end
 
-  it 'reraises unexpected GitHub errors' do
+  it 'maps unexpected GitHub errors to a retryable repository scan failure' do
     error = PolishOpenSourceRank::Infrastructure::GitHubClient::Error.new('server error', status: 500, body: '{}')
     client.stub_error('/repos/alice/app/git/trees/main', error, params: { recursive: 1 })
 
-    expect { gateway.tree('alice/app', ref: 'main') }.to raise_error(error)
+    expect { gateway.tree('alice/app', ref: 'main') }.to raise_error(
+      PolishOpenSourceRank::Contexts::Packages::Application::RetryableRepositoryScanFailure,
+      'GitHub repository scan failed for alice/app: HTTP 500'
+    )
+  end
+
+  it 'maps redirects to a retryable repository scan failure' do
+    redirect = PolishOpenSourceRank::Infrastructure::GitHubClient::Error.new('moved', status: 301, body: '{}')
+    client.stub_error('/repos/alice/app', redirect)
+
+    expect { gateway.repository('alice/app') }.to raise_error(
+      PolishOpenSourceRank::Contexts::Packages::Application::RetryableRepositoryScanFailure,
+      'GitHub repository scan failed for alice/app: HTTP 301'
+    )
   end
 
   it 'maps unavailable trees and blobs to the package domain error' do
