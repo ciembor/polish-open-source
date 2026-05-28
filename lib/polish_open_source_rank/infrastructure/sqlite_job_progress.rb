@@ -158,6 +158,8 @@ module PolishOpenSourceRank
       end
 
       def repository_section(attributes)
+        counts = repository_progress_counts(attributes)
+
         section(
           label: attributes.fetch(:label),
           period_start: attributes.fetch(:period_start),
@@ -165,14 +167,23 @@ module PolishOpenSourceRank
           stage: attributes.fetch(:stage),
           unit_kind: 'repository',
           platform: attributes.fetch(:platform),
-          total: attributes.fetch(:total),
-          done: attributes.fetch(:done),
-          pending: [attributes.fetch(:total) - attributes.fetch(:done), 0].max,
+          total: counts.fetch(:total),
+          done: counts.fetch(:done),
+          pending: counts.fetch(:pending),
           failed: 0,
           skipped: 0,
           status_detail: nil,
           now: attributes.fetch(:now)
         )
+      end
+
+      def repository_progress_counts(attributes)
+        total = attributes.fetch(:total)
+        done = attributes.fetch(:done)
+        pending = [total - done, 0].max
+        return { total: total, done: total, pending: 0 } if finished_sync_run?(attributes.fetch(:period_start))
+
+        { total: total, done: done, pending: pending }
       end
 
       def package_sections(period_start, now)
@@ -274,6 +285,10 @@ module PolishOpenSourceRank
 
       def failed_sync_run?(period_start)
         sync_runs_dataset.where(period_start: period_start, status: 'failed').any?
+      end
+
+      def finished_sync_run?(period_start)
+        sync_runs_dataset.where(period_start: period_start, status: 'finished').any?
       end
 
       def candidate_counts(table, period_start, platform)
