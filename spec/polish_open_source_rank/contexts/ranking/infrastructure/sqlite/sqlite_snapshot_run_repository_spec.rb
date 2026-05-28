@@ -66,11 +66,16 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
   end
 
   it 'marks runs as failed with the original error message' do
+    allow(Time).to receive(:now) { Time.new(2026, 4, 1, 12, 0, 0, '+02:00') }
     run_id = seed_run
 
     repository.fail(run_id, 'GitHubClient::Forbidden: blocked')
 
-    expect(sync_run).to include(status: 'failed', error: 'GitHubClient::Forbidden: blocked')
+    expect(sync_run).to include(
+      status: 'failed',
+      finished_at: '2026-04-01T10:00:00Z',
+      error: 'GitHubClient::Forbidden: blocked'
+    )
   end
 
   it 'restores completed pending candidates when a refresh run fails', :aggregate_failures do

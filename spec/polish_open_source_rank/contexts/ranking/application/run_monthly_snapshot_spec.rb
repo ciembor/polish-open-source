@@ -117,6 +117,43 @@ class FakeJobCodeberg < FakeJobGitHub
   end
 end
 
+class JoinInterruptedThread
+  attr_reader :killed
+
+  def initialize(error)
+    @error = error
+    @join_calls = 0
+    @killed = false
+  end
+
+  def join
+    @join_calls += 1
+    raise error if @join_calls == 1
+
+    self
+  end
+
+  def [](_key)
+    nil
+  end
+
+  def alive?
+    !killed
+  end
+
+  def killed?
+    killed
+  end
+
+  def kill
+    @killed = true
+  end
+
+  private
+
+  attr_reader :error
+end
+
 class FakeOrganizationGitHub < FakeJobGitHub
   def supports_organizations?
     true
@@ -1162,6 +1199,22 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       PolishOpenSourceRank::Contexts::Operations::Application::MonthlySnapshotInterrupted,
       'Received SIGTERM'
     )
+    expect(fetch_row('SELECT status, error FROM sync_runs WHERE period_start = ?', ['2026-04-01'])).to include(
+      status: 'failed',
+      error: 'PolishOpenSourceRank::Contexts::Operations::Application::MonthlySnapshotInterrupted: Received SIGTERM'
+    )
+  end
+
+  it 'stops source worker threads before recording an interrupted run failure' do
+    interrupted_error = PolishOpenSourceRank::Contexts::Operations::Application::MonthlySnapshotInterrupted
+    thread = JoinInterruptedThread.new(interrupted_error.new('Received SIGTERM'))
+    allow(Thread).to receive(:new).and_return(thread)
+
+    expect do
+      described_class.new(store: store, sources: [github], catalog: catalog, logger: StringIO.new).call(period)
+    end.to raise_error(interrupted_error, 'Received SIGTERM')
+
+    expect(thread).to be_killed
     expect(fetch_row('SELECT status, error FROM sync_runs WHERE period_start = ?', ['2026-04-01'])).to include(
       status: 'failed',
       error: 'PolishOpenSourceRank::Contexts::Operations::Application::MonthlySnapshotInterrupted: Received SIGTERM'
