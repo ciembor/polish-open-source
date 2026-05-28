@@ -6,6 +6,8 @@ module PolishOpenSourceRank
       module Infrastructure
         module SQLite
           class SQLitePackageRepositoryQueue
+            include SQLiteRetryableErrors
+
             RETRYABLE_STATUSES = %w[pending failed].freeze
             REFRESHABLE_STATUSES = %w[pending failed scanned unavailable].freeze
             STALE_PROCESSING_SECONDS = 60 * 60
@@ -161,7 +163,11 @@ module PolishOpenSourceRank
             end
 
             def update(scan_id, attributes)
-              package_repository_scans.where(id: scan_id).update(attributes.merge(updated_at: timestamp))
+              translate_retryable_sqlite_failure do
+                database.transaction do
+                  package_repository_scans.where(id: scan_id).update(attributes.merge(updated_at: timestamp))
+                end
+              end
             end
 
             def package_repository_scans

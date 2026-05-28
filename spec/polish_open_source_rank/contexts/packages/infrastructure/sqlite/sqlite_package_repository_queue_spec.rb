@@ -105,6 +105,26 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     expect(queue.pending(period, limit: 10).map { |scan| scan.fetch(:full_name) }).to eq(['alice/stale'])
   end
 
+  it 'translates transient SQLite write failures to retryable scan failures' do
+    allow(database).to receive(:transaction)
+      .and_raise(Sequel::DatabaseError, 'SQLite3::BusyException: database is locked')
+
+    expect { queue.mark_processing(1) }.to raise_error(
+      PolishOpenSourceRank::Contexts::Packages::Application::RetryableRepositoryScanFailure,
+      'Retryable SQLite persistence failure: SQLite3::BusyException: database is locked'
+    )
+  end
+
+  it 'reraises non-retryable SQLite write failures' do
+    allow(database).to receive(:transaction)
+      .and_raise(Sequel::DatabaseError, 'SQLite3::SQLException: malformed database schema')
+
+    expect { queue.mark_processing(1) }.to raise_error(
+      Sequel::DatabaseError,
+      'SQLite3::SQLException: malformed database schema'
+    )
+  end
+
   it 'rejects unsupported ecosystem filters' do
     expect do
       queue.pending(period, limit: 10, ecosystem: 'unknown')

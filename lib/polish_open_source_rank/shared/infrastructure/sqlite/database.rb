@@ -7,6 +7,14 @@ module PolishOpenSourceRank
     module Infrastructure
       module SQLite
         class Database
+          SQLITE_WRITE_RETRIES = 3
+          SQLITE_WRITE_RETRY_DELAY = 0.25
+          SQLITE_LOCK_MESSAGES = [
+            /database is locked/i,
+            /database table is locked/i,
+            /database schema is locked/i
+          ].freeze
+
           def self.open(path)
             new(path).open
           end
@@ -51,7 +59,9 @@ module PolishOpenSourceRank
           end
 
           def transaction(&)
-            sequel_connection.transaction(mode: :immediate, &)
+            with_sqlite_write_retry do
+              sequel_connection.transaction(mode: :immediate, &)
+            end
           end
 
           private
@@ -81,6 +91,24 @@ module PolishOpenSourceRank
             connection.execute('PRAGMA foreign_keys = ON')
             connection.execute('PRAGMA journal_mode = WAL')
             connection.execute('PRAGMA synchronous = NORMAL')
+          end
+
+          def with_sqlite_write_retry
+            attempts = 0
+
+            begin
+              yield
+            rescue Sequel::DatabaseError => e
+              attempts += 1
+              raise unless sqlite_lock_error?(e) && attempts <= SQLITE_WRITE_RETRIES
+
+              sleep(SQLITE_WRITE_RETRY_DELAY * attempts)
+              retry
+            end
+          end
+
+          def sqlite_lock_error?(error)
+            SQLITE_LOCK_MESSAGES.any? { |pattern| error.message.match?(pattern) }
           end
 
           def with_hash_results

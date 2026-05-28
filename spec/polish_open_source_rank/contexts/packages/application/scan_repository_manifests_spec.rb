@@ -55,6 +55,28 @@ class FakePackageTreeGateway
   end
 end
 
+class OneFailurePackageManifestRepository
+  def initialize(delegate, error)
+    @delegate = delegate
+    @error = error
+    @failed = false
+  end
+
+  def replace_detected(...)
+    unless failed
+      self.failed = true
+      raise error
+    end
+
+    delegate.replace_detected(...)
+  end
+
+  private
+
+  attr_accessor :failed
+  attr_reader :delegate, :error
+end
+
 RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application::ScanRepositoryManifests do
   let(:clock) { -> { Time.utc(2026, 5, 23, 12, 0, 0) } }
   let(:tree_gateway) { FakePackageTreeGateway.new }
@@ -104,6 +126,30 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application::ScanReposi
     expect(result).to eq(scanned: 0, failed: 1, manifests: 0)
   end
 
+  it 'marks transient SQLite persistence failures as retryable and continues later scans' do
+    seed_scan(full_name: 'alice/locked', source_id: 1)
+    seed_scan(full_name: 'alice/app', source_id: 2)
+    stub_changed_repository(full_name: 'alice/locked')
+    stub_changed_repository(full_name: 'alice/app')
+    failure = PolishOpenSourceRank::Contexts::Packages::Application::RetryableRepositoryScanFailure.new(
+      'Retryable SQLite persistence failure: SQLite3::BusyException: database is locked'
+    )
+    repository = OneFailurePackageManifestRepository.new(manifest_repository, failure)
+
+    result = described_class.new(
+      repository_queue: repository_queue,
+      tree_gateway: tree_gateway,
+      manifest_repository: repository
+    ).call(period, limit: 10)
+
+    expect(scan_by_name('alice/locked')).to include(
+      status: 'failed',
+      error: 'Retryable SQLite persistence failure: SQLite3::BusyException: database is locked'
+    )
+    expect(scan_by_name('alice/app')).to include(status: 'scanned')
+    expect(result).to eq(scanned: 1, failed: 1, manifests: 2)
+  end
+
   it 'stores parser failures without aborting the repository scan' do
     seed_scan(full_name: 'alice/broken')
     tree_gateway.stub_repository('alice/broken', default_branch: 'main')
@@ -148,16 +194,16 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application::ScanReposi
     expect(database.fetch_value('SELECT COUNT(*) FROM registry_package_links')).to eq(0)
   end
 
-  def seed_scan(full_name:, tree_sha: nil, manifest_count: 0)
+  def seed_scan(full_name:, source_id: 1, tree_sha: nil, manifest_count: 0)
     database.execute(
       <<~SQL,
         INSERT INTO package_repository_scans(
           period_start, repository_kind, platform, repository_source_id, full_name, tree_sha, manifest_count,
           status, updated_at
         )
-        VALUES (?, 'user', 'github', 1, ?, ?, ?, 'pending', ?)
+        VALUES (?, 'user', 'github', ?, ?, ?, ?, 'pending', ?)
       SQL
-      [period.start_date.to_s, full_name, tree_sha, manifest_count, '2026-05-23T11:00:00Z']
+      [period.start_date.to_s, source_id, full_name, tree_sha, manifest_count, '2026-05-23T11:00:00Z']
     )
   end
 
@@ -184,6 +230,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application::ScanReposi
 
   def scan
     database.fetch_all('SELECT * FROM package_repository_scans').first
+  end
+
+  def scan_by_name(full_name)
+    database.fetch_all('SELECT * FROM package_repository_scans WHERE full_name = ?', [full_name]).first
   end
 
   def manifests
@@ -216,11 +266,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application::ScanReposi
     )
   end
 
-  def stub_changed_repository
-    tree_gateway.stub_repository('alice/app', default_branch: 'main')
-    tree_gateway.stub_tree('alice/app', ref: 'main', sha: 'tree-sha', truncated: true, entries: tree_entries)
-    tree_gateway.stub_blob('alice/app', sha: 'package-sha', content: '{"name":"app"}')
-    tree_gateway.stub_blob('alice/app', sha: 'gemspec-sha', content: 'Gem::Specification.new')
+  def stub_changed_repository(full_name: 'alice/app')
+    tree_gateway.stub_repository(full_name, default_branch: 'main')
+    tree_gateway.stub_tree(full_name, ref: 'main', sha: 'tree-sha', truncated: true, entries: tree_entries)
+    tree_gateway.stub_blob(full_name, sha: 'package-sha', content: '{"name":"app"}')
+    tree_gateway.stub_blob(full_name, sha: 'gemspec-sha', content: 'Gem::Specification.new')
   end
 
   def tree_entries
