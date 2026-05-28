@@ -51,6 +51,30 @@ RSpec.describe PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLit
     )
   end
 
+  it 'does not report repository retention as pending work after a monthly run finishes' do
+    database = open_database
+    database.execute(
+      'INSERT INTO sync_runs(period_start, period_end, status, started_at, finished_at) VALUES (?, ?, ?, ?, ?)',
+      ['2026-04-01', '2026-05-01', 'finished', '2026-05-01T00:00:00Z', '2026-05-01T00:05:00Z']
+    )
+    database.execute(
+      'INSERT INTO users(platform, github_id, login, html_url, updated_at) VALUES (?, ?, ?, ?, ?)',
+      ['github', 1, 'alice', 'https://github.com/alice', '2026-05-01T00:01:00Z']
+    )
+    database.execute(repository_sql(:repositories), ['github', 10, 1, 'alice', 'app', 'alice/app'])
+    database.execute(user_stats_sql, ['2026-04-01', 'github', 1, 'alice', 2, '2026-05-01T00:01:00Z'])
+    database.execute(repository_stats_sql, ['2026-04-01', 'github', 10, 1, 'alice', '2026-05-01T00:01:00Z'])
+
+    progress = described_class.new(database).job_progress(now: Time.parse('2026-05-01T00:10:00Z'))
+
+    expect(section(progress, 'user repositories / github')).to include(
+      total: 2,
+      done: 2,
+      pending: 0,
+      state: 'complete'
+    )
+  end
+
   def expect_section_labels(progress)
     expect(progress.fetch(:sections).map { |section| section.fetch(:label) }).to include(
       'monthly users / github',
