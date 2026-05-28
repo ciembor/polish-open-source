@@ -52,7 +52,8 @@ module PolishOpenSourceRank
             rescue PolishOpenSourceRank::Infrastructure::GitHubClient::Error => e
               raise_unavailable(full_name) if UNAVAILABLE_STATUSES.include?(e.status)
 
-              raise
+              raise Application::RetryableRepositoryScanFailure,
+                    "GitHub repository scan failed for #{full_name}: HTTP #{e.status}"
             end
 
             def repository_path(full_name)

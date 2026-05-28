@@ -79,6 +79,23 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubClient do
     expect(authorizations).to eq(['Bearer token', nil])
   end
 
+  it 'follows repository redirects and returns the redirected response body' do
+    stub_http(
+      response('301', 'Moved Permanently', '', 'location' => 'https://api.github.com/repos/QuestPDF/QuestPDF'),
+      ok_response({ 'full_name' => 'QuestPDF/QuestPDF' }, 'x-ratelimit-remaining' => '59')
+    )
+
+    response = client.get('/repos/QuestPDF/QuestPDF.Native')
+
+    expect(response.body).to eq('full_name' => 'QuestPDF/QuestPDF')
+  end
+
+  it 'raises an HTTP error when a redirect location is invalid' do
+    stub_http(response('301', 'Moved Permanently', '', 'location' => '://bad redirect'))
+
+    expect { client.get('/repos/QuestPDF/QuestPDF.Native') }.to raise_error(described_class::Error)
+  end
+
   it 'retries transient transport errors' do
     stub_http_start(
       Net::OpenTimeout.new('execution expired'),

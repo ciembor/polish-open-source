@@ -25,6 +25,7 @@ module PolishOpenSourceRank
 
       API_VERSION = '2022-11-28'
       DEFAULT_ACCEPT = 'application/vnd.github+json'
+      REDIRECT_STATUSES = [301, 302, 307, 308].freeze
       RETRYABLE_STATUSES = [403, 429, 500, 502, 503, 504].freeze
       RETRYABLE_TRANSPORT_ERRORS = [
         EOFError,
@@ -47,24 +48,19 @@ module PolishOpenSourceRank
 
       def get(path, params: {}, accept: DEFAULT_ACCEPT)
         attempts = 0
+        current_path = path
+        current_params = params
 
         loop do
           attempts += 1
-          response = perform_get(path, params, accept, authenticated: true)
-          response = retry_without_token(path, params, accept) if token_lifetime_policy_forbidden?(response)
+          response = request_response(current_path, current_params, accept)
+          redirected = redirected_request_for(current_path, response)
+          return follow_redirect(redirected) if redirected
           return parsed_success(response) if response.is_a?(Net::HTTPSuccess)
 
-          wait_seconds = retry_wait_seconds(response, attempts)
-          raise http_error(response) unless wait_seconds && attempts <= max_retries
-
-          logger.puts "GitHub API retry in #{wait_seconds.round(2)}s for #{path} (HTTP #{response.code})"
-          sleeper.call(wait_seconds)
+          retry_failed_response(current_path, response, attempts)
         rescue *RETRYABLE_TRANSPORT_ERRORS => e
-          wait_seconds = transport_error_retry_wait_seconds(attempts)
-          raise unless wait_seconds
-
-          logger.puts "GitHub API retry in #{wait_seconds.round(2)}s for #{path} (#{e.class})"
-          sleeper.call(wait_seconds)
+          retry_transport_error(current_path, e, attempts)
         end
       end
 
@@ -160,6 +156,52 @@ module PolishOpenSourceRank
       def retry_without_token(path, params, accept)
         logger.puts "GitHub API retry without token for #{path} (organization token policy)"
         perform_get(path, params, accept, authenticated: false)
+      end
+
+      def request_response(path, params, accept)
+        response = perform_get(path, params, accept, authenticated: true)
+        return response unless token_lifetime_policy_forbidden?(response)
+
+        retry_without_token(path, params, accept)
+      end
+
+      def redirect?(response)
+        REDIRECT_STATUSES.include?(response.code.to_i)
+      end
+
+      def redirected_request_for(path, response)
+        return unless redirect?(response)
+
+        location = response['location']
+        raise http_error(response) if location.to_s.empty?
+
+        uri = URI.parse(location)
+        redirected_path = [uri.path, uri.query].compact.join('?')
+        logger.puts "GitHub API redirect for #{path} to #{redirected_path}"
+        [uri.path, URI.decode_www_form(uri.query.to_s).to_h]
+      rescue URI::InvalidURIError
+        raise http_error(response)
+      end
+
+      def follow_redirect(redirected_request)
+        redirected_path, redirected_params = redirected_request
+        get(redirected_path, params: redirected_params)
+      end
+
+      def retry_failed_response(path, response, attempts)
+        wait_seconds = retry_wait_seconds(response, attempts)
+        raise http_error(response) unless wait_seconds && attempts <= max_retries
+
+        logger.puts "GitHub API retry in #{wait_seconds.round(2)}s for #{path} (HTTP #{response.code})"
+        sleeper.call(wait_seconds)
+      end
+
+      def retry_transport_error(path, error, attempts)
+        wait_seconds = transport_error_retry_wait_seconds(attempts)
+        raise unless wait_seconds
+
+        logger.puts "GitHub API retry in #{wait_seconds.round(2)}s for #{path} (#{error.class})"
+        sleeper.call(wait_seconds)
       end
 
       def token_lifetime_policy_forbidden?(response)

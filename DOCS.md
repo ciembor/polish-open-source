@@ -185,6 +185,22 @@ sudo podman exec -w /app polish-open-source-rank bundle exec rake crawl:repair_p
 
 Run these from the server as `ciembor` in `/home/ciembor/polish-open-source-rank`.
 
+When `/internal/jobs` shows `package repository scans` as `failed` and `stale`, check production in this order:
+
+```sh
+ssh ciembor@maciej-ciemborowicz.eu
+sudo systemctl status polish-open-source-rank-packages.service polish-open-source-rank-crawl-resume.service --no-pager
+sudo journalctl -u polish-open-source-rank-packages.service -u polish-open-source-rank-crawl-resume.service -n 200 --no-pager
+sudo podman exec -w /app polish-open-source-rank bundle exec rake crawl:list
+```
+
+Interpretation:
+
+- active `polish-open-source-rank-packages.service`: the backlog may still be draining;
+- failed package service plus pending package scans: the last package crawl aborted before it finished the queue;
+- old rows left in `processing`: repair them with `rake crawl:repair_packages[...]` before rerunning or resuming;
+- `crawl:list` is the fastest way to confirm whether the tracked package job is `running`, `interrupted`, `failed`, or already reopened by `resume_crawls`.
+
 Inspect timers and recent job logs:
 
 ```sh
@@ -297,6 +313,14 @@ The app is deployed behind Nginx at `https://polish-open-source.pl`. Nginx is co
 GitHub Actions runs quality checks and then calls [scripts/deploy.sh](scripts/deploy.sh). Required repository secret:
 
 - `SSH_PRIVATE_KEY_B64`: base64-encoded private SSH key accepted for `ciembor@maciej-ciemborowicz.eu`.
+
+Operational shape on the live host:
+
+- the production host is reached as `ciembor@maciej-ciemborowicz.eu`;
+- the app checkout lives in `/home/ciembor/polish-open-source-rank`;
+- the web app runs in the `polish-open-source-rank` Podman container;
+- monthly, package, and resume crawls are started by `systemd` one-shot services and use the same mounted `db/` and `log/` directories as the web app;
+- `/internal/jobs` reflects SQLite state from that shared app database, so `stale` package sections usually mean the package crawl is still running, the process died and left scans in `processing`, or the last package run failed while work remained pending.
 
 ## Quality
 
