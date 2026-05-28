@@ -270,6 +270,7 @@ module PolishOpenSourceRank
 
       def section_state(attributes, event_stats)
         return 'failed' if failed_monthly_run_with_pending_work?(attributes)
+        return package_section_state(attributes) if package_section?(attributes)
         return 'pending' if attributes.fetch(:pending).positive? && !event_stats.fetch(:last_finished_at)
         return 'running' if attributes.fetch(:pending).positive?
         return 'failed' if attributes.fetch(:failed).positive?
@@ -281,6 +282,28 @@ module PolishOpenSourceRank
         attributes[:job_kind] == 'monthly' &&
           failed_sync_run?(attributes.fetch(:period_start)) &&
           attributes.fetch(:pending).positive?
+      end
+
+      def package_section?(attributes)
+        attributes[:job_kind] == 'packages'
+      end
+
+      def package_section_state(attributes)
+        return 'failed' if attributes.fetch(:failed).positive?
+        return 'complete' unless attributes.fetch(:pending).positive?
+
+        case latest_package_run_status(attributes.fetch(:period_start))
+        when 'running' then 'running'
+        when 'failed' then 'failed'
+        else 'pending'
+        end
+      end
+
+      def latest_package_run_status(period_start)
+        package_crawl_runs_dataset
+          .where(period_start: period_start)
+          .order(Sequel.desc(Sequel.function(:datetime, :started_at)), Sequel.desc(:id))
+          .get(:status)
       end
 
       def failed_sync_run?(period_start)
