@@ -124,9 +124,14 @@ module PolishOpenSourceRank
 
             def fail(run_id, error)
               database.transaction do
-                run = database.dataset(:sync_runs).where(id: run_id).first
+                run_scope = database.dataset(:sync_runs).where(id: run_id)
+                run = run_scope.first
                 restore_completed_pending_candidates(run.fetch(:period_start)) if run
-                database.dataset(:sync_runs).where(id: run_id).update(status: 'failed', error: error)
+                run_scope.update(
+                  status: 'failed',
+                  finished_at: timestamp,
+                  error: error
+                )
               end
             end
 

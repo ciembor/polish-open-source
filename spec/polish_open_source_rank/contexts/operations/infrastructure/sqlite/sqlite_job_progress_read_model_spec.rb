@@ -24,6 +24,33 @@ RSpec.describe PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLit
     )
   end
 
+  it 'marks unfinished monthly sections as failed after the owning run fails' do
+    database = open_database
+    insert_run = <<~SQL
+      INSERT INTO sync_runs(period_start, period_end, status, started_at, finished_at, error)
+      VALUES (?, ?, ?, ?, ?, ?)
+    SQL
+    database.execute(
+      insert_run,
+      ['2026-04-01', '2026-05-01', 'failed', '2026-05-01T00:00:00Z', '2026-05-01T00:05:00Z', 'Received SIGTERM']
+    )
+    database.execute(candidate_sql(:candidate_organizations), ['2026-04-01', 'github', 3, 'org', 'pending'])
+    event = PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteJobWorkEventRepository.new(database)
+    event.record(
+      **base_event,
+      stage: 'organizations',
+      unit_kind: 'organization_candidate',
+      subject_label: 'done-org'
+    )
+
+    progress = described_class.new(database).job_progress(now: Time.parse('2026-05-01T00:10:00Z'))
+
+    expect(section(progress, 'monthly organizations / github')).to include(
+      pending: 1,
+      state: 'failed'
+    )
+  end
+
   def expect_section_labels(progress)
     expect(progress.fetch(:sections).map { |section| section.fetch(:label) }).to include(
       'monthly users / github',

@@ -5,15 +5,49 @@ module PolishOpenSourceRank
     module Ranking
       module Application
         module MonthlySnapshotWorkflow
+          # Owns source worker lifecycle so interruption cleanup stays in one place.
+          class SourceThreads
+            def self.start(sources, refresh_platforms)
+              new(
+                sources.map do |source|
+                  Thread.new { yield(source, refresh_platforms.include?(source.platform)) }
+                end
+              )
+            end
+
+            def initialize(threads)
+              @threads = threads
+            end
+
+            def join
+              threads.each(&:join)
+            end
+
+            def errors
+              threads.filter_map { |thread| thread[:error] }
+            end
+
+            def stop
+              threads.each { |thread| thread.kill if thread.alive? }
+              threads.each(&:join)
+            end
+
+            private
+
+            attr_reader :threads
+          end
+
           private
 
           def run_source_snapshots(period, refresh_platforms:)
-            threads = sources.map do |source|
-              Thread.new { run_source_snapshot(period, source, refresh: refresh_platforms.include?(source.platform)) }
+            source_threads = SourceThreads.start(sources, refresh_platforms) do |source, refresh|
+              run_source_snapshot(period, source, refresh: refresh)
             end
-            threads.each(&:join)
-            errors = threads.filter_map { |thread| thread[:error] }
-            raise errors.first if errors.length == sources.length
+            source_threads.join
+            raise_if_every_source_failed(source_threads.errors)
+          rescue StandardError
+            source_threads&.stop
+            raise
           end
 
           def complete_run(period, run_id)
@@ -83,6 +117,10 @@ module PolishOpenSourceRank
           rescue StandardError => e
             log(source, "#{stage} failed: #{e.class}: #{e.message}")
             e
+          end
+
+          def raise_if_every_source_failed(errors)
+            raise errors.first if errors.length == sources.length
           end
         end
       end

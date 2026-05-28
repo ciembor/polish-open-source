@@ -258,11 +258,22 @@ module PolishOpenSourceRank
       end
 
       def section_state(attributes, event_stats)
+        return 'failed' if failed_monthly_run_with_pending_work?(attributes)
         return 'pending' if attributes.fetch(:pending).positive? && !event_stats.fetch(:last_finished_at)
         return 'running' if attributes.fetch(:pending).positive?
         return 'failed' if attributes.fetch(:failed).positive?
 
         'complete'
+      end
+
+      def failed_monthly_run_with_pending_work?(attributes)
+        attributes[:job_kind] == 'monthly' &&
+          failed_sync_run?(attributes.fetch(:period_start)) &&
+          attributes.fetch(:pending).positive?
+      end
+
+      def failed_sync_run?(period_start)
+        sync_runs_dataset.where(period_start: period_start, status: 'failed').any?
       end
 
       def candidate_counts(table, period_start, platform)
