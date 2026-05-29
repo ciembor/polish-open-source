@@ -25,6 +25,18 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     expect(registry_links.first).to include(match_confidence: 'high', matched: 1)
   end
 
+  it 'treats all as an unbounded manifest resolve limit' do
+    seed_scan
+    seed_manifest(path: 'one/package.json', package_name: '@Scope/One', normalized_package_name: '@scope/one')
+    seed_manifest(path: 'two/package.json', package_name: '@Scope/Two', normalized_package_name: '@scope/two')
+
+    repository.resolve_from_manifests(period, ecosystem: 'npm', limit: 'all')
+
+    expect(registry_packages.map { |package| package.fetch(:normalized_package_name) }).to eq(
+      %w[@scope/one @scope/two]
+    )
+  end
+
   it 'resolves repository-signal manifests with escaped registry lookup URLs' do
     seed_scan
     seed_manifest(ecosystem: 'terraform', path: 'main.tf', package_name: 'alice/terraform-aws-tool',
@@ -55,6 +67,15 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     expect(repository.packages_to_fetch(period, ecosystem: 'npm', limit: 10, refresh: true).length).to eq(1)
     expect(registry_packages.first).to include(status: 'active', latest_version: '1.2.3')
     expect(registry_snapshots.first).to include(downloads_30d: 55, downloads_7d: nil)
+  end
+
+  it 'treats all as an unbounded registry fetch limit' do
+    seed_pending_package(package_name: 'one')
+    seed_pending_package(package_name: 'two')
+
+    expect(repository.packages_to_fetch(period, ecosystem: 'npm', limit: 'all', refresh: false).map do |package|
+      package.fetch(:normalized_package_name)
+    end).to eq(%w[one two])
   end
 
   it 'rejects registry packages whose source repository points elsewhere' do

@@ -35,8 +35,7 @@ module PolishOpenSourceRank
                       .where(period_start: period_start(period))
                       .where(retryable)
                       .order(Sequel.asc(:id))
-                      .limit(bounded_limit(limit))
-                      .all
+              scans = apply_limit(scans, limit).all
               mark_outdated_manifest_retries(scans, retry_scan_ids)
             end
 
@@ -210,6 +209,11 @@ module PolishOpenSourceRank
 
             def bounded_limit(limit)
               limit.to_i.clamp(1, 10_000)
+            end
+
+            def apply_limit(dataset, limit)
+              normalized = normalized_limit(limit)
+              normalized ? dataset.limit(normalized) : dataset
             end
 
             def timestamp

@@ -35,6 +35,17 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     expect(scans).to all(include(status: 'pending', updated_at: '2026-05-23T11:00:00Z'))
   end
 
+  it 'treats all as an unbounded enqueue and pending scan limit' do
+    seed_user(id: 1, login: 'alice')
+    seed_user_repository(id: 101, owner_id: 1, owner: 'alice', full_name: 'alice/one', stars: 20, delta: 0)
+    seed_user_repository(id: 102, owner_id: 1, owner: 'alice', full_name: 'alice/two', stars: 10, delta: 0)
+
+    queue.enqueue(period, limit: 'all')
+
+    expect(scans.map { |scan| scan.fetch(:full_name) }).to eq(%w[alice/one alice/two])
+    expect(queue.pending(period, limit: 'all').map { |scan| scan.fetch(:full_name) }).to eq(%w[alice/one alice/two])
+  end
+
   it 'keeps enqueue idempotent and can include forks explicitly' do
     seed_user(id: 1, login: 'alice')
     seed_user_repository(id: 101, owner_id: 1, owner: 'alice', full_name: 'alice/fork', stars: 120, delta: 0, fork: 1)

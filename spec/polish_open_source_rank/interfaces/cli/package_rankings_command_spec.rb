@@ -49,6 +49,21 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::PackageRankingsCommand do
     )
   end
 
+  it 'passes all as an unbounded package crawl limit' do
+    described_class.call(
+      %w[--period 2026-04 --limit all],
+      job: job,
+      output: output
+    )
+
+    expect(job).to have_received(:call).with(
+      PolishOpenSourceRank::Shared::Domain::Period.parse('2026-04'),
+      ecosystem: nil,
+      limits: { repository: 'all', scan: 'all', manifest: 'all', registry: 'all' },
+      refresh: false
+    )
+  end
+
   it 'does not run package rankings before monthly rankings finish for the period' do
     monthly_completion =
       instance_double(
