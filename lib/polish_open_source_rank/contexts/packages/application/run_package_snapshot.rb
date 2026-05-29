@@ -39,13 +39,22 @@ module PolishOpenSourceRank
                       :work_events
 
           def run_flow(period, ecosystem:, limits:, refresh:)
-            stale_reset = repository_queue.reset_stale_processing(period)
-            repository_queue.enqueue(period, limit: limits.repository)
-            scan_stats = manifest_scanner.call(period, ecosystem: ecosystem, limit: limits.scan, refresh: refresh)
-            registry_packages.resolve_from_manifests(period, ecosystem: ecosystem, limit: limits.manifest)
-            registry_stats = fetch_registry_snapshots(period, ecosystem: ecosystem, limit: limits.registry,
-                                                              refresh: refresh)
-            scan_stats.merge(stale_scans_reset: stale_reset).merge(registry_stats)
+            first_pass = execute_pass(period, ecosystem: ecosystem, limits: limits, refresh: refresh)
+            return first_pass unless retryable_stage_failures?(first_pass)
+
+            second_pass = execute_pass(period, ecosystem: ecosystem, limits: limits, refresh: refresh)
+            first_pass.merge(
+              scanned: first_pass.fetch(:scanned) + second_pass.fetch(:scanned),
+              failed: second_pass.fetch(:failed),
+              manifests: first_pass.fetch(:manifests) + second_pass.fetch(:manifests),
+              registry_fetched: first_pass.fetch(:registry_fetched) + second_pass.fetch(:registry_fetched),
+              registry_ok: first_pass.fetch(:registry_ok) + second_pass.fetch(:registry_ok),
+              registry_not_found: first_pass.fetch(:registry_not_found) + second_pass.fetch(:registry_not_found),
+              registry_rate_limited: second_pass.fetch(:registry_rate_limited),
+              registry_failed: second_pass.fetch(:registry_failed),
+              snapshots_written: first_pass.fetch(:snapshots_written) + second_pass.fetch(:snapshots_written),
+              retry_passes: 1
+            )
           end
 
           def fetch_registry_snapshots(period, ecosystem:, limit:, refresh:)
@@ -125,6 +134,22 @@ module PolishOpenSourceRank
               manifest: limits.fetch(:manifest),
               registry: limits.fetch(:registry)
             )
+          end
+
+          def execute_pass(period, ecosystem:, limits:, refresh:)
+            stale_reset = repository_queue.reset_stale_processing(period)
+            repository_queue.enqueue(period, limit: limits.repository)
+            scan_stats = manifest_scanner.call(period, ecosystem: ecosystem, limit: limits.scan, refresh: refresh)
+            registry_packages.resolve_from_manifests(period, ecosystem: ecosystem, limit: limits.manifest)
+            registry_stats = fetch_registry_snapshots(period, ecosystem: ecosystem, limit: limits.registry,
+                                                              refresh: refresh)
+            scan_stats.merge(stale_scans_reset: stale_reset).merge(registry_stats)
+          end
+
+          def retryable_stage_failures?(stats)
+            stats.fetch(:failed).positive? ||
+              stats.fetch(:registry_failed).positive? ||
+              stats.fetch(:registry_rate_limited).positive?
           end
         end
       end

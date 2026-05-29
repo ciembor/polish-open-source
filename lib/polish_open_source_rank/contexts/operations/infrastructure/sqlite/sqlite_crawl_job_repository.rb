@@ -36,6 +36,16 @@ module PolishOpenSourceRank
               update(job_id, status: status, finished_at: timestamp, error: error)
             end
 
+            def retry(job_id, error)
+              crawl_job_runs_dataset
+                .where(id: job_id)
+                .update(
+                  attempts: Sequel[:attempts] + 1,
+                  error: error,
+                  updated_at: timestamp
+                )
+            end
+
             def resumable(command: nil)
               dataset = crawl_job_runs_dataset.where(status: RESUMABLE_STATUSES)
               dataset = dataset.where(command: command) if command

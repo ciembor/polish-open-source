@@ -933,6 +933,29 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(logger.string).to include('[github] candidate "broken" failed: DistinctToStringError: boom')
   end
 
+  it 'retries failed candidates once before failing the run' do
+    github.candidates = { 'Poland' => [{ source_id: 500, login: 'broken' }] }
+    github.profiles = { 'broken' => profile(500, 'broken', 'Krakow, Poland') }
+    github.repositories = { 'broken' => [repository(600, 'broken/tool', 5)] }
+    attempts = 0
+    allow(github).to receive(:user).and_wrap_original do |original, *args|
+      attempts += 1
+      raise Net::OpenTimeout, 'execution expired' if attempts == 1
+
+      original.call(*args)
+    end
+
+    described_class.new(store: store, sources: [github], catalog: catalog, logger: StringIO.new).call(period)
+
+    expect(fetch_candidate('broken')).to include(status: 'processed', error: nil)
+    expect(fetch_repository_stats('broken/tool')).to include(owner_login: 'broken', stargazers_count: 5)
+    expect(fetch_row('SELECT status, error FROM sync_runs WHERE period_start = ?', ['2026-04-01'])).to include(
+      status: 'finished',
+      error: nil
+    )
+    expect(attempts).to eq(2)
+  end
+
   it 'continues processing later candidates after a retryable candidate crash' do
     github.candidates = {
       'Poland' => [{ source_id: 500, login: 'broken' }, { source_id: 1, login: 'alice' }]

@@ -64,6 +64,19 @@ RSpec.describe PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLit
     expect(repository.all.map { |job| job.fetch(:id) }).to eq([newer, older])
   end
 
+  it 'increments attempts and keeps the job running when retrying a transient failure' do
+    job_id = repository.start(command: 'monthly_rankings', arguments: ['--month', '2026-04'])
+
+    repository.retry(job_id, 'Net::OpenTimeout: execution expired')
+
+    expect(job(job_id)).to include(
+      status: 'running',
+      attempts: 2,
+      error: 'Net::OpenTimeout: execution expired',
+      finished_at: nil
+    )
+  end
+
   def job(job_id)
     database.fetch_all('SELECT * FROM crawl_job_runs WHERE id = ?', [job_id]).first
   end

@@ -120,6 +120,30 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
     expect(crawl_jobs).not_to have_received(:finish)
   end
 
+  it 'retries transient crawl job failures once before marking the job failed' do
+    output = StringIO.new
+    job = instance_double(PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlySnapshot)
+    crawl_jobs = instance_double(
+      PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteCrawlJobRepository,
+      start: 29,
+      retry: nil,
+      finish: nil,
+      fail: nil
+    )
+    attempts = 0
+    allow(job).to receive(:call) do
+      attempts += 1
+      raise Net::OpenTimeout, 'execution expired' if attempts == 1
+    end
+
+    described_class.call(['--month', '2026-04'], job: job, output: output, crawl_jobs: crawl_jobs)
+
+    expect(crawl_jobs).to have_received(:retry).with(29, 'Net::OpenTimeout: execution expired')
+    expect(crawl_jobs).to have_received(:finish).with(29)
+    expect(crawl_jobs).not_to have_received(:fail)
+    expect(job).to have_received(:call).twice
+  end
+
   it 'marks failed crawl jobs with the original error' do
     output = StringIO.new
     job = instance_double(PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlySnapshot)

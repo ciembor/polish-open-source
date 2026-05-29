@@ -111,6 +111,24 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::PackageRankingsCommand do
     )
   end
 
+  it 'retries transient package job failures once before marking the job failed' do
+    attempts = 0
+    allow(job).to receive(:call) do
+      attempts += 1
+      raise Net::OpenTimeout, 'execution expired' if attempts == 1
+
+      { scanned: 1, failed: 0, registry_fetched: 1, registry_ok: 1, registry_failed: 0 }
+    end
+    allow(crawl_jobs).to receive(:retry)
+
+    described_class.call(%w[--period 2026-04], job: job, output: output, crawl_jobs: crawl_jobs)
+
+    expect(crawl_jobs).to have_received(:retry).with(7, 'Net::OpenTimeout: execution expired')
+    expect(crawl_jobs).to have_received(:finish).with(7)
+    expect(crawl_jobs).not_to have_received(:fail)
+    expect(job).to have_received(:call).twice
+  end
+
   it 'marks process stop signals as interrupted' do
     term_handler = nil
     previous_handlers = []
