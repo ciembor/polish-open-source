@@ -6,6 +6,7 @@ module PolishOpenSourceRank
   module Infrastructure
     class SQLiteJobProgress
       STALE_SECONDS = 10 * 60
+      WORK_EVENT_STATS_SAMPLE_SIZE = 5000
       MONTHLY_PLATFORM_ORDER = %w[github gitlab codeberg].freeze
       PACKAGE_STAGE_ORDER = %w[
         repository_scan
@@ -19,6 +20,34 @@ module PolishOpenSourceRank
         WHERE error IS NOT NULL
         ORDER BY datetime(finished_at) DESC, id DESC
         LIMIT 30
+      SQL
+      WORK_EVENT_STATS_SQL = <<~SQL.freeze
+        WITH recent_events AS (
+          SELECT duration_ms, finished_at, id
+          FROM job_work_events
+          WHERE %<filters>s
+          ORDER BY finished_at DESC, id DESC
+          LIMIT #{WORK_EVENT_STATS_SAMPLE_SIZE}
+        ),
+        ranked AS (
+          SELECT duration_ms,
+                 finished_at,
+                 ROW_NUMBER() OVER (ORDER BY duration_ms) AS duration_rank,
+                 COUNT(*) OVER () AS events_count
+          FROM recent_events
+        )
+        SELECT events_count,
+               MIN(finished_at) AS first_finished_at,
+               MAX(finished_at) AS last_finished_at,
+               ROUND(AVG(duration_ms)) AS average_ms,
+               MAX(CASE
+                 WHEN duration_rank = ((events_count + 1) / 2) THEN duration_ms
+               END) AS median_ms,
+               MAX(CASE
+                 WHEN duration_rank = ((events_count * 95 + 99) / 100) THEN duration_ms
+               END) AS p95_ms
+        FROM ranked
+        GROUP BY events_count
       SQL
 
       def initialize(database, stale_seconds: STALE_SECONDS)
@@ -152,48 +181,68 @@ module PolishOpenSourceRank
       end
 
       def work_event_stats(attributes)
-        events = work_events_for(attributes)
-        durations = events.map { |event| event.fetch(:duration_ms).to_i }.sort
+        stats = work_event_stats_row(attributes)
+        return empty_work_event_stats unless stats
+
+        count = stats.fetch(:events_count).to_i
         {
-          throughput_per_minute: throughput_per_minute(events),
-          average_ms: average(durations),
-          median_ms: percentile(durations, 0.50),
-          p95_ms: percentile(durations, 0.95),
-          last_finished_at: events.map { |event| event.fetch(:finished_at) }.max
+          throughput_per_minute: throughput_per_minute(
+            count,
+            stats.fetch(:first_finished_at),
+            stats.fetch(:last_finished_at)
+          ),
+          average_ms: stats.fetch(:average_ms)&.to_i,
+          median_ms: stats.fetch(:median_ms)&.to_i,
+          p95_ms: stats.fetch(:p95_ms)&.to_i,
+          last_finished_at: stats.fetch(:last_finished_at)
         }
       end
 
-      def work_events_for(attributes)
-        dataset = job_work_events_dataset.where(
-          period_start: attributes.fetch(:period_start),
-          job_kind: attributes.fetch(:job_kind),
-          stage: attributes.fetch(:stage),
-          unit_kind: attributes.fetch(:unit_kind)
-        )
-        dataset = dataset.where(platform: attributes[:platform]) if attributes[:platform]
-        dataset = dataset.where(ecosystem: attributes[:ecosystem]) if attributes[:ecosystem]
-        dataset.select(:duration_ms, :finished_at).order(:finished_at).all
+      def empty_work_event_stats
+        {
+          throughput_per_minute: 0.0,
+          average_ms: nil,
+          median_ms: nil,
+          p95_ms: nil,
+          last_finished_at: nil
+        }
       end
 
-      def throughput_per_minute(events)
-        return 0.0 if events.length < 2
+      def work_event_stats_row(attributes)
+        rows = fetch_all(work_event_stats_sql(attributes), work_event_stats_params(attributes))
+        rows.first
+      end
 
-        started = Time.parse(events.first.fetch(:finished_at))
-        finished = Time.parse(events.last.fetch(:finished_at))
+      def work_event_stats_sql(attributes)
+        format(WORK_EVENT_STATS_SQL, filters: work_event_filters(attributes).join(' AND '))
+      end
+
+      def work_event_filters(attributes)
+        filters = ['period_start = ?', 'job_kind = ?', 'stage = ?', 'unit_kind = ?']
+        filters << 'platform = ?' if attributes[:platform]
+        filters << 'ecosystem = ?' if attributes[:ecosystem]
+        filters
+      end
+
+      def work_event_stats_params(attributes)
+        params = [
+          attributes.fetch(:period_start),
+          attributes.fetch(:job_kind),
+          attributes.fetch(:stage),
+          attributes.fetch(:unit_kind)
+        ]
+        params << attributes[:platform] if attributes[:platform]
+        params << attributes[:ecosystem] if attributes[:ecosystem]
+        params
+      end
+
+      def throughput_per_minute(count, first_finished_at, last_finished_at)
+        return 0.0 if count < 2
+
+        started = Time.parse(first_finished_at)
+        finished = Time.parse(last_finished_at)
         minutes = [(finished - started) / 60.0, 1.0 / 60.0].max
-        (events.length / minutes).round(2)
-      end
-
-      def average(values)
-        return nil if values.empty?
-
-        (values.sum.to_f / values.length).round
-      end
-
-      def percentile(values, percentile)
-        return nil if values.empty?
-
-        values[[(values.length * percentile).ceil - 1, 0].max]
+        (count / minutes).round(2)
       end
 
       def eta_seconds(pending, duration_ms)
@@ -305,10 +354,6 @@ module PolishOpenSourceRank
 
       def package_crawl_runs_dataset
         database.dataset(:package_crawl_runs)
-      end
-
-      def job_work_events_dataset
-        database.dataset(:job_work_events)
       end
     end
   end
