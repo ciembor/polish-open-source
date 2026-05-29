@@ -79,18 +79,22 @@ module PolishOpenSourceRank
       end
 
       def repository_stars_delta(repository, period)
-        return 0 if repository.key?(:stars) && repository.fetch(:stars).zero?
+        repository_star_snapshot(repository, period).fetch(:monthly_stars_delta)
+      end
+
+      def repository_star_snapshot(repository, period)
+        return empty_star_snapshot if repository.key?(:stars) && repository.fetch(:stars).zero?
 
         owner, repo = repository_coordinates(repository)
         first_page = stargazers_page(owner, repo, 1)
         last_page = last_page_number(first_page.headers.fetch('link', nil)) || 1
-        return count_stars(first_page.body, period) if last_page == 1
+        return star_snapshot(first_page.body, period) if last_page == 1
 
-        count_stars_backwards(owner, repo, period, last_page)
+        count_star_snapshot_backwards(owner, repo, period, last_page)
       rescue GitHubClient::Error => e
         raise unless [403, 451].include?(e.status)
 
-        0
+        empty_star_snapshot
       end
 
       def public_activity_count(profile, period)
@@ -171,18 +175,31 @@ module PolishOpenSourceRank
         [match[1], match[2]]
       end
 
-      def count_stars_backwards(owner, repo, period, last_page)
-        count = 0
+      def count_star_snapshot_backwards(owner, repo, period, last_page)
+        snapshot = empty_star_snapshot
         last_page.downto(1) do |page|
           times = stargazers_page(owner, repo, page).body.map { |star| Time.parse(star.fetch('starred_at')) }
-          count += times.count { |time| period.cover_time?(time) }
+          historical_stars = times.count { |time| time.to_date < period.end_date }
+          snapshot[:stars] += historical_stars
+          snapshot[:stargazers_count] += historical_stars
+          snapshot[:monthly_stars_delta] += times.count { |time| period.cover_time?(time) }
           break if times.any? && times.all? { |time| time.to_date < period.start_date }
         end
-        count
+        snapshot
       end
 
-      def count_stars(stargazers, period)
-        stargazers.count { |star| period.cover_time?(Time.parse(star.fetch('starred_at'))) }
+      def star_snapshot(stargazers, period)
+        times = stargazers.map { |star| Time.parse(star.fetch('starred_at')) }
+        stars = times.count { |time| time.to_date < period.end_date }
+        {
+          stars: stars,
+          stargazers_count: stars,
+          monthly_stars_delta: times.count { |time| period.cover_time?(time) }
+        }
+      end
+
+      def empty_star_snapshot
+        { stars: 0, stargazers_count: 0, monthly_stars_delta: 0 }
       end
 
       def next_page?(link_header)

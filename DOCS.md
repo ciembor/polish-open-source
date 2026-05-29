@@ -11,7 +11,7 @@ Package rankings are built as a separate crawl after the monthly source ranking.
 - User login, name, raw location, normalized city, normalized country, public email, homepage, profile URL, avatar URL.
 - User monthly stats: public repo count, total stars across owned public repositories, stars gained by those repositories during the month when the platform exposes dated star history, public activity event count during the month.
 - Repository data per user: name, full name, URL, homepage, language, description, fork/archive flags.
-- Repository monthly stats: current stars and stars gained during the month.
+- Repository monthly stats: stars and stars gained during the month.
 - Organization profiles and organization repositories with the same public ranking fields.
 - Package manifest data from public repositories: ecosystem, manifest path, package name, normalized package name, parser status, registry links, homepage, repository URL, and license when the manifest exposes it.
 - Package registry snapshots: latest version, release timestamp when available, download metrics when available, dependent package counts when available, and dependent repository counts when available.
@@ -83,6 +83,12 @@ The job intentionally favors stability over speed:
 - sleeps until `X-RateLimit-Reset` before consuming the final primary GitHub request;
 - retries 403, 429, and 5xx responses with backoff;
 - stores candidate status in SQLite so failed runs can be resumed.
+
+For GitHub repositories, monthly `stargazers_count` is historical at the period end and
+`monthly_stars_delta` counts stars gained inside that calendar month. For platforms
+without dated star history, repository stars may remain the value observed during the
+monthly crawl, while `monthly_stars_delta` falls back to the best available source
+calculation.
 
 Production uses the systemd timer in [deploy/polish-open-source-rank-monthly.timer](deploy/polish-open-source-rank-monthly.timer).
 

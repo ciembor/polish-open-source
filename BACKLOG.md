@@ -1,231 +1,311 @@
-# Backlog: rozszerzenie rankingów pakietów
+# Plan dla agenta: historyczne gwiazdki dla miesięcznych rankingów
 
-Cel: pokazać więcej sensownych ekosystemów pakietów w publicznym `/packages`, ale tylko wtedy, gdy mamy wiarygodną metrykę rankingową albo świadomie oznaczony etap diagnostyczny. GitHub pozostaje źródłem kwalifikacji polskości; registry i systemy pakietów służą do metryk, wersji i linków.
+## Cel
 
-## Zasady
+Zmienić semantykę miesięcznych rankingów tak, żeby dla GitHuba wartości gwiazdek były historyczne dla konkretnego miesiąca, a nie aktualne z momentu crawl joba.
 
-- [ ] Nie klasyfikować pakietu jako polskiego na podstawie registry.
-- [ ] Pakiet trafia do polskiego rankingu przez manifest w repozytorium zakwalifikowanym przez GitHubowy ranking PL.
-- [ ] Nie pokazywać publicznego rankingu ekosystemu bez stabilnej metryki sortowania.
-- [ ] Zachowywać `nil` dla niedostępnych metryk zamiast udawać zero.
-- [ ] Każdy nowy ekosystem ma testy parsera, klienta registry, read modelu i UI/routingu.
-- [ ] Każda zmiana przechodzi `bin/quality` i jest commitowana bez omijania hooków.
+Docelowo:
 
-## Kolejność
+```text
+period_start = 2026-04-01
+stargazers_count = liczba gwiazdek repo na koniec kwietnia
+monthly_stars_delta = liczba gwiazdek zdobytych w kwietniu
+observed_at = moment faktycznego pobrania danych
+```
 
-1. [x] Packagist downloads
-2. [x] Hex diagnosis
-3. [x] Homebrew
-4. [x] NuGet
-5. [x] Maven
-6. [x] Repo stars/trending + Terraform, Conan, vcpkg, SwiftPM, pub.dev
-7. [x] System package ecosystems: APT, RPM, Nix
+## Problem
 
-## 1. Packagist Downloads
+Obecnie `repository.fetch(:stars)` pochodzi z aktualnego GitHub API `/users/:login/repos` albo `/orgs/:login/repos`.
 
-Dlaczego: dane Packagist już są w bazie, ale ekosystem nie jest widoczny, bo obecny klient nie zapisuje liczbowej metryki rankingowej.
+Jeśli crawl dla kwietnia trwa od 1 maja do 3 czerwca, część rekordów zapisze do `period_start = 2026-04-01`, ale z wartościami gwiazdek z czerwca.
 
-- [x] Sprawdzić oficjalny endpoint Packagist z metrykami downloads dla pakietu.
-- [x] Rozszerzyć `PackagistRegistryClient`, żeby zapisywał:
-  - [x] `downloads_total`,
-  - [x] `downloads_30d` albo najbliższy wiarygodny odpowiednik miesięczny, jeśli API go daje.
-- [x] Dodać `packagist` do publicznych metryk w `PackageRankingMetric`.
-- [x] Upewnić się, że `/packages` pokazuje Packagist po pojawieniu się snapshotów z metryką.
-- [x] Dodać testy dla klienta registry i ranking read modelu.
-- [x] Uruchomić package crawl dla Packagist lub pełny crawl z obecnymi limitami.
-- [x] Sprawdzić produkcyjne liczby snapshotów i pozycje rankingowe.
+`monthly_stars_delta` bywa liczony z różnicy względem poprzedniego snapshotu, więc też może obejmować gwiazdki zdobyte po miesiącu docelowym.
 
-Definition of Done:
+## Zakres
 
-- [x] Packagist jest widoczny w `/packages`.
-- [x] Ranking Packagist sortuje po prawdziwej metryce downloads.
-- [x] Brak metryki w API nie tworzy fałszywych zer.
+Zmiana dotyczy przede wszystkim:
 
-Wynik produkcji: Packagist ma publiczny ranking. Refresh `2026-04` zapisał 188 aktywnych snapshotów z `downloads_total` i `downloads_30d`; top po miesięcznych pobraniach zaczyna się od `symfony/polyfill-mbstring`, `guzzlehttp/psr7`, `psr/http-message`.
+```text
+lib/polish_open_source_rank/infrastructure/github/gateway.rb
+lib/polish_open_source_rank/contexts/ranking/application/run_monthly_snapshot.rb
+lib/polish_open_source_rank/contexts/ranking/application/monthly_snapshot_factory.rb
+lib/polish_open_source_rank/contexts/ranking/domain/source_repository.rb
+```
 
-## 2. Hex Diagnosis
+oraz testów dla:
 
-Dlaczego: Hex ma już obsługiwaną metrykę `downloads_total` i jest dopuszczony w `PackageRankingMetric`, ale produkcja nie pokazuje Hex, bo nie ma aktywnych snapshotów.
+```text
+spec/polish_open_source_rank/infrastructure/github/gateway_spec.rb
+spec/polish_open_source_rank/contexts/ranking/application/run_monthly_snapshot_spec.rb
+spec/polish_open_source_rank/contexts/ranking/infrastructure/sqlite/sqlite_snapshot_repository_spec.rb
+```
 
-- [x] Sprawdzić produkcyjne `registry_packages` dla `hex`: statusy `active`, `not_found`, `failed`, `pending`.
-- [x] Sprawdzić `package_manifests` dla `hex`: `parsed`, `partial`, `failed`, `unpublished`.
-- [x] Ustalić, czy problemem są:
-  - [x] nazwy pakietów z parserów `mix.exs` / `rebar.config`,
-  - [x] błędne mapowanie do Hex API,
-  - [x] brak opublikowanych pakietów,
-  - [x] rate limiting albo błędy registry.
-- [x] Dodać brakujące testy regresyjne dla wykrytego przypadku.
-- [x] Naprawić parser albo klienta registry, jeśli diagnoza wskaże błąd po naszej stronie.
-- [x] Uruchomić ograniczony crawl Hex.
+Nazwy plików mogą się minimalnie różnić, agent ma sprawdzić aktualne repo.
 
-Definition of Done:
+## Krok 1 - znaleźć aktualny przepływ danych
 
-- [x] Wiemy, dlaczego Hex nie pojawia się w UI.
-- [x] Jeśli mamy realne aktywne paczki Hex, `/packages` pokazuje Hex.
-- [x] Jeśli nie mamy realnych aktywnych paczek, mamy udokumentowaną przyczynę w testach lub diagnostyce.
+Prześledzić:
 
-Wynik produkcji: problemem była normalizacja nazw w parserach `mix.exs` i `rebar.config`; zamienialiśmy `_` na `-`, podczas gdy Hex używa nazw z underscore. Po poprawce i celowanym refreshu `2026-04` Hex ma 42 aktywne snapshoty z `downloads_total`, 35 `not_found`, 0 `rate_limited`, 0 `failed`. Publiczny ranking jest widoczny w `/packages`; top po pobraniach zaczyna się od `money`, `req`, `mockery`.
+1. `GitHubGateway#repository`
+2. `GitHubGateway#each_repository_for`
+3. `RunMonthlySnapshot#store_repository`
+4. `RunMonthlySnapshot#store_organization_repository`
+5. `MonthlySnapshotFactory#repository_snapshot`
+6. `MonthlySnapshotFactory#organization_repository_snapshot`
+7. zapis do `repository_monthly_stats`
+8. zapis do `organization_repository_monthly_stats`
 
-## 3. Homebrew
+Potwierdzić, gdzie `stars` z `SourceRepository` trafia do `stargazers_count`.
 
-Dlaczego: to najlepszy pierwszy systemowy ekosystem. Ma publiczne dane formuł i analytics, a wiele formuł mapuje się na repozytoria GitHub.
+## Krok 2 - dodać obliczanie historycznych gwiazdek
 
-- [x] Dodać nowy ekosystem `homebrew`.
-- [x] Dodać detekcję manifestów/formuł:
-  - [x] `Formula/*.rb`,
-  - [x] `Casks/*.rb`, jeśli zdecydujemy objąć caski: decyzja, nie mieszać casków z formułami w tym etapie,
-  - [x] lokalne tapy Homebrew, jeśli występują w polskich repozytoriach.
-- [x] Zaprojektować parser formuły jako bezpieczny parser statyczny, bez wykonywania Ruby.
-- [x] Wyciągać co najmniej:
-  - [x] nazwę formuły,
-  - [x] homepage,
-  - [x] URL źródłowy,
-  - [x] GitHub URL, jeśli występuje,
-  - [x] licencję, jeśli łatwo dostępna.
-- [x] Dodać klienta Homebrew analytics dla metryk:
-  - [x] installs 30d,
-  - [x] installs 90d albo total, jeśli potrzebne.
-- [x] Zmapować metrykę na `downloads_30d` albo osobną nazwę domenową, jeśli `downloads` byłoby mylące.
-- [x] Dodać ranking publiczny Homebrew.
-- [x] Dodać testy parsera, klienta analytics i read modelu.
+W `GitHubGateway` dodać metodę, np.:
 
-Definition of Done:
+```ruby
+def repository_star_snapshot(repository, period)
+  owner, repo = repository_coordinates(repository)
 
-- [x] Homebrew ma stabilny ranking publiczny.
-- [x] Nie wykonujemy kodu formuł.
-- [x] Metryka jest nazwana tak, żeby nie mylić install analytics z registry downloads.
+  stars_at_period_end = 0
+  stars_in_period = 0
 
-Wynik implementacji: Homebrew obsługuje formuły `Formula/*.rb` także w lokalnych tapach (`*/Formula/*.rb`). Caski nie są mieszane z formułami w tym etapie, bo mają osobną kategorię analytics. Parser jest statyczny i nie wykonuje Ruby; klient czyta `formulae.brew.sh/api/formula/*.json`, zapisuje 30-dniowe instalacje w polu rankingowym `downloads_30d`, a UI pokazuje je jako „Instalacje 30 dni” / „30-day installs”.
+  last_page = last_page_number(stargazers_page(owner, repo, 1).headers.fetch('link', nil)) || 1
 
-## 4. NuGet
+  last_page.downto(1) do |page|
+    stars = stargazers_page(owner, repo, page).body
+    times = stars.map { |star| Time.parse(star.fetch('starred_at')) }
 
-Dlaczego: duży ekosystem .NET/C#, z publicznym registry API i licznikami pobrań.
+    stars_at_period_end += times.count { |time| time.to_date <= period.end_date }
+    stars_in_period += times.count { |time| period.cover_time?(time) }
 
-- [x] Dodać nowy ekosystem `nuget`.
-- [x] Dodać detekcję manifestów:
-  - [x] `.csproj`,
-  - [x] `.fsproj`,
-  - [x] `.vbproj`,
-  - [x] `.nuspec`,
-  - [x] `Directory.Packages.props`.
-- [x] Dodać parser:
-  - [x] package id,
-  - [x] version,
-  - [x] repository URL,
-  - [x] project URL,
-  - [x] license.
-- [x] Dodać klienta NuGet registry:
-  - [x] latest version,
-  - [x] downloads total,
-  - [x] registry URL,
-  - [x] repository/project URL, jeśli API daje.
-- [x] Dodać metrykę rankingową dla NuGet.
-- [x] Dodać testy XML parserów bez zależności od frameworków webowych.
-- [ ] Uruchomić ograniczony crawl NuGet.
+    break if times.any? && times.all? { |time| time.to_date < period.start_date }
+  end
 
-Definition of Done:
+  {
+    stargazers_count: stars_at_period_end,
+    monthly_stars_delta: stars_in_period
+  }
+end
+```
 
-- [x] NuGet jest widoczny w `/packages`.
-- [x] `.csproj` i `.nuspec` nie wymagają wykonywania build tooli.
-- [x] Ranking używa prawdziwych liczników NuGet.
+Uwaga: trzeba sprawdzić, czy `period` ma `end_date`. Jeśli nie ma, dodać helper albo użyć końca miesiąca z `start_date`.
 
-Wynik implementacji: NuGet ma publiczny ranking po `downloads_total` z NuGet SearchQueryService. Klient odkrywa endpoint wyszukiwania przez service index NuGet V3, a parser XML statycznie obsługuje `.csproj`, `.fsproj`, `.vbproj`, `.nuspec` i diagnostycznie `Directory.Packages.props` bez uruchamiania build tooli. Ograniczony crawl produkcyjny pozostaje krokiem operacyjnym po wdrożeniu.
+Ważne: obecny `repository_stars_delta` już używa:
 
-## 5. Maven
+```ruby
+application/vnd.github.star+json
+```
 
-Dlaczego: ważny ekosystem JVM/Java/Kotlin, ale metryki popularności są mniej proste niż w Packagist/NuGet.
+i `starred_at`, więc można wykorzystać istniejące metody `stargazers_page`, `count_stars_backwards`, `count_stars`.
 
-- [x] Dodać decyzję produktową: czy Maven pokazujemy od razu publicznie, czy najpierw zbieramy dane diagnostycznie: najpierw diagnostycznie, bo Maven Central Search API nie udostępnia stabilnej metryki downloads/popularity.
-- [x] Dodać nowy ekosystem `maven`.
-- [ ] Dodać detekcję manifestów:
-  - [x] `pom.xml`,
-  - [x] `build.gradle`,
-  - [x] `build.gradle.kts`,
-  - [x] `settings.gradle`,
-  - [x] `settings.gradle.kts`.
-- [x] Dodać parser Maven/Gradle:
-  - [x] `groupId`,
-  - [x] `artifactId`,
-  - [x] version,
-  - [x] URL projektu,
-  - [x] SCM URL,
-  - [x] licencja.
-- [x] Dodać klienta Maven Central:
-  - [x] latest version,
-  - [x] artifact coordinates,
-  - [x] registry URL.
-- [x] Sprawdzić dostępne metryki popularności Maven Central.
-- [x] Jeśli nie ma dobrej metryki downloads, nie pokazywać publicznego rankingu Maven na siłę.
-- [x] Dodać widok diagnostyczny lub wewnętrzny raport liczby wykrytych artefaktów Maven: dane są zbierane diagnostycznie w `package_manifests`, `registry_packages` i snapshotach z metadanymi `maven_central_downloads_unavailable`.
+## Krok 3 - unikać zliczania tylko gwiazdek z miesiąca
 
-Definition of Done:
+Do `stargazers_count` potrzebne jest count `starred_at <= period.end_date`, nie tylko gwiazdki z miesiąca.
 
-- [x] Maven artefakty są wykrywane i rozwiązywane do Maven Central.
-- [x] Publiczny ranking pojawia się tylko, jeśli mamy stabilną metrykę.
-- [x] Brak metryki jest jawnie opisany w kodzie/testach, nie ukryty w pustym UI.
+Przykład:
 
-Wynik implementacji: Maven działa jako ekosystem diagnostyczny dla metryk registry, ale może być publicznie sortowany po gwiazdkach i miesięcznym trendzie powiązanego repozytorium. Wykrywamy `pom.xml`, `build.gradle`, `build.gradle.kts`, `settings.gradle` i `settings.gradle.kts`; parser statycznie wyciąga współrzędne `groupId:artifactId`, wersję, URL projektu, SCM i licencję bez uruchamiania Maven/Gradle. Klient Maven Central rozwiązuje artefakty przez Search API do najnowszej wersji i URL `central.sonatype.com/artifact/...`, ale snapshot jawnie zapisuje brak metryki popularności w `metadata`.
+Dla `2026-04`:
 
-## 6. Repo Stars/Trending + Brakujące Ekosystemy
+```text
+stargazers_count = wszystkie gwiazdki do 2026-04-30 23:59:59
+monthly_stars_delta = gwiazdki od 2026-04-01 00:00:00 do 2026-04-30 23:59:59
+```
 
-Dlaczego: języki z top GitHuba i ważne ekosystemy bez stabilnych metryk downloads nie powinny znikać z publicznego UI. Dla nich wspólną metryką rankingową są gwiazdki i miesięczny trend repozytorium, z którego wykryto manifest.
+## Krok 4 - zmienić RunMonthlySnapshot
 
-- [x] Dodać publiczne metryki pakietów:
-  - [x] `repository_stars_count`,
-  - [x] `repository_stars_delta`.
-- [x] Pokazywać stars/trending dla wszystkich ekosystemów pakietów.
-- [x] Dodać Terraform/OpenTofu modules:
-  - [x] wykrywanie `main.tf`,
-  - [x] tożsamość pakietu z `owner/repo`,
-  - [x] snapshot bez udawanych downloads.
-- [x] Dodać Conan:
-  - [x] `conanfile.py`,
-  - [x] `conanfile.txt`.
-- [x] Dodać vcpkg:
-  - [x] `vcpkg.json`.
-- [x] Dodać SwiftPM:
-  - [x] `Package.swift`.
-- [x] Dodać pub.dev:
-  - [x] `pubspec.yaml`.
+Obecnie:
 
-Definition of Done:
+```ruby
+monthly_stars_delta = repository_delta(source, repository, period)
+metrics.add(repository, monthly_stars_delta)
+store.record_repository_snapshot(...)
+```
 
-- [x] Ekosystemy bez stabilnych downloads mają ranking publiczny po gwiazdkach/trendzie repozytorium.
-- [x] Brak metryk registry pozostaje jawnie zapisany jako `nil`, bez fałszywych zer.
-- [x] Parsowanie nowych manifestów jest statyczne i nie wykonuje kodu projektu.
+Zastąpić to czymś w tym stylu:
 
-## 7. System Package Ecosystems
+```ruby
+stars = repository_star_snapshot(source, repository, period)
 
-Dlaczego: Homebrew nie wystarcza do systemowych pakietów. Debian/Ubuntu, RPM i Nix są ważnymi kanałami dystrybucji narzędzi systemowych i developerskich, ale nie mają jednej stabilnej metryki popularności porównywalnej z downloads w npm.
+historical_repository = repository.with(
+  stars: stars.fetch(:stargazers_count)
+)
 
-- [x] Dodać APT/Debian:
-  - [x] wykrywanie `debian/control`,
-  - [x] statyczny parser pól `Source`, `Homepage`, `Maintainer`, `Standards-Version`.
-- [x] Dodać RPM:
-  - [x] wykrywanie `*.spec`,
-  - [x] statyczny parser pól `Name`, `Version`, `License`, `URL`, `Source`.
-- [x] Dodać Nix:
-  - [x] wykrywanie `flake.nix`,
-  - [x] wykrywanie `default.nix`,
-  - [x] wykrywanie `package.nix`,
-  - [x] celowo pominąć `shell.nix`, bo opisuje zwykle środowisko developerskie, nie pakiet.
+metrics.add(historical_repository, stars.fetch(:monthly_stars_delta))
 
-Definition of Done:
+store.record_repository_snapshot(
+  snapshot_factory.repository_snapshot(
+    period,
+    source,
+    profile,
+    location,
+    historical_repository,
+    stars.fetch(:monthly_stars_delta)
+  )
+)
+```
 
-- [x] APT, RPM i Nix są widoczne w systemie package crawl.
-- [x] Publiczny ranking działa po `repository_stars_count` i `repository_stars_delta`.
-- [x] Nie zapisujemy fałszywych downloads dla systemowych rejestrów.
+Jeśli `SourceRepository` nie ma `.with`, zrobić prosty konstruktor/helper, np.:
 
-## Operacje Po Każdym Etapie
+```ruby
+repository.merge(stars: stars.fetch(:stargazers_count))
+```
 
-- [x] Uruchomić `bin/quality`.
-- [x] Wdrożyć po przejściu hooków.
-- [x] Sprawdzić `/packages`.
-- [x] Sprawdzić produkcyjne liczby:
-  - [x] `package_repository_scans`,
-  - [x] `package_manifests`,
-  - [x] `registry_packages`,
-  - [x] `registry_package_snapshots`,
-  - [x] statusy `active`, `not_found`, `failed`, `rate_limited`, `pending`.
-- [x] Sprawdzić `/internal/jobs` po crawl runie.
-- [x] Zanotować, czy ekosystem ma publiczny ranking, czy tylko diagnostykę.
+zależnie od tego, czym jest `SourceRepository`.
+
+Analogicznie zmienić:
+
+```ruby
+store_organization_repository
+```
+
+## Krok 5 - fallback dla źródeł bez historycznego API
+
+Nie zakładać, że GitLab/Codeberg obsługują historyczne gwiazdki.
+
+W `RunMonthlySnapshot` dodać helper:
+
+```ruby
+def repository_star_snapshot(source, repository, period)
+  if source.respond_to?(:repository_star_snapshot)
+    source.repository_star_snapshot(repository, period)
+  else
+    {
+      stargazers_count: repository.fetch(:stars),
+      monthly_stars_delta: repository_delta(source, repository, period)
+    }
+  end
+end
+```
+
+Dla organizacji może używać tej samej metody, bo to nadal repozytorium.
+
+## Krok 6 - usunąć zależność delty od poprzedniego snapshotu dla GitHuba
+
+Dla GitHuba `monthly_stars_delta` powinno być liczone po `starred_at`, nie przez:
+
+```ruby
+current_stars - previous_stars
+```
+
+Ten fallback może zostać dla GitLaba/Codeberga, ale GitHub powinien używać nowej metody `repository_star_snapshot`.
+
+## Krok 7 - testy jednostkowe GitHubGateway
+
+Dodać testy dla:
+
+1. repo ma gwiazdki przed miesiącem, w miesiącu i po miesiącu
+2. `stargazers_count` liczy tylko do końca miesiąca
+3. `monthly_stars_delta` liczy tylko gwiazdki w miesiącu
+4. gwiazdki po miesiącu nie są doliczane
+5. paginacja działa dla wielu stron
+6. repo bez gwiazdek zwraca 0/0
+7. 403/451 zachowują dotychczasowy bezpieczny fallback, np. 0/0
+
+Przykład oczekiwanej semantyki:
+
+```text
+period = 2026-04
+
+starred_at:
+2026-03-10
+2026-04-02
+2026-04-30
+2026-05-01
+
+expected:
+stargazers_count = 3
+monthly_stars_delta = 2
+```
+
+## Krok 8 - testy RunMonthlySnapshot
+
+Dodać test, że jeśli source implementuje `repository_star_snapshot`, to:
+
+- zapisany `stargazers_count` pochodzi z `repository_star_snapshot[:stargazers_count]`
+- zapisany `monthly_stars_delta` pochodzi z `repository_star_snapshot[:monthly_stars_delta]`
+- nie używa aktualnego `repository[:stars]` jako finalnej wartości
+
+Analogicznie dla repo organizacji.
+
+## Krok 9 - testy regresji dla packages
+
+Sprawdzić, czy package ranking nadal joinuje po:
+
+```sql
+user_stats.period_start = snapshots.period_start
+organization_stats.period_start = snapshots.period_start
+```
+
+Jeśli tak, packages automatycznie dostaną historyczne repo stars, o ile miesięczne repo stats są historyczne.
+
+Nie trzeba zmieniać registry downloads, bo API pakietów zwykle nie daje historycznego stanu.
+
+## Krok 10 - migracja danych
+
+Nie trzeba migracji schematu, jeśli zostają te same kolumny:
+
+```text
+stargazers_count
+monthly_stars_delta
+observed_at
+```
+
+Ale warto dopisać w dokumentacji semantykę:
+
+```text
+For GitHub repositories, stargazers_count is historical at period end.
+For non-GitHub platforms, stargazers_count may be observed current value unless platform supports historical stars.
+```
+
+## Krok 11 - CLI / opcje
+
+Nie robić flagi, jeśli ma to być domyślne zachowanie.
+
+Jeśli agent chce zachować kompatybilność, może dodać flagę typu:
+
+```bash
+--current-stars
+```
+
+ale preferowane: historyczne GitHub stars jako default.
+
+## Krok 12 - walidacja lokalna
+
+Uruchomić:
+
+```bash
+bundle exec rspec
+```
+
+oraz ręcznie, na małym scope/limicie:
+
+```bash
+bundle exec ruby bin/monthly_rankings --period 2026-04 --limit 10 --recalculate-stars
+```
+
+Jeśli `--recalculate-stars` nie istnieje, sprawdzić faktyczne CLI i uruchomić dostępny odpowiednik.
+
+## Krok 13 - sprawdzenie w SQLite
+
+Po crawlu sprawdzić:
+
+```sql
+select full_name, stargazers_count, monthly_stars_delta, observed_at
+from repository_monthly_stats
+join repositories
+  on repositories.github_id = repository_monthly_stats.repository_github_id
+where period_start = '2026-04-01'
+order by stargazers_count desc
+limit 20;
+```
+
+Dla repo znanego z gwiazdkami po kwietniu sprawdzić, że `stargazers_count` nie zawiera gwiazdek z maja/czerwca.
+
+## Kryteria akceptacji
+
+1. GitHub `stargazers_count` dla repozytorium w okresie `YYYY-MM` oznacza liczbę gwiazdek na koniec tego miesiąca.
+2. GitHub `monthly_stars_delta` oznacza liczbę gwiazdek zdobytych w tym miesiącu.
+3. Gwiazdki zdobyte po końcu miesiąca nie wpływają na snapshot wcześniejszego miesiąca.
+4. User `total_stars` i organization `total_stars` są sumą historycznych gwiazdek repozytoriów z tego miesiąca.
+5. Package ranking korzysta z repo stars dla tego samego `period_start`.
+6. Testy przechodzą.
+7. W dokumentacji jest jasno opisane, które metryki są historyczne, a które są observed current.
