@@ -58,6 +58,19 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     expect(queue.processed_user?(period, 'github', 1)).to be_nil
   end
 
+  it 'reports a user as processed when stored repository rows exceed the public repository count' do
+    seed_user
+    seed_user_stats(public_repo_count: 2)
+    seed_repository(github_id: 10, full_name: 'alice/app')
+    seed_repository_stats(repository_github_id: 10, full_name: 'alice/app')
+    seed_repository(github_id: 11, full_name: 'alice/app-2')
+    seed_repository_stats(repository_github_id: 11, full_name: 'alice/app-2')
+    seed_repository(github_id: 12, full_name: 'alice/app-3')
+    seed_repository_stats(repository_github_id: 12, full_name: 'alice/app-3')
+
+    expect(queue.processed_user?(period, 'github', 1)).to eq(1)
+  end
+
   it 'records and resolves organization candidates through organization snapshots' do
     queue.record_organization(period, github_id: 11, login: 'polish-org', source_query: 'Poland')
     queue.mark_organization(period, 'polish-org', 'failed', 'temporary')
@@ -90,6 +103,19 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     expect(queue.processed_organization?(period, 'github', 11)).to be_nil
   end
 
+  it 'reports an organization as processed when stored repository rows exceed the public repository count' do
+    seed_organization
+    seed_organization_stats(public_repo_count: 2)
+    seed_organization_repository(github_id: 110, full_name: 'polish-org/app')
+    seed_organization_repository_stats(repository_github_id: 110, full_name: 'polish-org/app')
+    seed_organization_repository(github_id: 111, full_name: 'polish-org/app-2')
+    seed_organization_repository_stats(repository_github_id: 111, full_name: 'polish-org/app-2')
+    seed_organization_repository(github_id: 112, full_name: 'polish-org/app-3')
+    seed_organization_repository_stats(repository_github_id: 112, full_name: 'polish-org/app-3')
+
+    expect(queue.processed_organization?(period, 'github', 11)).to eq(1)
+  end
+
   def candidate(login)
     database.fetch_all('SELECT * FROM candidate_users WHERE login = ?', [login]).first
   end
@@ -110,17 +136,18 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
                                       public_repo_count, 10, 1, 1, '2026-05-01T00:10:00Z'])
   end
 
-  def seed_repository
+  def seed_repository(github_id: 10, full_name: 'alice/app')
     database.execute(
       repository_sql,
-      ['github', 10, 1, 'alice', 'app', 'alice/app', 'https://github.com/alice/app', 0, 0,
+      ['github', github_id, 1, 'alice', full_name.split('/').last, full_name, "https://github.com/#{full_name}", 0, 0,
        '2026-05-01T00:01:00Z']
     )
   end
 
-  def seed_repository_stats
-    database.execute(repository_stats_sql, [period.start_date.to_s, 'github', 10, 1, 'alice', 'Kraków', 'Poland',
-                                            10, 1, '2026-05-01T00:10:00Z'])
+  def seed_repository_stats(repository_github_id: 10, full_name: 'alice/app')
+    database.execute(repository_stats_sql, [period.start_date.to_s, 'github', repository_github_id, 1,
+                                            full_name.split('/').first, 'Kraków', 'Poland', 10, 1,
+                                            '2026-05-01T00:10:00Z'])
   end
 
   def user_stats_sql
@@ -173,7 +200,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     )
   end
 
-  def seed_organization_repository
+  def seed_organization_repository(github_id: 110, full_name: 'polish-org/app')
     database.execute(
       <<~SQL,
         INSERT INTO organization_repositories(
@@ -182,12 +209,24 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, ?)
       SQL
-      ['github', 110, 11, 'polish-org', 'app', 'polish-org/app', 'https://github.com/polish-org/app',
+      ['github', github_id, 11, 'polish-org', full_name.split('/').last, full_name, "https://github.com/#{full_name}",
        '2026-05-01T00:01:00Z']
     )
   end
 
-  def seed_organization_repository_stats
+  def seed_organization_repository_stats(repository_github_id: 110, full_name: 'polish-org/app')
+    values = [
+      period.start_date.to_s,
+      'github',
+      repository_github_id,
+      11,
+      full_name.split('/').first,
+      'Warszawa',
+      'Poland',
+      10,
+      1,
+      '2026-05-01T00:10:00Z'
+    ]
     database.execute(
       <<~SQL,
         INSERT INTO organization_repository_monthly_stats(
@@ -196,8 +235,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       SQL
-      [period.start_date.to_s, 'github', 110, 11, 'polish-org', 'Warszawa', 'Poland', 10, 1,
-       '2026-05-01T00:10:00Z']
+      values
     )
   end
 end
