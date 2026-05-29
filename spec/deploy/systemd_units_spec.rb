@@ -43,7 +43,7 @@ RSpec.describe File do
     )
     expect(service).to include('bundle exec ruby bin/package_rankings --require-monthly-complete')
     expect(service).to include(
-      '--repository-limit 1000 --scan-limit 1000 --manifest-limit 2000 --registry-limit 2000'
+      '--repository-limit all --scan-limit all --manifest-limit all --registry-limit all'
     )
     expect(timer).to include('OnCalendar=*-*-02 07:15:00')
     expect(timer).to include('Persistent=true')
