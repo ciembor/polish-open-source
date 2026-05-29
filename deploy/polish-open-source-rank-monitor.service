@@ -1,0 +1,7 @@
+[Unit]
+Description=Polish Open Source Rank server health snapshot
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/ciembor/polish-open-source-rank
+ExecStart=/home/ciembor/polish-open-source-rank/scripts/server-health-snapshot.sh
