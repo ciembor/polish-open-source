@@ -17,6 +17,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
       custom_registry: 'https://registry.example.com/',
       parse_status: 'custom_registry'
     )
+    expect(parse('NpmPackageJsonParser', 'package.json', '{"workspaces":["packages/*"]}')).to have_attributes(
+      confidence: 'low',
+      parse_status: 'partial'
+    )
     expect(parse('NpmPackageJsonParser', 'package.json', '{')).to have_attributes(parse_status: 'failed')
   end
 

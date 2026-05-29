@@ -13,7 +13,7 @@ module PolishOpenSourceRank
             def parse(path:, content:)
               data = JSON.parse(content)
               name = data['name']
-              return Helpers.failed('npm', 'missing name') unless name
+              return partial('missing name') unless name
 
               PackageManifest.new(
                 ecosystem: 'npm',
@@ -32,6 +32,15 @@ module PolishOpenSourceRank
             end
 
             private
+
+            def partial(error)
+              PackageManifest.new(
+                ecosystem: 'npm',
+                confidence: 'low',
+                parse_status: 'partial',
+                metadata: { error: error }
+              )
+            end
 
             def custom_registry(data)
               registry = data.dig('publishConfig', 'registry')
