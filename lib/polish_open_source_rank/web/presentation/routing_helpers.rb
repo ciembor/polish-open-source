@@ -7,15 +7,14 @@ module PolishOpenSourceRank
         include LanguagePathHelpers
         include PackagePathHelpers
         include ProfilePathHelpers
+        include RankingSectionPathHelpers
         include StructuredDataHelpers
 
         def current_locale
           @locale || settings.default_locale
         end
 
-        def current_locale?(locale)
-          current_locale == locale
-        end
+        def current_locale?(locale) = current_locale == locale
 
         def locale_path(locale)
           query = Rack::Utils.parse_nested_query(request.query_string)

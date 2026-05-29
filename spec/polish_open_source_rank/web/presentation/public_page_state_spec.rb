@@ -66,6 +66,13 @@ class PublicPageStateFakeViewContext
     "/#{period_slug}/locations/#{slug}"
   end
 
+  def organization_rankings_path(period_slug:, scope_slug: 'poland')
+    path = "/#{period_slug}/organizations"
+    return path if scope_slug == 'poland'
+
+    "#{path}/locations/#{scope_slug}"
+  end
+
   def period_label(period_start)
     {
       '2026-04-01' => 'April 2026'
@@ -117,6 +124,21 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
         title: 'rankings.seo.title_period|period=April 2026|scope=Krakow',
         description: 'rankings.seo.description_period|period=April 2026|scope=Krakow',
         canonical_path: '/2026-04/locations/krakow'
+      )
+    end
+
+    it 'builds organization ranking metadata with organization canonical paths' do
+      state = page_state.rankings(
+        scope: { slug: 'krakow', name: 'Krakow' },
+        period_slug: 'latest',
+        section: 'organizations',
+        page: page
+      )
+
+      expect(state).to include(
+        title: 'rankings.seo.organizations_title_latest|period=rankings.seo.current_period|scope=Krakow',
+        description: 'rankings.seo.organizations_description_latest|period=rankings.seo.current_period|scope=Krakow',
+        canonical_path: '/latest/organizations/locations/krakow'
       )
     end
   end

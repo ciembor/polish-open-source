@@ -23,6 +23,8 @@ module PolishOpenSourceRank
         end
 
         def ranking_overview_sections
+          return organization_ranking_overview_sections if @ranking_section == 'organizations'
+
           user_ranking_overview_sections + repository_ranking_overview_sections
         end
 
@@ -53,7 +55,7 @@ module PolishOpenSourceRank
               t('rankings.trending_10_month'),
               @repository_rankings.fetch(:trending).first(10)
             ) { |row| repository_list_schema(row) }
-          ] + organization_ranking_overview_sections
+          ]
         end
 
         def organization_ranking_overview_sections
