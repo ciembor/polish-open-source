@@ -21,8 +21,25 @@ module PolishOpenSourceRank
             end
 
             def record_contributor_snapshot(snapshot)
-              upsert_user(record_mapper.contributor_attributes(snapshot))
-              record_user_stats(record_mapper.contributor_stats_attributes(snapshot))
+              contributor_attributes = record_mapper.contributor_attributes(snapshot)
+              contributor_stats_attributes = record_mapper.contributor_stats_attributes(snapshot)
+
+              database.transaction do
+                upsert_without_transaction(
+                  users_dataset,
+                  { platform: snapshot.platform, github_id: snapshot.source_id },
+                  record_mapper.user_record(contributor_attributes)
+                )
+                upsert_without_transaction(
+                  user_stats_dataset,
+                  {
+                    period_start: snapshot.period.start_date.to_s,
+                    platform: snapshot.platform,
+                    user_github_id: snapshot.source_id
+                  },
+                  record_mapper.user_stats_record(contributor_stats_attributes)
+                )
+              end
             end
 
             def record_contributor_profile(snapshot)
@@ -42,13 +59,40 @@ module PolishOpenSourceRank
             end
 
             def record_repository_snapshot(snapshot)
-              upsert_repository(record_mapper.repository_attributes(snapshot))
-              record_repository_stats(record_mapper.repository_stats_attributes(snapshot))
+              repository_attributes = record_mapper.repository_attributes(snapshot)
+              repository_stats_attributes = record_mapper.repository_stats_attributes(snapshot)
+              observed_at = timestamp
+
+              database.transaction do
+                upsert_without_transaction(
+                  repositories_dataset,
+                  { platform: snapshot.platform, github_id: snapshot.source_id },
+                  record_mapper.repository_record(repository_attributes)
+                )
+                record_repository_stats_without_transaction(repository_stats_attributes, observed_at)
+              end
             end
 
             def record_organization_snapshot(snapshot)
-              upsert_organization(record_mapper.organization_attributes(snapshot))
-              record_organization_stats(record_mapper.organization_stats_attributes(snapshot))
+              organization_attributes = record_mapper.organization_attributes(snapshot)
+              organization_stats_attributes = record_mapper.organization_stats_attributes(snapshot)
+
+              database.transaction do
+                upsert_without_transaction(
+                  organizations_dataset,
+                  { platform: snapshot.platform, github_id: snapshot.source_id },
+                  record_mapper.organization_record(organization_attributes)
+                )
+                upsert_without_transaction(
+                  organization_stats_dataset,
+                  {
+                    period_start: snapshot.period.start_date.to_s,
+                    platform: snapshot.platform,
+                    organization_github_id: snapshot.source_id
+                  },
+                  record_mapper.organization_stats_record(organization_stats_attributes)
+                )
+              end
             end
 
             def record_organization_profile(snapshot)
@@ -56,8 +100,18 @@ module PolishOpenSourceRank
             end
 
             def record_organization_repository_snapshot(snapshot)
-              upsert_organization_repository(record_mapper.organization_repository_attributes(snapshot))
-              record_organization_repository_stats(record_mapper.organization_repository_stats_attributes(snapshot))
+              repository_attributes = record_mapper.organization_repository_attributes(snapshot)
+              repository_stats_attributes = record_mapper.organization_repository_stats_attributes(snapshot)
+              observed_at = timestamp
+
+              database.transaction do
+                upsert_without_transaction(
+                  organization_repositories_dataset,
+                  { platform: snapshot.platform, github_id: snapshot.source_id },
+                  record_mapper.organization_repository_record(repository_attributes)
+                )
+                record_organization_repository_stats_without_transaction(repository_stats_attributes, observed_at)
+              end
             end
 
             def upsert_repository(attributes)
@@ -70,16 +124,7 @@ module PolishOpenSourceRank
 
             def record_repository_stats(attributes)
               observed_at = timestamp
-              upsert(
-                repository_stats_dataset,
-                {
-                  period_start: attributes.fetch(:period_start),
-                  platform: attributes.fetch(:platform, 'github'),
-                  repository_github_id: attributes.fetch(:repository_github_id)
-                },
-                record_mapper.repository_stats_record(attributes, observed_at)
-              )
-              record_repository_star_observation(attributes, observed_at)
+              database.transaction { record_repository_stats_without_transaction(attributes, observed_at) }
             end
 
             def previous_repository_stars(period, platform, repository_source_id)
@@ -158,24 +203,6 @@ module PolishOpenSourceRank
               database.dataset(:organization_repository_star_observations)
             end
 
-            def record_repository_star_observation(attributes, observed_at)
-              upsert(
-                repository_star_observations_dataset,
-                {
-                  period_start: attributes.fetch(:period_start),
-                  platform: attributes.fetch(:platform, 'github'),
-                  repository_github_id: attributes.fetch(:repository_github_id)
-                },
-                {
-                  period_start: attributes.fetch(:period_start),
-                  platform: attributes.fetch(:platform, 'github'),
-                  repository_github_id: attributes.fetch(:repository_github_id),
-                  stargazers_count: attributes.fetch(:stargazers_count),
-                  observed_at: observed_at
-                }
-              )
-            end
-
             def upsert_organization(attributes)
               upsert(
                 organizations_dataset,
@@ -184,29 +211,42 @@ module PolishOpenSourceRank
               )
             end
 
-            def record_organization_stats(attributes)
-              upsert(
-                organization_stats_dataset,
+            def upsert(dataset, identity, attributes)
+              database.transaction { upsert_without_transaction(dataset, identity, attributes) }
+            rescue Sequel::UniqueConstraintViolation
+              dataset.where(identity).update(update_attributes(attributes, identity))
+            end
+
+            def upsert_without_transaction(dataset, identity, attributes)
+              scoped = dataset.where(identity)
+              return unless scoped.update(update_attributes(attributes, identity)).zero?
+
+              dataset.insert(attributes)
+            end
+
+            def record_repository_stats_without_transaction(attributes, observed_at)
+              upsert_without_transaction(
+                repository_stats_dataset,
                 {
                   period_start: attributes.fetch(:period_start),
                   platform: attributes.fetch(:platform, 'github'),
-                  organization_github_id: attributes.fetch(:organization_github_id)
+                  repository_github_id: attributes.fetch(:repository_github_id)
                 },
-                record_mapper.organization_stats_record(attributes)
+                record_mapper.repository_stats_record(attributes, observed_at)
+              )
+              upsert_without_transaction(
+                repository_star_observations_dataset,
+                {
+                  period_start: attributes.fetch(:period_start),
+                  platform: attributes.fetch(:platform, 'github'),
+                  repository_github_id: attributes.fetch(:repository_github_id)
+                },
+                repository_star_observation_record(attributes, observed_at)
               )
             end
 
-            def upsert_organization_repository(attributes)
-              upsert(
-                organization_repositories_dataset,
-                { platform: attributes.fetch(:platform, 'github'), github_id: attributes.fetch(:github_id) },
-                record_mapper.organization_repository_record(attributes)
-              )
-            end
-
-            def record_organization_repository_stats(attributes)
-              observed_at = timestamp
-              upsert(
+            def record_organization_repository_stats_without_transaction(attributes, observed_at)
+              upsert_without_transaction(
                 organization_repository_stats_dataset,
                 {
                   period_start: attributes.fetch(:period_start),
@@ -215,37 +255,25 @@ module PolishOpenSourceRank
                 },
                 record_mapper.organization_repository_stats_record(attributes, observed_at)
               )
-              record_organization_repository_star_observation(attributes, observed_at)
-            end
-
-            def record_organization_repository_star_observation(attributes, observed_at)
-              upsert(
+              upsert_without_transaction(
                 organization_repository_star_observations_dataset,
                 {
                   period_start: attributes.fetch(:period_start),
                   platform: attributes.fetch(:platform, 'github'),
                   repository_github_id: attributes.fetch(:repository_github_id)
                 },
-                {
-                  period_start: attributes.fetch(:period_start),
-                  platform: attributes.fetch(:platform, 'github'),
-                  repository_github_id: attributes.fetch(:repository_github_id),
-                  stargazers_count: attributes.fetch(:stargazers_count),
-                  observed_at: observed_at
-                }
+                repository_star_observation_record(attributes, observed_at)
               )
             end
 
-            def upsert(dataset, identity, attributes)
-              scoped = dataset.where(identity)
-
-              database.transaction do
-                next unless scoped.update(update_attributes(attributes, identity)).zero?
-
-                dataset.insert(attributes)
-              end
-            rescue Sequel::UniqueConstraintViolation
-              scoped.update(update_attributes(attributes, identity))
+            def repository_star_observation_record(attributes, observed_at)
+              {
+                period_start: attributes.fetch(:period_start),
+                platform: attributes.fetch(:platform, 'github'),
+                repository_github_id: attributes.fetch(:repository_github_id),
+                stargazers_count: attributes.fetch(:stargazers_count),
+                observed_at: observed_at
+              }
             end
 
             def update_attributes(attributes, identity)

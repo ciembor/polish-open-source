@@ -7,7 +7,7 @@ module PolishOpenSourceRank
     module Infrastructure
       module SQLite
         class Database
-          SQLITE_WRITE_RETRIES = 3
+          SQLITE_WRITE_RETRIES = 8
           SQLITE_WRITE_RETRY_DELAY = 0.25
           SQLITE_LOCK_MESSAGES = [
             /database is locked/i,
@@ -102,7 +102,7 @@ module PolishOpenSourceRank
               attempts += 1
               raise unless sqlite_lock_error?(e) && attempts <= SQLITE_WRITE_RETRIES
 
-              sleep(SQLITE_WRITE_RETRY_DELAY * attempts)
+              sleep(SQLITE_WRITE_RETRY_DELAY * (2**(attempts - 1)))
               retry
             end
           end
