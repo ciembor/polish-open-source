@@ -14,7 +14,7 @@ module PolishOpenSourceRank
                 homepage_url: body['homepage'],
                 license: body['license'],
                 confidence: body['name'] ? 'high' : 'low',
-                parse_status: body['name'] ? 'parsed' : 'failed',
+                parse_status: body['name'] ? 'parsed' : 'partial',
                 metadata: { path: path, version: body['version'] || body['version-string'] }
               )
             rescue JSON::ParserError => e

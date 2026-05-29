@@ -11,7 +11,7 @@ module PolishOpenSourceRank
             def parse(path:, content:)
               data = JSON.parse(content)
               name = data['name']
-              return Helpers.failed('packagist', 'missing vendor/package name') unless valid_name?(name)
+              return partial('missing vendor/package name') unless valid_name?(name)
 
               PackageManifest.new(
                 ecosystem: 'packagist',
@@ -28,6 +28,15 @@ module PolishOpenSourceRank
             end
 
             private
+
+            def partial(error)
+              PackageManifest.new(
+                ecosystem: 'packagist',
+                confidence: 'low',
+                parse_status: 'partial',
+                metadata: { error: error }
+              )
+            end
 
             def valid_name?(name)
               name.to_s.match?(%r{\A[^/]+/[^/]+\z})
