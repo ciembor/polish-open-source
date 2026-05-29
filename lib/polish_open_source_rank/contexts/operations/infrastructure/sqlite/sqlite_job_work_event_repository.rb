@@ -8,12 +8,20 @@ module PolishOpenSourceRank
           class SQLiteJobWorkEventRepository
             include PolishOpenSourceRank::Contexts::Operations::Application::TimedJobWorkEvents
 
+            SQLITE_LOCK_MESSAGES = [
+              /database is locked/i,
+              /database table is locked/i,
+              /database schema is locked/i
+            ].freeze
+
             def initialize(database)
               @database = database
             end
 
             def record(**attributes)
               database.transaction { job_work_events.insert(row(attributes)) }
+            rescue Sequel::DatabaseError => e
+              raise unless sqlite_lock_error?(e)
             end
 
             private
@@ -41,6 +49,10 @@ module PolishOpenSourceRank
 
             def job_work_events
               database.dataset(:job_work_events)
+            end
+
+            def sqlite_lock_error?(error)
+              SQLITE_LOCK_MESSAGES.any? { |pattern| error.message.match?(pattern) }
             end
           end
         end
