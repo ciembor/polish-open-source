@@ -36,18 +36,25 @@ module PolishOpenSourceRank
         end
 
         def static_paths
-          ['/', '/latest', '/about', '/editions', '/languages', '/packages']
+          ['/', '/latest', '/organizations', '/about', '/editions', '/languages', '/packages']
         end
 
         def ranking_paths
-          latest_paths = RANKING_SEGMENTS.map { |kind, metric| "/latest/#{kind}/#{metric}" }
+          latest_paths = ['/latest/organizations'] + RANKING_SEGMENTS.map { |kind, metric| "/latest/#{kind}/#{metric}" }
           city_paths = city_slugs.flat_map do |slug|
-            ["/locations/#{slug}", "/latest/locations/#{slug}"] + ranking_scope_paths("/latest/locations/#{slug}")
+            [
+              "/locations/#{slug}",
+              "/latest/locations/#{slug}",
+              "/organizations/locations/#{slug}",
+              "/latest/organizations/locations/#{slug}"
+            ] + ranking_scope_paths("/latest/locations/#{slug}")
           end
 
           edition_period_slugs.each_with_object(latest_paths + city_paths) do |period_slug, paths|
             paths << "/#{period_slug}"
+            paths << "/#{period_slug}/organizations"
             paths.concat(city_slugs.map { |slug| "/#{period_slug}/locations/#{slug}" })
+            paths.concat(city_slugs.map { |slug| "/#{period_slug}/organizations/locations/#{slug}" })
             paths.concat(ranking_scope_paths("/#{period_slug}"))
             paths.concat(city_slugs.flat_map { |slug| ranking_scope_paths("/#{period_slug}/locations/#{slug}") })
           end

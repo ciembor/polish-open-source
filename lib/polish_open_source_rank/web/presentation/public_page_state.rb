@@ -8,15 +8,15 @@ module PolishOpenSourceRank
           @view_context = view_context
         end
 
-        def rankings(scope:, period_slug:, page:)
+        def rankings(scope:, period_slug:, page:, section: 'people')
           {
             user_rankings: page.user_rankings,
             repository_rankings: page.repository_rankings,
             organization_rankings: page.organization_rankings,
             organization_repository_rankings: page.organization_repository_rankings,
-            title: translate_rankings_title(scope, period_slug),
-            description: translate_rankings_description(scope, period_slug),
-            canonical_path: canonical_rankings_path(scope, period_slug)
+            title: translate_rankings_title(scope, period_slug, section),
+            description: translate_rankings_description(scope, period_slug, section),
+            canonical_path: canonical_rankings_path(scope, period_slug, section)
           }
         end
 
@@ -205,7 +205,13 @@ module PolishOpenSourceRank
           call_view(:t, key, values)
         end
 
-        def canonical_rankings_path(scope, period_slug)
+        def canonical_rankings_path(scope, period_slug, section)
+          if section == 'organizations'
+            return call_view(:organization_rankings_path, period_slug: period_slug) if scope.fetch(:slug) == 'poland'
+
+            return call_view(:organization_rankings_path, period_slug: period_slug, scope_slug: scope.fetch(:slug))
+          end
+
           return call_view(:period_base_path, period_slug) if scope.fetch(:slug) == 'poland'
 
           call_view(:city_path, scope.fetch(:slug), period_slug: period_slug)
@@ -221,14 +227,21 @@ module PolishOpenSourceRank
           call_view(:period_label, Date.parse("#{period_slug}-01").iso8601)
         end
 
-        def translate_rankings_title(scope, period_slug)
-          key = period_slug == 'latest' ? 'rankings.seo.title_latest' : 'rankings.seo.title_period'
+        def translate_rankings_title(scope, period_slug, section)
+          key = rankings_translation_key(section, period_slug, 'title')
           t(key, scope: call_view(:scope_name, scope), period: seo_period_label(period_slug))
         end
 
-        def translate_rankings_description(scope, period_slug)
-          key = period_slug == 'latest' ? 'rankings.seo.description_latest' : 'rankings.seo.description_period'
+        def translate_rankings_description(scope, period_slug, section)
+          key = rankings_translation_key(section, period_slug, 'description')
           t(key, scope: call_view(:scope_name, scope), period: seo_period_label(period_slug))
+        end
+
+        def rankings_translation_key(section, period_slug, field)
+          current = period_slug == 'latest' ? 'latest' : 'period'
+          return "rankings.seo.organizations_#{field}_#{current}" if section == 'organizations'
+
+          "rankings.seo.#{field}_#{current}"
         end
 
         def ranking_detail_description(kind, metric, ranking_name, scope_name, period_name)

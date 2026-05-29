@@ -11,14 +11,14 @@ function moveChildren(children, destination) {
 }
 
 let resizeFrame = 0;
-let originalSecondaryControls = null;
+const originalSecondaryControls = new WeakMap();
 
 function secondaryControls(nav) {
-  if (!originalSecondaryControls) {
-    originalSecondaryControls = Array.from(nav.querySelectorAll(".js-secondary-control"));
+  if (!originalSecondaryControls.has(nav)) {
+    originalSecondaryControls.set(nav, Array.from(nav.querySelectorAll(".js-secondary-control")));
   }
 
-  return originalSecondaryControls;
+  return originalSecondaryControls.get(nav);
 }
 
 function restoreNavItems(nav) {
@@ -108,10 +108,7 @@ function updateHamburger(nav) {
   if (hamburger.hidden) hamburger.removeAttribute("open");
 }
 
-function ensureNavLayout() {
-  const nav = document.querySelector(".js-nav");
-  if (!nav) return;
-
+function ensureNavLayout(nav) {
   restoreNavItems(nav);
   updateMenuLabels(nav);
   updateHamburger(nav);
@@ -130,11 +127,15 @@ function ensureNavLayout() {
   updateHamburger(nav);
 }
 
+function ensureNavLayouts() {
+  document.querySelectorAll(".js-nav").forEach(ensureNavLayout);
+}
+
 function scheduleNavLayout() {
   if (resizeFrame) window.cancelAnimationFrame(resizeFrame);
   resizeFrame = window.requestAnimationFrame(() => {
     resizeFrame = 0;
-    ensureNavLayout();
+    ensureNavLayouts();
   });
 }
 
@@ -161,7 +162,7 @@ window.addEventListener("resize", scheduleNavLayout);
 
 window.addEventListener("DOMContentLoaded", () => {
   revealFirstVisitNotices();
-  ensureNavLayout();
+  ensureNavLayouts();
 });
 
-window.addEventListener("load", ensureNavLayout);
+window.addEventListener("load", ensureNavLayouts);

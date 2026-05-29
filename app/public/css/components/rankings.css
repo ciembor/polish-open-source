@@ -1,5 +1,37 @@
 /* Ranking Lists */
 
+.location-nav-band {
+  background: #ffffff;
+  border-bottom: 1px solid var(--line);
+}
+
+.location-nav-band .content {
+  padding-bottom: 0;
+  padding-top: 0;
+}
+
+.location-nav {
+  align-items: center;
+  display: flex;
+  gap: 8px 14px;
+  min-width: 0;
+  padding: 12px 0;
+}
+
+.location-nav .nav-slot {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 14px;
+  min-width: 0;
+}
+
+.location-nav__link {
+  font-size: 0.88rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
 .ranking-band {
   padding: 38px 0 46px;
 }

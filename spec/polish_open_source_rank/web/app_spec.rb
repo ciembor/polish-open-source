@@ -131,6 +131,22 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect_poland_ranking_page(response)
   end
 
+  it 'renders organization rankings separately' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+
+    response = Rack::MockRequest.new(described_class).get('/organizations')
+    shortcut_city_response = Rack::MockRequest.new(described_class).get('/organizations/locations/warszawa')
+    latest_city_response = Rack::MockRequest.new(described_class).get('/latest/organizations/locations/warszawa')
+
+    expect_organization_ranking_page(response)
+    expect(shortcut_city_response.status).to eq(200)
+    expect(latest_city_response.status).to eq(200)
+    expect(shortcut_city_response.body).to include(
+      'rel="canonical" href="https://rank.example/latest/organizations/locations/warszawa"'
+    )
+    expect(latest_city_response.body).to include('polish-org/toolkit')
+  end
+
   it 'renders city rankings and empty databases' do
     ENV['DATABASE_URL'] = "sqlite://#{empty_database}"
 
@@ -147,14 +163,22 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     latest_response = Rack::MockRequest.new(described_class).get('/latest')
     latest_city_response = Rack::MockRequest.new(described_class).get('/latest/locations/krakow')
+    organization_response = Rack::MockRequest.new(described_class).get('/2026-04/organizations')
+    organization_city_response = Rack::MockRequest.new(described_class).get('/2026-04/organizations/locations/warszawa')
     response = Rack::MockRequest.new(described_class).get('/2026-04/locations/krakow')
     month_response = Rack::MockRequest.new(described_class).get('/2026-04')
 
     expect(latest_response.status).to eq(200)
     expect(latest_city_response.status).to eq(200)
+    expect(organization_response.status).to eq(200)
+    expect(organization_city_response.status).to eq(200)
     expect(response.status).to eq(200)
     expect(month_response.status).to eq(200)
     expect(response.body).to include('alice/app')
+    expect(organization_city_response.body).to include('polish-org/toolkit')
+    expect(organization_city_response.body).to include(
+      'rel="canonical" href="https://rank.example/2026-04/organizations/locations/warszawa"'
+    )
     expect(response.body).to include('rel="canonical" href="https://rank.example/2026-04/locations/krakow"')
   end
 
@@ -707,6 +731,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(sitemap.content_type).to include('application/xml')
     sitemap_locations = REXML::XPath.match(xml_document(sitemap.body), '//url/loc').map(&:text)
     expect(sitemap_locations).to include('https://rank.example/latest')
+    expect(sitemap_locations).to include('https://rank.example/latest/organizations')
+    expect(sitemap_locations).to include('https://rank.example/latest/organizations/locations/krakow')
     expect(sitemap_locations).to include('https://rank.example/en/latest')
     expect(sitemap_locations).to include('https://rank.example/about')
     expect(sitemap_locations).to include('https://rank.example/en/users/github/alice')
@@ -1323,7 +1349,6 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       '⭐ 12 345',
       '🔧 8',
       'alice/app',
-      'polish-org/toolkit',
       'class="location-notice js-first-visit-notice"',
       'data-storage-key="polishOpenSourceRank.locationNoticeSeen"',
       'hidden',
@@ -1340,14 +1365,37 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       '>x</span>',
       '>linkedin</span>',
       'href="/latest/users/top"',
-      'href="/latest/organizations/top"',
-      'href="/latest/organization-repositories/top"',
+      'href="/latest/organizations"',
+      'href="/languages"',
       'href="https://github.com/ciembor/polish-open-source"',
       'Repozytorium',
       'Zobacz top 100',
       'href="/editions"',
       'application/ld+json'
     )
+    expect(response.body).not_to include('href="/latest/organizations/top"')
+    expect(response.body).not_to include('href="/latest/organization-repositories/top"')
+  end
+
+  def expect_organization_ranking_page(response)
+    expect(response.status).to eq(200)
+    expect_body_to_include(
+      response,
+      '<title>Organizacje open source - Polska</title>',
+      'rel="canonical" href="https://rank.example/latest/organizations"',
+      'rel="alternate" hreflang="en" href="https://rank.example/en/latest/organizations"',
+      'property="og:title" content="Organizacje open source - Polska"',
+      '>Organizacje: Polska</h1>',
+      'Organizacje i ich repozytoria uporządkowane według gwiazdek oraz miesięcznego trendu.',
+      'polish-org/toolkit',
+      'href="/latest/organizations/locations/krakow"',
+      'href="/languages"',
+      'href="/latest/organizations/top"',
+      'href="/latest/organization-repositories/top"',
+      'Więcej miast'
+    )
+    expect(response.body).not_to include('href="/latest/users/top"')
+    expect(response.body).not_to include('href="/latest/repositories/top"')
   end
 
   def expect_user_profile_page(ranking_response:, profile_response:, badge_response:, missing_response:)
@@ -1478,7 +1526,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'Codeberg',
       'Maciej Ciemborowicz',
       'src="/images/maciej-ciemborowicz.jpg"',
-      'href="/latest/locations/krakow"'
+      'href="/latest"'
     )
     expect(response.body).not_to include('Programista i autor projektu')
     expect(response.body).not_to include('//locations')

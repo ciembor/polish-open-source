@@ -177,6 +177,7 @@
 }
 
 .nav__link:hover,
+.nav__link.is-active,
 .primary-link:hover,
 .muted-link:hover {
   color: var(--accent);

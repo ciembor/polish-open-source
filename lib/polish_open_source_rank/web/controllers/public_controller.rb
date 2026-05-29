@@ -8,9 +8,9 @@ module PolishOpenSourceRank
 
         private
 
-        def render_city(period_slug, slug)
+        def render_city(period_slug, slug, section: 'people')
           halt 404 unless Contexts::Ranking::Domain::LocationCatalog.city_slugs.include?(slug)
-          render_rankings(period_slug, slug)
+          render_rankings(period_slug, slug, section: section)
         end
 
         def render_city_ranking_detail(period_slug, slug, kind, metric)
@@ -18,14 +18,15 @@ module PolishOpenSourceRank
           render_ranking_detail(period_slug, slug, kind, metric)
         end
 
-        def render_rankings(period_slug, scope)
+        def render_rankings(period_slug, scope, section: 'people')
           @scope = scope_data(scope)
           @period_slug = period_slug
+          @ranking_section = section
           @period = period_for(period_slug)
-          public_html_cache!('rankings', period_slug, scope, @period, public_cache_revision(@period))
+          public_html_cache!('rankings', section, period_slug, scope, @period, public_cache_revision(@period))
           page = show_rankings.call(scope: scope, period_start: @period)
           assign_public_page(
-            public_page_state.rankings(scope: @scope, period_slug: @period_slug, page: page)
+            public_page_state.rankings(scope: @scope, period_slug: @period_slug, section: @ranking_section, page: page)
           )
           erb :'pages/rankings'
         end

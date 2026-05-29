@@ -20,10 +20,24 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::RoutingHelpers do
 
     expect(helper_host.send(:localized_page_path?, '/')).to be(true)
     expect(helper_host.send(:localized_page_path?, '/about')).to be(true)
+    expect(helper_host.send(:localized_page_path?, '/organizations')).to be(true)
     expect(helper_host.send(:localized_page_path?, '/users/github/alice')).to be(true)
     expect(helper_host.send(:localized_page_path?, '/repositories/github/alice/app')).to be(true)
     expect(helper_host.send(:localized_page_path?, '/2026-04/locations/krakow')).to be(true)
     expect(helper_host.send(:localized_page_path?, '/auth/github')).to be(false)
+  end
+
+  it 'builds people and organization paths for the selected scope', :aggregate_failures do
+    helper_host.instance_variable_set(:@period_slug, 'latest')
+    helper_host.instance_variable_set(:@scope, { slug: 'krakow' })
+
+    expect(helper_host.people_rankings_path).to eq('/latest/locations/krakow')
+    expect(helper_host.organization_rankings_path).to eq('/latest/organizations/locations/krakow')
+    expect(helper_host.section_scope_path({ slug: 'poland' }, section: 'people')).to eq('/latest')
+    expect(helper_host.section_scope_path({ slug: 'poland' }, section: 'organizations')).to eq('/latest/organizations')
+    expect(helper_host.section_scope_path({ slug: 'warszawa' }, section: 'organizations')).to(
+      eq('/latest/organizations/locations/warszawa')
+    )
   end
 
   it 'builds page-specific schema types' do
