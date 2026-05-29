@@ -18,7 +18,13 @@ module PolishOpenSourceRank
             end
 
             def enqueue(period, limit:, include_forks: false)
-              insert_scans(period_start(period), bounded_limit(limit), include_forks)
+              insert_scans(period_start(period), normalized_limit(limit), include_forks)
+            end
+
+            def normalized_limit(limit)
+              return nil if limit.to_s == 'all'
+
+              bounded_limit(limit)
             end
 
             def pending(period, limit:, ecosystem: nil, refresh: false)
@@ -104,11 +110,13 @@ module PolishOpenSourceRank
 
             def insert_scans(period_start, limit, include_forks)
               database.transaction do
-                database.execute(insert_scans_sql(include_forks), [timestamp, period_start, period_start, limit])
+                bindings = [timestamp, period_start, period_start]
+                bindings << limit if limit
+                database.execute(insert_scans_sql(include_forks, limit), bindings)
               end
             end
 
-            def insert_scans_sql(include_forks)
+            def insert_scans_sql(include_forks, limit)
               <<~SQL
                 INSERT OR IGNORE INTO package_repository_scans(
                   period_start, repository_kind, platform, repository_source_id, full_name, status, updated_at
@@ -120,8 +128,8 @@ module PolishOpenSourceRank
                   #{organization_repository_candidates_sql(include_forks)}
                 )
                 ORDER BY priority ASC, stargazers_count DESC, monthly_stars_delta DESC,
-                         repository_kind ASC, platform ASC, full_name COLLATE NOCASE ASC
-                LIMIT ?
+                        repository_kind ASC, platform ASC, full_name COLLATE NOCASE ASC
+                #{'LIMIT ?' if limit}
               SQL
             end
 

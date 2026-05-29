@@ -110,7 +110,10 @@ module PolishOpenSourceRank
         end
 
         def stage_limit(flag, global_limit, default)
-          (value_after(flag) || global_limit || default).to_i
+          value = value_after(flag) || global_limit || default
+          return 'all' if value.to_s == 'all'
+
+          value.to_i
         end
 
         def refresh?
