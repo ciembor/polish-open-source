@@ -1,7 +1,7 @@
 <nav class="location-nav nav js-nav" aria-label="<%= h t('nav.locations') %>">
   <a class="nav__link location-nav__link <%= 'is-active' if @scope.fetch(:slug) == 'poland' %>" href="<%= h app_path(section_scope_path(scopes.first)) %>"><%= h t('nav.country') %></a>
   <span class="nav-slot js-primary-city-slot">
-    <% primary_city_scopes.each do |scope| %>
+    <% scopes.drop(1).each do |scope| %>
       <a class="nav__link location-nav__link js-primary-city <%= 'is-active' if @scope.fetch(:slug) == scope.fetch(:slug) %>" href="<%= h app_path(section_scope_path(scope)) %>"><%= h scope.fetch(:name) %></a>
     <% end %>
   </span>
@@ -13,12 +13,8 @@
     ><%= h t('nav.more_cities') %></summary>
     <div class="nav-menu__panel js-more-cities-panel">
       <span class="nav-slot js-overflow-city-slot"></span>
-      <% secondary_city_scopes.each do |scope| %>
-        <a class="nav__link location-nav__link js-secondary-city <%= 'is-active' if @scope.fetch(:slug) == scope.fetch(:slug) %>" href="<%= h app_path(section_scope_path(scope)) %>"><%= h scope.fetch(:name) %></a>
-      <% end %>
     </div>
   </details>
-  <a class="nav__link location-nav__link js-secondary-control js-collapsible-control" href="<%= h app_path(language_index_path(period_slug: @period_slug)) %>"><%= h t('nav.languages') %></a>
   <details class="nav-menu nav-menu--hamburger js-hamburger" hidden>
     <summary class="nav-hamburger" aria-label="<%= h t('nav.menu') %>"></summary>
     <div class="nav-menu__panel js-hamburger-panel"></div>
