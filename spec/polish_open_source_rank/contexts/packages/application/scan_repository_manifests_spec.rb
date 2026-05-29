@@ -116,6 +116,24 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application::ScanReposi
     expect(tree_gateway.blob_calls).to be_empty
   end
 
+  it 'reparses unchanged repositories selected because they have outdated failed manifests' do
+    seed_scan(full_name: 'alice/app', tree_sha: 'tree-sha', manifest_count: 1)
+    tree_gateway.stub_repository('alice/app', default_branch: 'main')
+    tree_gateway.stub_tree('alice/app', ref: 'main', sha: 'tree-sha', entries: [{ path: 'package.json', sha: 'sha' }])
+    tree_gateway.stub_blob('alice/app', sha: 'sha', content: '{"workspaces":["packages/*"]}')
+    seed_manifest(
+      scan.fetch(:id),
+      ecosystem: 'npm',
+      parse_status: 'failed',
+      parser_version: 'manifest-parser-v1'
+    )
+
+    use_case.call(period, ecosystem: 'npm', limit: 10)
+
+    expect(manifests).to contain_exactly(include(ecosystem: 'npm', parse_status: 'partial'))
+    expect(tree_gateway.blob_calls).to eq([{ full_name: 'alice/app', sha: 'sha' }])
+  end
+
   it 'marks unavailable repositories without retrying them as transient failures' do
     seed_scan(full_name: 'alice/missing')
     tree_gateway.stub_unavailable('alice/missing')
@@ -225,6 +243,19 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application::ScanReposi
         VALUES (?, 'npm', 'app', 'exact', 1, ?)
       SQL
       [manifest_id, '2026-05-23T11:30:00Z']
+    )
+  end
+
+  def seed_manifest(scan_id, ecosystem:, parse_status:, parser_version:)
+    database.dataset(:package_manifests).insert(
+      repository_scan_id: scan_id,
+      ecosystem: ecosystem,
+      path: ecosystem == 'npm' ? 'package.json' : 'manifest',
+      confidence: 'low',
+      parse_status: parse_status,
+      parser_version: parser_version,
+      metadata_json: '{}',
+      parsed_at: '2026-05-23T11:00:00Z'
     )
   end
 

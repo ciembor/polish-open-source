@@ -92,7 +92,11 @@ module PolishOpenSourceRank
           end
 
           def unchanged?(scan, tree, refresh)
-            !refresh && scan[:tree_sha] == tree.sha
+            !refresh && !retry_failed_manifests?(scan) && scan[:tree_sha] == tree.sha
+          end
+
+          def retry_failed_manifests?(scan)
+            scan[:retry_failed_manifests].to_i.positive?
           end
 
           def mark_unchanged(scan, tree)

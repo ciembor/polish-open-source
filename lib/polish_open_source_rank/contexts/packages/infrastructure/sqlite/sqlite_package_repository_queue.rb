@@ -23,15 +23,15 @@ module PolishOpenSourceRank
 
             def pending(period, limit:, ecosystem: nil, refresh: false)
               validate_ecosystem!(ecosystem)
-              package_repository_scans
-                .where(period_start: period_start(period))
-                .where(Sequel.|(
-                         { status: statuses_for(refresh) },
-                         { id: scans_with_outdated_failed_manifests(ecosystem) }
-                       ))
-                .order(Sequel.asc(:id))
-                .limit(bounded_limit(limit))
-                .all
+              retry_scan_ids = outdated_failed_manifest_scan_ids(ecosystem)
+              retryable = Sequel.|({ status: statuses_for(refresh) }, { id: retry_scan_ids })
+              scans = package_repository_scans
+                      .where(period_start: period_start(period))
+                      .where(retryable)
+                      .order(Sequel.asc(:id))
+                      .limit(bounded_limit(limit))
+                      .all
+              mark_outdated_manifest_retries(scans, retry_scan_ids)
             end
 
             def reset_stale_processing(period, older_than: STALE_PROCESSING_SECONDS)
@@ -82,13 +82,18 @@ module PolishOpenSourceRank
               database.dataset(:package_manifests)
             end
 
-            def scans_with_outdated_failed_manifests(ecosystem)
+            def outdated_failed_manifest_scan_ids(ecosystem)
               dataset = package_manifests
                         .select(:repository_scan_id)
+                        .distinct
                         .where(parse_status: 'failed')
                         .exclude(parser_version: SQLitePackageManifestRepository::PARSER_VERSION)
               dataset = dataset.where(ecosystem: ecosystem) if ecosystem
-              dataset
+              dataset.map(:repository_scan_id)
+            end
+
+            def mark_outdated_manifest_retries(scans, retry_scan_ids)
+              scans.each { |scan| scan[:retry_failed_manifests] = retry_scan_ids.include?(scan.fetch(:id)) ? 1 : 0 }
             end
 
             def validate_ecosystem!(ecosystem)
