@@ -15,8 +15,8 @@ module PolishOpenSourceRank
                 AND user_stats.user_github_id = ?
                 AND (
                   user_stats.public_repo_count = 0
-                  OR EXISTS (
-                    SELECT 1
+                  OR user_stats.public_repo_count = (
+                    SELECT COUNT(*)
                     FROM repository_monthly_stats repository_stats
                     WHERE repository_stats.period_start = user_stats.period_start
                       AND repository_stats.platform = user_stats.platform
@@ -32,8 +32,8 @@ module PolishOpenSourceRank
                 AND organization_stats.organization_github_id = ?
                 AND (
                   organization_stats.public_repo_count = 0
-                  OR EXISTS (
-                    SELECT 1
+                  OR organization_stats.public_repo_count = (
+                    SELECT COUNT(*)
                     FROM organization_repository_monthly_stats repository_stats
                     WHERE repository_stats.period_start = organization_stats.period_start
                       AND repository_stats.platform = organization_stats.platform

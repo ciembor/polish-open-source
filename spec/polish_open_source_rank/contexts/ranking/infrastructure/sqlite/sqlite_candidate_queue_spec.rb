@@ -49,6 +49,15 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     expect(queue.processed_user?(period, 1)).to eq(1)
   end
 
+  it 'does not report a user as processed when only part of the repository snapshot exists' do
+    seed_user
+    seed_user_stats(public_repo_count: 2)
+    seed_repository
+    seed_repository_stats
+
+    expect(queue.processed_user?(period, 'github', 1)).to be_nil
+  end
+
   it 'records and resolves organization candidates through organization snapshots' do
     queue.record_organization(period, github_id: 11, login: 'polish-org', source_query: 'Poland')
     queue.mark_organization(period, 'polish-org', 'failed', 'temporary')
@@ -70,6 +79,15 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
 
     expect(queue.processed_organization?(period, 'github', 11)).to eq(1)
     expect(queue.processed_organization?(period, 11)).to eq(1)
+  end
+
+  it 'does not report an organization as processed when only part of the repository snapshot exists' do
+    seed_organization
+    seed_organization_stats(public_repo_count: 2)
+    seed_organization_repository
+    seed_organization_repository_stats
+
+    expect(queue.processed_organization?(period, 'github', 11)).to be_nil
   end
 
   def candidate(login)

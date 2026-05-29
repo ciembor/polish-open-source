@@ -119,6 +119,20 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     expect(repository.retryable_candidates?(period, platforms: [])).to be(false)
   end
 
+  it 'treats processed users with incomplete repository coverage as retryable' do
+    github_id = seed_candidate(login: 'alice', platform: 'github', status: 'processed')
+    seed_incomplete_processed_candidate('alice', platform: 'github', github_id: github_id)
+
+    expect(repository.retryable_candidates?(period)).to be(true)
+  end
+
+  it 'treats processed organizations with incomplete repository coverage as retryable' do
+    github_id = seed_organization_candidate(login: 'polish-org', platform: 'github', status: 'processed')
+    seed_incomplete_processed_organization_candidate('polish-org', platform: 'github', github_id: github_id)
+
+    expect(repository.retryable_candidates?(period, candidate_types: [:organizations])).to be(true)
+  end
+
   it 'reports retryable candidates with optional candidate type filters' do
     seed_candidate(login: 'alice', platform: 'github', status: 'pending')
     seed_organization_candidate(login: 'polish-org', platform: 'github', status: 'pending')
@@ -241,6 +255,43 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     )
   end
 
+  def seed_incomplete_processed_candidate(login, platform:, github_id:)
+    database.execute(
+      'INSERT INTO users(platform, github_id, login, html_url, updated_at) VALUES (?, ?, ?, ?, ?)',
+      [platform, github_id, login, "https://#{platform}.example.com/#{login}", '2026-04-01T00:00:00Z']
+    )
+    database.execute(
+      <<~SQL,
+        INSERT INTO user_monthly_stats(
+          period_start, platform, user_github_id, login, public_repo_count,
+          total_stars, monthly_stars_delta, public_activity_count, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      SQL
+      ['2026-04-01', platform, github_id, login, 2, 1, 0, 0, '2026-04-01T00:00:00Z']
+    )
+    database.execute(
+      <<~SQL,
+        INSERT INTO repositories(
+          platform, github_id, owner_github_id, owner_login, name, full_name, html_url, fork, archived, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      SQL
+      [platform, github_id + 10, github_id, login, 'app', "#{login}/app", "https://#{platform}.example.com/#{login}/app",
+       0, 0, '2026-04-01T00:00:00Z']
+    )
+    database.execute(
+      <<~SQL,
+        INSERT INTO repository_monthly_stats(
+          period_start, platform, repository_github_id, owner_github_id, owner_login, owner_city,
+          owner_country, stargazers_count, monthly_stars_delta, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      SQL
+      ['2026-04-01', platform, github_id + 10, github_id, login, 'Kraków', 'Poland', 1, 0, '2026-04-01T00:00:00Z']
+    )
+  end
+
   def seed_complete_processed_organization_candidate(login, platform:)
     github_id = ((login.hash.abs % 1000) + 1)
 
@@ -257,6 +308,45 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       SQL
       ['2026-04-01', platform, github_id, login, 0, 0, 0, '2026-04-01T00:00:00Z']
+    )
+  end
+
+  def seed_incomplete_processed_organization_candidate(login, platform:, github_id:)
+    database.execute(
+      'INSERT INTO organizations(platform, github_id, login, html_url, updated_at) VALUES (?, ?, ?, ?, ?)',
+      [platform, github_id, login, "https://#{platform}.example.com/#{login}", '2026-04-01T00:00:00Z']
+    )
+    database.execute(
+      <<~SQL,
+        INSERT INTO organization_monthly_stats(
+          period_start, platform, organization_github_id, login, public_repo_count,
+          total_stars, monthly_stars_delta, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      SQL
+      ['2026-04-01', platform, github_id, login, 2, 1, 0, '2026-04-01T00:00:00Z']
+    )
+    database.execute(
+      <<~SQL,
+        INSERT INTO organization_repositories(
+          platform, github_id, organization_github_id, organization_login, name, full_name, html_url, fork,
+          archived, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      SQL
+      [platform, github_id + 10, github_id, login, 'app', "#{login}/app",
+       "https://#{platform}.example.com/#{login}/app", 0, 0, '2026-04-01T00:00:00Z']
+    )
+    database.execute(
+      <<~SQL,
+        INSERT INTO organization_repository_monthly_stats(
+          period_start, platform, repository_github_id, organization_github_id, organization_login,
+          organization_city, organization_country, stargazers_count, monthly_stars_delta, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      SQL
+      ['2026-04-01', platform, github_id + 10, github_id, login, 'Warszawa', 'Poland', 1, 0,
+       '2026-04-01T00:00:00Z']
     )
   end
 end
