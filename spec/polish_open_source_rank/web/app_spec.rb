@@ -886,7 +886,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('Top 10 trendujących w miesiącu')
     expect(response.body).to include('⭐ 12 345')
     expect(response.body).to include('alice/app')
+    expect(response.body).to include('Nice Ruby app')
     expect(response.body).to include('polish-org/toolkit')
+    expect(response.body).to include('Shared tooling')
     expect(response.body).to include('href="/latest/languages/Ruby/users/top"')
   end
 
@@ -897,7 +899,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   def expect_language_repository_detail_pages(responses)
     expect(responses.fetch(:language_user_top).body).to include('Top 100: Ludzie, Ruby, według gwiazdek')
     expect(responses.fetch(:language_user_top).body).to include('alice/app')
+    expect(responses.fetch(:language_user_top).body).to include('Nice Ruby app')
     expect(responses.fetch(:language_organization_top).body).to include('polish-org/toolkit')
+    expect(responses.fetch(:language_organization_top).body).to include('Shared tooling')
   end
 
   def expect_language_detail_pages(responses)
