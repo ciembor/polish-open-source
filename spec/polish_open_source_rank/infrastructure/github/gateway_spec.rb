@@ -247,8 +247,32 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubGateway do
     expect(client.accepts).to eq([described_class::STAR_ACCEPT])
   end
 
+  it 'returns historical repository stars and monthly delta from stargazer history' do
+    client.queue(
+      body: [
+        { 'starred_at' => '2026-03-10T10:00:00Z' },
+        { 'starred_at' => '2026-04-02T10:00:00Z' },
+        { 'starred_at' => '2026-04-30T23:59:59Z' },
+        { 'starred_at' => '2026-05-01T00:00:00Z' }
+      ]
+    )
+
+    expect(gateway.repository_star_snapshot({ full_name: 'alice/app' }, period)).to include(
+      stargazers_count: 3,
+      monthly_stars_delta: 2
+    )
+  end
+
   it 'does not request stargazer history for repositories without stars' do
     expect(gateway.repository_stars_delta({ full_name: 'alice/empty', stars: 0 }, period)).to eq(0)
+    expect(client.paths).to be_empty
+  end
+
+  it 'returns an empty star snapshot for repositories without stars' do
+    expect(gateway.repository_star_snapshot({ full_name: 'alice/empty', stars: 0 }, period)).to include(
+      stargazers_count: 0,
+      monthly_stars_delta: 0
+    )
     expect(client.paths).to be_empty
   end
 
@@ -270,6 +294,29 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubGateway do
 
     expect(gateway.repository_stars_delta({ full_name: 'alice/app' }, period)).to eq(1)
     expect(client.params.map { |params| params.fetch(:page) }).to eq([1, 3, 2])
+  end
+
+  it 'walks stargazer pages backwards for historical star snapshots' do
+    client.queue(body: [], link: '<x?page=3>; rel="last"')
+    client.queue(
+      body: [
+        { 'starred_at' => '2026-05-01T00:00:00Z' },
+        { 'starred_at' => '2026-04-30T10:00:00Z' }
+      ]
+    )
+    client.queue(
+      body: [
+        { 'starred_at' => '2026-04-02T10:00:00Z' },
+        { 'starred_at' => '2026-03-20T10:00:00Z' }
+      ]
+    )
+    client.queue(body: [{ 'starred_at' => '2026-03-10T10:00:00Z' }])
+
+    expect(gateway.repository_star_snapshot({ full_name: 'alice/app' }, period)).to include(
+      stargazers_count: 4,
+      monthly_stars_delta: 2
+    )
+    expect(client.params.map { |params| params.fetch(:page) }).to eq([1, 3, 2, 1])
   end
 
   it 'walks stargazer pages backwards through page one' do
@@ -338,6 +385,21 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubGateway do
     )
 
     expect(gateway.repository_stars_delta({ full_name: 'alice/forbidden' }, period)).to eq(0)
+  end
+
+  it 'treats forbidden stargazer history as an empty star snapshot' do
+    client.queue_error(
+      PolishOpenSourceRank::Infrastructure::GitHubClient::Error.new(
+        'forbidden',
+        status: 403,
+        body: '{"message":"Resource not accessible"}'
+      )
+    )
+
+    expect(gateway.repository_star_snapshot({ full_name: 'alice/forbidden' }, period)).to include(
+      stargazers_count: 0,
+      monthly_stars_delta: 0
+    )
   end
 
   it 'reraises unexpected stargazer history errors' do

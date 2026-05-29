@@ -294,12 +294,15 @@ module PolishOpenSourceRank
           end
 
           def store_repository(period, source, profile, location, repository, metrics)
-            monthly_stars_delta = repository_delta(source, repository, period)
-            metrics.add(repository, monthly_stars_delta)
+            stars = repository_star_snapshot(source, repository, period) do
+              repository_delta(source, repository, period)
+            end
+            repository = repository_with_stars(repository, stars.fetch(:stars))
+            metrics.add(repository, stars.fetch(:monthly_stars_delta))
             with_store do
               store.record_repository_snapshot(
                 snapshot_factory.repository_snapshot(
-                  period, source, profile, location, repository, monthly_stars_delta
+                  period, source, profile, location, repository, stars.fetch(:monthly_stars_delta)
                 )
               )
             end
@@ -323,16 +326,32 @@ module PolishOpenSourceRank
           end
 
           def store_organization_repository(period, source, profile, location, repository, metrics)
-            monthly_stars_delta = organization_repository_delta(source, repository, period)
-            metrics.add(repository, monthly_stars_delta)
+            stars = repository_star_snapshot(source, repository, period) do
+              organization_repository_delta(source, repository, period)
+            end
+            repository = repository_with_stars(repository, stars.fetch(:stars))
+            metrics.add(repository, stars.fetch(:monthly_stars_delta))
             with_store do
               store.record_organization_repository_snapshot(
                 snapshot_factory.organization_repository_snapshot(
-                  period, source, profile, location, repository, monthly_stars_delta
+                  period, source, profile, location, repository, stars.fetch(:monthly_stars_delta)
                 )
               )
             end
             'stored'
+          end
+
+          def repository_star_snapshot(source, repository, period)
+            return source.repository_star_snapshot(repository, period) if source.respond_to?(:repository_star_snapshot)
+
+            {
+              stars: repository.fetch(:stars),
+              monthly_stars_delta: yield
+            }
+          end
+
+          def repository_with_stars(repository, stars)
+            repository.to_h.merge(stars: stars)
           end
 
           def catalog_repository?(repository)

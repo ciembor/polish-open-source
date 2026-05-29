@@ -160,6 +160,28 @@ class FakeOrganizationGitHub < FakeJobGitHub
   end
 end
 
+class HistoricalStarGitHub < FakeJobGitHub
+  attr_accessor :star_snapshots
+  attr_reader :star_snapshot_periods
+
+  def initialize
+    super
+    @star_snapshot_periods = []
+    @star_snapshots = {}
+  end
+
+  def repository_star_snapshot(repository, period)
+    star_snapshot_periods << [repository.fetch(:full_name), period]
+    star_snapshots.fetch(repository.fetch(:full_name))
+  end
+end
+
+class HistoricalStarOrganizationGitHub < HistoricalStarGitHub
+  def supports_organizations?
+    true
+  end
+end
+
 class StreamingOrganizationGitHub < FakeOrganizationGitHub
   def repositories_for_organization(_profile)
     raise 'organization repositories should be streamed'
@@ -469,6 +491,23 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(github.delta_periods).to eq([['alice/new', period]])
   end
 
+  it 'stores source-provided historical repository star snapshots' do
+    source = HistoricalStarGitHub.new
+    source.candidates = { 'Poland' => [{ source_id: 1, login: 'alice' }] }
+    source.profiles = { 'alice' => profile(1, 'alice', 'Krakow, Poland') }
+    source.repositories = { 'alice' => [repository(10, 'alice/app', 12)] }
+    source.star_snapshots = {
+      'alice/app' => { stars: 9, monthly_stars_delta: 3 }
+    }
+
+    run_job_with(source: source)
+
+    expect(fetch_user_stats('alice')).to include(total_stars: 9, monthly_stars_delta: 3)
+    expect(fetch_repository_stats('alice/app')).to include(stargazers_count: 9, monthly_stars_delta: 3)
+    expect(source.star_snapshot_periods).to eq([['alice/app', period]])
+    expect(source.delta_periods).to be_empty
+  end
+
   it 'can recalculate repository star deltas from source history during a refresh' do
     previous_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-03')
     seed_previous_repository_observation(previous_period)
@@ -610,6 +649,31 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       monthly_stars_delta: 6
     )
     expect(organization_source.organization_calls).to eq([['polish-org', 9]])
+  end
+
+  it 'stores source-provided historical organization repository star snapshots' do
+    organization_source = HistoricalStarOrganizationGitHub.new
+    organization_source.organization_candidates = { 'Poland' => [{ source_id: 9, login: 'polish-org' }] }
+    organization_source.organizations = { 'polish-org' => profile(9, 'polish-org', 'Warsaw, Poland') }
+    organization_source.organization_repositories = { 'polish-org' => [repository(90, 'polish-org/toolkit', 33)] }
+    organization_source.star_snapshots = {
+      'polish-org/toolkit' => { stars: 27, monthly_stars_delta: 4 }
+    }
+
+    run_job_with(source: organization_source)
+
+    expect(fetch_row('SELECT total_stars, monthly_stars_delta FROM organization_monthly_stats'))
+      .to include(total_stars: 27, monthly_stars_delta: 4)
+    expect(fetch_row(<<~SQL)).to include(stargazers_count: 27, monthly_stars_delta: 4)
+      SELECT stats.stargazers_count, stats.monthly_stars_delta
+      FROM organization_repository_monthly_stats stats
+      INNER JOIN organization_repositories repositories
+        ON repositories.platform = stats.platform
+       AND repositories.github_id = stats.repository_github_id
+      WHERE repositories.full_name = 'polish-org/toolkit'
+    SQL
+    expect(organization_source.star_snapshot_periods).to eq([['polish-org/toolkit', period]])
+    expect(organization_source.delta_periods).to be_empty
   end
 
   def ranked_organization_source
