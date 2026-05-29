@@ -99,7 +99,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
       parse_status: 'parsed'
     )
     expect(parse('ComposerJsonParser', 'composer.json', '{"name":"invalid"}')).to have_attributes(
-      parse_status: 'failed'
+      parse_status: 'partial'
     )
     expect(parse('ComposerJsonParser', 'composer.json', '{')).to have_attributes(parse_status: 'failed')
     expect(parse('GoModParser', 'go.mod', "module github.com/acme/tool\n\ngo 1.22")).to have_attributes(
@@ -224,6 +224,9 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
       license: 'MIT',
       parse_status: 'parsed'
     )
+    expect(parse('VcpkgJsonParser', 'vcpkg.json', '{"version":"1.0.0"}')).to have_attributes(
+      parse_status: 'partial'
+    )
     expect(parse('VcpkgJsonParser', 'vcpkg.json', '{')).to have_attributes(parse_status: 'failed')
   end
 
@@ -256,6 +259,9 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
       homepage_url: 'https://example.com/polish-rpm',
       license: 'MIT',
       parse_status: 'parsed'
+    )
+    expect(parse('RpmSpecParser', 'pyinstaller.spec', 'block_cipher = None')).to have_attributes(
+      parse_status: 'partial'
     )
     expect(parse('NixPackageParser', 'default.nix', nix_package).to_h).to include(
       ecosystem: 'nix',
