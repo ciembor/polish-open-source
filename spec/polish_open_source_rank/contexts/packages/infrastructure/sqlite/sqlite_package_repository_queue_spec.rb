@@ -90,6 +90,34 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     expect(queue.pending(period, limit: 10, refresh: true).map { |scan| scan.fetch(:id) }).to eq([scan_id])
   end
 
+  it 'retries scanned repositories with failed manifests from an older parser version' do
+    seed_user(id: 1, login: 'alice')
+    seed_user_repository(id: 101, owner_id: 1, owner: 'alice', full_name: 'alice/app', stars: 20, delta: 0)
+    queue.enqueue(period, limit: 10)
+    scan_id = scans.first.fetch(:id)
+    queue.mark_scanned(scan_id, tree_sha: 'abc123', tree_truncated: false, manifest_count: 1)
+    seed_manifest(scan_id, ecosystem: 'npm', parse_status: 'failed', parser_version: 'manifest-parser-v1')
+
+    expect(queue.pending(period, limit: 10, ecosystem: 'npm').map { |scan| scan.fetch(:id) }).to eq([scan_id])
+    expect(queue.pending(period, limit: 10, ecosystem: 'packagist')).to be_empty
+  end
+
+  it 'does not keep retrying failed manifests from the current parser version' do
+    seed_user(id: 1, login: 'alice')
+    seed_user_repository(id: 101, owner_id: 1, owner: 'alice', full_name: 'alice/app', stars: 20, delta: 0)
+    queue.enqueue(period, limit: 10)
+    scan_id = scans.first.fetch(:id)
+    queue.mark_scanned(scan_id, tree_sha: 'abc123', tree_truncated: false, manifest_count: 1)
+    seed_manifest(
+      scan_id,
+      ecosystem: 'npm',
+      parse_status: 'failed',
+      parser_version: PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite::SQLitePackageManifestRepository::PARSER_VERSION
+    )
+
+    expect(queue.pending(period, limit: 10, ecosystem: 'npm')).to be_empty
+  end
+
   it 'returns interrupted processing scans to the retryable queue' do
     seed_processing_scan(full_name: 'alice/stale', updated_at: '2026-05-23T09:59:59Z')
     seed_processing_scan(full_name: 'alice/current', updated_at: '2026-05-23T10:30:00Z', repository_source_id: 2)
@@ -152,6 +180,19 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
         VALUES (?, 'user', 'github', ?, ?, 'processing', ?)
       SQL
       [period.start_date.to_s, repository_source_id, full_name, updated_at]
+    )
+  end
+
+  def seed_manifest(scan_id, ecosystem:, parse_status:, parser_version:)
+    database.dataset(:package_manifests).insert(
+      repository_scan_id: scan_id,
+      ecosystem: ecosystem,
+      path: ecosystem == 'npm' ? 'package.json' : 'manifest',
+      confidence: 'low',
+      parse_status: parse_status,
+      parser_version: parser_version,
+      metadata_json: '{}',
+      parsed_at: '2026-05-23T11:00:00Z'
     )
   end
 

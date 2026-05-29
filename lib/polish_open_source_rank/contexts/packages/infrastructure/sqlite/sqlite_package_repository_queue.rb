@@ -24,7 +24,11 @@ module PolishOpenSourceRank
             def pending(period, limit:, ecosystem: nil, refresh: false)
               validate_ecosystem!(ecosystem)
               package_repository_scans
-                .where(period_start: period_start(period), status: statuses_for(refresh))
+                .where(period_start: period_start(period))
+                .where(Sequel.|(
+                         { status: statuses_for(refresh) },
+                         { id: scans_with_outdated_failed_manifests(ecosystem) }
+                       ))
                 .order(Sequel.asc(:id))
                 .limit(bounded_limit(limit))
                 .all
@@ -72,6 +76,19 @@ module PolishOpenSourceRank
 
             def statuses_for(refresh)
               refresh ? REFRESHABLE_STATUSES : RETRYABLE_STATUSES
+            end
+
+            def package_manifests
+              database.dataset(:package_manifests)
+            end
+
+            def scans_with_outdated_failed_manifests(ecosystem)
+              dataset = package_manifests
+                        .select(:repository_scan_id)
+                        .where(parse_status: 'failed')
+                        .exclude(parser_version: SQLitePackageManifestRepository::PARSER_VERSION)
+              dataset = dataset.where(ecosystem: ecosystem) if ecosystem
+              dataset
             end
 
             def validate_ecosystem!(ecosystem)
