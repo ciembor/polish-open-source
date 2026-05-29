@@ -23,7 +23,13 @@
           <% ecosystem = card.fetch(:ecosystem) %>
           <article class="index-card">
             <div class="index-card__header">
-              <img class="index-card__icon" src="<%= h package_ecosystem_icon_path(ecosystem) %>" alt="" aria-hidden="true">
+              <% if package_ecosystem_icon_exists?(ecosystem) %>
+                <img class="index-card__logo-icon" src="<%= h package_ecosystem_icon_path(ecosystem) %>" alt="" aria-hidden="true">
+              <% else %>
+                <span class="index-card__logo-icon index-card__logo-icon--fallback" aria-hidden="true">
+                  <%= h package_ecosystem_initial(ecosystem) %>
+                </span>
+              <% end %>
               <h3><a class="primary-link" href="<%= h app_path(package_ecosystem_path(ecosystem)) %>"><%= h package_ecosystem_name(ecosystem) %></a></h3>
             </div>
             <dl class="index-card__metrics">
