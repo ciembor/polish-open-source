@@ -15,6 +15,13 @@ RSpec.describe PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLit
 
     expect_section_labels(progress)
     expect_monthly_user_estimates(progress)
+    expect(section(progress, 'user repositories / github')).to include(
+      total: 2,
+      done: 1,
+      pending: 1,
+      failed: 0,
+      status_detail: 'stored=1, skipped=0, failed=0'
+    )
     expect(section(progress, 'package repository scans / user')).to include(total: 2, done: 1, pending: 1, failed: 0)
     expect(section(progress, 'registry snapshots / npm')).to include(
       total: 2,
@@ -71,6 +78,33 @@ RSpec.describe PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLit
       total: 2,
       done: 2,
       pending: 0,
+      failed: 0,
+      status_detail: 'stored=0, skipped=0, failed=0',
+      state: 'complete'
+    )
+  end
+
+  it 'reports skipped repositories as done work in repository sections' do
+    database = open_database
+    seed_monthly_progress(database)
+    seed_repository_work_event(database, stage: 'user_repository', subject_label: 'alice/app', status: 'stored')
+    seed_repository_work_event(
+      database,
+      stage: 'user_repository',
+      subject_label: 'alice/lib',
+      status: 'skipped',
+      finished_at: '2026-05-01T00:00:04Z',
+      duration_ms: 1500
+    )
+
+    progress = described_class.new(database).job_progress(now: Time.parse('2026-05-01T00:10:00Z'))
+
+    expect(section(progress, 'user repositories / github')).to include(
+      total: 2,
+      done: 2,
+      pending: 0,
+      failed: 0,
+      status_detail: 'stored=1, skipped=1, failed=0',
       state: 'complete'
     )
   end
@@ -189,6 +223,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLit
   def seed_work_events(database)
     event = PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteJobWorkEventRepository.new(database)
     event.record(**base_event, stage: 'users', unit_kind: 'user_candidate', subject_label: 'alice')
+    seed_repository_work_event(database, stage: 'user_repository', subject_label: 'alice/app')
     event.record(
       **base_event, job_kind: 'packages',
                     stage: 'repository_scan',
@@ -203,6 +238,22 @@ RSpec.describe PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLit
                     subject_label: 'alice/lib',
                     finished_at: '2026-05-01T00:00:03Z',
                     duration_ms: 3000
+    )
+  end
+
+  def seed_repository_work_event(
+    database, stage:, subject_label:, status: 'stored',
+    finished_at: '2026-05-01T00:00:02Z', duration_ms: 1000
+  )
+    event = PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteJobWorkEventRepository.new(database)
+    event.record(
+      **base_event,
+      stage: stage,
+      unit_kind: 'repository',
+      subject_label: subject_label,
+      status: status,
+      finished_at: finished_at,
+      duration_ms: duration_ms
     )
   end
 
