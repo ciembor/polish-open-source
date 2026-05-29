@@ -46,14 +46,6 @@ module PolishOpenSourceRank
           Contexts::Ranking::Domain::LocationCatalog.scopes
         end
 
-        def primary_city_scopes
-          Contexts::Ranking::Domain::LocationCatalog.primary_city_scopes
-        end
-
-        def secondary_city_scopes
-          Contexts::Ranking::Domain::LocationCatalog.secondary_city_scopes
-        end
-
         def elite_medal_path(rank)
           case rank.to_i
           when 1 then '/icons/medal-gold.svg'

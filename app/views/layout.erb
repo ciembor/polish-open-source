@@ -52,6 +52,7 @@
           <a class="nav__link js-secondary-control js-collapsible-control" href="<%= h app_path(people_rankings_path(period_slug: 'latest')) %>"><%= h t('nav.people') %></a>
           <a class="nav__link js-secondary-control js-collapsible-control" href="<%= h app_path(organization_rankings_path(period_slug: 'latest')) %>"><%= h t('nav.organizations') %></a>
           <div class="nav-slot js-secondary-controls-slot">
+            <a class="nav__link js-secondary-control js-collapsible-control" href="<%= h app_path(language_index_path(period_slug: 'latest')) %>"><%= h t('nav.languages') %></a>
             <a class="nav__link js-secondary-control js-collapsible-control" href="<%= h app_path(package_index_path(period_slug: 'latest')) %>"><%= h t('nav.packages') %></a>
             <a class="nav__link js-secondary-control js-collapsible-control" href="<%= h app_path(editions_path) %>"><%= h t('nav.editions') %></a>
             <a class="nav__link js-secondary-control js-collapsible-control" href="<%= h app_path('/about') %>"><%= h t('nav.about') %></a>
