@@ -4,11 +4,12 @@ module PolishOpenSourceRank
   module Interfaces
     module CLI
       class PackageRankingsCommand
-        HELP = <<~HELP
+        include RetryableJobCommand
+
+        HELP = <<~HELP.freeze
           Usage: bin/package_rankings --period YYYY-MM [--ecosystem npm] [--limit N] [--repository-limit N] [--scan-limit N] [--manifest-limit N] [--registry-limit N] [--refresh]
           Supported ecosystems: #{Contexts::Packages::Domain::Ecosystem.snapshot_supported_list}
         HELP
-               .freeze
 
         class MonthlySnapshotIncomplete < StandardError; end
 
@@ -54,9 +55,9 @@ module PolishOpenSourceRank
           raise MonthlySnapshotIncomplete, "Monthly rankings are not complete for #{period.key}"
         end
 
-        def with_crawl_job_tracking(&)
+        def with_crawl_job_tracking(&block)
           crawl_job_id = crawl_jobs&.start(command: 'package_rankings', arguments: argv)
-          run_interruptible_package_job(&)
+          run_with_job_retry(crawl_job_id) { run_interruptible_package_job(&block) }
           crawl_jobs&.finish(crawl_job_id) if crawl_job_id
         rescue Contexts::Operations::Application::CrawlInterrupted => e
           interrupt_crawl_job(crawl_job_id, e)

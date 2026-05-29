@@ -4,6 +4,8 @@ module PolishOpenSourceRank
   module Interfaces
     module CLI
       class MonthlyRankingsCommand
+        include RetryableJobCommand
+
         def self.call(argv, job:, output: $stdout, crawl_jobs: nil)
           new(argv: argv, job: job, output: output, crawl_jobs: crawl_jobs).call
         end
@@ -47,9 +49,9 @@ module PolishOpenSourceRank
           crawl_jobs.start(command: 'monthly_rankings', arguments: argv)
         end
 
-        def with_crawl_job_tracking
+        def with_crawl_job_tracking(&)
           crawl_job_id = start_crawl_job
-          yield
+          run_with_job_retry(crawl_job_id, &)
           finish_crawl_job(crawl_job_id)
         rescue Contexts::Operations::Application::CrawlInterrupted => e
           interrupt_crawl_job(crawl_job_id, e)

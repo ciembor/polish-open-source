@@ -51,7 +51,10 @@ module PolishOpenSourceRank
           end
 
           def complete_run(period, run_id)
-            return store.fail_run(run_id, 'Retryable candidates remain') if source_retryable_candidates?(period)
+            if source_retryable_candidates?(period)
+              retry_source_snapshots(period)
+              return store.fail_run(run_id, 'Retryable candidates remain') if source_retryable_candidates?(period)
+            end
             return if store.retryable_candidates?(period)
 
             store.prune_rankings(period)
@@ -117,6 +120,15 @@ module PolishOpenSourceRank
           rescue StandardError => e
             log(source, "#{stage} failed: #{e.class}: #{e.message}")
             e
+          end
+
+          def retry_source_snapshots(period)
+            original_existing_only = @existing_only
+            @existing_only = true
+            store.create_run(period, refresh_platforms: [])
+            run_source_snapshots(period, refresh_platforms: [])
+          ensure
+            @existing_only = original_existing_only
           end
 
           def raise_if_every_source_failed(errors)

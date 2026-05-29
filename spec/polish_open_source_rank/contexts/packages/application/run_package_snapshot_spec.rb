@@ -43,8 +43,12 @@ class FakeRegistryPackageRepository
 end
 
 class FakePackageRegistryClient
+  def initialize(failures: {})
+    @failures = failures.transform_values(&:dup)
+  end
+
   def fetch(package_name)
-    raise 'registry timeout' if package_name == 'broken'
+    raise 'registry timeout' if @failures.fetch(package_name, []).shift
 
     PolishOpenSourceRank::Contexts::Packages::Domain::RegistryFetchResult.new(
       status: 'ok',
@@ -64,8 +68,11 @@ end
 
 RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application::RunPackageSnapshot do
   let(:period) { PolishOpenSourceRank::Shared::Domain::Period.parse('2026-04') }
+  let(:registry_client_failures) { {} }
 
   it 'runs the package snapshot flow and records per-package fetch failures without aborting' do
+    allow(self).to receive(:registry_client_failures).and_return({ 'broken' => [true] })
+
     result = use_case.call(
       period,
       ecosystem: 'npm',
@@ -73,22 +80,44 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application::RunPackage
       refresh: true
     )
 
-    expect(repository_queue).to have_received(:reset_stale_processing).with(period)
-    expect(repository_queue).to have_received(:enqueue).with(period, limit: 100)
-    expect(manifest_scanner).to have_received(:call).with(period, ecosystem: 'npm', limit: 20, refresh: true)
-    expect(registry_packages.resolved).to eq([{ period: period, ecosystem: 'npm', limit: 30 }])
-    expect(registry_packages.recorded.map { |record| record.fetch(:result).status }).to eq(%w[ok failed])
+    expect(repository_queue).to have_received(:reset_stale_processing).with(period).twice
+    expect(repository_queue).to have_received(:enqueue).with(period, limit: 100).twice
+    expect(manifest_scanner).to have_received(:call).with(period, ecosystem: 'npm', limit: 20, refresh: true).twice
+    expect(registry_packages.resolved).to eq(
+      [
+        { period: period, ecosystem: 'npm', limit: 30 },
+        { period: period, ecosystem: 'npm', limit: 30 }
+      ]
+    )
+    expect(registry_packages.recorded.map { |record| record.fetch(:result).status }).to eq(%w[ok failed ok ok])
     expect(run_repository.finished).to eq(123)
     expect(run_repository.failed).to be_nil
     expect(result).to include(
       stale_scans_reset: 0,
-      scanned: 1,
+      scanned: 2,
       failed: 0,
-      manifests: 2,
-      registry_fetched: 2,
-      registry_ok: 1,
-      registry_failed: 1,
-      snapshots_written: 1
+      manifests: 4,
+      registry_fetched: 4,
+      registry_ok: 3,
+      registry_failed: 0,
+      snapshots_written: 3,
+      retry_passes: 1
+    )
+  end
+
+  it 'retries package stages once when a transient registry fetch fails' do
+    allow(self).to receive(:registry_client_failures).and_return({ 'broken' => [true] })
+
+    use_case.call(period, ecosystem: 'npm', limit: 10, refresh: false)
+
+    expect(repository_queue).to have_received(:reset_stale_processing).with(period).twice
+    expect(repository_queue).to have_received(:enqueue).with(period, limit: 10).twice
+    expect(manifest_scanner).to have_received(:call).with(period, ecosystem: 'npm', limit: 10, refresh: false).twice
+    expect(registry_packages.resolved).to eq(
+      [
+        { period: period, ecosystem: 'npm', limit: 10 },
+        { period: period, ecosystem: 'npm', limit: 10 }
+      ]
     )
   end
 
@@ -129,7 +158,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application::RunPackage
   end
 
   def registry_clients
-    { 'npm' => FakePackageRegistryClient.new }
+    { 'npm' => FakePackageRegistryClient.new(failures: registry_client_failures) }
   end
 
   def run_repository
