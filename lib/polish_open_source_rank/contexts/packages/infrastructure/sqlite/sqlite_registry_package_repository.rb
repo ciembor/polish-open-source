@@ -60,13 +60,12 @@ module PolishOpenSourceRank
               dataset = registry_packages.where(Sequel[:registry_packages][:ecosystem] => ecosystems_for(ecosystem))
               dataset = dataset.exclude(Sequel[:registry_packages][:status] => 'not_found') unless refresh
               dataset = without_snapshot(dataset, period) unless refresh
-              dataset
-                .order(
-                  Sequel.asc(Sequel[:registry_packages][:ecosystem]),
-                  Sequel.asc(Sequel[:registry_packages][:normalized_package_name])
-                )
-                .limit(bounded_limit(limit))
-                .all
+              dataset = dataset
+                        .order(
+                          Sequel.asc(Sequel[:registry_packages][:ecosystem]),
+                          Sequel.asc(Sequel[:registry_packages][:normalized_package_name])
+                        )
+              apply_limit(dataset, limit).all
             end
 
             def record_fetch_result(period, package_row, result)
@@ -94,11 +93,10 @@ module PolishOpenSourceRank
                         )
                         .exclude(Sequel[:package_manifests][:normalized_package_name] => nil)
               dataset = dataset.where(Sequel[:package_manifests][:ecosystem] => ecosystem) if ecosystem
-              dataset
-                .select_all(:package_manifests)
-                .order(Sequel.asc(Sequel[:package_manifests][:id]))
-                .limit(bounded_limit(limit))
-                .all
+              dataset = dataset
+                        .select_all(:package_manifests)
+                        .order(Sequel.asc(Sequel[:package_manifests][:id]))
+              apply_limit(dataset, limit).all
             end
 
             def upsert_pending_package(manifest)
@@ -364,6 +362,17 @@ module PolishOpenSourceRank
 
             def bounded_limit(limit)
               limit.to_i.clamp(1, 10_000)
+            end
+
+            def normalized_limit(limit)
+              return nil if limit.to_s == 'all'
+
+              bounded_limit(limit)
+            end
+
+            def apply_limit(dataset, limit)
+              normalized = normalized_limit(limit)
+              normalized ? dataset.limit(normalized) : dataset
             end
 
             def timestamp

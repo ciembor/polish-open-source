@@ -32,7 +32,9 @@ class FakeRegistryPackageRepository
   end
 
   def packages_to_fetch(_period, ecosystem:, limit:, refresh:)
-    @packages.select { |package| ecosystem.nil? || package.fetch(:ecosystem) == ecosystem }.first(limit).tap do
+    packages = @packages.select { |package| ecosystem.nil? || package.fetch(:ecosystem) == ecosystem }
+    packages = packages.first(limit) unless limit.to_s == 'all'
+    packages.tap do
       @fetch_options = { refresh: refresh }
     end
   end
@@ -127,6 +129,14 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application::RunPackage
     expect(repository_queue).to have_received(:enqueue).with(period, limit: 10)
     expect(manifest_scanner).to have_received(:call).with(period, ecosystem: 'npm', limit: 10, refresh: false)
     expect(registry_packages.resolved).to eq([{ period: period, ecosystem: 'npm', limit: 10 }])
+  end
+
+  it 'keeps --limit all as an unbounded shorthand for all stages' do
+    use_case.call(period, ecosystem: 'npm', limit: 'all', refresh: false)
+
+    expect(repository_queue).to have_received(:enqueue).with(period, limit: 'all')
+    expect(manifest_scanner).to have_received(:call).with(period, ecosystem: 'npm', limit: 'all', refresh: false)
+    expect(registry_packages.resolved).to eq([{ period: period, ecosystem: 'npm', limit: 'all' }])
   end
 
   it 'uses production defaults above the MVP sample size' do

@@ -123,6 +123,8 @@ module PolishOpenSourceRank
           end
 
           def global_limits(limit)
+            return Limits.new(repository: 'all', scan: 'all', manifest: 'all', registry: 'all') if limit.to_s == 'all'
+
             value = limit.to_i
             Limits.new(repository: value, scan: value, manifest: value, registry: value)
           end
