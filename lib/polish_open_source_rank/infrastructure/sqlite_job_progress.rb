@@ -69,14 +69,13 @@ module PolishOpenSourceRank
       end
 
       def monthly_sections(period_start, now)
-        MONTHLY_PLATFORM_ORDER.flat_map do |platform|
+        candidate_sections = MONTHLY_PLATFORM_ORDER.flat_map do |platform|
           [
             user_candidate_section(period_start, platform, now),
-            organization_candidate_section(period_start, platform, now),
-            user_repository_section(period_start, platform, now),
-            organization_repository_section(period_start, platform, now)
+            organization_candidate_section(period_start, platform, now)
           ]
         end.compact
+        candidate_sections + repository_sections(period_start, now)
       end
 
       def user_candidate_section(period_start, platform, now)
@@ -121,69 +120,10 @@ module PolishOpenSourceRank
         )
       end
 
-      def user_repository_section(period_start, platform, now)
-        total = user_monthly_stats_dataset
-                .where(period_start: period_start, platform: platform)
-                .sum(:public_repo_count).to_i
-        done = repository_monthly_stats_dataset.where(period_start: period_start, platform: platform).count
-        return if total.zero? && done.zero?
-
-        repository_section(
-          label: "user repositories / #{platform}",
-          period_start: period_start,
-          stage: 'user_repository',
-          platform: platform,
-          total: total,
-          done: done,
-          now: now
-        )
-      end
-
-      def organization_repository_section(period_start, platform, now)
-        total = organization_monthly_stats_dataset
-                .where(period_start: period_start, platform: platform)
-                .sum(:public_repo_count).to_i
-        done = organization_repository_monthly_stats_dataset.where(period_start: period_start, platform: platform).count
-        return if total.zero? && done.zero?
-
-        repository_section(
-          label: "organization repositories / #{platform}",
-          period_start: period_start,
-          stage: 'organization_repository',
-          platform: platform,
-          total: total,
-          done: done,
-          now: now
-        )
-      end
-
-      def repository_section(attributes)
-        counts = repository_progress_counts(attributes)
-
-        section(
-          label: attributes.fetch(:label),
-          period_start: attributes.fetch(:period_start),
-          job_kind: 'monthly',
-          stage: attributes.fetch(:stage),
-          unit_kind: 'repository',
-          platform: attributes.fetch(:platform),
-          total: counts.fetch(:total),
-          done: counts.fetch(:done),
-          pending: counts.fetch(:pending),
-          failed: 0,
-          skipped: 0,
-          status_detail: nil,
-          now: attributes.fetch(:now)
-        )
-      end
-
-      def repository_progress_counts(attributes)
-        total = attributes.fetch(:total)
-        done = attributes.fetch(:done)
-        pending = [total - done, 0].max
-        return { total: total, done: total, pending: 0 } if finished_sync_run?(attributes.fetch(:period_start))
-
-        { total: total, done: done, pending: pending }
+      def repository_sections(period_start, now)
+        SQLiteRepositoryJobProgressSections
+          .new(database: database, finished_sync_run: method(:finished_sync_run?), section_builder: method(:section))
+          .call(period_start, now)
       end
 
       def package_sections(period_start, now)
@@ -365,22 +305,6 @@ module PolishOpenSourceRank
 
       def package_crawl_runs_dataset
         database.dataset(:package_crawl_runs)
-      end
-
-      def user_monthly_stats_dataset
-        database.dataset(:user_monthly_stats)
-      end
-
-      def organization_monthly_stats_dataset
-        database.dataset(:organization_monthly_stats)
-      end
-
-      def repository_monthly_stats_dataset
-        database.dataset(:repository_monthly_stats)
-      end
-
-      def organization_repository_monthly_stats_dataset
-        database.dataset(:organization_repository_monthly_stats)
       end
 
       def job_work_events_dataset
