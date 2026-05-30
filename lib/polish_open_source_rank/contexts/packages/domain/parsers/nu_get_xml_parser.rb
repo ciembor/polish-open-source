@@ -14,7 +14,7 @@ module PolishOpenSourceRank
               document = REXML::Document.new(content)
               if File.basename(path) == 'Directory.Packages.props'
                 central_package_versions(path, document)
-              elsif File.extname(path) == '.nuspec'
+              elsif nuspec_path?(path)
                 nuspec(path, document)
               else
                 project(path, document)
@@ -123,6 +123,10 @@ module PolishOpenSourceRank
 
             def unsupported(path)
               StaticManifestParserHelpers.failed('nuget', "unsupported NuGet XML manifest: #{path}")
+            end
+
+            def nuspec_path?(path)
+              path.to_s.end_with?('.nuspec')
             end
           end
         end

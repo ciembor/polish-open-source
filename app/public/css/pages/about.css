@@ -88,6 +88,22 @@
   color: var(--accent);
 }
 
+.platform-card__best-effort {
+  position: absolute;
+  right: -52px;
+  bottom: 36px;
+  width: 200px;
+  transform: rotate(-45deg);
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 28px;
+  background: black;
+  color: #fff;
+  pointer-events: none;
+  user-select: none;
+}
+
 .platform-logo {
   align-items: center;
   display: flex;

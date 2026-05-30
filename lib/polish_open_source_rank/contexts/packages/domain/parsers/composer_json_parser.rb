@@ -29,6 +29,8 @@ module PolishOpenSourceRank
               )
             rescue JSON::ParserError => e
               error_message = e.message
+              return partial('empty composer.json') if content.to_s.strip.empty?
+
               if template_like_path?(path) || template_like_content?(content)
                 return partial("non-literal composer.json: #{error_message}")
               end
