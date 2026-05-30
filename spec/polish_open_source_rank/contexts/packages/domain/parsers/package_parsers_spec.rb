@@ -22,6 +22,9 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
       parse_status: 'partial'
     )
     expect(parse('NpmPackageJsonParser', 'package.json', '{')).to have_attributes(parse_status: 'failed')
+    expect(parse('NpmPackageJsonParser', 'templates/package.json', '{%- if npm -%}')).to have_attributes(
+      parse_status: 'partial'
+    )
   end
 
   it 'parses RubyGems gemspecs conservatively without executing Ruby' do
@@ -110,6 +113,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
                    parse_status: 'partial'
                  )
     expect(parse('ComposerJsonParser', 'composer.json', '{')).to have_attributes(parse_status: 'failed')
+    expect(parse('ComposerJsonParser',
+                 'src/test/resources/org/psliwa/idea/composerJson/inspection/doctrine/composer.json',
+                 <<~JSON)).to have_attributes(parse_status: 'partial')
+                   {"name":"doctrine/orm","require-dev":{"phpunit/phpunit":"~4.0",<warning>"satooshi/php-coveralls":"dev-master"</warning>}}
+                 JSON
     expect(parse('GoModParser', 'go.mod', "module github.com/acme/tool\n\ngo 1.22")).to have_attributes(
       ecosystem: 'go',
       package_name: 'github.com/acme/tool',
@@ -163,6 +171,9 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
       license: 'Apache-2.0',
       parse_status: 'parsed'
     )
+    expect(parse('NuGetXmlParser', 'obj/Debug/generated.nuspec',
+                 '<package><metadata><version>1.0.0</version></metadata></package>'))
+      .to have_attributes(parse_status: 'partial')
   end
 
   it 'keeps NuGet central package versions diagnostic when no package id exists' do
@@ -199,6 +210,15 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
       package_name: nil,
       parse_status: 'partial'
     )
+    malformed_comment_pom = pom_xml.sub(
+      '</licenses>',
+      <<~XML.chomp
+        </licenses>
+        <!-- <nativeImageArg> --report-unsupported-elements-at-runtime</nativeImageArg> -->
+      XML
+    )
+    expect(parse('MavenManifestParser', 'pom.xml', malformed_comment_pom))
+      .to have_attributes(package_name: 'pl.example:polish-tool', parse_status: 'parsed')
     expect(parse('MavenManifestParser', 'pom.xml', '<project>')).to have_attributes(parse_status: 'failed')
   end
 

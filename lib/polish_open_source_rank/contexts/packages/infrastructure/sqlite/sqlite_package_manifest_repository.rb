@@ -10,7 +10,7 @@ module PolishOpenSourceRank
           class SQLitePackageManifestRepository
             include SQLiteRetryableErrors
 
-            PARSER_VERSION = 'manifest-parser-v3'
+            PARSER_VERSION = 'manifest-parser-v5'
 
             def initialize(database, clock: -> { Time.now.utc }, parser_catalog: Domain::ManifestParserCatalog.new,
                            work_events: Operations::Application::JobWorkEventRecorder.new)
