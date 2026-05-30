@@ -38,7 +38,8 @@ module PolishOpenSourceRank
             job: job,
             output: output,
             crawl_jobs: crawl_jobs || crawl_job_repository,
-            monthly_completion: monthly_completion
+            monthly_completion: monthly_completion,
+            watchdog: { heartbeat: package_progress_heartbeat }
           )
         end
 
@@ -166,7 +167,15 @@ module PolishOpenSourceRank
         end
 
         def job_work_events
-          @job_work_events ||= Contexts::Operations::Infrastructure::SQLite::SQLiteJobWorkEventRepository.new(database)
+          @job_work_events ||=
+            Contexts::Operations::Infrastructure::SQLite::SQLiteJobWorkEventRepository.new(
+              database,
+              heartbeat: package_progress_heartbeat
+            )
+        end
+
+        def package_progress_heartbeat
+          @package_progress_heartbeat ||= Contexts::Operations::Application::ProgressHeartbeat.new
         end
       end
     end

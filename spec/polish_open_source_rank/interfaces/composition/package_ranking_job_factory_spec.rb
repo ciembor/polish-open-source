@@ -76,7 +76,9 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::PackageRankingJobF
     allow(PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteCrawlJobRepository)
       .to receive(:new).with(database).and_return(crawl_jobs)
     allow(PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteJobWorkEventRepository)
-      .to receive(:new).with(database).and_return(double('job work events'))
+      .to receive(:new).with(database, heartbeat: kind_of(
+        PolishOpenSourceRank::Contexts::Operations::Application::ProgressHeartbeat
+      )).and_return(double('job work events'))
   end
 
   def stub_github_collaborators

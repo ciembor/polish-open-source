@@ -81,4 +81,20 @@ RSpec.describe PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLit
       )
     end.to raise_error(Sequel::DatabaseError, /no such table/)
   end
+
+  it 'touches the heartbeat when recording timed work events' do
+    heartbeat = instance_double(PolishOpenSourceRank::Contexts::Operations::Application::ProgressHeartbeat, touch: nil)
+    repository = described_class.new(database, heartbeat: heartbeat)
+
+    repository.record_timed(
+      period_start: '2026-04-01',
+      job_kind: 'monthly',
+      stage: 'users',
+      unit_kind: 'user_candidate',
+      platform: 'github',
+      subject_label: 'alice'
+    ) { :processed }
+
+    expect(heartbeat).to have_received(:touch).at_least(:twice)
+  end
 end
