@@ -14,8 +14,9 @@ module PolishOpenSourceRank
               /database schema is locked/i
             ].freeze
 
-            def initialize(database)
+            def initialize(database, heartbeat: nil)
               @database = database
+              @heartbeat = heartbeat
             end
 
             def record(**attributes)
@@ -26,7 +27,7 @@ module PolishOpenSourceRank
 
             private
 
-            attr_reader :database
+            attr_reader :database, :heartbeat
 
             def row(attributes)
               {

@@ -2,6 +2,7 @@
 
 RSpec.describe PolishOpenSourceRank::Interfaces::CLI::PackageRankingsCommand do
   let(:output) { StringIO.new }
+  let(:heartbeat) { instance_double(PolishOpenSourceRank::Contexts::Operations::Application::ProgressHeartbeat) }
   let(:job) do
     double(
       'package snapshot job',
@@ -169,5 +170,31 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::PackageRankingsCommand do
     expect(Signal).to have_received(:trap).with('INT', 'DEFAULT')
     expect(Signal).to have_received(:trap).with('TERM', 'DEFAULT')
     expect(previous_handlers).to eq(%w[INT TERM])
+  end
+
+  it 'wraps the package job in a stall watchdog when a heartbeat is configured' do
+    watchdog = instance_double(PolishOpenSourceRank::Contexts::Operations::Application::StalledCrawlWatchdog)
+    allow(watchdog).to receive(:call).and_yield
+    watchdog_class = class_double(PolishOpenSourceRank::Contexts::Operations::Application::StalledCrawlWatchdog)
+    allow(watchdog_class).to receive(:new).and_return(watchdog)
+
+    described_class.new(
+      argv: %w[--period 2026-04],
+      job: job,
+      output: output,
+      crawl_jobs: crawl_jobs,
+      watchdog: {
+        heartbeat: heartbeat,
+        watchdog_class: watchdog_class
+      }
+    ).call
+
+    expect(watchdog_class).to have_received(:new).with(
+      heartbeat: heartbeat,
+      output: output,
+      label: 'Package crawl',
+      timeout_seconds: described_class::DEFAULT_STALE_TIMEOUT_SECONDS
+    )
+    expect(watchdog).to have_received(:call)
   end
 end

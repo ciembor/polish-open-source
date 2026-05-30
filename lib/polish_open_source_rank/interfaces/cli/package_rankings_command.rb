@@ -6,6 +6,7 @@ module PolishOpenSourceRank
       class PackageRankingsCommand
         include RetryableJobCommand
 
+        DEFAULT_STALE_TIMEOUT_SECONDS = 15 * 60
         HELP = <<~HELP.freeze
           Usage: bin/package_rankings --period YYYY-MM [--ecosystem npm] [--limit N] [--repository-limit N] [--scan-limit N] [--manifest-limit N] [--registry-limit N] [--refresh]
           Supported ecosystems: #{Contexts::Packages::Domain::Ecosystem.snapshot_supported_list}
@@ -23,12 +24,13 @@ module PolishOpenSourceRank
           ).call
         end
 
-        def initialize(argv:, job:, output:, crawl_jobs: nil, monthly_completion: nil)
+        def initialize(argv:, job:, output:, crawl_jobs: nil, monthly_completion: nil, watchdog: nil)
           @argv = argv
           @job = job
           @output = output
           @crawl_jobs = crawl_jobs
           @monthly_completion = monthly_completion
+          @watchdog = watchdog
         end
 
         def call
@@ -46,7 +48,7 @@ module PolishOpenSourceRank
 
         private
 
-        attr_reader :argv, :crawl_jobs, :job, :monthly_completion, :output
+        attr_reader :argv, :crawl_jobs, :job, :monthly_completion, :output, :watchdog
 
         def require_monthly_complete!(period)
           return unless require_monthly_complete?
@@ -57,7 +59,7 @@ module PolishOpenSourceRank
 
         def with_crawl_job_tracking(&block)
           crawl_job_id = crawl_jobs&.start(command: 'package_rankings', arguments: argv)
-          run_with_job_retry(crawl_job_id) { run_interruptible_package_job(&block) }
+          run_with_job_retry(crawl_job_id) { run_interruptible_package_job { run_with_stall_watchdog(&block) } }
           crawl_jobs&.finish(crawl_job_id) if crawl_job_id
         rescue Contexts::Operations::Application::CrawlInterrupted => e
           interrupt_crawl_job(crawl_job_id, e)
@@ -72,6 +74,30 @@ module PolishOpenSourceRank
             error_class: Contexts::Operations::Application::PackageSnapshotInterrupted,
             &
           )
+        end
+
+        def run_with_stall_watchdog(&)
+          return yield unless watchdog_heartbeat
+
+          watchdog_class.new(
+            heartbeat: watchdog_heartbeat,
+            output: output,
+            label: 'Package crawl',
+            timeout_seconds: watchdog_timeout_seconds
+          ).call(&)
+        end
+
+        def watchdog_heartbeat
+          watchdog&.fetch(:heartbeat)
+        end
+
+        def watchdog_class
+          watchdog&.fetch(:watchdog_class) ||
+            Contexts::Operations::Application::StalledCrawlWatchdog
+        end
+
+        def watchdog_timeout_seconds
+          watchdog&.fetch(:stale_timeout_seconds, DEFAULT_STALE_TIMEOUT_SECONDS) || DEFAULT_STALE_TIMEOUT_SECONDS
         end
 
         def interrupt_crawl_job(crawl_job_id, error)

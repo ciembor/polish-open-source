@@ -6,6 +6,7 @@ module PolishOpenSourceRank
       module Application
         module TimedJobWorkEvents
           def record_timed(**attributes)
+            touch_heartbeat
             started_at = Time.now.utc
             monotonic_started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
             result = yield
@@ -14,6 +15,7 @@ module PolishOpenSourceRank
             error = "#{e.class}: #{e.message}"
             raise
           ensure
+            touch_heartbeat
             record(
               **attributes,
               status: work_event_status(result, error),
@@ -37,6 +39,10 @@ module PolishOpenSourceRank
 
           def elapsed_ms(monotonic_started)
             ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - monotonic_started) * 1000).round
+          end
+
+          def touch_heartbeat
+            heartbeat&.touch if respond_to?(:heartbeat, true)
           end
         end
       end
