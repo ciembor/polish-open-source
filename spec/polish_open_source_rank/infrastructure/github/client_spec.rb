@@ -51,6 +51,14 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubClient do
     expect(sleeps).to include(1)
   end
 
+  it 'does not retry generic forbidden responses' do
+    stub_http(response('403', 'Forbidden', '{"message":"Repository access blocked"}'))
+
+    expect { client.get('/blocked') }.to raise_error(described_class::Error)
+    expect(sleeps).to be_empty
+    expect(Net::HTTP).to have_received(:start).once
+  end
+
   it 'uses exponential backoff for server errors without retry headers' do
     stub_http(
       response('500', 'Server Error', '{}'),
