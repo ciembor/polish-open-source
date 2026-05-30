@@ -909,7 +909,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('Ludzie')
     expect(response.body).to include('Organizacje')
     expect(response.body).to include('Top 10 według gwiazdek')
-    expect(response.body).to include('Top 10 trendujących w miesiącu')
+    expect(response.body).to include('Top 10 popularnych w miesiącu')
     expect(response.body).to include('⭐ 12 345')
     expect(response.body).to include('alice/app')
     expect(response.body).to include('Nice Ruby app')
@@ -933,7 +933,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   def expect_language_detail_pages(responses)
     expect(responses.fetch(:top).body).to include('Top 100 języków według liczby repozytoriów')
     expect(responses.fetch(:stars).body).to include('Top 100 języków według gwiazdek')
-    expect(responses.fetch(:trending).body).to include('Top 100 trendujących języków')
+    expect(responses.fetch(:trending).body).to include('Top 100 popularnych języków')
   end
 
   def expect_package_ranking_pages(responses, encoded_name)
@@ -953,7 +953,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('Organizacje')
     expect(response.body).to include('Top 10 według pobrań z 30 dni')
     expect(response.body).to include('Top 10 repozytoriów według gwiazdek')
-    expect(response.body).to include('Top 10 trendujących w miesiącu')
+    expect(response.body).to include('Top 10 popularnych w miesiącu')
     expect(response.body).to include('📥 1 000')
     expect(response.body).to include('⭐ 12 345')
     expect(response.body).to include('href="/latest/packages/npm/users/top"')
@@ -1027,11 +1027,11 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(responses.fetch(:user).body).to include('Top 100 aktywnych użytkowników')
     expect(responses.fetch(:user).body).to include('🔧 8')
     expect(responses.fetch(:repository).status).to eq(200)
-    expect(responses.fetch(:repository).body).to include('Top 100 trendujących repozytoriów')
+    expect(responses.fetch(:repository).body).to include('Top 100 popularnych repozytoriów')
     expect(responses.fetch(:organization).status).to eq(200)
     expect(responses.fetch(:organization).body).to include('Top 100 organizacji')
     expect(responses.fetch(:organization_repository).status).to eq(200)
-    expect(responses.fetch(:organization_repository).body).to include('Top 100 trendujących repozytoriów organizacji')
+    expect(responses.fetch(:organization_repository).body).to include('Top 100 popularnych repozytoriów organizacji')
   end
 
   def expect_latest_user_ranking_page(response)
@@ -1386,7 +1386,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'rel="alternate" hreflang="en" href="https://rank.example/en/latest/organizations"',
       'property="og:title" content="Organizacje open source - Polska"',
       '>Organizacje: Polska</h1>',
-      'Organizacje i ich repozytoria uporządkowane według gwiazdek oraz miesięcznego trendu.',
+      'Organizacje i ich repozytoria uporządkowane według gwiazdek oraz miesięcznej popularności.',
       'polish-org/toolkit',
       'href="/latest/organizations/locations/krakow"',
       'href="/languages"',
