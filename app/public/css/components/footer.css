@@ -92,6 +92,10 @@
   text-align: center;
 }
 
+.site-footer a {
+  text-decoration: none;
+}
+
 @media (max-width: 520px) {
   .site-author__inner {
     align-items: flex-start;
