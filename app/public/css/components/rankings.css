@@ -20,12 +20,7 @@
 }
 
 .location-nav .nav-slot {
-  align-items: center;
-  display: inline-flex;
-  flex: 1 1 auto;
-  gap: 14px;
-  justify-content: space-between;
-  min-width: 0;
+  display: contents;
 }
 
 .location-nav__link {
