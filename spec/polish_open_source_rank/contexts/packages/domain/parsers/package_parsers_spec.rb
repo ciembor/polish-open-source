@@ -21,10 +21,29 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
       confidence: 'low',
       parse_status: 'partial'
     )
+  end
+
+  it 'treats non-literal and malformed npm package.json files as partial when they are not fetchable packages' do
+    expect(parse('NpmPackageJsonParser', 'package.json', '')).to have_attributes(parse_status: 'partial')
+    expect(parse('NpmPackageJsonParser', 'package.json',
+                 "\xEF\xBB\xBF{\"name\":\"bom-package\"}")).to have_attributes(
+                   package_name: 'bom-package',
+                   parse_status: 'parsed'
+                 )
+    expect(parse('NpmPackageJsonParser', 'package.json',
+                 '{"name":"broken-package" "version":"1.0.0"}')).to have_attributes(
+                   parse_status: 'partial'
+                 )
     expect(parse('NpmPackageJsonParser', 'package.json', '{')).to have_attributes(parse_status: 'failed')
     expect(parse('NpmPackageJsonParser', 'templates/package.json', '{%- if npm -%}')).to have_attributes(
       parse_status: 'partial'
     )
+    expect(parse('NpmPackageJsonParser', 'resources/app/package.json',
+                 'version=1.0.0')).to have_attributes(parse_status: 'partial')
+    expect(parse('NpmPackageJsonParser', 'package.json',
+                 "<<<<<<< HEAD\n{\"name\":\"merge-package\"}\n=======\n{}\n>>>>>>> branch")).to have_attributes(
+                   parse_status: 'partial'
+                 )
   end
 
   it 'parses RubyGems gemspecs conservatively without executing Ruby' do
