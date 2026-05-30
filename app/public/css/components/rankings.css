@@ -14,6 +14,7 @@
   align-items: center;
   display: flex;
   gap: 8px 14px;
+  justify-content: space-between;
   min-width: 0;
   padding: 12px 0;
 }
@@ -21,8 +22,9 @@
 .location-nav .nav-slot {
   align-items: center;
   display: inline-flex;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   gap: 14px;
+  justify-content: space-between;
   min-width: 0;
 }
 
