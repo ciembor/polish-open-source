@@ -30,7 +30,7 @@ en:
         title: "Popularity"
       users:
         body: "People are found through public locations connected with Poland and Polish cities. Profiles enter the ranking when their public location matches a supported country or city."
-        title: "Users"
+        title: "People"
     seo:
       title: "About Polish Open Source Rank"
       description: "Mission, ranking rules for open-source work in Poland, and the supported GitHub, GitLab, and Codeberg platforms."
@@ -137,7 +137,7 @@ en:
       eyebrow: "Open-source ranking"
       lede: "Public users and repositories ordered by stars, monthly popularity and activity."
       organizations_lede: "Organizations and their repositories ordered by stars and monthly popularity."
-      organizations_title: "Organizations: %{scope}"
+      organizations_title: "%{scope}"
     metric:
       events: "Events"
       new_stars: "New stars"
@@ -180,7 +180,7 @@ en:
         trending: "Top 100 popular users"
     top_10_stars: "Top 10 by stars"
     trending_10_month: "Popular 10 this month"
-    users: "Users"
+    users: "People"
     users_activity_month: "Activity this month"
   packages:
     back: "Back to packages"
