@@ -104,7 +104,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #000;
+  background: var(--accent);
   color: #fff;
   font-size: 16px;
   font-weight: 700;

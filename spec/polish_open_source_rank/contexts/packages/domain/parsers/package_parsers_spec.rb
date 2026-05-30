@@ -105,6 +105,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
     expect(parse('ComposerJsonParser', 'composer.json', '{"name":"invalid"}')).to have_attributes(
       parse_status: 'partial'
     )
+    expect(parse('ComposerJsonParser', 'composer.json',
+                 '{"name":"cognesy/instructor-{{PACKAGE_NAME}}"}')).to have_attributes(
+                   parse_status: 'partial'
+                 )
     expect(parse('ComposerJsonParser', 'composer.json', '{')).to have_attributes(parse_status: 'failed')
     expect(parse('GoModParser', 'go.mod', "module github.com/acme/tool\n\ngo 1.22")).to have_attributes(
       ecosystem: 'go',
@@ -256,6 +260,9 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
       homepage_url: 'https://example.com/polish-apt',
       parse_status: 'parsed'
     )
+    expect(parse('DebianControlParser', 'debian/tests/control', 'Tests: smoke')).to have_attributes(
+      parse_status: 'partial'
+    )
     expect(parse('RpmSpecParser', 'polish-rpm.spec', rpm_spec).to_h).to include(
       ecosystem: 'rpm',
       package_name: 'polish-rpm',
@@ -287,6 +294,9 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
       homepage_url: 'https://github.com/acme/polishcran',
       license: 'MIT',
       parse_status: 'parsed'
+    )
+    expect(parse('CranDescriptionParser', 'inst/examples/demo/DESCRIPTION', 'Version: 1.0')).to have_attributes(
+      parse_status: 'partial'
     )
     expect(parse('CpanManifestParser', 'META.json', cpan_meta_json).to_h).to include(
       ecosystem: 'cpan',
