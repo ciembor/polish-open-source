@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'base64'
+require 'json'
 
 module PolishOpenSourceRank
   module Contexts
@@ -10,6 +11,7 @@ module PolishOpenSourceRank
           class GitHubRepositoryTreeGateway
             DEFAULT_MAX_BLOB_BYTES = 1_048_576
             UNAVAILABLE_STATUSES = [404, 409, 451].freeze
+            EMPTY_REPOSITORY_MESSAGE = 'Git Repository is empty.'
 
             def initialize(client, max_blob_bytes: DEFAULT_MAX_BLOB_BYTES)
               @client = client
@@ -22,7 +24,7 @@ module PolishOpenSourceRank
             end
 
             def tree(full_name, ref:)
-              body = github_response(full_name) do
+              body = github_tree_response(full_name) do
                 get("#{repository_path(full_name)}/git/trees/#{ref}", params: { recursive: 1 })
               end.body
               Domain::RepositoryTree.new(
@@ -52,8 +54,40 @@ module PolishOpenSourceRank
             rescue PolishOpenSourceRank::Infrastructure::GitHubClient::Error => e
               raise_unavailable(full_name) if UNAVAILABLE_STATUSES.include?(e.status)
 
+              raise_retryable_failure(full_name, e)
+            end
+
+            def github_tree_response(full_name)
+              yield
+            rescue PolishOpenSourceRank::Infrastructure::GitHubClient::Error => e
+              return empty_tree_response if empty_repository_tree_error?(e)
+
+              raise_unavailable(full_name) if UNAVAILABLE_STATUSES.include?(e.status)
+
+              raise_retryable_failure(full_name, e)
+            end
+
+            def empty_tree_response
+              PolishOpenSourceRank::Infrastructure::GitHubClient::Response.new(
+                status: 200,
+                headers: {},
+                body: { 'sha' => nil, 'tree' => [], 'truncated' => false }
+              )
+            end
+
+            def empty_repository_tree_error?(error)
+              error.status == 409 && error_body_message(error) == EMPTY_REPOSITORY_MESSAGE
+            end
+
+            def error_body_message(error)
+              JSON.parse(error.body.to_s).fetch('message', nil)
+            rescue JSON::ParserError
+              nil
+            end
+
+            def raise_retryable_failure(full_name, error)
               raise Application::RetryableRepositoryScanFailure,
-                    "GitHub repository scan failed for #{full_name}: HTTP #{e.status}"
+                    "GitHub repository scan failed for #{full_name}: HTTP #{error.status}"
             end
 
             def repository_path(full_name)

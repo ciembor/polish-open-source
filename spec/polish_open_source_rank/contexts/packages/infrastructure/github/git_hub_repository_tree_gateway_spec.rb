@@ -78,13 +78,31 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::GitHub:
   it 'maps unavailable repository trees to a recoverable package scan failure' do
     client.stub_error(
       '/repos/alice/conflict/git/trees/main',
-      PolishOpenSourceRank::Infrastructure::GitHubClient::Error.new('conflict', status: 409, body: '{}'),
+      PolishOpenSourceRank::Infrastructure::GitHubClient::Error.new('conflict', status: 409, body: 'conflict'),
       params: { recursive: 1 }
     )
 
     expect { gateway.tree('alice/conflict', ref: 'main') }.to raise_error(
       PolishOpenSourceRank::Contexts::Packages::Application::RepositoryUnavailable,
       'GitHub repository unavailable: alice/conflict'
+    )
+  end
+
+  it 'treats empty GitHub repositories as empty repository trees' do
+    client.stub_error(
+      '/repos/alice/empty/git/trees/main',
+      PolishOpenSourceRank::Infrastructure::GitHubClient::Error.new(
+        'conflict',
+        status: 409,
+        body: { message: 'Git Repository is empty.' }.to_json
+      ),
+      params: { recursive: 1 }
+    )
+
+    expect(gateway.tree('alice/empty', ref: 'main')).to have_attributes(
+      sha: nil,
+      truncated: false,
+      entries: []
     )
   end
 
