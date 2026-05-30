@@ -161,7 +161,8 @@ What happens when something fails:
 - If a monthly job receives `SIGINT` or `SIGTERM`, it marks the tracked crawl as `interrupted`.
 - If a monthly or package job raises an exception, it marks the tracked crawl as `failed`.
 - If the process is killed abruptly, for example by OOM or host/container loss, it may leave the tracked crawl as `running`.
-- `polish-open-source-rank-monthly.service`, `polish-open-source-rank-packages.service`, `polish-open-source-rank-crawl.service`, and `polish-open-source-rank-crawl-resume.service` use `Restart=on-failure` and retry after 60 seconds.
+- `polish-open-source-rank-monthly.service`, `polish-open-source-rank-packages.service`, and `polish-open-source-rank-crawl.service` use `Restart=on-failure` and retry after 60 seconds.
+- `polish-open-source-rank-crawl-resume.service` also retries after 60 seconds, but lock contention on `tmp/crawl.lock` exits with code `75` and is treated as a non-error because another crawl is already active.
 - `bin/resume_crawls` resumes tracked jobs with status `running` or `interrupted`.
 - A manually stopped systemd service is treated as an operator action; start the resume service when you want to continue later.
 

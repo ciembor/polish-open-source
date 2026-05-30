@@ -68,6 +68,8 @@ RSpec.describe File do
     unit = described_class.read(described_class.join(root, 'deploy/polish-open-source-rank-crawl-resume.service'))
 
     expect(unit).to include('bundle exec ruby bin/resume_crawls')
+    expect(unit).to include('SuccessExitStatus=75')
+    expect(unit).to include('/usr/bin/flock -n -E 75 /home/ciembor/polish-open-source-rank/tmp/crawl.lock')
     expect(unit).to include('Nice=10')
     expect(unit).to include('CPUWeight=20')
     expect(unit).to include('IOWeight=20')
