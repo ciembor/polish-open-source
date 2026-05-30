@@ -7,8 +7,10 @@ require 'tmpdir'
 class FakeJobGitHub
   attr_accessor :activities, :candidates, :deltas, :fail_errors, :fail_logins, :missing_logins, :profiles,
                 :repositories, :organization_candidates, :organization_fail_errors, :organization_fail_logins,
-                :organization_missing_logins, :organizations, :organization_repositories
-  attr_reader :activity_periods, :delta_periods, :searched_terms, :user_calls, :organization_calls
+                :organization_missing_logins, :organizations, :organization_repositories, :merged_pull_requests,
+                :organization_members
+  attr_reader :activity_periods, :delta_periods, :searched_terms, :user_calls, :organization_calls,
+              :merged_pull_request_periods, :organization_member_calls
 
   def initialize
     @activity_periods = []
@@ -21,15 +23,19 @@ class FakeJobGitHub
     @missing_logins = []
     @profiles = {}
     @repositories = {}
+    @merged_pull_requests = {}
     @organization_candidates = {}
     @organization_fail_errors = {}
     @organization_fail_logins = []
     @organization_missing_logins = []
     @organizations = {}
     @organization_repositories = {}
+    @organization_members = {}
     @searched_terms = []
     @user_calls = []
     @organization_calls = []
+    @merged_pull_request_periods = []
+    @organization_member_calls = []
   end
 
   def search_users_by_location(term)
@@ -84,6 +90,16 @@ class FakeJobGitHub
   def public_activity_count(profile, period)
     activity_periods << [profile.fetch(:login), period]
     activities.fetch(profile.fetch(:login), 0)
+  end
+
+  def merged_pull_requests_count(profile, period)
+    merged_pull_request_periods << [profile.fetch(:login), period]
+    merged_pull_requests.fetch(profile.fetch(:login), 0)
+  end
+
+  def organization_members_count(profile)
+    organization_member_calls << profile.fetch(:login)
+    organization_members.fetch(profile.fetch(:login), 0)
   end
 
   private
@@ -539,6 +555,59 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(fetch_candidate('alice')).to be_nil
     expect(fetch_candidate('polish-org', table: 'candidate_organizations')).to include(status: 'processed', error: nil)
     expect(fetch_user('polish-org', table: 'organizations')).to include(login: 'polish-org')
+  end
+
+  it 'stores monthly merged pull requests and organization members in snapshots' do
+    source = FakeOrganizationGitHub.new
+    source.candidates = { 'Poland' => [{ source_id: 1, login: 'alice' }] }
+    source.profiles = { 'alice' => profile(1, 'alice', 'Krakow, Poland') }
+    source.repositories = { 'alice' => [repository(10, 'alice/app', 12)] }
+    source.activities = { 'alice' => 7 }
+    source.merged_pull_requests = { 'alice' => 5 }
+    source.organization_candidates = { 'Poland' => [{ source_id: 9, login: 'polish-org' }] }
+    source.organizations = { 'polish-org' => profile(9, 'polish-org', 'Warsaw, Poland') }
+    source.organization_repositories = { 'polish-org' => [repository(20, 'polish-org/toolkit', 8)] }
+    source.organization_members = { 'polish-org' => 14 }
+
+    run_job_with(source: source)
+
+    expect(fetch_user_stats('alice')).to include(merged_pull_requests_count: 5)
+    expect(fetch_organization_stats('polish-org')).to include(members_count: 14)
+  end
+
+  it 'refreshes merged pull requests for existing users without rerunning discovery' do
+    upsert_user(user_attributes(1, 'alice'))
+    record_user_stats(user_stats(1, 'alice'))
+    github.merged_pull_requests = { 'alice' => 11 }
+
+    described_class.new(store: store, sources: [github], catalog: catalog, logger: StringIO.new).call(
+      period,
+      existing_only: true,
+      backfill: { refresh_user_merged_prs: true }
+    )
+
+    expect(fetch_user_stats('alice')).to include(merged_pull_requests_count: 11)
+    expect(github.searched_terms).to eq([])
+  end
+
+  it 'refreshes organization members for existing organizations without rediscovery' do
+    snapshot_repository.record_organization_snapshot(organization_snapshot_record(period))
+    organization_source = FakeOrganizationGitHub.new
+    organization_source.organization_members = { 'polish-org' => 23 }
+
+    described_class.new(
+      store: store,
+      sources: [organization_source],
+      catalog: catalog,
+      logger: StringIO.new
+    ).call(
+      period,
+      scope: :organizations,
+      existing_only: true,
+      backfill: { refresh_organization_members: true }
+    )
+
+    expect(fetch_organization_stats('polish-org')).to include(members_count: 23)
   end
 
   it 'does not fail an organization-scoped run because user candidates remain retryable' do
@@ -1522,7 +1591,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       avatar_url: nil,
       public_repository_count: 0,
       total_stars: 0,
-      monthly_stars_delta: 0
+      monthly_stars_delta: 0,
+      members_count: 0
     )
   end
 
@@ -1585,7 +1655,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       public_repo_count: 2,
       total_stars: 17,
       monthly_stars_delta: 4,
-      public_activity_count: 7
+      public_activity_count: 7,
+      merged_pull_requests_count: 0
     )
   end
 
@@ -1600,8 +1671,17 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
   def fetch_user_stats(login, platform: 'github')
     fetch_row(<<~SQL, [platform, login])
       SELECT period_start, platform, user_github_id, login, city, country, public_repo_count, total_stars,
-             monthly_stars_delta, public_activity_count
+             monthly_stars_delta, public_activity_count, merged_pull_requests_count
       FROM user_monthly_stats
+      WHERE platform = ? AND login = ?
+    SQL
+  end
+
+  def fetch_organization_stats(login, platform: 'github')
+    fetch_row(<<~SQL, [platform, login])
+      SELECT period_start, platform, organization_github_id, login, city, country, public_repo_count, total_stars,
+             monthly_stars_delta, members_count
+      FROM organization_monthly_stats
       WHERE platform = ? AND login = ?
     SQL
   end

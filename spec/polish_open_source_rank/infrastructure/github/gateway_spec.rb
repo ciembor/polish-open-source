@@ -106,6 +106,45 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubGateway do
     expect(gateway.public_activity_count({ login: 'alice' }, period)).to eq(1)
   end
 
+  it 'counts merged pull requests for the selected month outside the author namespace' do
+    client.queue(body: { 'total_count' => 14 })
+
+    expect(gateway.merged_pull_requests_count({ login: 'alice' }, period)).to eq(14)
+    expect(client.paths).to eq(['/search/issues'])
+    expect(client.params).to eq(
+      [
+        {
+          q: 'author:alice is:pr is:merged is:public -user:alice merged:2026-04-01..2026-04-30',
+          per_page: 1,
+          page: 1
+        }
+      ]
+    )
+  end
+
+  it 'counts organization members from the final pagination page' do
+    client.queue(body: [{ 'login' => 'alice' }], link: '<x?page=7>; rel="last"')
+
+    expect(gateway.organization_members_count({ login: 'polish-org' })).to eq(7)
+    expect(client.paths).to eq(['/orgs/polish-org/members'])
+    expect(client.params).to eq([{ per_page: 1, page: 1 }])
+  end
+
+  it 'returns zero organization members for an empty first page without pagination' do
+    client.queue(body: [])
+
+    expect(gateway.organization_members_count({ login: 'polish-org' })).to eq(0)
+  end
+
+  it 'translates missing organization members to the source contract error' do
+    client.queue_error(
+      PolishOpenSourceRank::Infrastructure::GitHubClient::NotFound.new('missing', status: 404, body: '{}')
+    )
+
+    expect { gateway.organization_members_count({ login: 'missing-org' }) }
+      .to raise_error(PolishOpenSourceRank::Contexts::Ranking::Application::SourceNotFound)
+  end
+
   it 'loads repositories across pages' do
     client.queue(body: [repository(1, 'alice/one')], link: '<x?page=2>; rel="next"')
     client.queue(body: [repository(2, 'alice/two')])

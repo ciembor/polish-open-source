@@ -21,6 +21,7 @@ module PolishOpenSourceRank
           :total_stars,
           :monthly_stars_delta,
           :public_activity_count,
+          :merged_pull_requests_count,
           keyword_init: true
         )
       end

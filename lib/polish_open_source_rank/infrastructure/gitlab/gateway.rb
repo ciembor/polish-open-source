@@ -55,6 +55,14 @@ module PolishOpenSourceRank
         0
       end
 
+      def merged_pull_requests_count(_profile, _period)
+        0
+      end
+
+      def organization_members_count(_profile)
+        0
+      end
+
       private
 
       attr_reader :client

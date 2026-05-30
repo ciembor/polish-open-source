@@ -88,6 +88,10 @@ module PolishOpenSourceRank
               snapshot_repository.record_repository_snapshot(snapshot)
             end
 
+            def record_user_stats(attributes)
+              snapshot_repository.record_user_stats(attributes)
+            end
+
             def record_organization_snapshot(snapshot)
               snapshot_repository.record_organization_snapshot(snapshot)
             end
@@ -96,8 +100,20 @@ module PolishOpenSourceRank
               snapshot_repository.record_organization_profile(snapshot)
             end
 
+            def record_organization_stats(attributes)
+              snapshot_repository.record_organization_stats(attributes)
+            end
+
             def record_organization_repository_snapshot(snapshot)
               snapshot_repository.record_organization_repository_snapshot(snapshot)
+            end
+
+            def user_stats_for_period(period, platform:)
+              snapshot_repository.user_stats_for_period(period, platform)
+            end
+
+            def organization_stats_for_period(period, platform:)
+              snapshot_repository.organization_stats_for_period(period, platform)
             end
 
             def previous_repository_stars(period, platform, repository_source_id)

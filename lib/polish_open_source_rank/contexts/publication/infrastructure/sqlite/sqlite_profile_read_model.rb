@@ -92,7 +92,7 @@ module PolishOpenSourceRank
                 SELECT users.platform, users.github_id AS source_id, users.github_id, users.login, users.name, users.location_raw, users.city,
                        users.country, users.email, users.homepage, users.html_url, users.avatar_url,
                        stats.period_start, stats.public_repo_count, stats.total_stars, stats.monthly_stars_delta,
-                       stats.public_activity_count
+                       stats.public_activity_count, stats.merged_pull_requests_count
                 FROM users
                 LEFT JOIN user_monthly_stats stats
                   ON stats.platform = users.platform
@@ -128,8 +128,8 @@ module PolishOpenSourceRank
               database.fetch_all(<<~SQL, [period_start, platform, login]).first
                 SELECT organizations.platform, organizations.github_id, organizations.login, organizations.name,
                        organizations.location_raw, organizations.city, organizations.country, organizations.email,
-                       organizations.homepage, organizations.html_url, organizations.avatar_url,
-                       stats.period_start, stats.public_repo_count, stats.total_stars, stats.monthly_stars_delta
+                       organizations.homepage, organizations.html_url, organizations.avatar_url, stats.period_start,
+                       stats.public_repo_count, stats.total_stars, stats.monthly_stars_delta, stats.members_count
                 FROM organizations
                 LEFT JOIN organization_monthly_stats stats
                   ON stats.platform = organizations.platform

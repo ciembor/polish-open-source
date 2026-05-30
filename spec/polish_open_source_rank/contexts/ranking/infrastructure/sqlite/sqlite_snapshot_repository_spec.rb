@@ -27,7 +27,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
       updated_at: '2026-05-01T12:00:00Z'
     )
     expect(row('repositories')).to include(platform: 'github', full_name: 'alice/app', fork: 0, archived: 1)
-    expect(row('user_monthly_stats')).to include(total_stars: 30, monthly_stars_delta: 4)
+    expect(row('user_monthly_stats')).to include(
+      total_stars: 30,
+      monthly_stars_delta: 4,
+      merged_pull_requests_count: 6
+    )
     expect(row('repository_monthly_stats')).to include(stargazers_count: 27, monthly_stars_delta: 2)
     expect(repository.previous_repository_stargazers_count(period, 'github', 100)).to eq(27)
   end
@@ -58,7 +62,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     )
 
     expect(row('organizations')).to include(login: 'polish-org', email: 'org@example.com')
-    expect(row('organization_monthly_stats')).to include(total_stars: 20, monthly_stars_delta: 3)
+    expect(row('organization_monthly_stats')).to include(
+      total_stars: 20,
+      monthly_stars_delta: 3,
+      members_count: 12
+    )
     expect(row('organization_repositories')).to include(full_name: 'polish-org/toolkit', archived: 0)
     expect(row('organization_repository_monthly_stats')).to include(stargazers_count: 17, monthly_stars_delta: 2)
     expect(repository.previous_organization_repository_stargazers_count(period, 'github', 200)).to eq(17)
@@ -138,7 +146,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
       public_repo_count: 1,
       total_stars: total_stars,
       monthly_stars_delta: 4,
-      public_activity_count: 9
+      public_activity_count: 9,
+      merged_pull_requests_count: 6
     }
   end
 
@@ -189,7 +198,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
       avatar_url: 'https://avatars.example.com/polish-org.png',
       public_repository_count: 1,
       total_stars: 20,
-      monthly_stars_delta: 3
+      monthly_stars_delta: 3,
+      members_count: 12
     )
   end
 

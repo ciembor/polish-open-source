@@ -11,7 +11,8 @@ module PolishOpenSourceRank
               public_repository_count: repository_metrics.public_repository_count,
               total_stars: repository_metrics.total_stars,
               monthly_stars_delta: repository_metrics.monthly_stars_delta,
-              public_activity_count: source.public_activity_count(profile, period)
+              public_activity_count: source.public_activity_count(profile, period),
+              merged_pull_requests_count: source.merged_pull_requests_count(profile, period)
             )
           end
 
@@ -21,7 +22,8 @@ module PolishOpenSourceRank
               public_repository_count: 0,
               total_stars: 0,
               monthly_stars_delta: 0,
-              public_activity_count: 0
+              public_activity_count: 0,
+              merged_pull_requests_count: 0
             )
           end
 
@@ -52,7 +54,8 @@ module PolishOpenSourceRank
               **profile_snapshot_attributes(period, source, profile, location),
               public_repository_count: repository_metrics.public_repository_count,
               total_stars: repository_metrics.total_stars,
-              monthly_stars_delta: repository_metrics.monthly_stars_delta
+              monthly_stars_delta: repository_metrics.monthly_stars_delta,
+              members_count: source.organization_members_count(profile)
             )
           end
 
@@ -61,7 +64,8 @@ module PolishOpenSourceRank
               **profile_snapshot_attributes(period, source, profile, location),
               public_repository_count: 0,
               total_stars: 0,
-              monthly_stars_delta: 0
+              monthly_stars_delta: 0,
+              members_count: 0
             )
           end
 
