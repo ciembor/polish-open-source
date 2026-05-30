@@ -6,8 +6,9 @@ module PolishOpenSourceRank
       module Infrastructure
         module SQLite
           class SQLiteRegistryPackageRepository
+            include RegistryPackageNameFiltering
+
             FETCHABLE_PARSE_STATUSES = %w[parsed partial].freeze
-            PLACEHOLDER_PACKAGE_NAMES = %w[bar baz dummy example foo src test].freeze
             REGISTRY_URLS = {
               'npm' => 'https://www.npmjs.com/package/%s',
               'rubygems' => 'https://rubygems.org/gems/%s',
@@ -165,6 +166,8 @@ module PolishOpenSourceRank
             end
 
             def record_failure(package_row, result)
+              return mark_ignored_package_row(package_row) if ignored_package_row?(package_row)
+
               registry_packages
                 .where(
                   ecosystem: package_row.fetch(:ecosystem),
@@ -173,6 +176,20 @@ module PolishOpenSourceRank
                 .update(
                   status: result.status,
                   error: result.error,
+                  checked_at: timestamp,
+                  updated_at: timestamp
+                )
+            end
+
+            def mark_ignored_package_row(package_row)
+              registry_packages
+                .where(
+                  ecosystem: package_row.fetch(:ecosystem),
+                  normalized_package_name: package_row.fetch(:normalized_package_name)
+                )
+                .update(
+                  status: 'not_found',
+                  error: ignored_package_error(package_row.fetch(:ecosystem)),
                   checked_at: timestamp,
                   updated_at: timestamp
                 )
@@ -254,9 +271,7 @@ module PolishOpenSourceRank
               end
             end
 
-            def initial_verification
-              { accepted_links: 0, rejected_links: 0, matched_links: 0 }
-            end
+            def initial_verification = { accepted_links: 0, rejected_links: 0, matched_links: 0 }
 
             def linked_manifests(package)
               registry_package_links
@@ -291,10 +306,7 @@ module PolishOpenSourceRank
                 repository_match: repository_match_status(verification),
                 repository_match_counts: verification
               )
-
-              Contexts::Packages::Domain::RegistryPackageSnapshot.new(
-                **attributes
-              )
+              Contexts::Packages::Domain::RegistryPackageSnapshot.new(**attributes)
             end
 
             def repository_match_status(verification)
@@ -302,20 +314,6 @@ module PolishOpenSourceRank
               return 'unverified' if verification.fetch(:accepted_links).positive?
 
               'missing'
-            end
-
-            def placeholder_manifest?(manifest)
-              placeholder_name?(manifest.fetch(:ecosystem), manifest.fetch(:normalized_package_name))
-            end
-
-            def placeholder_package?(package)
-              placeholder_name?(package.ecosystem, package.normalized_package_name)
-            end
-
-            def placeholder_name?(ecosystem, normalized_package_name)
-              return false unless %w[pypi rubygems].include?(ecosystem)
-
-              PLACEHOLDER_PACKAGE_NAMES.include?(normalized_package_name)
             end
 
             def registry_url(ecosystem, package_name)

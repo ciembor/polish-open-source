@@ -37,6 +37,16 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     )
   end
 
+  it 'skips invalid npm workspace paths during manifest resolve' do
+    seed_scan
+    seed_manifest(package_name: 'app-init/feature', normalized_package_name: 'app-init/feature')
+
+    repository.resolve_from_manifests(period, ecosystem: 'npm', limit: 10)
+
+    expect(registry_packages).to be_empty
+    expect(registry_links).to be_empty
+  end
+
   it 'resolves repository-signal manifests with escaped registry lookup URLs' do
     seed_scan
     seed_manifest(ecosystem: 'terraform', path: 'main.tf', package_name: 'alice/terraform-aws-tool',
@@ -106,6 +116,17 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
                                                      registry_url: 'https://rubygems.org/gems/foo'))
 
     expect(registry_packages.first).to include(status: 'not_found', error: 'placeholder package name')
+    expect(registry_snapshots).to be_empty
+  end
+
+  it 'marks invalid npm package names as not found instead of failed' do
+    seed_pending_package(package_name: 'app-init/feature',
+                         registry_url: 'https://www.npmjs.com/package/app-init/feature')
+    failure = PolishOpenSourceRank::Contexts::Packages::Domain::RegistryFetchResult.new(status: 'failed')
+
+    repository.record_fetch_result(period, registry_packages.first, failure)
+
+    expect(registry_packages.first).to include(status: 'not_found', error: 'invalid npm package name')
     expect(registry_snapshots).to be_empty
   end
 
