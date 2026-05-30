@@ -5,7 +5,7 @@
       <a class="nav__link location-nav__link js-primary-city <%= 'is-active' if @scope.fetch(:slug) == scope.fetch(:slug) %>" href="<%= h app_path(section_scope_path(scope)) %>"><%= h scope.fetch(:name) %></a>
     <% end %>
   </span>
-  <details class="nav-menu js-more-cities">
+  <details class="nav-menu nav-menu--aligned-end js-more-cities">
     <summary
       class="js-more-cities-summary"
       data-label-wide="<%= h t('nav.more_cities') %>"
