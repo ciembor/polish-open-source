@@ -80,7 +80,10 @@ module PolishOpenSourceRank
             end
 
             def normalized_content(content)
-              content.to_s.sub(/\A\xEF\xBB\xBF/u, '')
+              content.to_s
+                     .dup
+                     .force_encoding(Encoding::UTF_8)
+                     .sub(/\A\uFEFF/, '')
             end
 
             def template_like_path?(path)

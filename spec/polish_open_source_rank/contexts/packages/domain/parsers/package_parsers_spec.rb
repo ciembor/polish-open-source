@@ -31,6 +31,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
                    parse_status: 'parsed'
                  )
     expect(parse('NpmPackageJsonParser', 'package.json',
+                 "\xEF\xBB\xBF{\"name\":\"bom-package-binary\"}".b)).to have_attributes(
+                   package_name: 'bom-package-binary',
+                   parse_status: 'parsed'
+                 )
+    expect(parse('NpmPackageJsonParser', 'package.json',
                  '{"name":"broken-package" "version":"1.0.0"}')).to have_attributes(
                    parse_status: 'partial'
                  )
