@@ -30,7 +30,7 @@ pl:
         title: "Popularność"
       users:
         body: "Osoby są wyszukiwane po publicznych lokalizacjach związanych z Polską i polskimi miastami. Do rankingu trafiają profile, których publiczna lokalizacja pasuje do obsługiwanego kraju albo miasta."
-        title: "Użytkownicy"
+        title: "Ludzie"
     seo:
       title: "O Polish Open Source Rank"
       description: "Misja, zasady rankingu open source dla Polski oraz wspierane platformy GitHub, GitLab i Codeberg."
@@ -137,7 +137,7 @@ pl:
       eyebrow: "Ranking open source"
       lede: "Publiczni użytkownicy i repozytoria uporządkowane według gwiazdek, miesięcznej popularności i aktywności."
       organizations_lede: "Organizacje i ich repozytoria uporządkowane według gwiazdek oraz miesięcznej popularności."
-      organizations_title: "Organizacje: %{scope}"
+      organizations_title: "%{scope}"
     metric:
       events: "Zdarzeń"
       new_stars: "Nowe gwiazdki"
@@ -180,7 +180,7 @@ pl:
         trending: "Top 100 popularnych użytkowników"
     top_10_stars: "Top 10 według gwiazdek"
     trending_10_month: "Top 10 popularnych w miesiącu"
-    users: "Użytkownicy"
+    users: "Ludzie"
     users_activity_month: "Aktywność w miesiącu"
   packages:
     back: "Wróć do pakietów"

@@ -601,7 +601,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     expect(polish_response.body).to include('<html lang="pl">')
     expect(polish_response.body).to include('aria-label="Język"')
-    expect(polish_response.body).to include('Użytkownicy')
+    expect(polish_response.body).to include('Ludzie')
     expect(polish_response.body).to include('Zobacz top 100')
     expect(polish_response.body).to include('href="/en"')
   end
@@ -1385,7 +1385,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'rel="canonical" href="https://rank.example/latest/organizations"',
       'rel="alternate" hreflang="en" href="https://rank.example/en/latest/organizations"',
       'property="og:title" content="Organizacje open source - Polska"',
-      '>Organizacje: Polska</h1>',
+      '>Polska</h1>',
       'Organizacje i ich repozytoria uporządkowane według gwiazdek oraz miesięcznej popularności.',
       'polish-org/toolkit',
       'href="/latest/organizations/locations/krakow"',

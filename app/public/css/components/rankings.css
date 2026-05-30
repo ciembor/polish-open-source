@@ -316,8 +316,11 @@
 }
 
 .ranking-action {
+  display: block;
+  width: 100%;
+  text-align: center;
+  margin-top: 12px;
   color: var(--accent);
-  display: inline-block;
   font-size: 0.92rem;
   font-weight: 800;
   text-decoration: none;
