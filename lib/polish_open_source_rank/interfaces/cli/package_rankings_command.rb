@@ -92,7 +92,7 @@ module PolishOpenSourceRank
         end
 
         def watchdog_class
-          watchdog&.fetch(:watchdog_class) ||
+          watchdog&.fetch(:watchdog_class, nil) ||
             Contexts::Operations::Application::StalledCrawlWatchdog
         end
 
