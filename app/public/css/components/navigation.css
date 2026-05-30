@@ -154,6 +154,10 @@
   white-space: nowrap;
 }
 
+.nav-menu__panel .js-overflow-city-slot {
+  display: contents;
+}
+
 .nav-menu__panel .nav-form {
   width: 100%;
 }
