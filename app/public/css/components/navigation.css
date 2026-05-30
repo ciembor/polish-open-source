@@ -145,6 +145,11 @@
   z-index: 10;
 }
 
+.nav-menu--aligned-end .nav-menu__panel {
+  left: auto;
+  right: 0;
+}
+
 .nav-menu__panel .nav__link {
   border-radius: 6px;
   color: var(--ink);
