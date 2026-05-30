@@ -154,6 +154,20 @@
   margin: 2px 0 0;
 }
 
+.index-card__action {
+  color: var(--accent);
+  display: block;
+  font-size: 0.92rem;
+  font-weight: 800;
+  text-align: center;
+  text-decoration: none;
+  width: 100%;
+}
+
+.index-card__action:hover {
+  color: var(--accent-strong);
+}
+
 .ranking-list {
   width: 100%;
   background: var(--surface);

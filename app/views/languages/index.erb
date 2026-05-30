@@ -42,7 +42,7 @@
                 <dd>⭐ <%= h number(card.fetch(:repository_stars_count)) %></dd>
               </div>
             </dl>
-            <a class="ranking-action" href="<%= h app_path(language_path(language)) %>"><%= h t('languages.action') %></a>
+            <a class="index-card__action" href="<%= h app_path(language_path(language)) %>"><%= h t('languages.action') %></a>
           </article>
         <% end %>
       </div>
