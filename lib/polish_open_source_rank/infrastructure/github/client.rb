@@ -26,7 +26,7 @@ module PolishOpenSourceRank
       API_VERSION = '2022-11-28'
       DEFAULT_ACCEPT = 'application/vnd.github+json'
       REDIRECT_STATUSES = [301, 302, 307, 308].freeze
-      RETRYABLE_STATUSES = [403, 429, 500, 502, 503, 504].freeze
+      RETRYABLE_STATUSES = [429, 500, 502, 503, 504].freeze
       RETRYABLE_TRANSPORT_ERRORS = [
         EOFError,
         Errno::ECONNRESET,
@@ -148,9 +148,12 @@ module PolishOpenSourceRank
       end
 
       def retry_wait_seconds(response, attempts)
+        return retry_after(response) if retry_after(response)
+        return rate_limit_reset_wait(response) if rate_limited_response?(response)
+        return exponential_backoff(attempts) if secondary_rate_limit_response?(response)
         return unless RETRYABLE_STATUSES.include?(response.code.to_i)
 
-        retry_after(response) || rate_limit_reset_wait(response) || exponential_backoff(attempts)
+        exponential_backoff(attempts)
       end
 
       def retry_without_token(path, params, accept)
@@ -207,6 +210,15 @@ module PolishOpenSourceRank
       def token_lifetime_policy_forbidden?(response)
         response.code.to_i == 403 &&
           response.body.to_s.include?('forbids access via a fine-grained personal access tokens')
+      end
+
+      def rate_limited_response?(response)
+        remaining = response['x-ratelimit-remaining']
+        response.code.to_i == 403 && remaining && remaining.to_i <= 1
+      end
+
+      def secondary_rate_limit_response?(response)
+        response.code.to_i == 403 && response.body.to_s.downcase.include?('secondary rate limit')
       end
 
       def transport_error_retry_wait_seconds(attempts)

@@ -75,6 +75,23 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::GitHub:
     )
   end
 
+  it 'maps repository access blocks to the package domain unavailable error' do
+    blocked = PolishOpenSourceRank::Infrastructure::GitHubClient::Error.new(
+      'blocked',
+      status: 403,
+      body: { message: 'Repository access blocked' }.to_json
+    )
+    client.stub_error('/repos/alice/blocked', blocked)
+    client.stub_error('/repos/alice/blocked/git/trees/main', blocked, params: { recursive: 1 })
+
+    expect { gateway.repository('alice/blocked') }.to raise_error(
+      PolishOpenSourceRank::Contexts::Packages::Application::RepositoryUnavailable
+    )
+    expect { gateway.tree('alice/blocked', ref: 'main') }.to raise_error(
+      PolishOpenSourceRank::Contexts::Packages::Application::RepositoryUnavailable
+    )
+  end
+
   it 'maps unavailable repository trees to a recoverable package scan failure' do
     client.stub_error(
       '/repos/alice/conflict/git/trees/main',

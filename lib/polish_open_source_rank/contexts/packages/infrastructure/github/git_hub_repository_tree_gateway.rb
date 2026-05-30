@@ -12,6 +12,7 @@ module PolishOpenSourceRank
             DEFAULT_MAX_BLOB_BYTES = 1_048_576
             UNAVAILABLE_STATUSES = [404, 409, 451].freeze
             EMPTY_REPOSITORY_MESSAGE = 'Git Repository is empty.'
+            BLOCKED_REPOSITORY_MESSAGE = 'Repository access blocked'
 
             def initialize(client, max_blob_bytes: DEFAULT_MAX_BLOB_BYTES)
               @client = client
@@ -52,6 +53,7 @@ module PolishOpenSourceRank
             def github_response(full_name)
               yield
             rescue PolishOpenSourceRank::Infrastructure::GitHubClient::Error => e
+              raise_unavailable(full_name) if blocked_repository_error?(e)
               raise_unavailable(full_name) if UNAVAILABLE_STATUSES.include?(e.status)
 
               raise_retryable_failure(full_name, e)
@@ -62,6 +64,7 @@ module PolishOpenSourceRank
             rescue PolishOpenSourceRank::Infrastructure::GitHubClient::Error => e
               return empty_tree_response if empty_repository_tree_error?(e)
 
+              raise_unavailable(full_name) if blocked_repository_error?(e)
               raise_unavailable(full_name) if UNAVAILABLE_STATUSES.include?(e.status)
 
               raise_retryable_failure(full_name, e)
@@ -77,6 +80,10 @@ module PolishOpenSourceRank
 
             def empty_repository_tree_error?(error)
               error.status == 409 && error_body_message(error) == EMPTY_REPOSITORY_MESSAGE
+            end
+
+            def blocked_repository_error?(error)
+              error.status == 403 && error_body_message(error) == BLOCKED_REPOSITORY_MESSAGE
             end
 
             def error_body_message(error)
