@@ -7,6 +7,10 @@ module PolishOpenSourceRank
         module Parsers
           class ComposerJsonParser
             Helpers = StaticManifestParserHelpers
+            TEMPLATE_PATH_SEGMENTS = %w[
+              template templates fixture fixtures example examples demo demos sample samples
+              test tests spec specs resource resources inspection inspections
+            ].freeze
 
             def parse(path:, content:)
               data = JSON.parse(content)
@@ -24,7 +28,12 @@ module PolishOpenSourceRank
                 metadata: { path: path, issues_url: data.dig('support', 'issues') }.compact
               )
             rescue JSON::ParserError => e
-              Helpers.failed('packagist', e.message)
+              error_message = e.message
+              if template_like_path?(path) || template_like_content?(content)
+                return partial("non-literal composer.json: #{error_message}")
+              end
+
+              Helpers.failed('packagist', error_message)
             end
 
             private
@@ -44,6 +53,19 @@ module PolishOpenSourceRank
 
             def license(value)
               value.is_a?(Array) ? value.join(', ') : value
+            end
+
+            def template_like_path?(path)
+              normalized_segments = path.to_s.split('/').map { |segment| segment.downcase.gsub(/[^a-z0-9]+/, '_') }
+              normalized_segments.any? { |segment| template_segment?(segment) }
+            end
+
+            def template_like_content?(content)
+              content.to_s.match?(/{{|{%-|<%=?|<(?:warning|weak_warning)>/)
+            end
+
+            def template_segment?(segment)
+              TEMPLATE_PATH_SEGMENTS.any? { |keyword| segment.include?(keyword) }
             end
           end
         end

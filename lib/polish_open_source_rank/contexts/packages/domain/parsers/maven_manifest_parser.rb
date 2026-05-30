@@ -19,7 +19,7 @@ module PolishOpenSourceRank
             private
 
             def parse_pom(path, content)
-              document = REXML::Document.new(content)
+              document = REXML::Document.new(strip_xml_comments(content))
               root = document.root
               group_id = child_text(root, 'groupId') || child_text(child(root, 'parent'), 'groupId')
               artifact_id = child_text(root, 'artifactId')
@@ -95,6 +95,10 @@ module PolishOpenSourceRank
 
             def github_url(content)
               content[%r{https://github\.com/[^\s"',)]+}, 0]
+            end
+
+            def strip_xml_comments(content)
+              content.gsub(/<!--.*?-->/m, '')
             end
           end
         end

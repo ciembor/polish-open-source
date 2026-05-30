@@ -49,7 +49,7 @@ module PolishOpenSourceRank
                 homepage_url: text(document, 'projectUrl'),
                 license: text(document, 'license') || text(document, 'licenseUrl'),
                 confidence: text(document, 'id') ? 'high' : 'low',
-                parse_status: text(document, 'id') ? 'parsed' : 'failed',
+                parse_status: text(document, 'id') ? 'parsed' : 'partial',
                 metadata: { path: path, version: text(document, 'version') }.compact
               )
             end
