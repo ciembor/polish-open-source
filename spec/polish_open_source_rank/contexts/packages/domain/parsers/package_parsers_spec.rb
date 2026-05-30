@@ -112,6 +112,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
                  '{"name":"cognesy/instructor-{{PACKAGE_NAME}}"}')).to have_attributes(
                    parse_status: 'partial'
                  )
+    expect(parse('ComposerJsonParser', 'composer.json', '')).to have_attributes(parse_status: 'partial')
     expect(parse('ComposerJsonParser', 'composer.json', '{')).to have_attributes(parse_status: 'failed')
     expect(parse('ComposerJsonParser',
                  'src/test/resources/org/psliwa/idea/composerJson/inspection/doctrine/composer.json',
@@ -169,6 +170,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
       repository_url: 'https://github.com/acme/polish-nuspec-tool',
       homepage_url: 'https://example.com/polish-nuspec-tool',
       license: 'Apache-2.0',
+      parse_status: 'parsed'
+    )
+    expect(parse('NuGetXmlParser', '.nuspec', nuspec)).to have_attributes(
+      package_name: 'Polish.Nuspec.Tool',
       parse_status: 'parsed'
     )
     expect(parse('NuGetXmlParser', 'obj/Debug/generated.nuspec',
