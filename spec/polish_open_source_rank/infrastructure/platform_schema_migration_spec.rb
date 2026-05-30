@@ -14,6 +14,10 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration do
     expect(database.fetch_value(package_table_sql('package_crawl_runs'))).to eq(1)
     expect(database.fetch_value(package_table_sql('registry_package_snapshots'))).to eq(1)
     expect(database.table_info('users').map { |column| column.fetch('name') }).to include('platform')
+    expect(database.table_info('user_monthly_stats').map { |column| column.fetch('name') })
+      .to include('merged_pull_requests_count')
+    expect(database.table_info('organization_monthly_stats').map { |column| column.fetch('name') })
+      .to include('members_count')
   end
 
   it 'creates package ranking tables and indexes in a fresh database' do
@@ -78,6 +82,18 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration do
     expect(database.fetch_value("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'users'")).to eq(1)
   end
 
+  it 'adds new monthly metric columns to an existing current schema' do
+    database = open_database
+    database.execute_batch(legacy_current_schema_sql)
+
+    described_class.new(database, PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql).bootstrap!
+
+    expect(database.table_info('user_monthly_stats').map { |column| column.fetch('name') })
+      .to include('merged_pull_requests_count')
+    expect(database.table_info('organization_monthly_stats').map { |column| column.fetch('name') })
+      .to include('members_count')
+  end
+
   def open_database
     path = File.join(Dir.mktmpdir, 'rank.sqlite3')
     PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(path)
@@ -129,6 +145,56 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration do
         owner_github_id INTEGER NOT NULL, owner_login TEXT NOT NULL, owner_city TEXT, owner_country TEXT,
         stargazers_count INTEGER NOT NULL, monthly_stars_delta INTEGER NOT NULL, updated_at TEXT NOT NULL,
         PRIMARY KEY(period_start, repository_github_id));
+    SQL
+  end
+
+  def legacy_current_schema_sql
+    <<~SQL
+      CREATE TABLE users (
+        platform TEXT NOT NULL DEFAULT 'github',
+        github_id INTEGER NOT NULL,
+        login TEXT NOT NULL,
+        html_url TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY(platform, github_id),
+        UNIQUE(platform, login)
+      );
+      CREATE TABLE organizations (
+        platform TEXT NOT NULL DEFAULT 'github',
+        github_id INTEGER NOT NULL,
+        login TEXT NOT NULL,
+        html_url TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY(platform, github_id),
+        UNIQUE(platform, login)
+      );
+      CREATE TABLE user_monthly_stats (
+        period_start TEXT NOT NULL,
+        platform TEXT NOT NULL DEFAULT 'github',
+        user_github_id INTEGER NOT NULL,
+        login TEXT NOT NULL,
+        city TEXT,
+        country TEXT,
+        public_repo_count INTEGER NOT NULL,
+        total_stars INTEGER NOT NULL,
+        monthly_stars_delta INTEGER NOT NULL,
+        public_activity_count INTEGER NOT NULL,
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY(period_start, platform, user_github_id)
+      );
+      CREATE TABLE organization_monthly_stats (
+        period_start TEXT NOT NULL,
+        platform TEXT NOT NULL DEFAULT 'github',
+        organization_github_id INTEGER NOT NULL,
+        login TEXT NOT NULL,
+        city TEXT,
+        country TEXT,
+        public_repo_count INTEGER NOT NULL,
+        total_stars INTEGER NOT NULL,
+        monthly_stars_delta INTEGER NOT NULL,
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY(period_start, platform, organization_github_id)
+      );
     SQL
   end
 end

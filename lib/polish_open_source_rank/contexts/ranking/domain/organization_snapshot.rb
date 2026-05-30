@@ -20,6 +20,7 @@ module PolishOpenSourceRank
           :public_repository_count,
           :total_stars,
           :monthly_stars_delta,
+          :members_count,
           keyword_init: true
         )
       end

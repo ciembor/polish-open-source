@@ -20,12 +20,22 @@ module PolishOpenSourceRank
             @store_mutex = Mutex.new
             @work_events = work_events
             @snapshot_factory = MonthlySnapshotFactory.new
+            @source_metric_backfill = MonthlySourceMetricBackfill.new(
+              store: store,
+              sources: sources,
+              logger: logger,
+              work_events: work_events
+            )
           end
 
-          def call(period, refresh: false, scope: nil, recalculate_stars: false, existing_only: false)
+          def call(period, refresh: false, scope: nil, recalculate_stars: false, existing_only: false, backfill: {})
             @scope = scope
             @recalculate_stars = recalculate_stars
             @existing_only = existing_only
+            if source_metric_backfill_only?(backfill)
+              return source_metric_backfill.call(period, scope: scope, **backfill)
+            end
+
             refresh_platforms = refresh ? sources.map(&:platform) : []
             run_id = store.create_run(period, refresh_platforms: refresh_platforms)
             return unless run_id
@@ -40,7 +50,8 @@ module PolishOpenSourceRank
 
           private
 
-          attr_reader :catalog, :classifier, :logger, :snapshot_factory, :sources, :store, :store_mutex, :work_events
+          attr_reader :catalog, :classifier, :logger, :snapshot_factory, :source_metric_backfill, :sources, :store,
+                      :store_mutex, :work_events
 
           def discover_source_candidates(period, source)
             catalog.search_terms.each do |term|
@@ -374,6 +385,10 @@ module PolishOpenSourceRank
 
           def candidate_login(candidate)
             candidate.fetch(:login)
+          end
+
+          def source_metric_backfill_only?(backfill)
+            @existing_only && (backfill[:refresh_user_merged_prs] || backfill[:refresh_organization_members])
           end
 
           def recalculate_stars?

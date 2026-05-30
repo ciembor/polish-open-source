@@ -58,6 +58,16 @@ module PolishOpenSourceRank
               )
             end
 
+            def user_stats_for_period(period, platform)
+              database.fetch_all(<<~SQL, [period.start_date.to_s, platform])
+                SELECT period_start, platform, user_github_id, user_github_id AS source_id, login, city, country, public_repo_count,
+                       total_stars, monthly_stars_delta, public_activity_count, merged_pull_requests_count
+                FROM user_monthly_stats
+                WHERE period_start = ? AND platform = ?
+                ORDER BY login ASC
+              SQL
+            end
+
             def record_repository_snapshot(snapshot)
               repository_attributes = record_mapper.repository_attributes(snapshot)
               repository_stats_attributes = record_mapper.repository_stats_attributes(snapshot)
@@ -97,6 +107,29 @@ module PolishOpenSourceRank
 
             def record_organization_profile(snapshot)
               upsert_organization(record_mapper.organization_attributes(snapshot))
+            end
+
+            def record_organization_stats(attributes)
+              upsert(
+                organization_stats_dataset,
+                {
+                  period_start: attributes.fetch(:period_start),
+                  platform: attributes.fetch(:platform, 'github'),
+                  organization_github_id: attributes.fetch(:organization_github_id)
+                },
+                record_mapper.organization_stats_record(attributes)
+              )
+            end
+
+            def organization_stats_for_period(period, platform)
+              database.fetch_all(<<~SQL, [period.start_date.to_s, platform])
+                SELECT period_start, platform, organization_github_id, organization_github_id AS source_id,
+                       login, city, country, public_repo_count,
+                       total_stars, monthly_stars_delta, members_count
+                FROM organization_monthly_stats
+                WHERE period_start = ? AND platform = ?
+                ORDER BY login ASC
+              SQL
             end
 
             def record_organization_repository_snapshot(snapshot)

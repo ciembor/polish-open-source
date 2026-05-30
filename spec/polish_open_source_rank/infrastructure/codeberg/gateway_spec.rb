@@ -73,6 +73,11 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::CodebergGateway do
     expect(gateway.public_activity_count({ login: 'alice' }, period)).to eq(1)
   end
 
+  it 'uses zero for unsupported merged pull requests and organization members' do
+    expect(gateway.merged_pull_requests_count({ login: 'alice' }, period)).to eq(0)
+    expect(gateway.organization_members_count({ login: 'alice' })).to eq(0)
+  end
+
   it 'translates missing users to the source contract error' do
     client.queue_error(
       PolishOpenSourceRank::Infrastructure::CodebergClient::NotFound.new('missing', status: 404, body: '{}')

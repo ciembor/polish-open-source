@@ -36,6 +36,8 @@ module PolishOpenSourceRank
           options = { refresh: refresh?, recalculate_stars: recalculate_stars? }
           options[:scope] = scope_argument if scope_argument
           options[:existing_only] = true if existing_only?
+          backfill = monthly_metric_backfill
+          options[:backfill] = backfill unless backfill.empty?
           options
         end
 
@@ -88,6 +90,21 @@ module PolishOpenSourceRank
 
         def existing_only?
           argv.include?('--existing-only')
+        end
+
+        def refresh_user_merged_prs?
+          argv.include?('--refresh-user-merged-prs')
+        end
+
+        def refresh_organization_members?
+          argv.include?('--refresh-organization-members')
+        end
+
+        def monthly_metric_backfill
+          {}.tap do |backfill|
+            backfill[:refresh_user_merged_prs] = true if refresh_user_merged_prs?
+            backfill[:refresh_organization_members] = true if refresh_organization_members?
+          end
         end
       end
     end

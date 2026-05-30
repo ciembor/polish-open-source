@@ -108,6 +108,22 @@ module PolishOpenSourceRank
         count
       end
 
+      def merged_pull_requests_count(profile, period)
+        login = profile.fetch(:login)
+        response = client.get(
+          '/search/issues',
+          params: { q: merged_pull_request_query(login, period), per_page: 1, page: 1 }
+        )
+        Integer(response.body.fetch('total_count', 0))
+      end
+
+      def organization_members_count(profile)
+        response = client.get("/orgs/#{profile.fetch(:login)}/members", params: { per_page: 1, page: 1 })
+        member_count(response)
+      rescue GitHubClient::NotFound
+        raise Contexts::Ranking::Application::SourceNotFound
+      end
+
       private
 
       attr_reader :client
@@ -209,6 +225,24 @@ module PolishOpenSourceRank
       def last_page_number(link_header)
         match = link_header.to_s.match(/[?&]page=(\d+)>; rel="last"/)
         match && Integer(match[1])
+      end
+
+      def merged_pull_request_query(login, period)
+        [
+          "author:#{login}",
+          'is:pr',
+          'is:merged',
+          'is:public',
+          "-user:#{login}",
+          "merged:#{period.start_date}..#{period.end_date - 1}"
+        ].join(' ')
+      end
+
+      def member_count(response)
+        last_page = last_page_number(response.headers.fetch('link', nil))
+        return last_page if last_page
+
+        Array(response.body).length
       end
     end
   end

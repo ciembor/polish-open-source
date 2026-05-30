@@ -10,6 +10,7 @@ module PolishOpenSourceRank
 
       def bootstrap!
         needed? ? run : create_current_schema
+        ensure_current_columns
       end
 
       def needed?
@@ -153,6 +154,18 @@ module PolishOpenSourceRank
 
       def execute_batch(sql)
         database.execute_batch(sql)
+      end
+
+      def ensure_current_columns
+        add_column_unless_exists('user_monthly_stats', 'merged_pull_requests_count INTEGER NOT NULL DEFAULT 0')
+        add_column_unless_exists('organization_monthly_stats', 'members_count INTEGER NOT NULL DEFAULT 0')
+      end
+
+      def add_column_unless_exists(table_name, column_definition)
+        column_name = column_definition.split.first
+        return if table_columns(table_name).include?(column_name)
+
+        database.execute("ALTER TABLE #{table_name} ADD COLUMN #{column_definition}")
       end
     end
   end
