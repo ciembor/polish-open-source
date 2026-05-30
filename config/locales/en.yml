@@ -26,8 +26,8 @@ en:
         title: "Top by stars"
       title: "How rankings are built"
       trending:
-        body: "The trending ranking shows the star increase in a given month. For platforms that do not expose public star history in the needed form, the monthly increase is treated as unavailable."
-        title: "Trending"
+        body: "The popularity ranking shows the star increase in a given month. For platforms that do not expose public star history in the needed form, the monthly increase is treated as unavailable."
+        title: "Popularity"
       users:
         body: "People are found through public locations connected with Poland and Polish cities. Profiles enter the ranking when their public location matches a supported country or city."
         title: "Users"
@@ -135,8 +135,8 @@ en:
       title: "No ranking data"
     hero:
       eyebrow: "Open-source ranking"
-      lede: "Public users and repositories ordered by stars, monthly trend and activity."
-      organizations_lede: "Organizations and their repositories ordered by stars and monthly trend."
+      lede: "Public users and repositories ordered by stars, monthly popularity and activity."
+      organizations_lede: "Organizations and their repositories ordered by stars and monthly popularity."
       organizations_title: "Organizations: %{scope}"
     metric:
       events: "Events"
@@ -149,13 +149,13 @@ en:
     see_top_100: "See top 100"
     seo:
       current_period: "latest snapshot"
-      description: "Top and trending public users and repositories on code platforms for %{scope}."
-      description_latest: "Top and trending public open-source users and repositories for %{scope} in the latest snapshot."
-      description_period: "Top and trending public open-source users and repositories for %{scope} in the %{period} edition."
+      description: "Top and popularity rankings for public users and repositories on code platforms for %{scope}."
+      description_latest: "Top and popularity rankings for public open-source users and repositories for %{scope} in the latest snapshot."
+      description_period: "Top and popularity rankings for public open-source users and repositories for %{scope} in the %{period} edition."
       detail_description: "%{ranking} for %{scope}, using the %{metric} metric, in the %{period} edition."
       detail_title: "%{ranking} - %{scope} - %{period}"
-      organizations_description_latest: "Top and trending open-source organizations and organization repositories for %{scope} in the latest snapshot."
-      organizations_description_period: "Top and trending open-source organizations and organization repositories for %{scope} in the %{period} edition."
+      organizations_description_latest: "Top and popularity rankings for open-source organizations and organization repositories for %{scope} in the latest snapshot."
+      organizations_description_period: "Top and popularity rankings for open-source organizations and organization repositories for %{scope} in the %{period} edition."
       organizations_title_latest: "Open-source organizations - %{scope}"
       organizations_title_period: "Open-source organizations - %{scope} - %{period}"
       title_latest: "%{scope} open-source ranking"
@@ -167,19 +167,19 @@ en:
     title:
       organization_repositories:
         top: "Top 100 organization repositories by stars"
-        trending: "Top 100 trending organization repositories"
+        trending: "Top 100 popular organization repositories"
       organizations:
         top: "Top 100 organizations by stars"
-        trending: "Top 100 trending organizations"
+        trending: "Top 100 popular organizations"
       repositories:
         top: "Top 100 repositories by stars"
-        trending: "Top 100 trending repositories"
+        trending: "Top 100 popular repositories"
       users:
         active: "Top 100 active users"
         top: "Top 100 users by stars"
-        trending: "Top 100 trending users"
+        trending: "Top 100 popular users"
     top_10_stars: "Top 10 by stars"
-    trending_10_month: "Trending 10 this month"
+    trending_10_month: "Popular 10 this month"
     users: "Users"
     users_activity_month: "Activity this month"
   packages:
@@ -235,7 +235,7 @@ en:
       repository:
         stars:
           count: "Repository stars"
-          delta: "Trending stars"
+          delta: "New stars"
       unavailable: "n/a"
     profile:
       lede: "Public package profile with registry metrics and linked repositories."
@@ -254,7 +254,7 @@ en:
       downloads: "Top 100: %{kind}, %{ecosystem}, by total downloads"
       installs: "Top 100: %{kind}, %{ecosystem}, by 30-day installs"
       stars: "Top 100: %{kind}, %{ecosystem}, by repository stars"
-      trending: "Top 100: %{kind}, %{ecosystem}, trending"
+      trending: "Top 100: %{kind}, %{ecosystem}, popular"
       top: "Top 100: %{kind}, %{ecosystem}, by 30-day downloads"
     seo:
       ecosystem_description: "%{ecosystem} package rankings for packages used by Polish open-source repositories."
@@ -277,14 +277,14 @@ en:
       downloads: "Top 100 by total downloads"
       installs: "Top 100 by 30-day installs"
       stars: "Top 100 by repository stars"
-      trending: "Top 100 trending packages"
+      trending: "Top 100 popular packages"
       top: "Top 100 by 30-day downloads"
     ranking_preview_title:
       dependents: "Top 10 by dependent packages"
       downloads: "Top 10 by total downloads"
       installs: "Top 10 by 30-day installs"
       stars: "Top 10 repositories by stars"
-      trending: "Top 10 trending this month"
+      trending: "Top 10 popular this month"
       top: "Top 10 by 30-day downloads"
   languages:
     action: "View ranking"
@@ -292,7 +292,7 @@ en:
     back_to_language: "Back to %{language}"
     hero:
       eyebrow: "Language rankings"
-      lede: "Programming languages in Polish open-source repositories by project count, stars, and monthly trend."
+      lede: "Programming languages in Polish open-source repositories by project count, stars, and popularity."
     language_lede: "Top %{language} repositories in Polish open source."
     metric:
       repository:
@@ -305,18 +305,18 @@ en:
       user: "People"
     repository_ranking_title:
       top: "Top 100: %{kind}, %{language}, by stars"
-      trending: "Top 100: %{kind}, %{language}, trending"
+      trending: "Top 100: %{kind}, %{language}, popular"
     repository_ranking_preview_title:
       top: "Top 10 by stars"
-      trending: "Top 10 trending this month"
+      trending: "Top 10 popular this month"
     ranking_title:
       stars: "Top 100 languages by stars"
       top: "Top 100 languages by repository count"
-      trending: "Top 100 trending languages"
+      trending: "Top 100 popular languages"
     ranking_preview_title:
       stars: "Top 10 languages by stars"
       top: "Top 10 languages by repository count"
-      trending: "Top 10 trending languages"
+      trending: "Top 10 popular languages"
     repository_count: "%{count} repositories"
     seo:
       index_description: "Rankings of programming languages used in Polish open-source repositories."

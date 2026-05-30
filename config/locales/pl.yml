@@ -26,8 +26,8 @@ pl:
         title: "Top według gwiazdek"
       title: "Jak powstają rankingi"
       trending:
-        body: "Ranking trending pokazuje przyrost gwiazdek w danym miesiącu. Dla platform, które nie udostępniają publicznej historii gwiazdek w potrzebnej postaci, miesięczny przyrost jest traktowany jako niedostępny."
-        title: "Trending"
+        body: "Ranking popularności pokazuje przyrost gwiazdek w danym miesiącu. Dla platform, które nie udostępniają publicznej historii gwiazdek w potrzebnej postaci, miesięczny przyrost jest traktowany jako niedostępny."
+        title: "Popularność"
       users:
         body: "Osoby są wyszukiwane po publicznych lokalizacjach związanych z Polską i polskimi miastami. Do rankingu trafiają profile, których publiczna lokalizacja pasuje do obsługiwanego kraju albo miasta."
         title: "Użytkownicy"
@@ -135,8 +135,8 @@ pl:
       title: "Brak danych rankingowych"
     hero:
       eyebrow: "Ranking open source"
-      lede: "Publiczni użytkownicy i repozytoria uporządkowane według gwiazdek, miesięcznego trendu i aktywności."
-      organizations_lede: "Organizacje i ich repozytoria uporządkowane według gwiazdek oraz miesięcznego trendu."
+      lede: "Publiczni użytkownicy i repozytoria uporządkowane według gwiazdek, miesięcznej popularności i aktywności."
+      organizations_lede: "Organizacje i ich repozytoria uporządkowane według gwiazdek oraz miesięcznej popularności."
       organizations_title: "Organizacje: %{scope}"
     metric:
       events: "Zdarzeń"
@@ -149,13 +149,13 @@ pl:
     see_top_100: "Zobacz top 100"
     seo:
       current_period: "najnowszy snapshot"
-      description: "Top i trending publiczni użytkownicy oraz repozytoria platform kodu dla lokalizacji %{scope}."
-      description_latest: "Top i trending publiczni użytkownicy oraz repozytoria open source dla lokalizacji %{scope} w najnowszym snapshotcie."
-      description_period: "Top i trending publiczni użytkownicy oraz repozytoria open source dla lokalizacji %{scope} w edycji %{period}."
+      description: "Rankingi top i popularności publicznych użytkowników oraz repozytoriów platform kodu dla lokalizacji %{scope}."
+      description_latest: "Rankingi top i popularności publicznych użytkowników oraz repozytoriów open source dla lokalizacji %{scope} w najnowszym snapshotcie."
+      description_period: "Rankingi top i popularności publicznych użytkowników oraz repozytoriów open source dla lokalizacji %{scope} w edycji %{period}."
       detail_description: "%{ranking} dla lokalizacji %{scope}, według metryki %{metric}, w edycji %{period}."
       detail_title: "%{ranking} - %{scope} - %{period}"
-      organizations_description_latest: "Top i trending organizacje oraz repozytoria organizacji open source dla lokalizacji %{scope} w najnowszym snapshotcie."
-      organizations_description_period: "Top i trending organizacje oraz repozytoria organizacji open source dla lokalizacji %{scope} w edycji %{period}."
+      organizations_description_latest: "Rankingi top i popularności organizacji oraz repozytoriów organizacji open source dla lokalizacji %{scope} w najnowszym snapshotcie."
+      organizations_description_period: "Rankingi top i popularności organizacji oraz repozytoriów organizacji open source dla lokalizacji %{scope} w edycji %{period}."
       organizations_title_latest: "Organizacje open source - %{scope}"
       organizations_title_period: "Organizacje open source - %{scope} - %{period}"
       title_latest: "%{scope} open-source ranking"
@@ -167,19 +167,19 @@ pl:
     title:
       organization_repositories:
         top: "Top 100 repozytoriów organizacji według gwiazdek"
-        trending: "Top 100 trendujących repozytoriów organizacji"
+        trending: "Top 100 popularnych repozytoriów organizacji"
       organizations:
         top: "Top 100 organizacji według gwiazdek"
-        trending: "Top 100 trendujących organizacji"
+        trending: "Top 100 popularnych organizacji"
       repositories:
         top: "Top 100 repozytoriów według gwiazdek"
-        trending: "Top 100 trendujących repozytoriów"
+        trending: "Top 100 popularnych repozytoriów"
       users:
         active: "Top 100 aktywnych użytkowników"
         top: "Top 100 użytkowników według gwiazdek"
-        trending: "Top 100 trendujących użytkowników"
+        trending: "Top 100 popularnych użytkowników"
     top_10_stars: "Top 10 według gwiazdek"
-    trending_10_month: "Top 10 trendujących w miesiącu"
+    trending_10_month: "Top 10 popularnych w miesiącu"
     users: "Użytkownicy"
     users_activity_month: "Aktywność w miesiącu"
   packages:
@@ -236,7 +236,7 @@ pl:
       repository:
         stars:
           count: "Gwiazdki repozytorium"
-          delta: "Trend gwiazdek"
+          delta: "Nowe gwiazdki"
       unavailable: "n/a"
     profile:
       lede: "Publiczny profil pakietu z metrykami rejestru i powiązanymi repozytoriami."
@@ -255,7 +255,7 @@ pl:
       downloads: "Top 100: %{kind}, %{ecosystem}, według pobrań łącznie"
       installs: "Top 100: %{kind}, %{ecosystem}, według instalacji z 30 dni"
       stars: "Top 100: %{kind}, %{ecosystem}, według gwiazdek repozytorium"
-      trending: "Top 100: %{kind}, %{ecosystem}, trendujące"
+      trending: "Top 100: %{kind}, %{ecosystem}, popularne"
       top: "Top 100: %{kind}, %{ecosystem}, według pobrań z 30 dni"
     seo:
       ecosystem_description: "Rankingi pakietów %{ecosystem} używanych przez polskie repozytoria open source."
@@ -278,14 +278,14 @@ pl:
       downloads: "Top 100 według pobrań łącznie"
       installs: "Top 100 według instalacji z 30 dni"
       stars: "Top 100 według gwiazdek repozytorium"
-      trending: "Top 100 trendujących pakietów"
+      trending: "Top 100 popularnych pakietów"
       top: "Top 100 według pobrań z 30 dni"
     ranking_preview_title:
       dependents: "Top 10 według zależnych pakietów"
       downloads: "Top 10 według pobrań łącznie"
       installs: "Top 10 według instalacji z 30 dni"
       stars: "Top 10 repozytoriów według gwiazdek"
-      trending: "Top 10 trendujących w miesiącu"
+      trending: "Top 10 popularnych w miesiącu"
       top: "Top 10 według pobrań z 30 dni"
   languages:
     action: "Zobacz ranking"
@@ -294,7 +294,7 @@ pl:
     card_description: "Repozytoria w języku %{language}."
     hero:
       eyebrow: "Rankingi języków"
-      lede: "Języki programowania w polskich repozytoriach open source według liczby projektów, gwiazdek i trendu."
+      lede: "Języki programowania w polskich repozytoriach open source według liczby projektów, gwiazdek i popularności."
     language_lede: "Najmocniejsze repozytoria %{language} w polskim open source."
     metric:
       repository:
@@ -307,18 +307,18 @@ pl:
       user: "Ludzie"
     repository_ranking_title:
       top: "Top 100: %{kind}, %{language}, według gwiazdek"
-      trending: "Top 100: %{kind}, %{language}, trendujące"
+      trending: "Top 100: %{kind}, %{language}, popularne"
     repository_ranking_preview_title:
       top: "Top 10 według gwiazdek"
-      trending: "Top 10 trendujących w miesiącu"
+      trending: "Top 10 popularnych w miesiącu"
     ranking_title:
       stars: "Top 100 języków według gwiazdek"
       top: "Top 100 języków według liczby repozytoriów"
-      trending: "Top 100 trendujących języków"
+      trending: "Top 100 popularnych języków"
     ranking_preview_title:
       stars: "Top 10 języków według gwiazdek"
       top: "Top 10 języków według liczby repozytoriów"
-      trending: "Top 10 trendujących języków"
+      trending: "Top 10 popularnych języków"
     repository_count: "%{count} repozytoriów"
     seo:
       index_description: "Rankingi języków programowania używanych w polskich repozytoriach open source."
