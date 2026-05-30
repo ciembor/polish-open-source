@@ -104,6 +104,12 @@
   user-select: none;
 }
 
+.platform-notice {
+  text-align: center;
+  margin-top: 2.5em;
+  margin-bottom: -1em;
+}
+
 .platform-logo {
   align-items: center;
   display: flex;
