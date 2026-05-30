@@ -14,7 +14,7 @@ module PolishOpenSourceRank
                 homepage_url: field(content, 'Homepage'),
                 license: nil,
                 confidence: source ? 'high' : 'low',
-                parse_status: source ? 'parsed' : 'failed',
+                parse_status: source ? 'parsed' : 'partial',
                 metadata: {
                   path: path,
                   maintainer: field(content, 'Maintainer'),

@@ -190,6 +190,21 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
     expect(go.snapshot.to_h).to include(latest_release_at: '2026-05-01T00:00:00Z', downloads_total: nil)
   end
 
+  it 'rejects invalid Packagist package names without making HTTP requests' do
+    stub_http(response('200', packagist_body))
+
+    result = client(:PackagistRegistryClient).fetch('cognesy/instructor-{{PACKAGE_NAME}}')
+
+    expect(result.status).to eq('not_found')
+    expect(result.package.to_h).to include(
+      ecosystem: 'packagist',
+      package_name: 'cognesy/instructor-{{PACKAGE_NAME}}',
+      status: 'not_found',
+      error: 'invalid package name'
+    )
+    expect(requests).to be_empty
+  end
+
   it 'maps Homebrew formula metadata and install analytics without download labels' do
     stub_http(response('200', homebrew_body))
 

@@ -15,7 +15,7 @@ module PolishOpenSourceRank
                 homepage_url: field(content, 'URL'),
                 license: field(content, 'License'),
                 confidence: name ? 'high' : 'low',
-                parse_status: name ? 'parsed' : 'failed',
+                parse_status: name ? 'parsed' : 'partial',
                 metadata: { path: path, version: field(content, 'Version') }
               )
             end

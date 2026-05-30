@@ -39,7 +39,7 @@ module PolishOpenSourceRank
             end
 
             def valid_name?(name)
-              name.to_s.match?(%r{\A[^/]+/[^/]+\z})
+              name.to_s.match?(%r{\A[a-z0-9_.-]+/[a-z0-9_.-]+\z})
             end
 
             def license(value)

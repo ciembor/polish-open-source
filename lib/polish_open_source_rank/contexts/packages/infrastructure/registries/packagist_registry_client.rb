@@ -21,6 +21,8 @@ module PolishOpenSourceRank
             end
 
             def fetch(package_name)
+              return invalid_package_result(package_name) unless valid_name?(package_name)
+
               result = http_client.get_json("/packages/#{package_name}.json")
               return Helpers.fetch_error(result) unless result.status == 'ok'
 
@@ -41,6 +43,21 @@ module PolishOpenSourceRank
             private
 
             attr_reader :http_client
+
+            def invalid_package_result(package_name)
+              package = Domain::RegistryPackage.new(
+                ecosystem: 'packagist',
+                package_name: package_name,
+                registry_url: "#{WEB_BASE_URL}/#{package_name}",
+                status: 'not_found',
+                error: 'invalid package name'
+              )
+              Domain::RegistryFetchResult.new(status: 'not_found', package: package, error: package.error)
+            end
+
+            def valid_name?(package_name)
+              package_name.to_s.match?(%r{\A[a-z0-9_.-]+/[a-z0-9_.-]+\z})
+            end
 
             def latest_version(package_data)
               versions = package_data.fetch('versions', [])
