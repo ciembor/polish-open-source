@@ -338,10 +338,30 @@
   color: var(--accent);
 }
 
+.organization-repository-columns {
+  align-items: start;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.organization-repository-column {
+  min-width: 0;
+}
+
+.organization-repository-column h3 {
+  font-size: 1.05rem;
+  margin-bottom: 16px;
+}
+
 .project-grid {
   display: grid;
   gap: 18px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.project-grid--stacked {
+  grid-template-columns: 1fr;
 }
 
 .project-card {
@@ -500,4 +520,16 @@
 
 .badge-markdown__copy:hover {
   background: #f4f7f4;
+}
+
+@media (max-width: 780px) {
+  .organization-repository-columns,
+  .profile-access-grid,
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .project-grid {
+    grid-template-columns: 1fr;
+  }
 }

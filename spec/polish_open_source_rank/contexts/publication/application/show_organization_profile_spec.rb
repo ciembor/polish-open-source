@@ -24,6 +24,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Application::ShowOrg
     expect(result).to be_a(PolishOpenSourceRank::Contexts::Publication::Application::ProfilePage)
     expect(result.fetch(:login)).to eq('polish-org')
     expect(result.repositories).to eq([{ full_name: 'polish-org/toolkit' }])
+    expect(result.popular_repositories).to eq([{ full_name: 'polish-org/toolkit' }])
     expect(result.badges).to eq([{ label: 'Polish Open Source Org' }])
   end
 end

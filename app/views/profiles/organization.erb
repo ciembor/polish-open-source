@@ -52,11 +52,27 @@
 <section class="profile-section profile-section--alt" aria-labelledby="organization-repositories-heading">
   <div class="content">
     <h2 id="organization-repositories-heading"><%= h t('organizations.repositories.title') %></h2>
-    <%= erb :"profiles/repository_grid", locals: {
-      repositories: @repositories,
-      empty_translation_key: 'organizations.repositories.empty',
-      path_builder: method(:organization_repository_profile_path),
-      show_homepage: false
-    } %>
+    <div class="organization-repository-columns">
+      <section class="organization-repository-column" aria-labelledby="organization-top-repositories-heading">
+        <h3 id="organization-top-repositories-heading"><%= h t('organizations.repositories.top_title') %></h3>
+        <%= erb :"profiles/repository_grid", locals: {
+          repositories: @repositories,
+          empty_translation_key: 'organizations.repositories.empty',
+          path_builder: method(:organization_repository_profile_path),
+          show_homepage: false,
+          grid_class: 'project-grid project-grid--stacked'
+        } %>
+      </section>
+      <section class="organization-repository-column" aria-labelledby="organization-popular-repositories-heading">
+        <h3 id="organization-popular-repositories-heading"><%= h t('organizations.repositories.popular_title') %></h3>
+        <%= erb :"profiles/repository_grid", locals: {
+          repositories: @popular_repositories,
+          empty_translation_key: 'organizations.repositories.empty',
+          path_builder: method(:organization_repository_profile_path),
+          show_homepage: false,
+          grid_class: 'project-grid project-grid--stacked'
+        } %>
+      </section>
+    </div>
   </div>
 </section>

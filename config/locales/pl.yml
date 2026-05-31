@@ -361,7 +361,9 @@ pl:
       source_profile: "Organizacja na %{platform}"
     repositories:
       empty: "Dla tej organizacji nie zapisano jeszcze publicznych repozytoriów w aktualnym snapshotcie."
+      popular_title: "Popularne w miesiącu"
       title: "Najlepsze repozytoria"
+      top_title: "Top repozytoria"
     seo:
       title: "%{organization} - organizacja %{platform}"
       description: "Publiczny profil organizacji open source %{organization} na %{platform}, z metrykami rankingu i najlepszymi repozytoriami."

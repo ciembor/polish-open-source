@@ -9,6 +9,10 @@ module PolishOpenSourceRank
             fetch(:repositories)
           end
 
+          def popular_repositories
+            fetch(:popular_repositories, repositories)
+          end
+
           def badges
             fetch(:badges, [])
           end

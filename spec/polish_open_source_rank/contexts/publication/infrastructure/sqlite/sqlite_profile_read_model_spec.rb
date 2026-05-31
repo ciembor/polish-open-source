@@ -94,7 +94,16 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
       organization_id: 50,
       organization_login: 'polish-org',
       full_name: 'polish-org/toolkit',
-      stars: 200
+      stars: 200,
+      monthly_stars_delta: 1
+    )
+    seed_organization_repository(
+      id: 502,
+      organization_id: 50,
+      organization_login: 'polish-org',
+      full_name: 'polish-org/monthly',
+      stars: 100,
+      monthly_stars_delta: 20
     )
 
     organization = read_model.organization_profile('github', 'polish-org', period_start: period)
@@ -103,7 +112,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     expect(organization).to include(login: 'polish-org', elite_rank: 1, city_rank: 1)
     expect(organization.fetch(:profile_badge)).to include(label: 'Polish Open Source Org', value: '1st')
     expect(organization.fetch(:repositories)).to contain_exactly(
-      include(full_name: 'polish-org/toolkit', polish_repo_badge: include(label: 'Polish Org Repo', value: '1st'))
+      include(full_name: 'polish-org/toolkit', polish_repo_badge: include(label: 'Polish Org Repo', value: '1st')),
+      include(full_name: 'polish-org/monthly', polish_repo_badge: include(label: 'Polish Org Repo', value: '2nd'))
+    )
+    expect(organization.fetch(:popular_repositories).map { _1.fetch(:full_name) }).to eq(
+      %w[polish-org/monthly polish-org/toolkit]
     )
     expect(repository).to include(full_name: 'polish-org/toolkit', elite_rank: 1)
     expect(repository.fetch(:polish_repo_badge)).to include(label: 'Polish Org Repo', value: '1st')
@@ -198,7 +211,14 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     )
   end
 
-  def seed_organization_repository(id:, organization_id:, organization_login:, full_name:, stars:)
+  def seed_organization_repository(
+    id:,
+    organization_id:,
+    organization_login:,
+    full_name:,
+    stars:,
+    monthly_stars_delta: 0
+  )
     database.execute(
       <<~SQL,
         INSERT INTO organization_repositories(
@@ -218,7 +238,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       SQL
-      [period, 'github', id, organization_id, organization_login, 'Warszawa', 'Poland', stars, 0,
+      [period, 'github', id, organization_id, organization_login, 'Warszawa', 'Poland', stars, monthly_stars_delta,
        '2026-05-01T00:10:00Z']
     )
   end

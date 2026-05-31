@@ -69,6 +69,7 @@ module PolishOpenSourceRank
 
           {
             repositories: organization.fetch(:repositories),
+            popular_repositories: organization.fetch(:popular_repositories, organization.fetch(:repositories)),
             title: t('organizations.seo.title', organization: display_name, platform: source_name),
             description: t('organizations.seo.description', organization: display_name, platform: source_name),
             canonical_path: call_view(:organization_profile_path, organization)

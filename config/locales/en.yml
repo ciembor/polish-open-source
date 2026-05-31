@@ -359,7 +359,9 @@ en:
       source_profile: "%{platform} organization"
     repositories:
       empty: "No public repositories were stored for this organization in the current snapshot."
+      popular_title: "Popular this month"
       title: "Best repositories"
+      top_title: "Top repositories"
     seo:
       title: "%{organization} - %{platform} organization"
       description: "%{organization} public open-source organization on %{platform}, with ranking metrics and top repositories."

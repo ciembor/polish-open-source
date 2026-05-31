@@ -51,16 +51,18 @@ module PolishOpenSourceRank
               return unless organization
 
               ranking = organization_ranking(organization, period_start)
+              platform = organization.fetch(:platform)
+              organization_id = organization.fetch(:github_id)
+              ranking_period = ranking.fetch(:period_start)
               organization.merge(
                 elite_rank: ranking.fetch(:country_rank),
                 city_rank: ranking.fetch(:city_rank),
                 badges: [ranking.fetch(:badge)],
                 profile_badge: ranking.fetch(:badge),
-                repositories: top_organization_repositories(
-                  organization.fetch(:platform),
-                  organization.fetch(:github_id),
-                  ranking.fetch(:period_start)
-                )
+                repositories: organization_repositories(platform, organization_id, ranking_period,
+                                                        order_column: 'stargazers_count'),
+                popular_repositories: organization_repositories(platform, organization_id, ranking_period,
+                                                                order_column: 'monthly_stars_delta')
               )
             end
 
@@ -176,10 +178,16 @@ module PolishOpenSourceRank
               end
             end
 
-            def top_organization_repositories(platform, organization_id, period_start, limit: 6)
+            def organization_repositories(platform, organization_id, period_start, order_column:, limit: 6)
               return [] unless period_start
 
-              top_organization_repository_rows(platform, organization_id, period_start, limit).map do |repository|
+              organization_repository_rows(
+                platform,
+                organization_id,
+                period_start,
+                limit,
+                order_column: order_column
+              ).map do |repository|
                 repository.merge(
                   polish_repo_badge: organization_repository_badge(
                     repository.fetch(:platform),
@@ -206,7 +214,7 @@ module PolishOpenSourceRank
               SQL
             end
 
-            def top_organization_repository_rows(platform, organization_id, period_start, limit)
+            def organization_repository_rows(platform, organization_id, period_start, limit, order_column:)
               database.fetch_all(<<~SQL, [period_start, platform, organization_id])
                 SELECT repositories.platform, repositories.github_id, repositories.full_name, repositories.name,
                        repositories.description, repositories.html_url, repositories.homepage,
@@ -216,7 +224,7 @@ module PolishOpenSourceRank
                   ON repositories.platform = stats.platform
                  AND repositories.github_id = stats.repository_github_id
                 WHERE stats.period_start = ? AND stats.platform = ? AND stats.organization_github_id = ?
-                ORDER BY stats.stargazers_count DESC, repositories.full_name COLLATE NOCASE ASC
+                ORDER BY stats.#{order_column} DESC, repositories.full_name COLLATE NOCASE ASC
                 LIMIT #{bounded_limit(limit)}
               SQL
             end

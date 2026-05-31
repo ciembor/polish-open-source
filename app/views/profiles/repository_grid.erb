@@ -1,7 +1,7 @@
 <% if repositories.empty? %>
   <p class="profile-empty"><%= h t(empty_translation_key) %></p>
 <% else %>
-  <div class="project-grid">
+  <div class="<%= h(defined?(grid_class) ? grid_class : 'project-grid') %>">
     <% repositories.each do |repository| %>
       <article class="project-card">
         <div class="project-card__header">

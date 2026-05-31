@@ -235,6 +235,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(organization_profile.body).to include('rel="canonical" href="https://rank.example/organizations/github/polish-org"')
     expect(organization_profile.body).to include('"@type": "Organization"')
     expect(organization_profile.body).to include('Najmocniejsze repozytorium')
+    expect(organization_profile.body).to include('Top repozytoria')
+    expect(organization_profile.body).to include('Popularne w miesiącu')
     expect(organization_profile.body).to include('Pozycja w Warszawa')
     expect(organization_profile.body).to include('href="/organization-repositories/github/polish-org/toolkit"')
     expect(organization_profile.body).not_to include('Twój dostęp Discord')
