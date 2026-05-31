@@ -148,6 +148,12 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
       package_name: 'github.com/acme/tool',
       parse_status: 'parsed'
     )
+    expect(parse('GoModParser', 'vendor/gopkg.in/yaml.v2/go.mod',
+                 "module \"gopkg.in/yaml.v2\"\n\ngo 1.22")).to have_attributes(
+                   package_name: 'gopkg.in/yaml.v2',
+                   normalized_package_name: 'gopkg.in/yaml.v2',
+                   parse_status: 'parsed'
+                 )
     expect(parse('GoModParser', 'go.mod', 'go 1.22')).to have_attributes(parse_status: 'partial')
   end
 
