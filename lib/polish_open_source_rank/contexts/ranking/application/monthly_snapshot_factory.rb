@@ -53,6 +53,7 @@ module PolishOpenSourceRank
               public_repository_count: repository_metrics.public_repository_count,
               total_stars: repository_metrics.total_stars,
               monthly_stars_delta: repository_metrics.monthly_stars_delta,
+              merged_pull_requests_count: source.organization_merged_pull_requests_count(profile, period),
               members_count: source.organization_members_count(profile)
             )
           end
@@ -63,6 +64,7 @@ module PolishOpenSourceRank
               public_repository_count: 0,
               total_stars: 0,
               monthly_stars_delta: 0,
+              merged_pull_requests_count: 0,
               members_count: 0
             )
           end

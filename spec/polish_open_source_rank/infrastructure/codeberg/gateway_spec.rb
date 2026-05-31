@@ -75,6 +75,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::CodebergGateway do
 
   it 'uses zero for unsupported merged pull requests and organization members' do
     expect(gateway.merged_pull_requests_count({ login: 'alice' }, period)).to eq(0)
+    expect(gateway.organization_merged_pull_requests_count({ login: 'alice' }, period)).to eq(0)
     expect(gateway.organization_members_count({ login: 'alice' })).to eq(0)
   end
 

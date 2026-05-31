@@ -17,7 +17,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration do
     expect(database.table_info('user_monthly_stats').map { |column| column.fetch('name') })
       .to include('merged_pull_requests_count')
     expect(database.table_info('organization_monthly_stats').map { |column| column.fetch('name') })
-      .to include('members_count')
+      .to include('merged_pull_requests_count', 'members_count')
   end
 
   it 'creates package ranking tables and indexes in a fresh database' do
@@ -91,7 +91,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration do
     expect(database.table_info('user_monthly_stats').map { |column| column.fetch('name') })
       .to include('merged_pull_requests_count')
     expect(database.table_info('organization_monthly_stats').map { |column| column.fetch('name') })
-      .to include('members_count')
+      .to include('merged_pull_requests_count', 'members_count')
   end
 
   def open_database

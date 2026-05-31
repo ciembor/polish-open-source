@@ -8,9 +8,9 @@ class FakeJobGitHub
   attr_accessor :activities, :candidates, :deltas, :fail_errors, :fail_logins, :missing_logins, :profiles,
                 :repositories, :organization_candidates, :organization_fail_errors, :organization_fail_logins,
                 :organization_missing_logins, :organizations, :organization_repositories, :merged_pull_requests,
-                :organization_members
+                :organization_merged_pull_requests, :organization_members
   attr_reader :activity_periods, :delta_periods, :searched_terms, :user_calls, :organization_calls,
-              :merged_pull_request_periods, :organization_member_calls
+              :merged_pull_request_periods, :organization_merged_pull_request_periods, :organization_member_calls
 
   def initialize
     @activity_periods = []
@@ -30,11 +30,13 @@ class FakeJobGitHub
     @organization_missing_logins = []
     @organizations = {}
     @organization_repositories = {}
+    @organization_merged_pull_requests = {}
     @organization_members = {}
     @searched_terms = []
     @user_calls = []
     @organization_calls = []
     @merged_pull_request_periods = []
+    @organization_merged_pull_request_periods = []
     @organization_member_calls = []
   end
 
@@ -100,6 +102,11 @@ class FakeJobGitHub
   def organization_members_count(profile)
     organization_member_calls << profile.fetch(:login)
     organization_members.fetch(profile.fetch(:login), 0)
+  end
+
+  def organization_merged_pull_requests_count(profile, period)
+    organization_merged_pull_request_periods << [profile.fetch(:login), period]
+    organization_merged_pull_requests.fetch(profile.fetch(:login), 0)
   end
 
   private
@@ -582,12 +589,13 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     source.organization_candidates = { 'Poland' => [{ source_id: 9, login: 'polish-org' }] }
     source.organizations = { 'polish-org' => profile(9, 'polish-org', 'Warsaw, Poland') }
     source.organization_repositories = { 'polish-org' => [repository(20, 'polish-org/toolkit', 8)] }
+    source.organization_merged_pull_requests = { 'polish-org' => 6 }
     source.organization_members = { 'polish-org' => 14 }
 
     run_job_with(source: source)
 
     expect(fetch_user_stats('alice')).to include(merged_pull_requests_count: 5)
-    expect(fetch_organization_stats('polish-org')).to include(members_count: 14)
+    expect(fetch_organization_stats('polish-org')).to include(merged_pull_requests_count: 6, members_count: 14)
   end
 
   it 'refreshes merged pull requests for existing users without rerunning discovery' do
@@ -623,6 +631,27 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     )
 
     expect(fetch_organization_stats('polish-org')).to include(members_count: 23)
+  end
+
+  it 'refreshes organization merged pull requests for existing organizations without rediscovery' do
+    snapshot_repository.record_organization_snapshot(organization_snapshot_record(period))
+    organization_source = FakeOrganizationGitHub.new
+    organization_source.organization_merged_pull_requests = { 'polish-org' => 17 }
+
+    described_class.new(
+      store: store,
+      sources: [organization_source],
+      catalog: catalog,
+      logger: StringIO.new
+    ).call(
+      period,
+      scope: :organizations,
+      existing_only: true,
+      backfill: { refresh_organization_merged_prs: true }
+    )
+
+    expect(fetch_organization_stats('polish-org')).to include(merged_pull_requests_count: 17)
+    expect(organization_source.searched_terms).to eq([])
   end
 
   it 'does not fail an organization-scoped run because user candidates remain retryable' do
@@ -1619,6 +1648,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       public_repository_count: 0,
       total_stars: 0,
       monthly_stars_delta: 0,
+      merged_pull_requests_count: 0,
       members_count: 0
     )
   end
@@ -1706,7 +1736,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
   def fetch_organization_stats(login, platform: 'github')
     fetch_row(<<~SQL, [platform, login])
       SELECT period_start, platform, organization_github_id, login, city, country, public_repo_count, total_stars,
-             monthly_stars_delta, members_count
+             monthly_stars_delta, merged_pull_requests_count, members_count
       FROM organization_monthly_stats
       WHERE platform = ? AND login = ?
     SQL

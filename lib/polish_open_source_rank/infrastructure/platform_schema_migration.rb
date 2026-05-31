@@ -161,6 +161,7 @@ module PolishOpenSourceRank
           rebuild_user_monthly_stats_without_public_activity_count
         end
         add_column_unless_exists('user_monthly_stats', 'merged_pull_requests_count INTEGER NOT NULL DEFAULT 0')
+        add_column_unless_exists('organization_monthly_stats', 'merged_pull_requests_count INTEGER NOT NULL DEFAULT 0')
         add_column_unless_exists('organization_monthly_stats', 'members_count INTEGER NOT NULL DEFAULT 0')
       end
 

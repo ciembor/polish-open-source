@@ -1193,6 +1193,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       public_repository_count: 1,
       total_stars: 8_765,
       monthly_stars_delta: 12,
+      merged_pull_requests_count: 3,
       members_count: 42
     )
   end

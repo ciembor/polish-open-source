@@ -65,6 +65,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     expect(row('organization_monthly_stats')).to include(
       total_stars: 20,
       monthly_stars_delta: 3,
+      merged_pull_requests_count: 4,
       members_count: 12
     )
     expect(row('organization_repositories')).to include(full_name: 'polish-org/toolkit', archived: 0)
@@ -198,6 +199,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
       public_repository_count: 1,
       total_stars: 20,
       monthly_stars_delta: 3,
+      merged_pull_requests_count: 4,
       members_count: 12
     )
   end

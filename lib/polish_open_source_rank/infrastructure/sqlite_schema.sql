@@ -106,6 +106,7 @@ CREATE TABLE IF NOT EXISTS organization_monthly_stats (
   public_repo_count INTEGER NOT NULL,
   total_stars INTEGER NOT NULL,
   monthly_stars_delta INTEGER NOT NULL,
+  merged_pull_requests_count INTEGER NOT NULL DEFAULT 0,
   members_count INTEGER NOT NULL DEFAULT 0,
   updated_at TEXT NOT NULL,
   PRIMARY KEY(period_start, platform, organization_github_id),

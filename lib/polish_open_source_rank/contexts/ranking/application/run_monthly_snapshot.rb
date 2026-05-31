@@ -389,7 +389,7 @@ module PolishOpenSourceRank
           end
 
           def source_metric_backfill_only?(backfill)
-            @existing_only && (backfill[:refresh_user_merged_prs] || backfill[:refresh_organization_members])
+            @existing_only && backfill.value?(true)
           end
 
           def use_snapshot_star_diff?

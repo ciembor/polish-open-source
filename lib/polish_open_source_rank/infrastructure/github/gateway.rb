@@ -126,6 +126,15 @@ module PolishOpenSourceRank
         0
       end
 
+      def organization_merged_pull_requests_count(profile, period)
+        login = profile.fetch(:login)
+        response = client.get(
+          '/search/issues',
+          params: { q: organization_merged_pull_request_query(login, period), per_page: 1, page: 1 }
+        )
+        Integer(response.body.fetch('total_count', 0))
+      end
+
       def organization_members_count(profile)
         response = client.get("/orgs/#{profile.fetch(:login)}/members", params: { per_page: 1, page: 1 })
         member_count(response)
@@ -243,6 +252,16 @@ module PolishOpenSourceRank
           'is:merged',
           'is:public',
           "-#{qualifier('user', login)}",
+          "merged:#{period.start_date}..#{period.end_date - 1}"
+        ].join(' ')
+      end
+
+      def organization_merged_pull_request_query(login, period)
+        [
+          qualifier('org', login),
+          'is:pr',
+          'is:merged',
+          'is:public',
           "merged:#{period.start_date}..#{period.end_date - 1}"
         ].join(' ')
       end

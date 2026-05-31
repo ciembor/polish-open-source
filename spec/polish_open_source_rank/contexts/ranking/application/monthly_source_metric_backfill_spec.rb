@@ -119,6 +119,38 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::MonthlySour
     )
   end
 
+  it 'skips organization merged pull requests already refreshed in previous backfill attempts' do
+    source = instance_double(GitHubSource, platform: 'github', supports_organizations?: true)
+    allow(store).to receive(:organization_stats_for_period).with(period, platform: 'github').and_return(
+      [
+        { source_id: 1, organization_github_id: 1, login: 'done-org' },
+        { source_id: 2, organization_github_id: 2, login: 'pending-org' }
+      ]
+    )
+    allow(work_events).to receive(:successful_subject_ids).with(
+      {
+        period_start: '2026-04-01',
+        job_kind: 'monthly',
+        stage: 'organization_merged_pull_requests',
+        unit_kind: 'organization',
+        platform: 'github'
+      }
+    ).and_return(Set['1'])
+    allow(source).to receive(:organization_merged_pull_requests_count)
+      .with(hash_including(login: 'pending-org'), period)
+      .and_return(11)
+    allow(store).to receive(:record_organization_stats)
+
+    described_class.new(store: store, sources: [source], logger: logger, work_events: work_events)
+                   .call(period, refresh_organization_merged_prs: true)
+
+    expect(source).not_to have_received(:organization_merged_pull_requests_count)
+      .with(hash_including(login: 'done-org'), period)
+    expect(store).to have_received(:record_organization_stats).with(
+      hash_including(login: 'pending-org', merged_pull_requests_count: 11)
+    )
+  end
+
   it 'stops worker threads when joining source refreshes raises' do
     source_threads = instance_double(
       PolishOpenSourceRank::Contexts::Ranking::Application::MonthlySnapshotWorkflow::SourceThreads,

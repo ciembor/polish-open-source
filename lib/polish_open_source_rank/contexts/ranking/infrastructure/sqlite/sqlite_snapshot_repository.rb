@@ -125,7 +125,7 @@ module PolishOpenSourceRank
               database.fetch_all(<<~SQL, [period.start_date.to_s, platform])
                 SELECT period_start, platform, organization_github_id, organization_github_id AS source_id,
                        login, city, country, public_repo_count,
-                       total_stars, monthly_stars_delta, members_count
+                       total_stars, monthly_stars_delta, merged_pull_requests_count, members_count
                 FROM organization_monthly_stats
                 WHERE period_start = ? AND platform = ?
                 ORDER BY login ASC

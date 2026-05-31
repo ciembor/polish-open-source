@@ -90,7 +90,13 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
     allow(job).to receive(:call)
 
     described_class.call(
-      ['--month', '2026-04', '--existing-only', '--refresh-user-merged-prs', '--refresh-organization-members'],
+      [
+        '--month', '2026-04',
+        '--existing-only',
+        '--refresh-user-merged-prs',
+        '--refresh-organization-members',
+        '--refresh-organization-merged-prs'
+      ],
       job: job,
       output: output
     )
@@ -102,7 +108,8 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
       existing_only: true,
       backfill: {
         refresh_user_merged_prs: true,
-        refresh_organization_members: true
+        refresh_organization_members: true,
+        refresh_organization_merged_prs: true
       }
     )
   end

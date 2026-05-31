@@ -137,6 +137,22 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubGateway do
     )
   end
 
+  it 'counts organization merged pull requests for the selected month' do
+    client.queue(body: { 'total_count' => 21 })
+
+    expect(gateway.organization_merged_pull_requests_count({ login: 'polish-org' }, period)).to eq(21)
+    expect(client.paths).to eq(['/search/issues'])
+    expect(client.params).to eq(
+      [
+        {
+          q: 'org:polish-org is:pr is:merged is:public merged:2026-04-01..2026-04-30',
+          per_page: 1,
+          page: 1
+        }
+      ]
+    )
+  end
+
   it 'treats unavailable search users as zero merged pull requests' do
     client.queue_error(
       PolishOpenSourceRank::Infrastructure::GitHubClient::Error.new(
