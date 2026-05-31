@@ -60,17 +60,7 @@ module PolishOpenSourceRank
             rows = store.user_stats_for_period(period, platform: source.platform)
             log(source, "refreshing merged pull requests for #{rows.length} users")
             rows.each do |row|
-              record_work_event(
-                period,
-                stage: 'user_merged_pull_requests',
-                unit_kind: 'user',
-                platform: source.platform,
-                subject_id: row.fetch(:source_id),
-                subject_label: row.fetch(:login)
-              ) do
-                merged_pull_requests_count = source.merged_pull_requests_count(row, period)
-                store.record_user_stats(row.merge(merged_pull_requests_count: merged_pull_requests_count))
-              end
+              refresh_user_merged_prs_for_row(period, source, row)
             end
           end
 
@@ -109,6 +99,22 @@ module PolishOpenSourceRank
               job_kind: 'monthly',
               **attributes, &
             )
+          end
+
+          def refresh_user_merged_prs_for_row(period, source, row)
+            record_work_event(
+              period,
+              stage: 'user_merged_pull_requests',
+              unit_kind: 'user',
+              platform: source.platform,
+              subject_id: row.fetch(:source_id),
+              subject_label: row.fetch(:login)
+            ) do
+              merged_pull_requests_count = source.merged_pull_requests_count(row, period)
+              store.record_user_stats(row.merge(merged_pull_requests_count: merged_pull_requests_count))
+            end
+          rescue StandardError => e
+            log(source, "refresh merged pull requests skipped for #{row.fetch(:login)}: #{e.class}: #{e.message}")
           end
         end
       end
