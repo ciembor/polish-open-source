@@ -13,7 +13,9 @@ module PolishOpenSourceRank
           downloads_30d: '📥',
           downloads_7d: '📥',
           downloads_total: '📥',
-          merged_pull_requests_count: '🔀'
+          dependents_count: '🔗',
+          dependent_repositories_count: '🔗',
+          merged_pull_requests_count: '🚀'
         }.freeze
 
         def h(value)

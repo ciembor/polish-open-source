@@ -856,6 +856,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       period_user_top: request.get('/2026-04/packages/npm/users/top'),
       downloads: request.get('/2026-04/packages/npm/downloads'),
       dependents: request.get('/latest/packages/npm/dependents'),
+      rubygems_dependents: request.get('/latest/packages/rubygems/dependents'),
       homebrew: request.get('/latest/packages/homebrew'),
       homebrew_top: request.get('/latest/packages/homebrew/top'),
       nuget: request.get('/latest/packages/nuget'),
@@ -961,6 +962,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   def expect_package_detail_pages(responses)
     expect_npm_package_detail_pages(responses)
+    expect_rubygems_package_pages(responses)
     expect_homebrew_package_pages(responses)
     expect_nuget_package_pages(responses)
   end
@@ -989,6 +991,11 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(responses.fetch(:homebrew).body).to include('polish-tool')
     expect(responses.fetch(:homebrew_top).body).to include('Top 100 według instalacji z 30 dni')
     expect(responses.fetch(:homebrew_top).body).to include('Instalacje 30 dni')
+  end
+
+  def expect_rubygems_package_pages(responses)
+    expect(responses.fetch(:rubygems_dependents).body).to include('Top 100 według zależnych pakietów')
+    expect(responses.fetch(:rubygems_dependents).body).to include('🔗 23')
   end
 
   def expect_nuget_package_pages(responses)
@@ -1025,7 +1032,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   def expect_primary_ranking_pages(responses)
     expect(responses.fetch(:user).status).to eq(200)
     expect(responses.fetch(:user).body).to include('Top 100 użytkowników według zmergowanych PR')
-    expect(responses.fetch(:user).body).to include('🔀 8')
+    expect(responses.fetch(:user).body).to include('🚀 8')
     expect(responses.fetch(:repository).status).to eq(200)
     expect(responses.fetch(:repository).body).to include('Top 100 popularnych repozytoriów')
     expect(responses.fetch(:organization).status).to eq(200)
@@ -1206,7 +1213,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   def seed_package_records(database, period)
     seed_package(database, period, '@scope/tool', downloads_30d: 1_000)
-    seed_package(database, period, 'rack', downloads_total: 50_000, dependents_count: 23)
+    seed_package(database, period, 'rack', ecosystem: 'rubygems', downloads_total: 50_000, dependents_count: 23)
     seed_package(database, period, 'polish-tool', ecosystem: 'homebrew', downloads_30d: 250)
     seed_package(database, period, 'Polish.Tool', ecosystem: 'nuget', downloads_total: 12_000)
     seed_package(database, period, 'pl.example:polish-tool', ecosystem: 'maven')
@@ -1347,7 +1354,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       '"@type": "CollectionPage"',
       '"name": "Top 10 według gwiazdek"',
       '⭐ 12 345',
-      '🔀 8',
+      '🚀 8',
       'alice/app',
       'class="location-notice js-first-visit-notice"',
       'data-storage-key="polishOpenSourceRank.locationNoticeSeen"',
