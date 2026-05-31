@@ -14,9 +14,9 @@
           <p class="lede"><%= h record[:description] %></p>
         <% end %>
         <div class="profile-actions">
-          <a class="ranking-action" href="<%= h record.fetch(:html_url) %>"><%= h t('repositories.links.source_project', platform: platform_name(record.fetch(:platform))) %></a>
+          <a class="profile-action" href="<%= h record.fetch(:html_url) %>"><%= h t('repositories.links.source_project', platform: platform_name(record.fetch(:platform))) %></a>
           <% if record[:homepage] && !record[:homepage].empty? %>
-            <a class="ranking-action" href="<%= h record[:homepage] %>"><%= h t('users.links.homepage') %></a>
+            <a class="profile-action" href="<%= h record[:homepage] %>"><%= h t('users.links.homepage') %></a>
           <% end %>
         </div>
       </div>

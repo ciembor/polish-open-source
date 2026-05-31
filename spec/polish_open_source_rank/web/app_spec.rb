@@ -1418,12 +1418,14 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'Pozycja w rankingu Polski',
       'Pozycja w Kraków',
       'Najmocniejsze repozytorium',
+      'class="profile-action"',
       '#1',
       'Najlepsze projekty',
       'alice/app',
       '/icons/medal-gold.svg',
       '12 345'
     )
+    expect(profile_response.body).not_to include('class="ranking-action"')
     expect(profile_response.body).not_to include('/badges/users/github/alice.svg')
     expect(badge_response.status).to eq(200)
     expect(badge_response.content_type).to include('image/svg+xml')
@@ -1486,6 +1488,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile_response.body).to include('<title>alice/app - projekt GitHub</title>')
     expect(profile_response.body).to include('rel="canonical" href="https://rank.example/repositories/github/alice/app"')
     expect(profile_response.body).to include('"@type": "SoftwareSourceCode"')
+    expect(profile_response.body).to include('class="profile-action"')
+    expect(profile_response.body).not_to include('class="ranking-action"')
     expect(profile_response.body).to include('/icons/medal-gold.svg')
     expect(profile_response.body).not_to include('Odznaka na GitHub')
     expect(profile_response.body).not_to include('/badges/repositories/github/alice/app.svg')
