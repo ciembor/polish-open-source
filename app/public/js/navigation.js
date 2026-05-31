@@ -158,6 +158,49 @@ function revealFirstVisitNotices() {
   });
 }
 
+function fallbackCopyText(text) {
+  const input = document.createElement("textarea");
+  input.value = text;
+  input.setAttribute("readonly", "");
+  input.style.position = "fixed";
+  input.style.top = "-1000px";
+  document.body.appendChild(input);
+  input.select();
+
+  try {
+    document.execCommand("copy");
+  } finally {
+    input.remove();
+  }
+}
+
+function copyText(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text).catch(() => {
+      fallbackCopyText(text);
+    });
+  }
+
+  fallbackCopyText(text);
+  return Promise.resolve();
+}
+
+function markCopyButton(button) {
+  const originalLabel = button.dataset.copyLabel || button.textContent;
+  button.textContent = button.dataset.copyDoneLabel || originalLabel;
+  window.setTimeout(() => {
+    button.textContent = originalLabel;
+  }, 1600);
+}
+
+function handleBadgeMarkdownCopy(event) {
+  const button = event.target.closest(".js-copy-badge-markdown");
+  if (!button) return;
+
+  copyText(button.dataset.copyText || "").then(() => markCopyButton(button));
+}
+
+document.addEventListener("click", handleBadgeMarkdownCopy);
 window.addEventListener("resize", scheduleNavLayout);
 
 window.addEventListener("DOMContentLoaded", () => {
