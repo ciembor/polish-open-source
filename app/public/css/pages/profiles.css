@@ -223,8 +223,8 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 18px;
-  justify-content: center;
+  gap: 16px;
+  justify-content: flex-start;
   min-width: 0;
 }
 
@@ -259,7 +259,7 @@
 }
 
 .discord-access {
-  margin: 0;
+  margin: 4px 0 0;
 }
 
 .discord-access h3 {
@@ -287,7 +287,11 @@
 }
 
 .discord-panel__status {
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
   margin: 0;
+  text-align: center;
 }
 
 .profile-facts,
@@ -360,7 +364,7 @@
   align-items: stretch;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
   min-width: 0;
   width: 100%;
 }
@@ -376,26 +380,36 @@
   margin: 0;
 }
 
+.badge-preview__showcase {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 52px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.badge-preview__image-link {
+  display: inline-flex;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
 .badge-preview img {
   display: block;
   height: 20px;
   max-width: 100%;
+  object-fit: contain;
   width: auto;
+}
+
+.badge-preview--profile .badge-preview__showcase {
+  min-height: 84px;
 }
 
 .badge-preview--profile img {
   height: 46px;
-}
-
-.badge-preview__image-link {
-  align-self: flex-start;
-  display: block;
-  max-width: 100%;
-  min-width: 0;
-}
-
-.profile-badge-panel .badge-preview__image-link {
-  align-self: flex-start;
 }
 
 .badge-preview code {

@@ -1,15 +1,17 @@
 <article class="profile-summary profile-access-card discord-panel">
   <h2 id="profile-discord-heading"><%= h t('users.discord.title') %></h2>
   <div class="profile-access-card__body discord-panel__body">
-    <% if panel[:connection] %>
-      <p class="discord-panel__status"><%= h t('users.discord.connected', user: panel.fetch(:connection).fetch(:discord_username)) %></p>
-    <% end %>
     <% if error %>
       <p class="profile-empty"><%= h t("users.discord.errors.#{error}") %></p>
     <% end %>
     <div class="discord-panel__join">
       <a class="discord-join-button" href="<%= h app_path('/auth/discord') %>"><%= h t('users.discord.connect_action') %></a>
     </div>
+    <% if panel[:connection] %>
+      <p class="discord-panel__status"><%= h t('users.discord.connected', user: panel.fetch(:connection).fetch(:discord_username)) %></p>
+    <% else %>
+      <p class="discord-panel__status"><%= h t('users.discord.connect_body') %></p>
+    <% end %>
     <div class="discord-access">
       <h3><%= h t('users.discord.channels_title') %></h3>
       <ul>
