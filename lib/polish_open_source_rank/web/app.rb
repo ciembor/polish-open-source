@@ -24,7 +24,8 @@ module PolishOpenSourceRank
       set :public_folder, PolishOpenSourceRank.root.join('app/public').to_s
       set :views, PolishOpenSourceRank.root.join('app/views').to_s
 
-      RANKING_DETAIL_SEGMENTS = '(users|repositories|organizations|organization-repositories)/(top|trending|active)'
+      RANKING_DETAIL_SEGMENTS = '(users|repositories|organizations|organization-repositories)/' \
+                                '(top|trending|active|members)'
       SUPPORTED_LOCALES = %w[en pl].freeze
       DEFAULT_LOCALE = 'pl'
       CSS_ASSET_FILES = [

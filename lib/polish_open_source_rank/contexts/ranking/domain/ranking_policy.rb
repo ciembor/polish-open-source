@@ -20,7 +20,8 @@ module PolishOpenSourceRank
           }.freeze
           ORGANIZATION_RANKINGS = {
             top: Metric.new(key: :organization_top, column: 'total_stars', trending: false),
-            trending: Metric.new(key: :organization_trending, column: TRENDING_COLUMN, trending: true)
+            trending: Metric.new(key: :organization_trending, column: TRENDING_COLUMN, trending: true),
+            members: Metric.new(key: :organization_members, column: 'members_count', trending: false)
           }.freeze
           REPOSITORY_RANKINGS = {
             top: Metric.new(key: :repository_top, column: 'stargazers_count', trending: false),

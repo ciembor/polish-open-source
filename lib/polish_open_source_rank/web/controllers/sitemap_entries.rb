@@ -12,6 +12,7 @@ module PolishOpenSourceRank
           %w[repositories trending],
           %w[organizations top],
           %w[organizations trending],
+          %w[organizations members],
           %w[organization-repositories top],
           %w[organization-repositories trending]
         ].freeze

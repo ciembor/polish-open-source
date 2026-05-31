@@ -15,6 +15,7 @@ module PolishOpenSourceRank
           downloads_total: '📥',
           dependents_count: '🔗',
           dependent_repositories_count: '🔗',
+          members_count: '👥',
           merged_pull_requests_count: '🚀'
         }.freeze
 

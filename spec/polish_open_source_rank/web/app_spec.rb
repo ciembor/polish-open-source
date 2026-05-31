@@ -732,6 +732,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     sitemap_locations = REXML::XPath.match(xml_document(sitemap.body), '//url/loc').map(&:text)
     expect(sitemap_locations).to include('https://rank.example/latest')
     expect(sitemap_locations).to include('https://rank.example/latest/organizations')
+    expect(sitemap_locations).to include('https://rank.example/latest/organizations/members')
     expect(sitemap_locations).to include('https://rank.example/latest/organizations/locations/krakow')
     expect(sitemap_locations).to include('https://rank.example/en/latest')
     expect(sitemap_locations).to include('https://rank.example/about')
@@ -836,6 +837,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       user: request.get('/2026-04/locations/krakow/users/active'),
       repository: request.get('/2026-04/repositories/trending'),
       organization: request.get('/2026-04/organizations/top'),
+      organization_members: request.get('/2026-04/organizations/members'),
       organization_repository: request.get('/2026-04/organization-repositories/trending'),
       latest_user: request.get('/latest/users/top'),
       latest_city_repository: request.get('/latest/locations/krakow/repositories/top'),
@@ -1037,6 +1039,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(responses.fetch(:repository).body).to include('Top 100 popularnych repozytoriów')
     expect(responses.fetch(:organization).status).to eq(200)
     expect(responses.fetch(:organization).body).to include('Top 100 organizacji')
+    expect(responses.fetch(:organization_members).status).to eq(200)
+    expect(responses.fetch(:organization_members).body).to include('Top 100 organizacji według liczby członków')
+    expect(responses.fetch(:organization_members).body).to include('👥 42')
     expect(responses.fetch(:organization_repository).status).to eq(200)
     expect(responses.fetch(:organization_repository).body).to include('Top 100 popularnych repozytoriów organizacji')
   end
@@ -1185,7 +1190,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       avatar_url: 'https://avatars.example/polish-org.png',
       public_repository_count: 1,
       total_stars: 8_765,
-      monthly_stars_delta: 12
+      monthly_stars_delta: 12,
+      members_count: 42
     )
   end
 
@@ -1393,11 +1399,14 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'rel="alternate" hreflang="en" href="https://rank.example/en/latest/organizations"',
       'property="og:title" content="Organizacje open source - Polska"',
       '>Polska</h1>',
-      'Organizacje i ich repozytoria uporządkowane według gwiazdek oraz miesięcznej popularności.',
+      'Organizacje i ich repozytoria uporządkowane według gwiazdek, liczby członków oraz miesięcznej popularności.',
+      'Top 10 według członków',
+      '👥 42',
       'polish-org/toolkit',
       'href="/latest/organizations/locations/krakow"',
       'href="/languages"',
       'href="/latest/organizations/top"',
+      'href="/latest/organizations/members"',
       'href="/latest/organization-repositories/top"',
       'Więcej miast'
     )

@@ -71,6 +71,10 @@ module PolishOpenSourceRank
               @organization_rankings.fetch(:trending).first(10)
             ) { |row| organization_list_schema(row) },
             item_list_schema(
+              t('rankings.members_10'),
+              @organization_rankings.fetch(:members).first(10)
+            ) { |row| organization_list_schema(row) },
+            item_list_schema(
               t('rankings.organization_repositories_month'),
               @organization_repository_rankings.fetch(:top).first(10)
             ) { |row| organization_repository_list_schema(row) }

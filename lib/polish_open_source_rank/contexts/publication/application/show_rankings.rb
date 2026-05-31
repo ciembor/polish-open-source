@@ -24,7 +24,7 @@ module PolishOpenSourceRank
               return RankingsPage.new(
                 user_rankings: EMPTY_RANKINGS,
                 repository_rankings: EMPTY_RANKINGS,
-                organization_rankings: { top: [], trending: [] },
+                organization_rankings: { top: [], trending: [], members: [] },
                 organization_repository_rankings: { top: [], trending: [] }
               )
             end

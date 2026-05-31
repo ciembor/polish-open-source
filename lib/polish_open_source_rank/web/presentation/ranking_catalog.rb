@@ -28,6 +28,11 @@ module PolishOpenSourceRank
             title_key: 'rankings.title.organizations.trending',
             label_key: 'rankings.metric.new_stars'
           ),
+          %w[organizations members] => Descriptor.new(
+            column: RankingPolicy.column(:organization_members).to_sym,
+            title_key: 'rankings.title.organizations.members',
+            label_key: 'rankings.metric.members'
+          ),
           %w[organization-repositories top] => Descriptor.new(
             column: RankingPolicy.column(:organization_repository_top).to_sym,
             title_key: 'rankings.title.organization_repositories.top',

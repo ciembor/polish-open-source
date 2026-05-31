@@ -139,12 +139,14 @@ en:
     hero:
       eyebrow: "Open-source ranking"
       lede: "Public users and repositories ordered by stars, monthly popularity and merged pull requests."
-      organizations_lede: "Organizations and their repositories ordered by stars and monthly popularity."
+      organizations_lede: "Organizations and their repositories ordered by stars, member count, and monthly popularity."
       organizations_title: "%{scope}"
     metric:
+      members: "Members"
       merged_pull_requests: "Merged PRs"
       new_stars: "New stars"
       stars: "Stars"
+    members_10: "Top 10 by members"
     organization_repositories_month: "Organization repositories"
     organizations: "Organizations"
     repositories: "Repositories"
@@ -157,8 +159,8 @@ en:
       description_period: "Top and popularity rankings for public open-source users and repositories for %{scope} in the %{period} edition."
       detail_description: "%{ranking} for %{scope}, using the %{metric} metric, in the %{period} edition."
       detail_title: "%{ranking} - %{scope} - %{period}"
-      organizations_description_latest: "Top and popularity rankings for open-source organizations and organization repositories for %{scope} in the latest snapshot."
-      organizations_description_period: "Top and popularity rankings for open-source organizations and organization repositories for %{scope} in the %{period} edition."
+      organizations_description_latest: "Top, member count, and popularity rankings for open-source organizations and organization repositories for %{scope} in the latest snapshot."
+      organizations_description_period: "Top, member count, and popularity rankings for open-source organizations and organization repositories for %{scope} in the %{period} edition."
       organizations_title_latest: "Open-source organizations - %{scope}"
       organizations_title_period: "Open-source organizations - %{scope} - %{period}"
       title_latest: "%{scope} open-source ranking"
@@ -172,6 +174,7 @@ en:
         top: "Top 100 organization repositories by stars"
         trending: "Top 100 popular organization repositories"
       organizations:
+        members: "Top 100 organizations by members"
         top: "Top 100 organizations by stars"
         trending: "Top 100 popular organizations"
       repositories:
