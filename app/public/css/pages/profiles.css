@@ -427,6 +427,16 @@
     width: auto;
 }
 
+.repository-badge-preview .badge-preview__showcase {
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
+.repository-badge-preview .badge-markdown {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .user-repository-badge-preview + .user-repository-badge-preview {
   margin-top: 20px;
 }
