@@ -46,6 +46,9 @@ pl:
       description: "Zalogowane konto GitHub nie znajduje się w aktualnym rankingu."
       eyebrow: "Logowanie GitHub"
       title: "Nie znaleziono profilu w rankingu"
+  badges:
+    copied: "Skopiowano"
+    copy: "Kopiuj"
   editions:
     action:
       month_ranking: "Ranking miesiąca"

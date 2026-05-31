@@ -46,6 +46,9 @@ en:
       description: "The authenticated GitHub account is not in the current ranking."
       eyebrow: "GitHub login"
       title: "Ranking profile not found"
+  badges:
+    copied: "Copied"
+    copy: "Copy"
   editions:
     action:
       month_ranking: "Month ranking"
