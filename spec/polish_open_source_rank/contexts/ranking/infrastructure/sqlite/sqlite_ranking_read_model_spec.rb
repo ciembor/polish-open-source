@@ -78,9 +78,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
   it 'returns scoped organization rankings' do
     seed_organization(id: 100, login: 'polish-org', stars: 80, delta: 10, members: 12)
     seed_organization(id: 200, login: 'second-org', city: 'Kraków', stars: 70, delta: 4, members: 30)
+    seed_organization(id: 300, login: 'zero-members-org', stars: 60, delta: 2)
 
     expect(read_model.organization_rankings(period_start: period).fetch(:top).map { _1.fetch(:login) }).to eq(
-      %w[polish-org second-org]
+      %w[polish-org second-org zero-members-org]
     )
     expect(read_model.organization_rankings('krakow', period_start: period).fetch(:top).map { _1.fetch(:login) }).to eq(
       ['second-org']

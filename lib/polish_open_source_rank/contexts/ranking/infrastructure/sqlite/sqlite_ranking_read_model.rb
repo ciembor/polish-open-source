@@ -127,7 +127,7 @@ module PolishOpenSourceRank
             attr_reader :catalog, :database
 
             def trending_filter(order_column, table_alias)
-              Domain::RankingPolicy.trending?(order_column) ? "AND #{table_alias}.monthly_stars_delta > 0" : ''
+              Domain::RankingPolicy.positive_ranking?(order_column) ? "AND #{table_alias}.#{order_column} > 0" : ''
             end
 
             def user_scope(scope)

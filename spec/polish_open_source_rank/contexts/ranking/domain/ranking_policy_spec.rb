@@ -13,4 +13,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Domain::RankingPolicy do
     expect(described_class::USER_TIE_BREAKER).to eq('login COLLATE NOCASE ASC')
     expect(described_class::REPOSITORY_TIE_BREAKER).to include('repository_github_id ASC')
   end
+
+  it 'marks member count rankings as positive-value rankings' do
+    expect(described_class).to be_positive_ranking('members_count')
+  end
 end

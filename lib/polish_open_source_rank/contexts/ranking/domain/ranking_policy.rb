@@ -7,6 +7,7 @@ module PolishOpenSourceRank
         class RankingPolicy
           RANKING_LIMIT = 100
           TRENDING_COLUMN = 'monthly_stars_delta'
+          POSITIVE_RANKING_COLUMNS = [TRENDING_COLUMN, 'members_count'].freeze
           Metric = Struct.new(:key, :column, :trending, keyword_init: true) do
             def trending?
               trending
@@ -55,6 +56,10 @@ module PolishOpenSourceRank
 
           def self.trending?(column)
             column == TRENDING_COLUMN
+          end
+
+          def self.positive_ranking?(column)
+            POSITIVE_RANKING_COLUMNS.include?(column)
           end
 
           def self.bounded_limit(limit)
