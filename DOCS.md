@@ -73,7 +73,8 @@ Run a specific month:
 
 ```sh
 bin/monthly_rankings --month 2026-04
-bin/monthly_rankings --month 2026-04 --refresh --recalculate-stars
+bin/monthly_rankings --month 2026-04 --refresh
+bin/monthly_rankings --month 2026-04 --use-stars-diff
 ```
 
 The job intentionally favors stability over speed:
@@ -89,6 +90,10 @@ For GitHub repositories, monthly `stargazers_count` is historical at the period 
 without dated star history, repository stars may remain the value observed during the
 monthly crawl, while `monthly_stars_delta` falls back to the best available source
 calculation.
+
+By default, monthly star deltas are fetched from source history for the requested
+calendar month. `--use-stars-diff` uses the difference between the current observation
+and the previous stored monthly snapshot instead.
 
 Production uses the systemd timer in [deploy/polish-open-source-rank-monthly.timer](deploy/polish-open-source-rank-monthly.timer).
 
@@ -171,8 +176,8 @@ The monthly ranking job resumes at the data level:
 - already processed candidates and already written monthly stats are skipped;
 - retryable candidate failures can be picked up on the next attempt;
 - `--refresh` intentionally reprocesses the selected period/platform/scope.
-- `--recalculate-stars` ignores previous stored repository star observations and fetches monthly star
-  history again from the source API; use it with `--refresh` when recomputing an existing month.
+- `--use-stars-diff` uses previous stored repository star observations instead of fetching monthly
+  star history again from the source API.
 
 The package ranking job also resumes at the data level:
 
@@ -252,10 +257,10 @@ sudo systemctl start polish-open-source-rank-crawl.service
 sudo journalctl -u polish-open-source-rank-crawl.service -f
 ```
 
-Continue the same manual monthly crawl after an interruption by starting the resume service or by starting the same command without `--refresh`. Overwrite/recompute it by adding `--refresh`; add `--recalculate-stars` when repository star deltas should be fetched again from source history instead of reused from previous observations:
+Continue the same manual monthly crawl after an interruption by starting the resume service or by starting the same command without `--refresh`. Overwrite/recompute it by adding `--refresh`; add `--use-stars-diff` only when repository star deltas should be estimated from previous stored observations instead of fetched from source history:
 
 ```sh
-printf 'CRAWL_ARGS="--month 2026-04 --platform github --scope organizations --refresh --recalculate-stars"\n' > .crawl.env
+printf 'CRAWL_ARGS="--month 2026-04 --platform github --scope organizations --refresh"\n' > .crawl.env
 sudo systemctl start polish-open-source-rank-crawl.service
 ```
 

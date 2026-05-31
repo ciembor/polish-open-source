@@ -2,7 +2,7 @@
 
 namespace :crawl do
   desc 'Run a monthly crawl: rake crawl:monthly[2026-04,github,organizations,false,false]'
-  task :monthly, %i[month platform scope refresh recalculate_stars] do |_task, args|
+  task :monthly, %i[month platform scope refresh use_stars_diff] do |_task, args|
     PolishOpenSourceRank::Interfaces::Composition::RankingJobFactory.build(monthly_argv(args)).call
   end
 
@@ -54,7 +54,7 @@ def monthly_argv(args)
   argv += ['--platform', args[:platform]] if args[:platform]
   argv += ['--scope', args[:scope]] if args[:scope]
   argv << '--refresh' if args[:refresh] == 'true'
-  argv << '--recalculate-stars' if args[:recalculate_stars] == 'true'
+  argv << '--use-stars-diff' if args[:use_stars_diff] == 'true'
   argv
 end
 

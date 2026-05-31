@@ -22,11 +22,11 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
     expect(job).to have_received(:call).with(
       have_attributes(key: '2026-04'),
       refresh: true,
-      recalculate_stars: false
+      use_snapshot_star_diff: false
     )
   end
 
-  it 'passes explicit star recalculation requests to the monthly job' do
+  it 'keeps source star history enabled for explicit star recalculation requests' do
     output = StringIO.new
     job = instance_double(PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlySnapshot)
     allow(job).to receive(:call)
@@ -36,7 +36,21 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
     expect(job).to have_received(:call).with(
       have_attributes(key: '2026-04'),
       refresh: true,
-      recalculate_stars: true
+      use_snapshot_star_diff: false
+    )
+  end
+
+  it 'passes explicit star diff requests to the monthly job' do
+    output = StringIO.new
+    job = instance_double(PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlySnapshot)
+    allow(job).to receive(:call)
+
+    described_class.call(['--month', '2026-04', '--use-stars-diff'], job: job, output: output)
+
+    expect(job).to have_received(:call).with(
+      have_attributes(key: '2026-04'),
+      refresh: false,
+      use_snapshot_star_diff: true
     )
   end
 
@@ -50,7 +64,7 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
     expect(job).to have_received(:call).with(
       have_attributes(key: '2026-04'),
       refresh: false,
-      recalculate_stars: false,
+      use_snapshot_star_diff: false,
       scope: :organizations
     )
   end
@@ -65,7 +79,7 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
     expect(job).to have_received(:call).with(
       have_attributes(key: '2026-04'),
       refresh: false,
-      recalculate_stars: false,
+      use_snapshot_star_diff: false,
       existing_only: true
     )
   end
@@ -84,7 +98,7 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
     expect(job).to have_received(:call).with(
       have_attributes(key: '2026-04'),
       refresh: false,
-      recalculate_stars: false,
+      use_snapshot_star_diff: false,
       existing_only: true,
       backfill: {
         refresh_user_merged_prs: true,
@@ -219,7 +233,7 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
     expect(job).to have_received(:call).with(
       have_attributes(key: '2026-04'),
       refresh: false,
-      recalculate_stars: false
+      use_snapshot_star_diff: false
     )
   end
 end

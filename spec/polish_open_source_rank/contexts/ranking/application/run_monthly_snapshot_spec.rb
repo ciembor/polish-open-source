@@ -484,7 +484,22 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(github.activity_periods).to be_empty
   end
 
-  it 'uses previous repository observations and skips repositories below the catalog star threshold' do
+  it 'uses source star history by default even when previous repository observations exist' do
+    previous_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-03')
+    seed_previous_repository_observation(previous_period)
+    github.candidates = { 'Poland' => [{ source_id: 1, login: 'alice' }] }
+    github.profiles = { 'alice' => profile(1, 'alice', 'Krakow, Poland') }
+    github.repositories = { 'alice' => [repository(10, 'alice/app', 14)] }
+    github.deltas = { 'alice/app' => 9 }
+
+    job.call(period)
+
+    expect(fetch_user_stats('alice')).to include(monthly_stars_delta: 9)
+    expect(fetch_repository_stats('alice/app')).to include(monthly_stars_delta: 9)
+    expect(github.delta_periods).to eq([['alice/app', period]])
+  end
+
+  it 'can use previous repository observations and skips repositories below the catalog star threshold' do
     previous_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-03')
     seed_previous_repository_observation(previous_period)
     github.candidates = { 'Poland' => [{ source_id: 1, login: 'alice' }] }
@@ -498,7 +513,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     }
     github.deltas = { 'alice/new' => 2 }
 
-    job.call(period)
+    job.call(period, use_snapshot_star_diff: true)
 
     expect(fetch_user_stats('alice')).to include(monthly_stars_delta: 6)
     expect(fetch_repository_stats('alice/app')).to include(monthly_stars_delta: 4)
@@ -524,7 +539,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(source.delta_periods).to be_empty
   end
 
-  it 'can recalculate repository star deltas from source history during a refresh' do
+  it 'uses repository star deltas from source history during a refresh' do
     previous_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-03')
     seed_previous_repository_observation(previous_period)
     github.candidates = { 'Poland' => [{ source_id: 1, login: 'alice' }] }
@@ -532,7 +547,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     github.repositories = { 'alice' => [repository(10, 'alice/app', 14)] }
     github.deltas = { 'alice/app' => 9 }
 
-    job.call(period, refresh: true, recalculate_stars: true)
+    job.call(period, refresh: true)
 
     expect(fetch_user_stats('alice')).to include(monthly_stars_delta: 9)
     expect(fetch_repository_stats('alice/app')).to include(monthly_stars_delta: 9)
