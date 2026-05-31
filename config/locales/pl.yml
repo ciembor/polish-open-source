@@ -333,7 +333,7 @@ pl:
   repositories:
     badge:
       alt: "Badge Polish Repo"
-      title: "Odznaka na GitHub"
+      title: "Odznaki repozytoriów"
     links:
       source_project: "Projekt na %{platform}"
     seo:
@@ -372,7 +372,7 @@ pl:
     avatar_alt: "Zdjęcie profilowe %{user}"
     badge:
       alt: "Badge Polish Open Source"
-      title: "Odznaka na GitHub"
+      title: "Odznaka"
     discord:
       channels_title: "Kanały do pisania"
       city_rank: "Ranking %{city}"
@@ -390,6 +390,10 @@ pl:
       poland_rank: "Ranking Polski"
       status: "Discord"
       title: "Twój dostęp Discord"
+    profile_access:
+      title: "Dostęp i odznaka"
+    repository_badges:
+      title: "Odznaki repozytoriów"
     links:
       homepage: "Strona"
       source_profile: "Profil na %{platform}"

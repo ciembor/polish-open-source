@@ -1,25 +1,21 @@
-<section class="profile-section" aria-labelledby="profile-discord-heading">
-  <div class="content">
-    <article class="profile-summary discord-panel">
-      <h2 id="profile-discord-heading"><%= h t('users.discord.title') %></h2>
-      <% if panel[:connection] %>
-        <p><%= h t('users.discord.connected', user: panel.fetch(:connection).fetch(:discord_username)) %></p>
-      <% end %>
-      <% if error %>
-        <p class="profile-empty"><%= h t("users.discord.errors.#{error}") %></p>
-      <% end %>
-      <div class="discord-panel__join">
-        <a class="discord-join-button" href="<%= h app_path('/auth/discord') %>"><%= h t('users.discord.connect_action') %></a>
-      </div>
-
-      <div class="discord-access">
-        <h3><%= h t('users.discord.channels_title') %></h3>
-        <ul>
-          <% panel.fetch(:access_channels).each do |channel| %>
-            <li><%= h channel %></li>
-          <% end %>
-        </ul>
-      </div>
-    </article>
+<article class="profile-summary discord-panel">
+  <h2 id="profile-discord-heading"><%= h t('users.discord.title') %></h2>
+  <% if panel[:connection] %>
+    <p><%= h t('users.discord.connected', user: panel.fetch(:connection).fetch(:discord_username)) %></p>
+  <% end %>
+  <% if error %>
+    <p class="profile-empty"><%= h t("users.discord.errors.#{error}") %></p>
+  <% end %>
+  <div class="discord-panel__join">
+    <a class="discord-join-button" href="<%= h app_path('/auth/discord') %>"><%= h t('users.discord.connect_action') %></a>
   </div>
-</section>
+
+  <div class="discord-access">
+    <h3><%= h t('users.discord.channels_title') %></h3>
+    <ul>
+      <% panel.fetch(:access_channels).each do |channel| %>
+        <li><%= h channel %></li>
+      <% end %>
+    </ul>
+  </div>
+</article>

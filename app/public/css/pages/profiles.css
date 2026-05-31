@@ -192,6 +192,13 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.profile-access-grid {
+  align-items: stretch;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .profile-summary,
 .project-card {
   background: var(--surface);
@@ -202,7 +209,8 @@
 }
 
 .discord-panel {
-  max-width: 760px;
+  display: flex;
+  flex-direction: column;
 }
 
 .discord-panel__join {
@@ -256,6 +264,15 @@
   font-size: 0.9rem;
   font-weight: 800;
   padding: 7px 10px;
+}
+
+.profile-badge-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-badge-panel .badge-preview {
+  margin-top: 14px;
 }
 
 .profile-facts,
@@ -346,6 +363,10 @@
 .badge-preview img {
   height: 20px;
   width: auto;
+}
+
+.badge-preview--profile img {
+  height: 46px;
 }
 
 .badge-preview code {

@@ -331,7 +331,7 @@ en:
   repositories:
     badge:
       alt: "Polish Repo badge"
-      title: "GitHub badge"
+      title: "Repository badges"
     links:
       source_project: "%{platform} project"
     seo:
@@ -370,7 +370,7 @@ en:
     avatar_alt: "%{user} profile photo"
     badge:
       alt: "Polish Open Source badge"
-      title: "GitHub badge"
+      title: "Badge"
     discord:
       channels_title: "Writable channels"
       city_rank: "%{city} rank"
@@ -388,6 +388,10 @@ en:
       poland_rank: "Poland rank"
       status: "Discord"
       title: "Your Discord access"
+    profile_access:
+      title: "Access and badge"
+    repository_badges:
+      title: "Repository badges"
     links:
       homepage: "Website"
       source_profile: "%{platform} profile"

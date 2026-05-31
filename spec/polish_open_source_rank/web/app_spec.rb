@@ -1442,6 +1442,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'Dołącz do Elite Discorda',
       'href="/auth/discord"',
       'Kanały do pisania',
+      'Odznaka',
+      'Odznaki repozytoriów',
       'general',
       'Top 10 PL',
       'Top 100 PL',
@@ -1449,6 +1451,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       '/badges/users/github/alice.svg',
       '/badges/repositories/github/alice/app.svg'
     )
+    expect(profile.body).not_to include('Odznaka na GitHub')
     expect(profile.body).not_to include('Ranking Polski')
     expect(profile.body).not_to include('Ranking Kraków')
     expect(profile.body).not_to include('Nie ma cię w rankingu?')
@@ -1493,7 +1496,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile_response.body).to include('/icons/medal-gold.svg')
     expect(profile_response.body).not_to include('Odznaka na GitHub')
     expect(profile_response.body).not_to include('/badges/repositories/github/alice/app.svg')
-    expect(owner_profile_response.body).to include('Odznaka na GitHub')
+    expect(owner_profile_response.body).to include('Odznaki repozytoriów')
+    expect(owner_profile_response.body).not_to include('Odznaka na GitHub')
     expect(owner_profile_response.body).to include('/badges/repositories/github/alice/app.svg')
     expect(owner_profile_response.body).to include(
       '[![Badge Polish Repo](https://rank.example/badges/repositories/github/alice/app.svg)]'
