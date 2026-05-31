@@ -61,7 +61,7 @@ module PolishOpenSourceRank
             def user_stats_for_period(period, platform)
               database.fetch_all(<<~SQL, [period.start_date.to_s, platform])
                 SELECT period_start, platform, user_github_id, user_github_id AS source_id, login, city, country, public_repo_count,
-                       total_stars, monthly_stars_delta, public_activity_count, merged_pull_requests_count
+                       total_stars, monthly_stars_delta, merged_pull_requests_count
                 FROM user_monthly_stats
                 WHERE period_start = ? AND platform = ?
                 ORDER BY login ASC

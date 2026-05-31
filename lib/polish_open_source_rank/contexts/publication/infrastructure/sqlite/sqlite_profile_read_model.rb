@@ -92,7 +92,7 @@ module PolishOpenSourceRank
                 SELECT users.platform, users.github_id AS source_id, users.github_id, users.login, users.name, users.location_raw, users.city,
                        users.country, users.email, users.homepage, users.html_url, users.avatar_url,
                        stats.period_start, stats.public_repo_count, stats.total_stars, stats.monthly_stars_delta,
-                       stats.public_activity_count, stats.merged_pull_requests_count
+                       stats.merged_pull_requests_count
                 FROM users
                 LEFT JOIN user_monthly_stats stats
                   ON stats.platform = users.platform

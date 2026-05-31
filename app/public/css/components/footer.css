@@ -96,6 +96,11 @@
   text-decoration: none;
 }
 
+.site-footer a:hover,
+.site-footer a:active {
+  color: var(--accent);
+}
+
 @media (max-width: 520px) {
   .site-author__inner {
     align-items: flex-start;

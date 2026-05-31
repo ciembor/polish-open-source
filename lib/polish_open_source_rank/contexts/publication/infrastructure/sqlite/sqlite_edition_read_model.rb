@@ -42,7 +42,7 @@ module PolishOpenSourceRank
                   scope, period_start, :repository_top, limit: 3
                 ),
                 users_by_stars: ranking_read_model.ranked_user_metric(scope, period_start, :user_top, limit: 3),
-                users_by_activity: ranking_read_model.ranked_user_metric(scope, period_start, :user_active, limit: 3)
+                users_by_merged_prs: ranking_read_model.ranked_user_metric(scope, period_start, :user_active, limit: 3)
               }
             end
 

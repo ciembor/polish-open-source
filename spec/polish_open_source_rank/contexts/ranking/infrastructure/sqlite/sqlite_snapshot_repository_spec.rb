@@ -146,7 +146,6 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
       public_repo_count: 1,
       total_stars: total_stars,
       monthly_stars_delta: 4,
-      public_activity_count: 9,
       merged_pull_requests_count: 6
     }
   end

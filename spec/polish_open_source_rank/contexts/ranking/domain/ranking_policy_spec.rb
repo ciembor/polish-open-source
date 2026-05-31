@@ -3,7 +3,7 @@
 RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Domain::RankingPolicy do
   it 'owns ranking metrics, limits, tie breakers, and trending semantics' do
     expect(described_class::USER_RANKINGS.fetch(:top).column).to eq('total_stars')
-    expect(described_class::USER_RANKINGS.fetch(:active).column).to eq('public_activity_count')
+    expect(described_class::USER_RANKINGS.fetch(:active).column).to eq('merged_pull_requests_count')
     expect(described_class::REPOSITORY_RANKINGS.fetch(:top).column).to eq('stargazers_count')
     expect(described_class.metric(:repository_trending)).to be_trending
     expect(described_class).to be_trending('monthly_stars_delta')

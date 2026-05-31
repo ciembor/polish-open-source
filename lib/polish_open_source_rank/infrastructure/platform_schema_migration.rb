@@ -92,10 +92,10 @@ module PolishOpenSourceRank
         execute_batch(<<~SQL)
           INSERT INTO user_monthly_stats(
             period_start, platform, user_github_id, login, city, country, public_repo_count,
-            total_stars, monthly_stars_delta, public_activity_count, updated_at
+            total_stars, monthly_stars_delta, updated_at
           )
           SELECT period_start, 'github', user_github_id, login, city, country, public_repo_count,
-                 total_stars, monthly_stars_delta, public_activity_count, updated_at
+                 total_stars, monthly_stars_delta, updated_at
           FROM user_monthly_stats_old;
         SQL
       end
@@ -157,8 +157,61 @@ module PolishOpenSourceRank
       end
 
       def ensure_current_columns
+        if table_columns('user_monthly_stats').include?('public_activity_count')
+          rebuild_user_monthly_stats_without_public_activity_count
+        end
         add_column_unless_exists('user_monthly_stats', 'merged_pull_requests_count INTEGER NOT NULL DEFAULT 0')
         add_column_unless_exists('organization_monthly_stats', 'members_count INTEGER NOT NULL DEFAULT 0')
+      end
+
+      def rebuild_user_monthly_stats_without_public_activity_count
+        with_foreign_keys_disabled do
+          database.transaction { rebuild_user_monthly_stats_table }
+        end
+      end
+
+      def merged_pull_requests_copy_source
+        old_columns = table_columns('user_monthly_stats_old_public_activity')
+        old_columns.include?('merged_pull_requests_count') ? 'COALESCE(merged_pull_requests_count, 0)' : '0'
+      end
+
+      def rebuild_user_monthly_stats_table
+        execute_batch(rename_and_recreate_user_monthly_stats_sql)
+        database.execute(copy_user_monthly_stats_sql)
+        execute_batch('DROP TABLE user_monthly_stats_old_public_activity;')
+      end
+
+      def rename_and_recreate_user_monthly_stats_sql
+        <<~SQL
+          ALTER TABLE user_monthly_stats RENAME TO user_monthly_stats_old_public_activity;
+          CREATE TABLE user_monthly_stats (
+            period_start TEXT NOT NULL,
+            platform TEXT NOT NULL DEFAULT 'github',
+            user_github_id INTEGER NOT NULL,
+            login TEXT NOT NULL,
+            city TEXT,
+            country TEXT,
+            public_repo_count INTEGER NOT NULL,
+            total_stars INTEGER NOT NULL,
+            monthly_stars_delta INTEGER NOT NULL,
+            merged_pull_requests_count INTEGER NOT NULL DEFAULT 0,
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY(period_start, platform, user_github_id),
+            FOREIGN KEY(platform, user_github_id) REFERENCES users(platform, github_id)
+          );
+        SQL
+      end
+
+      def copy_user_monthly_stats_sql
+        <<~SQL
+          INSERT INTO user_monthly_stats(
+            period_start, platform, user_github_id, login, city, country, public_repo_count,
+            total_stars, monthly_stars_delta, merged_pull_requests_count, updated_at
+          )
+          SELECT period_start, platform, user_github_id, login, city, country, public_repo_count,
+                 total_stars, monthly_stars_delta, #{merged_pull_requests_copy_source}, updated_at
+          FROM user_monthly_stats_old_public_activity
+        SQL
       end
 
       def add_column_unless_exists(table_name, column_definition)

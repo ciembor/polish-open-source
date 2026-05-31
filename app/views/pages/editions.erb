@@ -69,12 +69,12 @@
               </section>
 
               <section>
-                <h4><%= h t('editions.top_users_activity') %></h4>
+                <h4><%= h t('editions.top_users_merged_prs') %></h4>
                 <ol class="edition-toplist">
-                  <% edition.fetch(:users_by_activity).each do |row| %>
+                  <% edition.fetch(:users_by_merged_prs).each do |row| %>
                     <li>
                       <a class="primary-link" href="<%= h row.fetch(:html_url) %>"><%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:login) %></a>
-                      <span><%= number(row.fetch(:public_activity_count)) %> <%= h t('editions.activity_suffix') %></span>
+                      <span><%= number(row.fetch(:merged_pull_requests_count)) %> <%= h t('editions.merged_prs_suffix') %></span>
                     </li>
                   <% end %>
                 </ol>
