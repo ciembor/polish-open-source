@@ -35,7 +35,7 @@ RSpec.describe File do
       'Nice=10',
       'CPUWeight=20',
       'IOWeight=20',
-      '/usr/bin/flock /home/ciembor/polish-open-source-rank/tmp/crawl.lock',
+      '/usr/bin/flock /home/ciembor/polish-open-source-rank/tmp/packages.lock',
       '-v /home/ciembor/polish-open-source-rank/db:/app/db'
     )
     expect(service).to include(
