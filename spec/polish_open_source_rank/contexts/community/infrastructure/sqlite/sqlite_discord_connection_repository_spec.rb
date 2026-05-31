@@ -42,6 +42,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
 
     allow(database).to receive(:dataset).with(:discord_connections).and_return(dataset)
     allow(database).to receive(:transaction).and_yield
+    allow(database).to receive(:write).and_yield
     allow(dataset).to receive(:where).with(platform: 'github', user_github_id: 1).and_return(initial_scope)
     allow(initial_scope).to receive(:update).with(
       {

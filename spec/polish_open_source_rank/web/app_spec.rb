@@ -674,14 +674,29 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     response = request.get('/latest')
     not_modified = request.get('/latest', 'HTTP_IF_NONE_MATCH' => response['ETag'])
     badge_response = request.get('/badges/users/github/alice.svg')
+    badge_not_modified = request.get('/badges/users/github/alice.svg', 'HTTP_IF_NONE_MATCH' => badge_response['ETag'])
+    missing_badge = request.get('/badges/users/github/missing.svg')
 
-    expect(response['Cache-Control']).to eq('public, max-age=0, must-revalidate')
+    expect(response['Cache-Control']).to eq('public, max-age=60, stale-while-revalidate=300')
     expect(response['ETag']).to match(/\A".+"\z/)
     expect(response['Vary']).to include('Accept-Language')
     expect(response['Vary']).to include('Cookie')
     expect(not_modified.status).to eq(304)
-    expect(badge_response['Cache-Control']).to eq('public, max-age=300, stale-while-revalidate=3600')
+    expect(badge_response['Cache-Control']).to eq('public, max-age=3600, stale-while-revalidate=86400')
     expect(badge_response['ETag']).to match(/\A".+"\z/)
+    expect(badge_not_modified.status).to eq(304)
+    expect(missing_badge['Cache-Control']).to be_nil
+  end
+
+  it 'compresses public HTML and badge responses when clients support gzip', :aggregate_failures do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    request = Rack::MockRequest.new(described_class)
+
+    html = request.get('/latest', 'HTTP_ACCEPT_ENCODING' => 'gzip')
+    badge = request.get('/badges/users/github/alice.svg', 'HTTP_ACCEPT_ENCODING' => 'gzip')
+
+    expect(html['Content-Encoding']).to eq('gzip')
+    expect(badge['Content-Encoding']).to eq('gzip')
   end
 
   it 'serves static assets with immutable cache headers', :aggregate_failures do

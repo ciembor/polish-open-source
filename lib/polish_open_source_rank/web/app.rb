@@ -93,6 +93,7 @@ module PolishOpenSourceRank
       set :discord_oauth_client, nil
       set :discord_gateway, nil
       set :discord_role_map, nil
+      use Rack::Deflater
       use Rack::Session::Cookie,
           key: 'polish_open_source_rank.session',
           path: '/',

@@ -20,7 +20,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     repository = described_class.new(instance_double(PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database))
     dataset = instance_double(Sequel::Dataset)
     scoped = instance_double(Sequel::Dataset)
-    database = instance_double(Sequel::Database)
+    database = instance_double(PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database)
     allow(repository).to receive_messages(
       users_dataset: dataset,
       timestamp: '2026-05-01T00:00:00Z',
@@ -28,6 +28,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     )
     allow(dataset).to receive(:where).and_return(scoped)
     allow(database).to receive(:transaction).and_yield
+    allow(database).to receive(:write).and_yield
     allow(scoped).to receive(:update).and_return(0, 1)
     allow(dataset).to receive(:insert).and_raise(Sequel::UniqueConstraintViolation)
 

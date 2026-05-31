@@ -9,7 +9,7 @@ module PolishOpenSourceRank
 
       def public_html_cache!(*parts)
         cache_response!(
-          public_cache_allowed? ? 'public, max-age=0, must-revalidate' : 'private, no-cache',
+          public_cache_allowed? ? public_html_cache_control : 'private, no-cache',
           'html',
           current_locale,
           html_revision,
@@ -18,7 +18,7 @@ module PolishOpenSourceRank
       end
 
       def profile_cache!(profile)
-        cache_control = own_profile?(profile) ? 'private, no-cache' : 'public, max-age=0, must-revalidate'
+        cache_control = own_profile?(profile) ? 'private, no-cache' : public_html_cache_control
         cache_response!(
           cache_control,
           'profile',
@@ -32,7 +32,7 @@ module PolishOpenSourceRank
       end
 
       def repository_profile_cache!(repository)
-        cache_control = own_repository?(repository) ? 'private, no-cache' : 'public, max-age=0, must-revalidate'
+        cache_control = own_repository?(repository) ? 'private, no-cache' : public_html_cache_control
         cache_response!(
           cache_control,
           'repository-profile',
@@ -48,7 +48,7 @@ module PolishOpenSourceRank
       def public_badge_cache!(*parts)
         period = parts.last
         cache_response!(
-          'public, max-age=300, stale-while-revalidate=3600',
+          'public, max-age=3600, stale-while-revalidate=86400',
           'badge',
           *parts,
           public_cache_revision(period)
@@ -70,6 +70,10 @@ module PolishOpenSourceRank
 
       def public_cache_allowed?
         current_user.nil?
+      end
+
+      def public_html_cache_control
+        'public, max-age=60, stale-while-revalidate=300'
       end
 
       def cache_vary_header

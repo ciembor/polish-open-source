@@ -20,4 +20,4 @@ RUN mkdir -p db log tmp
 
 EXPOSE 9293
 
-CMD ["bundle", "exec", "rackup", "--host", "0.0.0.0", "--port", "9293", "--option", "Threads=0:2"]
+CMD ["bundle", "exec", "rackup", "--host", "0.0.0.0", "--port", "9293", "--option", "Threads=0:8"]

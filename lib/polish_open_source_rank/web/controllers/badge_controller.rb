@@ -7,30 +7,37 @@ module PolishOpenSourceRank
         private
 
         def render_repository_badge(platform, owner, name)
-          badge = render_badge.repository(platform: platform, owner: owner, name: name, period_start: latest_period)
-          halt 404 unless badge
-
-          content_type 'image/svg+xml'
-          public_badge_cache!('repository-badge', platform, owner, name, latest_period)
-          settings.badge_renderer.svg(badge, home_url: app_home_url)
+          render_cached_badge('repository-badge', platform, owner, name) do |period|
+            render_badge.repository(platform: platform, owner: owner, name: name, period_start: period)
+          end
         end
 
         def render_user_badge(platform, login)
-          badge = render_badge.user(platform: platform, login: login, period_start: latest_period)
-          halt 404 unless badge
-
-          content_type 'image/svg+xml'
-          public_badge_cache!('user-badge', platform, login, latest_period)
-          settings.badge_renderer.svg(badge, home_url: app_home_url)
+          render_cached_badge('user-badge', platform, login) do |period|
+            render_badge.user(platform: platform, login: login, period_start: period)
+          end
         end
 
         def render_organization_badge(platform, login)
-          badge = render_badge.organization(platform: platform, login: login, period_start: latest_period)
-          halt 404 unless badge
+          render_cached_badge('organization-badge', platform, login) do |period|
+            render_badge.organization(platform: platform, login: login, period_start: period)
+          end
+        end
+
+        def render_cached_badge(*cache_parts)
+          period = latest_period
 
           content_type 'image/svg+xml'
-          public_badge_cache!('organization-badge', platform, login, latest_period)
+          public_badge_cache!(*cache_parts, period) if conditional_cache_request?
+          badge = yield period
+          halt 404 unless badge
+
+          public_badge_cache!(*cache_parts, period) unless response.headers['ETag']
           settings.badge_renderer.svg(badge, home_url: app_home_url)
+        end
+
+        def conditional_cache_request?
+          !request.get_header('HTTP_IF_NONE_MATCH').to_s.empty?
         end
       end
     end

@@ -27,7 +27,7 @@ module PolishOpenSourceRank
                 invites_dataset.insert(attributes)
               end
             rescue Sequel::UniqueConstraintViolation
-              scoped.update(update_attributes(attributes))
+              database.write { scoped.update(update_attributes(attributes)) }
             end
 
             def find(platform, source_id)

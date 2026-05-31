@@ -7,6 +7,7 @@ module PolishOpenSourceRank
     module Infrastructure
       module SQLite
         class Database
+          DEFAULT_MAX_CONNECTIONS = 8
           SQLITE_WRITE_RETRIES = 8
           SQLITE_WRITE_RETRY_DELAY = 0.25
           SQLITE_LOCK_MESSAGES = [
@@ -35,11 +36,11 @@ module PolishOpenSourceRank
           end
 
           def execute(sql, params = [])
-            sequel_connection.fetch(sql, *params).delete
+            with_sqlite_write_retry { sequel_connection.fetch(sql, *params).delete }
           end
 
           def execute_batch(sql)
-            raw_connection.execute_batch(sql)
+            with_sqlite_write_retry { raw_connection.execute_batch(sql) }
           end
 
           def fetch_all(sql, params = [])
@@ -64,6 +65,10 @@ module PolishOpenSourceRank
             end
           end
 
+          def write(&)
+            with_sqlite_write_retry(&)
+          end
+
           private
 
           attr_reader :path
@@ -81,9 +86,13 @@ module PolishOpenSourceRank
           def sequel_connection
             @sequel_connection ||= Sequel.connect(
               "sqlite://#{path}",
-              max_connections: 1,
+              max_connections: sqlite_max_connections,
               after_connect: method(:configure_connection)
             )
+          end
+
+          def sqlite_max_connections
+            Integer(ENV.fetch('SQLITE_MAX_CONNECTIONS', DEFAULT_MAX_CONNECTIONS))
           end
 
           def configure_connection(connection)

@@ -27,7 +27,7 @@ module PolishOpenSourceRank
                 connections_dataset.insert(attributes)
               end
             rescue Sequel::UniqueConstraintViolation
-              scoped.update(update_attributes(attributes))
+              database.write { scoped.update(update_attributes(attributes)) }
             end
 
             def upsert_discord_connection(platform:, source_id:, discord_user_id:, discord_username:)

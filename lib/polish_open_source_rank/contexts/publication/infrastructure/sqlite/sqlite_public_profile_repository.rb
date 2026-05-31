@@ -50,7 +50,7 @@ module PolishOpenSourceRank
                 dataset.insert(attributes)
               end
             rescue Sequel::UniqueConstraintViolation
-              scoped.update(attributes.except(*identity.keys))
+              database.write { scoped.update(attributes.except(*identity.keys)) }
             end
 
             def timestamp
