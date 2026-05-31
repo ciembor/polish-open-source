@@ -137,6 +137,54 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubGateway do
     )
   end
 
+  it 'treats unavailable search users as zero merged pull requests' do
+    client.queue_error(
+      PolishOpenSourceRank::Infrastructure::GitHubClient::Error.new(
+        'validation failed',
+        status: 422,
+        body: <<~JSON
+          {
+            "message": "Validation Failed",
+            "errors": [
+              {
+                "message": "The listed users cannot be searched either because the users do not exist or you do not have permission to view the users.",
+                "resource": "Search",
+                "field": "q",
+                "code": "invalid"
+              }
+            ]
+          }
+        JSON
+      )
+    )
+
+    expect(gateway.merged_pull_requests_count({ login: '0x1fff' }, period)).to eq(0)
+  end
+
+  it 'reraises other merged pull request search failures' do
+    error = PolishOpenSourceRank::Infrastructure::GitHubClient::Error.new(
+      'validation failed',
+      status: 422,
+      body: <<~JSON
+        {"message":"Validation Failed","errors":[{"resource":"Search","field":"q","code":"invalid","message":"Other"}]}
+      JSON
+    )
+    client.queue_error(error)
+
+    expect { gateway.merged_pull_requests_count({ login: 'alice' }, period) }.to raise_error(error)
+  end
+
+  it 'reraises merged pull request search failures with invalid JSON bodies' do
+    error = PolishOpenSourceRank::Infrastructure::GitHubClient::Error.new(
+      'validation failed',
+      status: 422,
+      body: 'not-json'
+    )
+    client.queue_error(error)
+
+    expect { gateway.merged_pull_requests_count({ login: 'alice' }, period) }.to raise_error(error)
+  end
+
   it 'counts organization members from the final pagination page' do
     client.queue(body: [{ 'login' => 'alice' }], link: '<x?page=7>; rel="last"')
 

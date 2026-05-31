@@ -1,11 +1,16 @@
 # frozen_string_literal: true
 
+require 'json'
+
 module PolishOpenSourceRank
   module Infrastructure
     class GitHubGateway
       STAR_ACCEPT = 'application/vnd.github.star+json'
       PER_PAGE = 100
       SEARCH_PAGE_LIMIT = 10
+      UNAVAILABLE_SEARCH_USER_MESSAGE =
+        'The listed users cannot be searched either because the users do not exist ' \
+        'or you do not have permission to view the users.'
       SourceCandidate = Contexts::Ranking::Domain::SourceCandidate
       SourceContributor = Contexts::Ranking::Domain::SourceContributor
       SourceRepository = Contexts::Ranking::Domain::SourceRepository
@@ -115,6 +120,10 @@ module PolishOpenSourceRank
           params: { q: merged_pull_request_query(login, period), per_page: 1, page: 1 }
         )
         Integer(response.body.fetch('total_count', 0))
+      rescue GitHubClient::Error => e
+        raise unless unavailable_search_user?(e)
+
+        0
       end
 
       def organization_members_count(profile)
@@ -246,6 +255,26 @@ module PolishOpenSourceRank
         return value if value.match?(/\A[a-z0-9-]+\z/i)
 
         %("#{value.gsub('"', '\"')}")
+      end
+
+      def unavailable_search_user?(error)
+        return false unless error.status == 422
+
+        parsed_body = JSON.parse(error.body.to_s)
+        parsed_body.fetch('message', nil) == 'Validation Failed' && invalid_search_query?(parsed_body['errors'])
+      rescue JSON::ParserError
+        false
+      end
+
+      def invalid_search_query?(errors)
+        Array(errors).any? { |entry| invalid_search_query_entry?(entry) }
+      end
+
+      def invalid_search_query_entry?(entry)
+        entry['resource'] == 'Search' &&
+          entry['field'] == 'q' &&
+          entry['code'] == 'invalid' &&
+          entry['message'] == UNAVAILABLE_SEARCH_USER_MESSAGE
       end
 
       def member_count(response)
