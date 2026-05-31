@@ -233,7 +233,9 @@
 }
 
 .discord-panel__join {
+  align-items: center;
   display: flex;
+  min-height: 52px;
   justify-content: center;
   margin: 0;
 }
@@ -243,9 +245,11 @@
   border-radius: 8px;
   color: #ffffff;
   display: inline-flex;
+  align-items: center;
   font-size: 1rem;
   font-weight: 900;
   justify-content: center;
+  min-height: 52px;
   min-width: 0;
   padding: 13px 22px;
   text-align: center;
@@ -405,7 +409,7 @@
 }
 
 .badge-preview--profile .badge-preview__showcase {
-  min-height: 84px;
+  min-height: 52px;
 }
 
 .badge-preview--profile img {
@@ -425,7 +429,6 @@
   border-radius: 6px;
   color: var(--ink);
   display: flex;
-  min-height: 44px;
   max-width: 100%;
   min-width: 0;
   overflow: hidden;
