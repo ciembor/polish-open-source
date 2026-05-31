@@ -9,13 +9,18 @@ module PolishOpenSourceRank
 
           def initialize(heartbeat: nil)
             @heartbeat = heartbeat
+            @completed_subject_ids = Set.new
           end
 
           def record(**); end
 
+          def successful_subject_ids(_criteria)
+            completed_subject_ids.dup
+          end
+
           private
 
-          attr_reader :heartbeat
+          attr_reader :completed_subject_ids, :heartbeat
         end
       end
     end

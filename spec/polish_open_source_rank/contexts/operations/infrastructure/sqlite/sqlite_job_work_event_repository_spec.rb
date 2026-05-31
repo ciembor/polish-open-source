@@ -59,6 +59,53 @@ RSpec.describe PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLit
     end.not_to raise_error
   end
 
+  it 'returns successful subject ids for resumable work' do
+    repository = described_class.new(database)
+    repository.record(
+      period_start: '2026-04-01',
+      job_kind: 'monthly',
+      stage: 'user_merged_pull_requests',
+      unit_kind: 'user',
+      platform: 'github',
+      ecosystem: nil,
+      subject_id: 1,
+      subject_label: 'alice',
+      status: 'ok',
+      started_at: '2026-05-01T00:00:00Z',
+      finished_at: '2026-05-01T00:00:02Z',
+      duration_ms: 2000
+    )
+    repository.record(
+      period_start: '2026-04-01',
+      job_kind: 'monthly',
+      stage: 'user_merged_pull_requests',
+      unit_kind: 'user',
+      platform: 'github',
+      ecosystem: nil,
+      subject_id: 2,
+      subject_label: 'bob',
+      status: 'failed',
+      started_at: '2026-05-01T00:00:00Z',
+      finished_at: '2026-05-01T00:00:02Z',
+      duration_ms: 2000
+    )
+
+    criteria = {
+      period_start: '2026-04-01',
+      job_kind: 'monthly',
+      stage: 'user_merged_pull_requests',
+      unit_kind: 'user',
+      platform: 'github'
+    }
+
+    expect(repository.successful_subject_ids(criteria)).to eq(Set['1'])
+  end
+
+  it 'returns no successful subject ids for the null recorder' do
+    expect(PolishOpenSourceRank::Contexts::Operations::Application::JobWorkEventRecorder.new.successful_subject_ids({}))
+      .to eq(Set.new)
+  end
+
   it 'reraises non-retryable telemetry write failures' do
     database = instance_double(PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database)
     repository = described_class.new(database)

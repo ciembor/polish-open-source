@@ -10,6 +10,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::MonthlySour
     stub_const('GitHubSource', Class.new)
     stub_const('GitLabSource', Class.new)
     allow(work_events).to receive(:record_timed).and_yield
+    allow(work_events).to receive(:successful_subject_ids).and_return(Set.new)
   end
 
   it 'continues after one source fails to refresh merged pull requests' do
@@ -57,6 +58,65 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::MonthlySour
       hash_including(login: 'good-user', merged_pull_requests_count: 9)
     )
     expect(logger.string).to include('refresh merged pull requests skipped for bad-user: RuntimeError: boom')
+  end
+
+  it 'skips users that were already refreshed in previous backfill attempts' do
+    source = instance_double(GitHubSource, platform: 'github')
+    allow(store).to receive(:user_stats_for_period).with(period, platform: 'github').and_return(
+      [
+        { source_id: 1, user_github_id: 1, login: 'done-user' },
+        { source_id: 2, user_github_id: 2, login: 'pending-user' }
+      ]
+    )
+    allow(work_events).to receive(:successful_subject_ids).with(
+      {
+        period_start: '2026-04-01',
+        job_kind: 'monthly',
+        stage: 'user_merged_pull_requests',
+        unit_kind: 'user',
+        platform: 'github'
+      }
+    ).and_return(Set['1'])
+    allow(source).to receive(:merged_pull_requests_count).with(hash_including(login: 'pending-user'), period)
+                                                         .and_return(9)
+    allow(store).to receive(:record_user_stats)
+
+    described_class.new(store: store, sources: [source], logger: logger, work_events: work_events)
+                   .call(period, refresh_user_merged_prs: true)
+
+    expect(source).not_to have_received(:merged_pull_requests_count).with(hash_including(login: 'done-user'), period)
+    expect(store).to have_received(:record_user_stats).with(
+      hash_including(login: 'pending-user', merged_pull_requests_count: 9)
+    )
+  end
+
+  it 'skips organizations that were already refreshed in previous backfill attempts' do
+    source = instance_double(GitHubSource, platform: 'github', supports_organizations?: true)
+    allow(store).to receive(:organization_stats_for_period).with(period, platform: 'github').and_return(
+      [
+        { source_id: 1, organization_github_id: 1, login: 'done-org' },
+        { source_id: 2, organization_github_id: 2, login: 'pending-org' }
+      ]
+    )
+    allow(work_events).to receive(:successful_subject_ids).with(
+      {
+        period_start: '2026-04-01',
+        job_kind: 'monthly',
+        stage: 'organization_members',
+        unit_kind: 'organization',
+        platform: 'github'
+      }
+    ).and_return(Set['1'])
+    allow(source).to receive(:organization_members_count).with(hash_including(login: 'pending-org')).and_return(3)
+    allow(store).to receive(:record_organization_stats)
+
+    described_class.new(store: store, sources: [source], logger: logger, work_events: work_events)
+                   .call(period, refresh_organization_members: true)
+
+    expect(source).not_to have_received(:organization_members_count).with(hash_including(login: 'done-org'))
+    expect(store).to have_received(:record_organization_stats).with(
+      hash_including(login: 'pending-org', members_count: 3)
+    )
   end
 
   it 'stops worker threads when joining source refreshes raises' do

@@ -25,6 +25,22 @@ module PolishOpenSourceRank
               raise unless sqlite_lock_error?(e)
             end
 
+            def successful_subject_ids(criteria)
+              dataset = job_work_events.where(
+                period_start: criteria.fetch(:period_start),
+                job_kind: criteria.fetch(:job_kind),
+                stage: criteria.fetch(:stage),
+                unit_kind: criteria.fetch(:unit_kind),
+                status: 'ok'
+              )
+              platform = criteria[:platform]
+              ecosystem = criteria[:ecosystem]
+              dataset = dataset.where(platform: platform) if platform
+              dataset = dataset.where(ecosystem: ecosystem) if ecosystem
+
+              Set.new(dataset.exclude(subject_id: nil).select_map(:subject_id))
+            end
+
             private
 
             attr_reader :database, :heartbeat
