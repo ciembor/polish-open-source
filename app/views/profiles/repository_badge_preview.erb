@@ -1,0 +1,12 @@
+<% markdown = linked_badge_markdown(alt_text, badge_path) %>
+<div class="repository-badge-preview">
+  <div class="badge-preview__showcase">
+    <a class="badge-preview__image-link" href="<%= h app_path('/latest') %>">
+      <img src="<%= h app_path(badge_path) %>" alt="<%= h alt_text %>">
+    </a>
+  </div>
+  <div class="badge-markdown">
+    <code><%= h markdown %></code>
+    <button class="badge-markdown__copy js-copy-badge-markdown" type="button" data-copy-text="<%= h markdown %>" data-copy-label="<%= h t('badges.copy') %>" data-copy-done-label="<%= h t('badges.copied') %>"><%= h t('badges.copy') %></button>
+  </div>
+</div>

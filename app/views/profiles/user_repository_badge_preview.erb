@@ -1,0 +1,4 @@
+<div class="user-repository-badge-preview">
+  <p class="badge-preview__label"><%= h repository.fetch(:full_name) %></p>
+  <%= erb :"profiles/repository_badge_preview", locals: { badge_path: repository_badge_path(repository), alt_text: t('repositories.badge.alt') } %>
+</div>
