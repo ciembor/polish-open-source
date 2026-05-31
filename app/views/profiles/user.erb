@@ -50,7 +50,7 @@
     <% metric_items = [] %>
     <% metric_items << { label: t('rankings.metric.stars'), value: "⭐ #{number(@profile[:total_stars])}" } unless @profile[:total_stars].nil? %>
     <% metric_items << { label: t('rankings.metric.new_stars'), value: "⭐ #{number(@profile[:monthly_stars_delta])}" } unless @profile[:monthly_stars_delta].nil? %>
-    <% metric_items << { label: t('rankings.metric.events'), value: number(@profile[:public_activity_count]) } unless @profile[:public_activity_count].nil? %>
+    <% metric_items << { label: t('rankings.metric.merged_pull_requests'), value: number(@profile[:merged_pull_requests_count]) } unless @profile[:merged_pull_requests_count].nil? %>
     <% if @show_profile_badges %>
       <% @profile.fetch(:badges, []).each do |badge| %>
         <% metric_items << { label: badge.fetch(:label), value: (badge[:value] || t('users.metrics.outside_ranking')) } %>

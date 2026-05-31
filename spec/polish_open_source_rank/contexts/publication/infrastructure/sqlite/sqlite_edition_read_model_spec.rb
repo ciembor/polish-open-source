@@ -33,7 +33,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
           period_start: '2026-04-01',
           repositories: [:repository_rows],
           users_by_stars: [:star_rows],
-          users_by_activity: [:activity_rows]
+          users_by_merged_prs: [:activity_rows]
         }
       ]
     )
@@ -66,7 +66,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     <<~SQL
       INSERT INTO user_monthly_stats(
         period_start, platform, user_github_id, login, city, country, public_repo_count,
-        total_stars, monthly_stars_delta, public_activity_count, updated_at
+        total_stars, monthly_stars_delta, merged_pull_requests_count, updated_at
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     SQL

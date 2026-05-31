@@ -16,7 +16,7 @@ module PolishOpenSourceRank
           USER_RANKINGS = {
             top: Metric.new(key: :user_top, column: 'total_stars', trending: false),
             trending: Metric.new(key: :user_trending, column: TRENDING_COLUMN, trending: true),
-            active: Metric.new(key: :user_active, column: 'public_activity_count', trending: false)
+            active: Metric.new(key: :user_active, column: 'merged_pull_requests_count', trending: false)
           }.freeze
           ORGANIZATION_RANKINGS = {
             top: Metric.new(key: :organization_top, column: 'total_stars', trending: false),

@@ -132,7 +132,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::DiscordIn
       public_repo_count: 1,
       total_stars: 123,
       monthly_stars_delta: 4,
-      public_activity_count: 5
+      merged_pull_requests_count: 5
     }
   end
 

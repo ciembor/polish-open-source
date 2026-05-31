@@ -469,7 +469,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
 
     expect(store).to have_received(:prune_rankings).with(period)
     expect(user_rankings('poland').fetch(:trending).first).to include(login: 'alice', monthly_stars_delta: 4)
-    expect(user_rankings('krakow').fetch(:active).first).to include(public_activity_count: 7)
+    expect(user_rankings('krakow').fetch(:active).first).to include(merged_pull_requests_count: 0)
     expect(repository_rankings('poland').fetch(:top).map do |row|
       row.fetch(:full_name)
     end).to eq(%w[alice/app alice/lib])
@@ -481,7 +481,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect_persisted_alice_repository_stats
     expect(github.user_calls).to eq([['alice', 1], ['bob', 2]])
     expect(github.delta_periods).to eq([['alice/app', period], ['alice/lib', period]])
-    expect(github.activity_periods).to eq([['alice', period]])
+    expect(github.activity_periods).to be_empty
   end
 
   it 'uses previous repository observations and skips repositories below the catalog star threshold' do
@@ -1495,7 +1495,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       public_repo_count: 0,
       total_stars: 0,
       monthly_stars_delta: 0,
-      public_activity_count: 0
+      merged_pull_requests_count: 0
     }
   end
 
@@ -1655,7 +1655,6 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       public_repo_count: 2,
       total_stars: 17,
       monthly_stars_delta: 4,
-      public_activity_count: 7,
       merged_pull_requests_count: 0
     )
   end
@@ -1671,7 +1670,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
   def fetch_user_stats(login, platform: 'github')
     fetch_row(<<~SQL, [platform, login])
       SELECT period_start, platform, user_github_id, login, city, country, public_repo_count, total_stars,
-             monthly_stars_delta, public_activity_count, merged_pull_requests_count
+             monthly_stars_delta, merged_pull_requests_count
       FROM user_monthly_stats
       WHERE platform = ? AND login = ?
     SQL

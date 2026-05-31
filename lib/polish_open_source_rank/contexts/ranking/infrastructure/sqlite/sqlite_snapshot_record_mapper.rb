@@ -25,7 +25,6 @@ module PolishOpenSourceRank
                 public_repo_count: snapshot.public_repository_count,
                 total_stars: snapshot.total_stars,
                 monthly_stars_delta: snapshot.monthly_stars_delta,
-                public_activity_count: snapshot.public_activity_count,
                 merged_pull_requests_count: snapshot.merged_pull_requests_count
               }
             end
@@ -126,7 +125,6 @@ module PolishOpenSourceRank
                 public_repo_count: attributes.fetch(:public_repo_count),
                 total_stars: attributes.fetch(:total_stars),
                 monthly_stars_delta: attributes.fetch(:monthly_stars_delta),
-                public_activity_count: attributes.fetch(:public_activity_count),
                 merged_pull_requests_count: attributes[:merged_pull_requests_count].to_i,
                 updated_at: timestamp
               }

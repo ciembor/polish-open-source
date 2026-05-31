@@ -39,7 +39,7 @@ module PolishOpenSourceRank
               @user_rankings.fetch(:trending).first(10)
             ) { |row| user_schema(row) },
             item_list_schema(
-              t('rankings.users_activity_month'),
+              t('rankings.users_merged_prs_month'),
               @user_rankings.fetch(:active).first(10)
             ) { |row| user_schema(row) }
           ]

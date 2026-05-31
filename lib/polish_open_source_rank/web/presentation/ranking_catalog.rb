@@ -41,7 +41,7 @@ module PolishOpenSourceRank
           %w[users active] => Descriptor.new(
             column: RankingPolicy.column(:user_active).to_sym,
             title_key: 'rankings.title.users.active',
-            label_key: 'rankings.metric.events'
+            label_key: 'rankings.metric.merged_pull_requests'
           ),
           %w[users top] => Descriptor.new(
             column: RankingPolicy.column(:user_top).to_sym,

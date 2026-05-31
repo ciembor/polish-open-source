@@ -59,7 +59,7 @@ module PolishOpenSourceRank
               database.fetch_all(<<~SQL, [period_start, *params])
                 SELECT users.platform, users.login, users.name, users.email, users.homepage, users.html_url,
                        users.avatar_url, stats.city, stats.country, stats.public_repo_count, stats.total_stars,
-                       stats.monthly_stars_delta, stats.public_activity_count
+                       stats.monthly_stars_delta, stats.merged_pull_requests_count
                 FROM user_monthly_stats stats
                 INNER JOIN users ON users.platform = stats.platform AND users.github_id = stats.user_github_id
                 WHERE stats.period_start = ? AND #{sql_scope} #{trending_filter(order_column, 'stats')}

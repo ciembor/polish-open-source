@@ -157,7 +157,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     <<~SQL
       INSERT INTO user_monthly_stats(
         period_start, platform, user_github_id, login, city, country, public_repo_count,
-        total_stars, monthly_stars_delta, public_activity_count, updated_at
+        total_stars, monthly_stars_delta, merged_pull_requests_count, updated_at
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     SQL

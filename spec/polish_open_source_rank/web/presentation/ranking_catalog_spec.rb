@@ -7,9 +7,9 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::RankingCatalog do
     descriptor = catalog.descriptor('users', 'active')
 
     expect(catalog.include?('users', 'active')).to be(true)
-    expect(descriptor.column).to eq(:public_activity_count)
+    expect(descriptor.column).to eq(:merged_pull_requests_count)
     expect(descriptor.title_key).to eq('rankings.title.users.active')
-    expect(descriptor.label_key).to eq('rankings.metric.events')
+    expect(descriptor.label_key).to eq('rankings.metric.merged_pull_requests')
   end
 
   it 'rejects unsupported ranking combinations' do

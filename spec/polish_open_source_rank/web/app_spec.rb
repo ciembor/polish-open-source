@@ -1024,8 +1024,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   def expect_primary_ranking_pages(responses)
     expect(responses.fetch(:user).status).to eq(200)
-    expect(responses.fetch(:user).body).to include('Top 100 aktywnych użytkowników')
-    expect(responses.fetch(:user).body).to include('🔧 8')
+    expect(responses.fetch(:user).body).to include('Top 100 użytkowników według zmergowanych PR')
+    expect(responses.fetch(:user).body).to include('🔀 8')
     expect(responses.fetch(:repository).status).to eq(200)
     expect(responses.fetch(:repository).body).to include('Top 100 popularnych repozytoriów')
     expect(responses.fetch(:organization).status).to eq(200)
@@ -1129,7 +1129,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       public_repo_count: 1,
       total_stars: total_stars,
       monthly_stars_delta: 5,
-      public_activity_count: 8
+      merged_pull_requests_count: 8
     }
   end
 
@@ -1347,7 +1347,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       '"@type": "CollectionPage"',
       '"name": "Top 10 według gwiazdek"',
       '⭐ 12 345',
-      '🔧 8',
+      '🔀 8',
       'alice/app',
       'class="location-notice js-first-visit-notice"',
       'data-storage-key="polishOpenSourceRank.locationNoticeSeen"',
@@ -1505,7 +1505,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'kwiecień 2026',
       'Top projekty',
       'Top użytkownicy: gwiazdki',
-      'Top użytkownicy: aktywność',
+      'Top użytkownicy: zmergowane PR',
       'href="/2026-04"',
       'href="/editions/2025"'
     )
