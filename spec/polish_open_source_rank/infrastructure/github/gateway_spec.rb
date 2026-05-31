@@ -122,6 +122,21 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubGateway do
     )
   end
 
+  it 'quotes merged pull request qualifiers for logins outside the simple GitHub shape' do
+    client.queue(body: { 'total_count' => 3 })
+
+    expect(gateway.merged_pull_requests_count({ login: 'dependabot[bot]' }, period)).to eq(3)
+    expect(client.params).to eq(
+      [
+        {
+          q: 'author:"dependabot[bot]" is:pr is:merged is:public -user:"dependabot[bot]" merged:2026-04-01..2026-04-30',
+          per_page: 1,
+          page: 1
+        }
+      ]
+    )
+  end
+
   it 'counts organization members from the final pagination page' do
     client.queue(body: [{ 'login' => 'alice' }], link: '<x?page=7>; rel="last"')
 

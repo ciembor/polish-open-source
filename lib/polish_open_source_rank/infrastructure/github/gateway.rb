@@ -229,13 +229,23 @@ module PolishOpenSourceRank
 
       def merged_pull_request_query(login, period)
         [
-          "author:#{login}",
+          qualifier('author', login),
           'is:pr',
           'is:merged',
           'is:public',
-          "-user:#{login}",
+          "-#{qualifier('user', login)}",
           "merged:#{period.start_date}..#{period.end_date - 1}"
         ].join(' ')
+      end
+
+      def qualifier(name, value)
+        %(#{name}:#{quoted_search_value(value)})
+      end
+
+      def quoted_search_value(value)
+        return value if value.match?(/\A[a-z0-9-]+\z/i)
+
+        %("#{value.gsub('"', '\"')}")
       end
 
       def member_count(response)
