@@ -421,8 +421,7 @@
 
 .repository-badge-preview img {
     display: block;
-    margin-top: 4px;
-    height: 28.5px;
+    height: 24.5px;
     object-fit: contain;
     width: auto;
 }
