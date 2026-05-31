@@ -25,6 +25,23 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Domain::LocationClassifi
     expect(match).not_to be_polish
   end
 
+  it 'keeps multi-country users accepted through the default classification' do
+    expect(classifier.call('Warsaw, Poland / Berlin, Germany')).to have_attributes(
+      city: 'Warszawa',
+      country: 'Poland'
+    )
+  end
+
+  it 'rejects organization locations that include another country' do
+    expect(classifier.without_foreign_countries('Warsaw, Poland / Berlin, Germany')).to have_attributes(
+      city: nil,
+      country: nil,
+      raw: 'Warsaw, Poland / Berlin, Germany'
+    )
+    expect(classifier.without_foreign_countries('Krakow, Poland, USA')).not_to be_polish
+    expect(classifier.without_foreign_countries('Warsaw, United States')).not_to be_polish
+  end
+
   it 'exposes stable scopes and search terms' do
     catalog = PolishOpenSourceRank::Contexts::Ranking::Domain::LocationCatalog
 

@@ -199,7 +199,7 @@ module PolishOpenSourceRank
 
           def process_unseen_organization_candidate(period, source, login, source_id)
             profile = source.organization(login, source_id)
-            location = classifier.call(profile[:location])
+            location = classifier.without_foreign_countries(profile[:location])
             unless location.polish?
               with_store { store.mark_organization_candidate(period, source.platform, login, 'rejected') }
               return 'rejected'

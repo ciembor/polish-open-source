@@ -841,6 +841,18 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(fetch_candidate('foreign-org', table: 'candidate_organizations')).to include(status: 'rejected', error: nil)
   end
 
+  it 'rejects organizations that list Poland and another country' do
+    organization_source = FakeOrganizationGitHub.new
+    store.record_organization_candidate(period, platform: 'github', source_id: 9, login: 'global-org',
+                                                source_query: 'Poland')
+    organization_source.organizations = { 'global-org' => profile(9, 'global-org', 'Warsaw, Poland / Germany') }
+
+    run_job_with(source: organization_source)
+
+    expect(fetch_candidate('global-org', table: 'candidate_organizations')).to include(status: 'rejected', error: nil)
+    expect(fetch_user('global-org', table: 'organizations')).to be_nil
+  end
+
   it 'records organization candidate failures and keeps processing later organizations' do
     organization_source = FakeOrganizationGitHub.new
     organization_source.organization_candidates = {

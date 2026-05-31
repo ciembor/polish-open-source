@@ -28,6 +28,13 @@ module PolishOpenSourceRank
             )
           end
 
+          def without_foreign_countries(location)
+            match = call(location)
+            return empty_match(match.raw) if foreign_country?(match.raw)
+
+            match
+          end
+
           private
 
           attr_reader :catalog
@@ -43,6 +50,14 @@ module PolishOpenSourceRank
             return catalog::COUNTRY if city
 
             nil
+          end
+
+          def foreign_country?(raw)
+            variant_pattern(catalog::FOREIGN_COUNTRY_NAMES).match?(raw)
+          end
+
+          def empty_match(raw)
+            LocationMatch.new(city: nil, city_slug: nil, country: nil, raw: raw)
           end
 
           def variant_pattern(variants)
