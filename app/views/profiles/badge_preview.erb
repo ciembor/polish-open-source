@@ -1,7 +1,6 @@
 <% badge_preview_class = ['badge-preview', defined?(variant) ? variant : nil].compact.join(' ') %>
 <% markdown = linked_badge_markdown(alt_text, badge_path) %>
 <div class="<%= h badge_preview_class %>">
-  <p class="badge-preview__label"><%= h label %></p>
   <a href="<%= h app_path('/latest') %>">
     <img src="<%= h app_path(badge_path) %>" alt="<%= h alt_text %>">
   </a>
