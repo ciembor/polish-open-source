@@ -33,7 +33,7 @@ module PolishOpenSourceRank
         end
 
         def job_options
-          options = { refresh: refresh?, recalculate_stars: recalculate_stars? }
+          options = { refresh: refresh?, use_snapshot_star_diff: use_snapshot_star_diff? }
           options[:scope] = scope_argument if scope_argument
           options[:existing_only] = true if existing_only?
           backfill = monthly_metric_backfill
@@ -86,6 +86,10 @@ module PolishOpenSourceRank
 
         def recalculate_stars?
           argv.include?('--recalculate-stars')
+        end
+
+        def use_snapshot_star_diff?
+          argv.include?('--use-stars-diff') && !recalculate_stars?
         end
 
         def existing_only?

@@ -28,9 +28,10 @@ module PolishOpenSourceRank
             )
           end
 
-          def call(period, refresh: false, scope: nil, recalculate_stars: false, existing_only: false, backfill: {})
+          def call(period, refresh: false, scope: nil, use_snapshot_star_diff: false, existing_only: false,
+                   backfill: {})
             @scope = scope
-            @recalculate_stars = recalculate_stars
+            @use_snapshot_star_diff = use_snapshot_star_diff
             @existing_only = existing_only
             if source_metric_backfill_only?(backfill)
               return source_metric_backfill.call(period, scope: scope, **backfill)
@@ -235,7 +236,7 @@ module PolishOpenSourceRank
             previous_stars = with_store do
               store.previous_repository_stars(period, source.platform, repository.fetch(:source_id))
             end
-            return [current_stars - previous_stars.to_i, 0].max if previous_stars && !recalculate_stars?
+            return [current_stars - previous_stars.to_i, 0].max if previous_stars && use_snapshot_star_diff?
 
             source.repository_stars_delta(repository, period)
           end
@@ -247,7 +248,7 @@ module PolishOpenSourceRank
             previous_stars = with_store do
               store.previous_organization_repository_stars(period, source.platform, repository.fetch(:source_id))
             end
-            return [current_stars - previous_stars.to_i, 0].max if previous_stars && !recalculate_stars?
+            return [current_stars - previous_stars.to_i, 0].max if previous_stars && use_snapshot_star_diff?
 
             source.repository_stars_delta(repository, period)
           end
@@ -391,8 +392,8 @@ module PolishOpenSourceRank
             @existing_only && (backfill[:refresh_user_merged_prs] || backfill[:refresh_organization_members])
           end
 
-          def recalculate_stars?
-            @recalculate_stars
+          def use_snapshot_star_diff?
+            @use_snapshot_star_diff
           end
 
           def with_store(&)
