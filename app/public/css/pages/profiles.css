@@ -368,7 +368,7 @@
   align-items: stretch;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 25px;
   min-width: 0;
   width: 100%;
 }
@@ -414,6 +414,29 @@
 
 .badge-preview--profile img {
   height: 46px;
+}
+
+.badge-preview--repository {
+  align-items: center;
+  display: grid;
+  gap: 10px 18px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.badge-preview--repository .badge-preview__label {
+  grid-column: 1 / -1;
+}
+
+.badge-preview--repository .badge-preview__showcase {
+  grid-column: 2;
+  grid-row: 2;
+  justify-content: flex-end;
+  min-height: 28px;
+}
+
+.badge-preview--repository .badge-markdown {
+  grid-column: 1;
+  grid-row: 2;
 }
 
 .badge-preview code {
@@ -468,4 +491,16 @@
 
 .badge-markdown__copy:hover {
   background: #f4f7f4;
+}
+
+@media (max-width: 680px) {
+  .badge-preview--repository {
+    align-items: stretch;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .badge-preview--repository .badge-preview__showcase {
+    justify-content: flex-start;
+  }
 }

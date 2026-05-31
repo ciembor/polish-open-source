@@ -42,7 +42,7 @@
     <div class="content">
       <h2 id="profile-repository-badges-heading"><%= h t('users.repository_badges.title') %></h2>
       <% repository_badges.each do |repository| %>
-        <%= erb :"profiles/badge_preview", locals: { label: repository.fetch(:full_name), badge_path: repository_badge_path(repository), alt_text: t('repositories.badge.alt') } %>
+        <%= erb :"profiles/badge_preview", locals: { label: repository.fetch(:full_name), badge_path: repository_badge_path(repository), alt_text: t('repositories.badge.alt'), variant: 'badge-preview--repository', show_label: true } %>
       <% end %>
     </div>
   </section>

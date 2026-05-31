@@ -336,7 +336,7 @@ pl:
   repositories:
     badge:
       alt: "Badge Polish Repo"
-      title: "Odznaki repozytoriów"
+      title: "Odznaka"
     links:
       source_project: "Projekt na %{platform}"
     seo:

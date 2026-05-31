@@ -1444,6 +1444,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'Kanały do pisania',
       'Odznaka',
       'Odznaki repozytoriów',
+      '<p class="badge-preview__label">alice/app</p>',
       'class="badge-markdown"',
       'class="badge-markdown__copy js-copy-badge-markdown"',
       'data-copy-label="Kopiuj"',
@@ -1500,7 +1501,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile_response.body).to include('/icons/medal-gold.svg')
     expect(profile_response.body).not_to include('Odznaka na GitHub')
     expect(profile_response.body).not_to include('/badges/repositories/github/alice/app.svg')
-    expect(owner_profile_response.body).to include('Odznaki repozytoriów')
+    expect(owner_profile_response.body).to include('<h2 id="repository-badge-heading">Odznaka</h2>')
     expect(owner_profile_response.body).not_to include('Odznaka na GitHub')
     expect(owner_profile_response.body).to include('class="badge-markdown__copy js-copy-badge-markdown"')
     expect(owner_profile_response.body).to include('/badges/repositories/github/alice/app.svg')
