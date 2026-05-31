@@ -26,9 +26,11 @@
         <%= erb :"auth/discord_panel", locals: { panel: @discord_panel, error: @discord_error } %>
       <% end %>
       <% if profile_badge_visible %>
-        <article class="profile-summary profile-badge-panel">
+        <article class="profile-summary profile-access-card profile-badge-panel">
           <h2 id="profile-badge-heading"><%= h t('users.badge.title') %></h2>
-          <%= erb :"profiles/badge_preview", locals: { label: @profile.fetch(:login), badge_path: user_badge_path(@profile), alt_text: t('users.badge.alt'), variant: 'badge-preview--profile' } %>
+          <div class="profile-access-card__body">
+            <%= erb :"profiles/badge_preview", locals: { label: @profile.fetch(:login), badge_path: user_badge_path(@profile), alt_text: t('users.badge.alt'), variant: 'badge-preview--profile' } %>
+          </div>
         </article>
       <% end %>
     </div>
