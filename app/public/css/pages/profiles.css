@@ -208,15 +208,34 @@
   padding: 20px;
 }
 
-.discord-panel {
+.profile-access-card {
   display: flex;
   flex-direction: column;
+  gap: 22px;
+  padding: 24px;
+}
+
+.profile-access-card h2 {
+  margin-bottom: 0;
+}
+
+.profile-access-card__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 18px;
+  justify-content: center;
+  min-width: 0;
+}
+
+.discord-panel__body {
+  align-items: stretch;
 }
 
 .discord-panel__join {
   display: flex;
   justify-content: center;
-  margin: 22px 0 20px;
+  margin: 0;
 }
 
 .discord-join-button {
@@ -227,10 +246,11 @@
   font-size: 1rem;
   font-weight: 900;
   justify-content: center;
-  min-width: min(100%, 260px);
+  min-width: 0;
   padding: 13px 22px;
   text-align: center;
   text-decoration: none;
+  width: min(100%, 320px);
 }
 
 .discord-join-button:hover {
@@ -239,7 +259,7 @@
 }
 
 .discord-access {
-  margin-top: 8px;
+  margin: 0;
 }
 
 .discord-access h3 {
@@ -266,13 +286,8 @@
   padding: 7px 10px;
 }
 
-.profile-badge-panel {
-  display: flex;
-  flex-direction: column;
-}
-
-.profile-badge-panel .badge-preview {
-  margin-top: 14px;
+.discord-panel__status {
+  margin: 0;
 }
 
 .profile-facts,
@@ -342,11 +357,12 @@
 }
 
 .badge-preview {
-  align-items: flex-start;
+  align-items: stretch;
   display: flex;
   flex-direction: column;
-  flex-wrap: wrap;
-  gap: 10px;
+  gap: 14px;
+  min-width: 0;
+  width: 100%;
 }
 
 .badge-preview + .badge-preview {
@@ -361,12 +377,25 @@
 }
 
 .badge-preview img {
+  display: block;
   height: 20px;
+  max-width: 100%;
   width: auto;
 }
 
 .badge-preview--profile img {
   height: 46px;
+}
+
+.badge-preview__image-link {
+  align-self: flex-start;
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.profile-badge-panel .badge-preview__image-link {
+  align-self: flex-start;
 }
 
 .badge-preview code {
@@ -382,6 +411,7 @@
   border-radius: 6px;
   color: var(--ink);
   display: flex;
+  min-height: 44px;
   max-width: 100%;
   min-width: 0;
   overflow: hidden;
@@ -394,7 +424,10 @@
   border-radius: 0;
   flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
   padding: 8px 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .badge-markdown__copy {
@@ -407,6 +440,7 @@
   font: inherit;
   font-size: 0.82rem;
   font-weight: 800;
+  min-width: 82px;
   padding: 0 10px;
 }
 
