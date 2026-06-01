@@ -4,17 +4,20 @@ module PolishOpenSourceRank
   module Contexts
     module Publication
       module Domain
+        # Builds public badge payloads for users, repositories, and organizations.
         class BadgePolicy
-          def user_badges(country_rank:, city:, city_rank:)
-            [user_badge(country_rank: country_rank, city: city, city_rank: city_rank)]
+          def user_badges(profile:, language_badge: nil)
+            country_rank = profile.fetch(:country_rank)
+            city_badge = city_badge(profile)
+            badges = []
+            badges << ranked_badge('Polish Open Source', country_rank) if top?(country_rank, 100)
+            badges << language_badge if language_badge
+            badges << city_badge if city_badge
+            badges.empty? ? [outside_ranking_badge] : badges
           end
 
-          def user_badge(country_rank:, city:, city_rank:)
-            return ranked_badge('Polish Open Source', country_rank) if top?(country_rank, 100)
-            return ranked_badge("#{city} Elite", city_rank) if city && top?(city_rank, 10)
-            return ranked_badge("#{city} Top 100", city_rank) if city && top?(city_rank, 100)
-
-            { label: 'Polish Open Source', value: nil, status: 'outside_ranking', rank: nil }
+          def user_badge(profile:, language_badge: nil)
+            user_badges(profile: profile, language_badge: language_badge).first
           end
 
           def repository_badge(rank)
@@ -41,6 +44,18 @@ module PolishOpenSourceRank
 
           def ranked_badge(label, rank)
             { label: label, value: Rank.place(rank), status: 'ranked', rank: rank }
+          end
+
+          def city_badge(profile)
+            city = profile.fetch(:city)
+            city_rank = profile.fetch(:city_rank)
+            return ranked_badge("#{city} Elite", city_rank) if city && top?(city_rank, 10)
+
+            ranked_badge("#{city} Top 100", city_rank) if city && top?(city_rank, 100)
+          end
+
+          def outside_ranking_badge
+            { label: 'Polish Open Source', value: nil, status: 'outside_ranking', rank: nil }
           end
 
           def top?(rank, limit)

@@ -9,9 +9,17 @@ class AccessReadModelForSync
 end
 
 class RoleMapForSync
-  def role_ids(_role_keys) = %w[role-top]
+  Prepared = Struct.new(:managed_role_ids, :role_ids_by_key, keyword_init: true) do
+    def role_ids(keys)
+      keys.filter_map { |key| role_ids_by_key.fetch(key, nil) }
+    end
+  end
 
-  def managed_role_ids = %w[role-top role-old]
+  def prepare(*)
+    Prepared.new(managed_role_ids: %w[role-top role-old], role_ids_by_key: { 'top' => 'role-top' })
+  end
+
+  def managed_role_ids(prepared:) = prepared.managed_role_ids
 end
 
 class MemberGatewayForSync

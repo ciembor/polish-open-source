@@ -4,18 +4,17 @@ module PolishOpenSourceRank
   module Contexts
     module Community
       module Application
+        # Connects a ranking profile to a Discord account and enqueues async sync work.
         class ConnectDiscordAccount
           Result = Struct.new(:profile, :access, :role_ids, :sync_status, keyword_init: true)
           class PublicProfileNotFound < StandardError
           end
 
-          def initialize(profile_read_model:, connection_repository:, sync_job_repository:, access_read_model:,
-                         role_map:)
+          def initialize(profile_read_model:, connection_repository:, sync_job_repository:, access_read_model:)
             @profile_read_model = profile_read_model
             @connection_repository = connection_repository
             @sync_job_repository = sync_job_repository
             @access_read_model = access_read_model
-            @role_map = role_map
           end
 
           def call(current_user:, discord_user:, access_token:, period_start:, welcome_channel_id:)
@@ -25,17 +24,16 @@ module PolishOpenSourceRank
               profile.fetch(:source_id),
               period_start: period_start
             )
-            role_ids = role_map.role_ids(access.fetch(:role_keys))
 
             connect(profile, discord_user)
             request_sync(profile, discord_user, access_token, welcome_channel_id)
 
-            Result.new(profile: profile, access: access, role_ids: role_ids, sync_status: 'pending')
+            Result.new(profile: profile, access: access, role_ids: [], sync_status: 'pending')
           end
 
           private
 
-          attr_reader :access_read_model, :connection_repository, :profile_read_model, :role_map, :sync_job_repository
+          attr_reader :access_read_model, :connection_repository, :profile_read_model, :sync_job_repository
 
           def public_profile(current_user, period_start)
             profile = profile_read_model.user_profile(

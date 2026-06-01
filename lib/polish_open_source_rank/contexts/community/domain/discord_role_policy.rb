@@ -4,31 +4,49 @@ module PolishOpenSourceRank
   module Contexts
     module Community
       module Domain
+        # Maps contributor ranking access to Discord role keys.
         class DiscordRolePolicy
-          def role_keys(country_rank:, city_slug:, city_rank:)
+          BADGE_ROLE_KEYS = {
+            1 => 'DISCORD_ROLE_BADGE_TOP_1',
+            2 => 'DISCORD_ROLE_BADGE_TOP_2',
+            3 => 'DISCORD_ROLE_BADGE_TOP_3'
+          }.freeze
+
+          def initialize(role_catalog: DiscordRoleCatalog.new)
+            @role_catalog = role_catalog
+          end
+
+          def role_keys(access)
+            country_rank = access.fetch(:country_rank)
+            city_slug = access.fetch(:city_slug, nil)
+            city_rank = access.fetch(:city_rank)
+            language_accesses = access.fetch(:language_accesses)
+
             [].tap do |keys|
-              add_role_key(keys, 'DISCORD_ROLE_TOP_10_PL', country_rank, 10)
-              add_role_key(keys, 'DISCORD_ROLE_TOP_100_PL', country_rank, 100)
-              add_role_key(keys, city_role_key(city_slug), city_rank, 100) if city_slug
+              keys << DiscordRoleCatalog::COUNTRY_ROLE_KEY if ranked?(country_rank)
+              keys << role_catalog.city_role_key(city_slug) if city_slug && ranked?(city_rank)
+              add_language_role_keys(keys, language_accesses)
             end
           end
 
           def badge_role_key(country_rank)
-            case country_rank
-            when 1 then 'DISCORD_ROLE_BADGE_TOP_1'
-            when 2 then 'DISCORD_ROLE_BADGE_TOP_2'
-            when 3 then 'DISCORD_ROLE_BADGE_TOP_3'
-            end
+            BADGE_ROLE_KEYS[country_rank]
           end
 
           private
 
-          def city_role_key(city_slug)
-            "DISCORD_ROLE_TOP_100_CITY_#{city_slug.upcase.tr('-', '_')}"
+          attr_reader :role_catalog
+
+          def ranked?(rank)
+            rank && rank <= 100
           end
 
-          def add_role_key(keys, role_key, rank, limit)
-            keys << role_key if rank && rank <= limit
+          def add_language_role_keys(keys, language_accesses)
+            language_accesses.each do |language_access|
+              language = language_access.fetch(:language)
+              keys << DiscordLanguageRoleKey.build_open(language) if language_access.fetch(:member)
+              keys << DiscordLanguageRoleKey.build_top(language) if ranked?(language_access[:rank])
+            end
           end
         end
       end

@@ -25,7 +25,10 @@ module PolishOpenSourceRank
       end
 
       def discord_role_map
-        @discord_role_map ||= Contexts::Community::Infrastructure::Discord::DiscordRoleMap.new
+        @discord_role_map ||= Contexts::Community::Infrastructure::Discord::DiscordRoleMap.new(
+          gateway: discord_gateway,
+          published_language_source: contributor_access_read_model
+        )
       end
 
       def show_rankings
@@ -138,8 +141,7 @@ module PolishOpenSourceRank
           profile_read_model: profile_read_model,
           connection_repository: discord_connection_repository,
           sync_job_repository: discord_sync_job_repository,
-          access_read_model: contributor_access_read_model,
-          role_map: discord_role_map
+          access_read_model: contributor_access_read_model
         )
       end
 

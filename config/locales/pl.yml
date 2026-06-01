@@ -382,7 +382,7 @@ pl:
       alt: "Badge Polish Open Source"
       title: "Odznaka"
     discord:
-      channels_title: "Kanały do pisania"
+      groups_title: "Dostępne grupy"
       city_rank: "Ranking %{city}"
       connect_body: "Połącz konto Discord, żeby dołączyć do serwera oraz automatycznie zsynchronizować nick z GitHuba i role rankingowe."
       connect_action: "Dołącz do Elite Discorda"
@@ -397,7 +397,7 @@ pl:
       invite_action: "Dołącz do Discorda"
       invite_body: "To osobiste zaproszenie działa raz. Po dołączeniu bot powiąże ten invite z Twoim profilem w rankingu i automatycznie ustawi nick oraz role na serwerze."
       invite_unavailable: "Zaproszenie Discord jest chwilowo niedostępne."
-      no_channels: "Brak kanałów rankingowych dla aktualnego snapshotu."
+      no_groups: "Brak dodatkowych grup rankingowych dla aktualnego snapshotu."
       not_connected: "Discord niepołączony"
       poland_rank: "Ranking Polski"
       status: "Discord"

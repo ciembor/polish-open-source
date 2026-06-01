@@ -13,6 +13,7 @@ module PolishOpenSourceRank
             API_BASE = 'https://discord.com/api/v10'
             TEXT_CHANNEL_TYPES = [0, 5, 15].freeze
             SEND_MESSAGES = 1 << 11
+            VIEW_CHANNEL = 1 << 10
 
             def initialize(configuration)
               @configuration = configuration
@@ -72,8 +73,6 @@ module PolishOpenSourceRank
               )
             end
 
-            private
-
             attr_reader :configuration
 
             def join_guild(discord_user_id, access_token)
@@ -113,6 +112,25 @@ module PolishOpenSourceRank
             def guild_channels
               uri = URI("#{API_BASE}/guilds/#{configuration.discord_guild_id}/channels")
               request = Net::HTTP::Get.new(uri, bot_headers)
+              json_request(uri, request)
+            end
+
+            def create_role(name:, color: nil)
+              uri = URI("#{API_BASE}/guilds/#{configuration.discord_guild_id}/roles")
+              request = Net::HTTP::Post.new(uri, bot_headers)
+              payload = { name: name }
+              payload[:color] = color if color
+              request.body = JSON.generate(payload)
+              json_request(uri, request)
+            end
+
+            def create_channel(name:, type:, parent_id: nil, permission_overwrites: nil)
+              uri = URI("#{API_BASE}/guilds/#{configuration.discord_guild_id}/channels")
+              request = Net::HTTP::Post.new(uri, bot_headers)
+              payload = { name: name, type: type }
+              payload[:parent_id] = parent_id if parent_id
+              payload[:permission_overwrites] = permission_overwrites if permission_overwrites
+              request.body = JSON.generate(payload)
               json_request(uri, request)
             end
 
@@ -157,6 +175,17 @@ module PolishOpenSourceRank
 
               allow.anybits?(permission) && deny.nobits?(permission)
             end
+
+            def private_channel_overwrites(role_id)
+              allowed = (VIEW_CHANNEL | SEND_MESSAGES).to_s
+              denied = (VIEW_CHANNEL | SEND_MESSAGES).to_s
+              [
+                { id: configuration.discord_guild_id, type: 0, allow: '0', deny: denied },
+                { id: role_id, type: 0, allow: allowed, deny: '0' }
+              ]
+            end
+
+            private
 
             def bot_headers
               {

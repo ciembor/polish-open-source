@@ -8,12 +8,6 @@ class AccessReadModel
   def discord_access(*, **) = nil
 end
 
-class RoleMap
-  def role_ids(*) = []
-
-  def managed_role_ids = []
-end
-
 class RecordingConnectionRepository
   attr_reader :connection
 
@@ -42,14 +36,12 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::ConnectDi
     )
     connection_repository = RecordingConnectionRepository.new
     sync_job_repository = RecordingSyncJobRepository.new
-    role_map = ranking_role_map
 
     result = described_class.new(
       profile_read_model: profile_read_model,
       connection_repository: connection_repository,
       sync_job_repository: sync_job_repository,
-      access_read_model: access_read_model,
-      role_map: role_map
+      access_read_model: access_read_model
     ).call(
       current_user: { platform: 'github', login: 'alice' },
       discord_user: { 'id' => 'discord-1', 'username' => 'alice-discord', 'global_name' => 'Alice Discord' },
@@ -62,7 +54,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::ConnectDi
   end
 
   def expect_connected_discord(result, connection_repository, sync_job_repository)
-    expect(result.role_ids).to eq(%w[role-top role-city])
+    expect(result.role_ids).to eq([])
     expect(result.sync_status).to eq('pending')
     expect(connection_repository.connection).to include(discord_username: 'Alice Discord')
     expect(sync_job_repository.oauth_sync).to include(
@@ -75,17 +67,12 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::ConnectDi
     )
   end
 
-  def ranking_role_map
-    instance_double(RoleMap, role_ids: %w[role-top role-city], managed_role_ids: %w[role-top role-city old])
-  end
-
   it 'rejects Discord connection when the current user has no public profile' do
     use_case = described_class.new(
       profile_read_model: instance_double(ProfileReadModel, user_profile: nil),
       connection_repository: RecordingConnectionRepository.new,
       sync_job_repository: RecordingSyncJobRepository.new,
-      access_read_model: instance_double(AccessReadModel),
-      role_map: instance_double(RoleMap)
+      access_read_model: instance_double(AccessReadModel)
     )
 
     expect do
@@ -107,8 +94,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::ConnectDi
       ),
       connection_repository: RecordingConnectionRepository.new,
       sync_job_repository: RecordingSyncJobRepository.new,
-      access_read_model: instance_double(AccessReadModel, discord_access: { role_keys: [] }),
-      role_map: instance_double(RoleMap, role_ids: [], managed_role_ids: [])
+      access_read_model: instance_double(AccessReadModel, discord_access: { role_keys: [] })
     )
 
     expect do

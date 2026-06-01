@@ -380,7 +380,7 @@ en:
       alt: "Polish Open Source badge"
       title: "Badge"
     discord:
-      channels_title: "Writable channels"
+      groups_title: "Available groups"
       city_rank: "%{city} rank"
       connect_body: "Connect your Discord account to join the server, sync your GitHub nickname, and receive ranking roles automatically."
       connect_action: "Join Elite Discord"
@@ -395,7 +395,7 @@ en:
       invite_action: "Join Discord"
       invite_body: "This personal invite works once. After you join, the bot matches this invite to your ranking profile and sets your server nickname and roles automatically."
       invite_unavailable: "Discord invite is temporarily unavailable."
-      no_channels: "No ranking channels for the current snapshot."
+      no_groups: "No extra ranking groups for the current snapshot."
       not_connected: "Discord not connected"
       poland_rank: "Poland rank"
       status: "Discord"

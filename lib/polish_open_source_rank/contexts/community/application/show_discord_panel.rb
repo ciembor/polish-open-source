@@ -4,19 +4,21 @@ module PolishOpenSourceRank
   module Contexts
     module Community
       module Application
+        # Builds the Discord account panel from ranking access and sync state.
         class ShowDiscordPanel
-          Panel = Struct.new(:connection, :sync_status, :access, :access_channels, keyword_init: true) do
+          # Lightweight view model for the Discord account settings screen.
+          Panel = Struct.new(:connection, :sync_status, :access, :access_groups, keyword_init: true) do
             def fetch(key, *fallback, &)
               to_h.fetch(key, *fallback, &)
             end
           end
 
           def initialize(connection_repository:, sync_job_repository:, access_read_model:,
-                         catalog: Contexts::Ranking::Domain::LocationCatalog)
+                         role_catalog: Contexts::Community::Domain::DiscordRoleCatalog.new)
             @connection_repository = connection_repository
             @sync_job_repository = sync_job_repository
             @access_read_model = access_read_model
-            @catalog = catalog
+            @role_catalog = role_catalog
           end
 
           def call(platform:, source_id:, period_start:)
@@ -25,28 +27,16 @@ module PolishOpenSourceRank
               connection: connection_repository.discord_connection(platform, source_id),
               sync_status: sync_job_repository.sync_status(platform, source_id),
               access: access,
-              access_channels: access_channels(access.fetch(:role_keys))
+              access_groups: access_groups(access.fetch(:access_role_keys))
             )
           end
 
           private
 
-          attr_reader :access_read_model, :catalog, :connection_repository, :sync_job_repository
+          attr_reader :access_read_model, :connection_repository, :role_catalog, :sync_job_repository
 
-          def access_channels(role_keys)
-            ['general'] + role_keys.filter_map do |role_key|
-              case role_key
-              when 'DISCORD_ROLE_TOP_10_PL' then 'Top 10 PL'
-              when 'DISCORD_ROLE_TOP_100_PL' then 'Top 100 PL'
-              when /\ADISCORD_ROLE_TOP_100_CITY_(.+)\z/
-                "Top 100 #{city_name(Regexp.last_match(1))}"
-              end
-            end
-          end
-
-          def city_name(env_slug)
-            slug = env_slug.downcase.tr('_', '-')
-            catalog::CITIES.find { |city| city.fetch(:slug) == slug }&.fetch(:name) || env_slug
+          def access_groups(role_keys)
+            role_keys.filter_map { |role_key| role_catalog.role_name(role_key) }
           end
         end
       end

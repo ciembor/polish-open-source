@@ -69,12 +69,16 @@ module PolishOpenSourceRank
               end
 
               def sync_handler(configuration, repositories)
+                gateway = DiscordApiGateway.new(configuration)
                 Contexts::Community::Application::SyncDiscordConnection.new(
                   sync_job_repository: repositories.fetch(:sync_job_repository),
                   profile_read_model: repositories.fetch(:profile_read_model),
                   access_read_model: repositories.fetch(:access_read_model),
-                  member_gateway: DiscordApiGateway.new(configuration),
-                  role_map: DiscordRoleMap.new
+                  member_gateway: gateway,
+                  role_map: DiscordRoleMap.new(
+                    gateway: gateway,
+                    published_language_source: repositories.fetch(:access_read_model)
+                  )
                 )
               end
             end

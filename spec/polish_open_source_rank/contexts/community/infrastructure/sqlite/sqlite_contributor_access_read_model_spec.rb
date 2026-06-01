@@ -10,20 +10,29 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
   end
   let(:read_model) { described_class.new(database) }
 
-  it 'returns Discord access role keys from country and city ranks' do
+  it 'returns Discord access role keys from country, city, and language ranks' do
     seed_user(id: 1, login: 'alice', city: 'Kraków', total_stars: 100)
     seed_user(id: 2, login: 'bob', city: 'Kraków', total_stars: 90)
     seed_user(id: 3, login: 'carol', city: 'Wrocław', total_stars: 80)
+    seed_repository(id: 10, owner_id: 1, owner: 'alice', language: 'Ruby', stars: 30)
+    seed_repository(id: 11, owner_id: 1, owner: 'alice', language: 'JavaScript', stars: 3)
+    seed_repository(id: 12, owner_id: 2, owner: 'bob', language: 'Ruby', stars: 20)
 
     expect(read_model.access('github', 1, period_start: period)).to include(
       country_rank: 1,
       city: 'Kraków',
       city_slug: 'krakow',
       city_rank: 1,
+      language_accesses: contain_exactly(
+        include(language: 'Ruby', member: true, rank: 1),
+        include(language: 'JavaScript', member: true, rank: nil)
+      ),
       role_keys: contain_exactly(
-        'DISCORD_ROLE_TOP_10_PL',
         'DISCORD_ROLE_TOP_100_PL',
         'DISCORD_ROLE_TOP_100_CITY_KRAKOW',
+        'DISCORD_ROLE_LANGUAGE:ruby:Ruby',
+        'DISCORD_ROLE_TOP_100_LANGUAGE:ruby:Ruby',
+        'DISCORD_ROLE_LANGUAGE:javascript:JavaScript',
         'DISCORD_ROLE_BADGE_TOP_1'
       )
     )
@@ -41,6 +50,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
       city: nil,
       city_slug: nil,
       city_rank: nil,
+      language_accesses: [],
       role_keys: [],
       access_role_keys: [],
       badge_role_key: nil
@@ -55,6 +65,19 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
 
     expect(read_model.access('github', 1, period_start: nil)).to include(country_rank: 1)
     expect(read_model.access('github', 2, period_start: nil)).to include(country_rank: nil)
+  end
+
+  it 'lists published languages for the effective public period' do
+    seed_run(period)
+    seed_user(id: 1, login: 'alice', city: 'Kraków', total_stars: 100)
+    seed_repository(id: 10, owner_id: 1, owner: 'alice', language: 'Ruby', stars: 30)
+
+    expect(read_model.published_languages(period_start: period)).to eq(['Ruby'])
+    expect(read_model.published_languages(period_start: nil)).to eq(['Ruby'])
+  end
+
+  it 'returns no published languages without a public period' do
+    expect(read_model.published_languages(period_start: nil)).to eq([])
   end
 
   def period
@@ -75,6 +98,30 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
     )
     database.execute(user_stats_sql, [period_start, 'github', id, login, city, 'Poland', 1, total_stars, 0, 1,
                                       '2026-05-01T00:10:00Z'])
+  end
+
+  def seed_repository(id:, owner_id:, owner:, language:, stars:, period_start: period)
+    database.execute(
+      <<~SQL,
+        INSERT INTO repositories(
+          platform, github_id, owner_github_id, owner_login, name, full_name, html_url, language, fork, archived,
+          updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?)
+      SQL
+      ['github', id, owner_id, owner, "repo-#{id}", "#{owner}/repo-#{id}", "https://github.com/#{owner}/repo-#{id}",
+       language, '2026-05-01T00:01:00Z']
+    )
+    database.execute(
+      <<~SQL,
+        INSERT INTO repository_monthly_stats(
+          period_start, platform, repository_github_id, owner_github_id, owner_login, owner_city,
+          owner_country, stargazers_count, monthly_stars_delta, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      SQL
+      [period_start, 'github', id, owner_id, owner, 'Kraków', 'Poland', stars, 0, '2026-05-01T00:10:00Z']
+    )
   end
 
   def user_stats_sql

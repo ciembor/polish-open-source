@@ -16,12 +16,16 @@
       <p class="discord-panel__status"><%= h t('users.discord.connect_body') %></p>
     <% end %>
     <div class="discord-access">
-      <h3><%= h t('users.discord.channels_title') %></h3>
-      <ul>
-        <% panel.fetch(:access_channels).each do |channel| %>
-          <li><%= h channel %></li>
-        <% end %>
-      </ul>
+      <h3><%= h t('users.discord.groups_title') %></h3>
+      <% if panel.fetch(:access_groups).any? %>
+        <ul>
+          <% panel.fetch(:access_groups).each do |group| %>
+            <li><%= h group %></li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="profile-empty"><%= h t('users.discord.no_groups') %></p>
+      <% end %>
     </div>
   </div>
 </article>
