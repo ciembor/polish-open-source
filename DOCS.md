@@ -197,6 +197,17 @@ sudo podman exec -w /app polish-open-source-rank bundle exec rake crawl:repair_p
 
 Run these from the server as `ciembor` in `/home/ciembor/polish-open-source-rank`.
 
+The production host does not have a system `sqlite3` binary. When you need to inspect the live database, query it from inside the app container through the bundled Ruby `sqlite3` gem instead of trying `sqlite3 db/...` on the host.
+
+Example:
+
+```sh
+ssh ciembor@maciej-ciemborowicz.eu
+sudo podman exec -w /app polish-open-source-rank ruby -e 'require "bundler/setup"; require "sqlite3"; db = SQLite3::Database.new("db/polish_open_source_rank.sqlite3"); db.results_as_hash = true; puts db.execute("SELECT login FROM users LIMIT 3").map { |row| row["login"] }'
+```
+
+If you need more than a one-liner, create a short Ruby script under `/tmp` or `/app/tmp` and run it with `sudo podman exec -w /app polish-open-source-rank ruby /tmp/script.rb`.
+
 When `/internal/jobs` shows `package repository scans` as `failed` and `stale`, check production in this order:
 
 ```sh
