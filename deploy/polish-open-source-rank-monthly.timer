@@ -2,9 +2,8 @@
 Description=Run Polish Open Source Rank monthly snapshot
 
 [Timer]
-OnCalendar=*-*-02 03:15:00
+OnCalendar=*-*-01 00:00:00
 Persistent=true
 
 [Install]
 WantedBy=timers.target
-

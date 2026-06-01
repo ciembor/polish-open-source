@@ -13,6 +13,7 @@ RSpec.describe File do
 
   it 'runs scheduled crawls as restartable locked jobs' do
     unit = described_class.read(described_class.join(root, 'deploy/polish-open-source-rank-monthly.service'))
+    timer = described_class.read(described_class.join(root, 'deploy/polish-open-source-rank-monthly.timer'))
 
     expect(unit).to include('Restart=on-failure')
     expect(unit).to include('TimeoutStartSec=infinity')
@@ -24,6 +25,8 @@ RSpec.describe File do
     expect(unit).to include(
       '--memory=768m --memory-swap=768m --memory-reservation=512m --cpus=0.5 --cpu-shares=128 --pids-limit=256'
     )
+    expect(timer).to include('OnCalendar=*-*-01 00:00:00')
+    expect(timer).to include('Persistent=true')
   end
 
   it 'runs scheduled package crawls after monthly crawls with the shared database volume' do
@@ -45,7 +48,7 @@ RSpec.describe File do
     expect(service).to include(
       '--repository-limit all --scan-limit all --manifest-limit all --registry-limit all'
     )
-    expect(timer).to include('OnCalendar=*-*-02 07:15:00')
+    expect(timer).to include('OnCalendar=*-*-01 00:00:00')
     expect(timer).to include('Persistent=true')
   end
 

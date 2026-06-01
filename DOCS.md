@@ -124,7 +124,7 @@ Package crawl limits are stage-specific. `--repository-limit` controls how many 
 
 Supported package ecosystems in the current registry fetcher are npm, RubyGems, crates.io, PyPI, Hex, Packagist, Go, Homebrew, NuGet, Maven Central, Terraform/OpenTofu modules, Conan, vcpkg, SwiftPM, pub.dev, APT/Debian, RPM, and Nix. Registry download metrics are stored only when a reliable source exists; PyPI, Go, Maven, Terraform/OpenTofu, Conan, vcpkg, SwiftPM, pub.dev, APT/Debian, RPM, and Nix keep unavailable download metrics as `nil` and can still be ranked by linked repository stars and monthly star trend.
 
-Production uses [deploy/polish-open-source-rank-packages.timer](deploy/polish-open-source-rank-packages.timer), scheduled for `07:15` on the second day of each month. The timer starts after the monthly ranking service and both jobs use the same `tmp/crawl.lock`, so a long monthly crawl prevents package crawling from running concurrently.
+Production uses [deploy/polish-open-source-rank-packages.timer](deploy/polish-open-source-rank-packages.timer), scheduled for midnight on the first day of each month. The package service starts after the monthly ranking service and requires the monthly snapshot to be complete before publishing package rankings.
 
 Equivalent rake tasks are available for local operations:
 
@@ -141,8 +141,8 @@ bundle exec rake crawl:list
 
 Periodic jobs are systemd one-shot services that run short-lived Podman containers against the same mounted `db/` and `log/` directories as the web app.
 
-- `polish-open-source-rank-monthly.timer` starts `polish-open-source-rank-monthly.service` at `03:15` on the second day of each month.
-- `polish-open-source-rank-packages.timer` starts `polish-open-source-rank-packages.service` at `07:15` on the second day of each month.
+- `polish-open-source-rank-monthly.timer` starts `polish-open-source-rank-monthly.service` at midnight on the first day of each month.
+- `polish-open-source-rank-packages.timer` starts `polish-open-source-rank-packages.service` at midnight on the first day of each month.
 - Both timers use `Persistent=true`, so systemd starts a missed run after the host comes back.
 - Both crawl services use `flock -n tmp/crawl.lock`, so only one crawl runs at a time.
 - Crawl services run containers with the production env file, the production database volume, `RACK_ENV=production`, and bounded memory/CPU limits.
