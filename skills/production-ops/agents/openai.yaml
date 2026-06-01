@@ -1,0 +1,7 @@
+interface:
+  display_name: "Production Ops"
+  short_description: "Production deploy and incident workflow"
+  default_prompt: "Use $production-ops to inspect production state, deploy or roll back safely, and triage running services."
+
+policy:
+  allow_implicit_invocation: true
