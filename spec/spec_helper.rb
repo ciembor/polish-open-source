@@ -2,11 +2,30 @@
 
 require 'simplecov'
 
+simplecov_command_name = ENV.fetch('SIMPLECOV_COMMAND_NAME', nil)
+if simplecov_command_name
+  SimpleCov.command_name(simplecov_command_name)
+  SimpleCov.coverage_dir("coverage/#{simplecov_command_name}")
+end
+
 SimpleCov.start do
   enable_coverage :line
   track_files 'lib/**/*.rb'
   add_filter '/spec/'
-  minimum_coverage 100
+  minimum_coverage 100 unless ENV['SIMPLECOV_SKIP_MINIMUM_COVERAGE'] == 'true'
+end
+
+if ENV['KNAPSACK'] == 'true'
+  require 'knapsack'
+
+  Knapsack.tracker.config(
+    enable_time_offset_warning: true,
+    time_offset_in_seconds: 10
+  )
+  Knapsack.report.config(
+    report_path: ENV.fetch('KNAPSACK_REPORT_PATH', 'knapsack_rspec_report.json')
+  )
+  Knapsack::Adapters::RSpecAdapter.bind
 end
 
 require 'rack/mock'

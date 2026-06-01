@@ -20,6 +20,8 @@ jobs:
           bundler-cache: true
 
       - name: Quality
+        env:
+          KNAPSACK_NODES: "2"
         run: bin/quality
 
   deploy:

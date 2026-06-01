@@ -53,6 +53,8 @@ GEM
     http-cookie (1.1.6)
       domain_name (~> 0.5)
     json (2.19.5)
+    knapsack (4.0.0)
+      rake
     language_server-protocol (3.17.0.5)
     lint_roller (1.1.0)
     logger (1.7.0)
@@ -168,6 +170,7 @@ PLATFORMS
 DEPENDENCIES
   discordrb (~> 3.7)
   dry-configurable (~> 1.4)
+  knapsack (~> 4.0)
   puma (~> 8.0)
   rackup (~> 2.2)
   rake (~> 13.3)

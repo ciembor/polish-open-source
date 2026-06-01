@@ -7,6 +7,4 @@ if ! git diff --quiet; then
   git add -u
 fi
 
-bundle exec rubocop --cache-root tmp/rubocop_cache
-bundle exec reek
-bundle exec rspec
+KNAPSACK_NODES="${KNAPSACK_NODES:-2}" bin/quality
