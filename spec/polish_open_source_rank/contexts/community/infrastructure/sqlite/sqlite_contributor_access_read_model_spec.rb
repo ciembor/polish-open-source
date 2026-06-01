@@ -47,16 +47,33 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
     )
   end
 
+  it 'uses the latest finished ranking when no period is provided' do
+    seed_run('2026-04-01')
+    seed_run('2026-05-01', status: 'running')
+    seed_user(id: 1, login: 'alice', city: 'Kraków', total_stars: 100, period_start: '2026-04-01')
+    seed_user(id: 2, login: 'bob', city: 'Kraków', total_stars: 200, period_start: '2026-05-01')
+
+    expect(read_model.access('github', 1, period_start: nil)).to include(country_rank: 1)
+    expect(read_model.access('github', 2, period_start: nil)).to include(country_rank: nil)
+  end
+
   def period
     '2026-04-01'
   end
 
-  def seed_user(id:, login:, city:, total_stars:)
+  def seed_run(period_start, status: 'finished')
+    database.execute(
+      'INSERT INTO sync_runs(period_start, period_end, status, started_at) VALUES (?, ?, ?, ?)',
+      [period_start, '2026-05-01', status, '2026-05-01T00:00:00Z']
+    )
+  end
+
+  def seed_user(id:, login:, city:, total_stars:, period_start: period)
     database.execute(
       'INSERT INTO users(platform, github_id, login, html_url, updated_at) VALUES (?, ?, ?, ?, ?)',
       ['github', id, login, "https://github.com/#{login}", '2026-05-01T00:01:00Z']
     )
-    database.execute(user_stats_sql, [period, 'github', id, login, city, 'Poland', 1, total_stars, 0, 1,
+    database.execute(user_stats_sql, [period_start, 'github', id, login, city, 'Poland', 1, total_stars, 0, 1,
                                       '2026-05-01T00:10:00Z'])
   end
 

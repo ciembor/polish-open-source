@@ -182,15 +182,20 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('rel="canonical" href="https://rank.example/2026-04/locations/krakow"')
   end
 
-  it 'renders latest and explicit month slugs while the snapshot is still running with stored stats' do
-    ENV['DATABASE_URL'] = "sqlite://#{seed_running_database}"
+  it 'keeps latest pages on the last finished month while the next snapshot is still running' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database_with_running_next_period}"
 
     latest_response = Rack::MockRequest.new(described_class).get('/latest')
-    month_response = Rack::MockRequest.new(described_class).get('/2026-04')
+    profile_response = Rack::MockRequest.new(described_class).get('/users/github/alice')
+    package_response = Rack::MockRequest.new(described_class).get('/packages/npm')
+    running_month_response = Rack::MockRequest.new(described_class).get('/2026-05')
 
+    expect(latest_response.status).to eq(200)
+    expect(latest_response.body).to include('datetime="2026-04-01"')
     expect(latest_response.body).to include('alice/app')
-    expect(month_response.status).to eq(200)
-    expect(month_response.body).to include('alice/app')
+    expect(profile_response.body).to include('alice/app')
+    expect(package_response.status).to eq(200)
+    expect(running_month_response.status).to eq(404)
   end
 
   it 'renders full top 100 pages for each ranking type', :aggregate_failures do
@@ -832,6 +837,18 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     seed_period(run_repository, snapshot_repository, period)
     seed_package_records(database, older_period)
     seed_package_records(database, period)
+    path
+  end
+
+  def seed_database_with_running_next_period
+    path = seed_database
+    database = bootstrapped_database(path)
+    run_repository = snapshot_run_repository(database)
+    snapshot_repository = snapshot_repository(database)
+    period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-05')
+    run_repository.create(period)
+    snapshot_repository.record_user_stats(user_stats(period))
+    snapshot_repository.record_repository_stats(repository_stats(period))
     path
   end
 

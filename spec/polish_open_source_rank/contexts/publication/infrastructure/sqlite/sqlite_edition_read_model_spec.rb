@@ -46,16 +46,27 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     )
   end
 
-  def seed_run(period_start)
+  it 'does not publish editions for unfinished monthly runs' do
+    read_model = described_class.new(database)
+
+    seed_run('2026-04-01')
+    seed_run('2026-05-01', status: 'running', finished_at: nil)
+    seed_user_stats('2026-04-01')
+    seed_user_stats('2026-05-01')
+
+    expect(read_model.monthly_editions(2026).map { |edition| edition.fetch(:period_start) }).to eq(['2026-04-01'])
+  end
+
+  def seed_run(period_start, status: 'finished', finished_at: '2026-05-01T00:30:00Z')
     database.execute(
       'INSERT INTO sync_runs(period_start, period_end, status, started_at, finished_at) VALUES (?, ?, ?, ?, ?)',
-      [period_start, '2026-05-01', 'finished', '2026-05-01T00:00:00Z', '2026-05-01T00:30:00Z']
+      [period_start, '2026-05-01', status, '2026-05-01T00:00:00Z', finished_at]
     )
   end
 
   def seed_user_stats(period_start)
     database.execute(
-      'INSERT INTO users(platform, github_id, login, html_url, updated_at) VALUES (?, ?, ?, ?, ?)',
+      'INSERT OR IGNORE INTO users(platform, github_id, login, html_url, updated_at) VALUES (?, ?, ?, ?, ?)',
       ['github', 1, 'alice', 'https://github.com/alice', '2026-05-01T00:01:00Z']
     )
     database.execute(user_stats_sql, [period_start, 'github', 1, 'alice', 'Kraków', 'Poland', 1, 10, 2, 3,

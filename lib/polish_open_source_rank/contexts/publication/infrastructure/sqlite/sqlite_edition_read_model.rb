@@ -67,7 +67,8 @@ module PolishOpenSourceRank
               database.fetch_all(<<~SQL)
                 SELECT period_start
                 FROM sync_runs
-                WHERE #{edition_period_condition}
+                WHERE sync_runs.status = 'finished'
+                  AND #{edition_period_condition}
                 ORDER BY period_start DESC
               SQL
                       .map { |row| row.fetch(:period_start) }

@@ -19,7 +19,7 @@ pl:
         title: "Zakres danych"
       eyebrow: "Zasady"
       snapshots:
-        body: "Dane są odświeżane miesięcznie. Widok najnowszy przełącza się dopiero po zakończeniu pełnego crawlowania, a jawny adres miesiąca może pokazywać dane już w trakcie przeliczania."
+        body: "Dane są odświeżane miesięcznie. Strony publiczne przełączają się na nowy miesiąc dopiero po zakończeniu pełnego miesięcznego crawlowania."
         title: "Snapshoty"
       stars:
         body: "Ranking top sortuje użytkowników według łącznej liczby gwiazdek w publicznych repozytoriach, a repozytoria według aktualnej liczby gwiazdek."

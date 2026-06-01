@@ -49,7 +49,16 @@ module PolishOpenSourceRank
             end
 
             def latest_public_period
-              database.dataset(:user_monthly_stats).select_map(:period_start).max
+              database.fetch_value(<<~SQL)
+                SELECT MAX(sync_runs.period_start)
+                FROM sync_runs
+                WHERE sync_runs.status = 'finished'
+                  AND EXISTS (
+                    SELECT 1
+                    FROM user_monthly_stats user_stats
+                    WHERE user_stats.period_start = sync_runs.period_start
+                  )
+              SQL
             end
 
             def user_country_rank(platform, user_id, period_start)

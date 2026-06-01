@@ -19,7 +19,7 @@ en:
         title: "Data scope"
       eyebrow: "Rules"
       snapshots:
-        body: "Data is refreshed monthly. The latest view switches only after a full crawl completes, while an explicit month URL may show data while recalculation is still running."
+        body: "Data is refreshed monthly. Public pages switch to a new month only after the full monthly crawl completes."
         title: "Snapshots"
       stars:
         body: "The top ranking sorts users by the total number of stars in public repositories, and repositories by their current star count."

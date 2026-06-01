@@ -11,10 +11,7 @@ module PolishOpenSourceRank
             end
 
             def latest_period
-              periods = revision_tables.flat_map do |table|
-                database.dataset(table).select_map(:period_start)
-              end
-              periods.max
+              database.fetch_value(public_period_sql('MAX(sync_runs.period_start)'))
             end
 
             def public_cache_revision(period_start)
@@ -26,7 +23,7 @@ module PolishOpenSourceRank
             def recorded_period?(period_start)
               return false unless period_start
 
-              database.dataset(:sync_runs).where(period_start: period_start).any?
+              database.fetch_value(public_period_sql('1', 'sync_runs.period_start = ?'), [period_start]) == 1
             end
 
             private
@@ -40,6 +37,40 @@ module PolishOpenSourceRank
                 organization_monthly_stats
                 organization_repository_monthly_stats
               ]
+            end
+
+            def public_period_sql(select_expression, extra_condition = nil)
+              conditions = ["sync_runs.status = 'finished'", public_period_stats_condition]
+              conditions << extra_condition if extra_condition
+
+              <<~SQL
+                SELECT #{select_expression}
+                FROM sync_runs
+                WHERE #{conditions.join("\n  AND ")}
+              SQL
+            end
+
+            def public_period_stats_condition
+              <<~SQL
+                (
+                  EXISTS (
+                    SELECT 1 FROM user_monthly_stats user_stats
+                    WHERE user_stats.period_start = sync_runs.period_start
+                  )
+                  OR EXISTS (
+                    SELECT 1 FROM repository_monthly_stats repository_stats
+                    WHERE repository_stats.period_start = sync_runs.period_start
+                  )
+                  OR EXISTS (
+                    SELECT 1 FROM organization_monthly_stats organization_stats
+                    WHERE organization_stats.period_start = sync_runs.period_start
+                  )
+                  OR EXISTS (
+                    SELECT 1 FROM organization_repository_monthly_stats organization_repository_stats
+                    WHERE organization_repository_stats.period_start = sync_runs.period_start
+                  )
+                )
+              SQL
             end
 
             def public_cache_revision_sql

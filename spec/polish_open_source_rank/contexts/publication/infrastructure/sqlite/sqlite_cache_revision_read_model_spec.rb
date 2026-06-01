@@ -11,6 +11,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     seed_run(database)
     seed_user(database)
     seed_user_stats(database)
+    seed_run(database, period_start: '2026-05-01', period_end: '2026-06-01', status: 'running', finished_at: nil)
+    seed_user_stats(database, period_start: '2026-05-01')
 
     expect(read_model.latest_period).to eq('2026-04-01')
     expect(read_model.recorded_period?('2026-04-01')).to be(true)
@@ -19,10 +21,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     expect(read_model.public_cache_revision(nil)).to be_nil
   end
 
-  def seed_run(database)
+  def seed_run(database, period_start: '2026-04-01', period_end: '2026-05-01', status: 'finished',
+               finished_at: '2026-05-01T00:30:00Z')
     database.execute(
       'INSERT INTO sync_runs(period_start, period_end, status, started_at, finished_at) VALUES (?, ?, ?, ?, ?)',
-      ['2026-04-01', '2026-05-01', 'finished', '2026-05-01T00:00:00Z', '2026-05-01T00:30:00Z']
+      [period_start, period_end, status, '2026-05-01T00:00:00Z', finished_at]
     )
   end
 
@@ -33,7 +36,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     )
   end
 
-  def seed_user_stats(database)
+  def seed_user_stats(database, period_start: '2026-04-01')
     insert_stats_sql = <<~SQL
       INSERT INTO user_monthly_stats(
         period_start, platform, user_github_id, login, city, country, public_repo_count,
@@ -44,7 +47,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     database.execute(
       insert_stats_sql,
       [
-        '2026-04-01', 'github', 1, 'alice', 'Kraków', 'Poland', 1, 10, 2, 3,
+        period_start, 'github', 1, 'alice', 'Kraków', 'Poland', 1, 10, 2, 3,
         '2026-05-01T00:10:00Z'
       ]
     )
