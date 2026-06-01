@@ -22,7 +22,7 @@ jobs:
           bundler-cache: true
 
       - name: Cache RuboCop
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: tmp/rubocop_cache
           key: rubocop-${{ runner.os }}-${{ hashFiles('Gemfile.lock', '.rubocop.yml') }}
