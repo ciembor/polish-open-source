@@ -458,6 +458,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   it 'queues Discord member sync without waiting for the gateway' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    ENV['DISCORD_GUILD_ID'] = '1505949566229286972'
+    ENV['DISCORD_INVITE_CHANNEL_ID'] = '1505949566699176050'
     described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
     described_class.set :discord_oauth_client, FakeDiscordOAuthClient.new
     described_class.set :discord_gateway, FailingMemberSyncDiscordGateway.new
@@ -760,6 +762,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   it 'rate limits abusive operational and auth paths without limiting normal public pages', :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
     request = Rack::MockRequest.new(described_class)
 
     30.times { expect(request.get('/auth/github').status).to eq(302) }
