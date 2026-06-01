@@ -36,7 +36,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     seed_repository(id: 10, owner_id: 1, owner: 'alice', full_name: 'alice/app', language: 'Ruby', stars: 30)
     seed_repository(id: 11, owner_id: 2, owner: 'bob', full_name: 'bob/tool', language: 'Ruby', stars: 20)
 
-    profile = read_model.repository_profile('github', 'bob', 'tool', period_start: period)
+    profile = read_model.repository_profile('github', 'bob/tool', period_start: period)
 
     expect(profile.fetch(:polish_repo_badge)).to include(label: 'Polish .rb Repo', value: '2nd', rank: 2)
   end
@@ -46,7 +46,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     seed_repository(id: 10, owner_id: 1, owner: 'alice', full_name: 'alice/app', language: 'Ruby', stars: 30)
     seed_published_badge('repository', subject_id: 10, label: 'Polish .rb Repo', rank: 9)
 
-    profile = read_model.repository_profile('github', 'alice', 'app', period_start: period)
+    profile = read_model.repository_profile('github', 'alice/app', period_start: period)
 
     expect(profile.fetch(:polish_repo_badge)).to include(label: 'Polish .rb Repo', value: '9th', rank: 9)
   end
@@ -83,7 +83,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     seed_user(id: 1, login: 'alice', total_stars: 100)
     seed_repository(id: 10, owner_id: 1, owner: 'alice', full_name: 'alice/app', language: 'Ruby', stars: 30)
 
-    profile = read_model.repository_profile('github', 'alice', 'app', period_start: period)
+    profile = read_model.repository_profile('github', 'alice/app', period_start: period)
 
     expect(profile).to include(full_name: 'alice/app', elite_rank: 1)
     expect(profile.fetch(:polish_repo_badge)).to include(label: 'Polish .rb Repo', value: '1st', status: 'ranked')
@@ -93,7 +93,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     seed_user(id: 1, login: 'alice', total_stars: 100)
     seed_repository(id: 10, owner_id: 1, owner: 'alice', full_name: 'alice/docs', language: nil, stars: 30)
 
-    profile = read_model.repository_profile('github', 'alice', 'docs', period_start: period)
+    profile = read_model.repository_profile('github', 'alice/docs', period_start: period)
 
     expect(profile.fetch(:polish_repo_badge)).to include(label: 'Polish Repo', value: '1st')
   end
@@ -103,13 +103,13 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     seed_repository_record(id: 10, owner_id: 1, owner: 'alice', full_name: 'alice/app', language: nil)
 
     user = read_model.user_profile('github', 'alice', period_start: nil)
-    repository = read_model.repository_profile('github', 'alice', 'app', period_start: nil)
+    repository = read_model.repository_profile('github', 'alice/app', period_start: nil)
 
     expect(user).to include(elite_rank: nil, repositories: [])
     expect(user.fetch(:profile_badge)).to include(label: 'Polish Open Source', value: nil)
     expect(repository).to include(elite_rank: nil)
     expect(read_model.user_profile('github', 'missing', period_start: period)).to be_nil
-    expect(read_model.repository_profile('github', 'alice', 'missing', period_start: period)).to be_nil
+    expect(read_model.repository_profile('github', 'alice/missing', period_start: period)).to be_nil
   end
 
   it 'lists every public user identity for sitemap rendering' do
@@ -143,7 +143,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     )
 
     organization = read_model.organization_profile('github', 'polish-org', period_start: period)
-    repository = read_model.organization_repository_profile('github', 'polish-org', 'toolkit', period_start: period)
+    repository = read_model.organization_repository_profile('github', 'polish-org/toolkit', period_start: period)
 
     expect(organization).to include(login: 'polish-org', elite_rank: 1, city_rank: 1)
     expect(organization.fetch(:profile_badge)).to include(label: 'Polish Open Source Org', value: '1st')

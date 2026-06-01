@@ -75,6 +75,16 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     expect(capturing_database.calls[1].fetch(:sql)).to match(/LIMIT 1\n\z/)
   end
 
+  it 'rejects unsupported order columns before SQL is generated' do
+    capturing_database = new_capturing_database
+    read_model = described_class.new(capturing_database)
+
+    expect do
+      read_model.ranked_users('poland', period, 'total_stars; DROP TABLE users')
+    end.to raise_error(ArgumentError, 'Unsupported ranking order expression: total_stars; DROP TABLE users')
+    expect(capturing_database.calls).to be_empty
+  end
+
   it 'returns scoped organization rankings' do
     seed_organization(id: 100, login: 'polish-org', stars: 80, delta: 10, members: 12)
     seed_organization(id: 200, login: 'second-org', city: 'Kraków', stars: 70, delta: 4, members: 30)

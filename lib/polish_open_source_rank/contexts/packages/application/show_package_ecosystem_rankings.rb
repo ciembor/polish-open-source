@@ -14,6 +14,7 @@ module PolishOpenSourceRank
           def call(ecosystem:, period_start:, limit: DEFAULT_LIMIT, repository_kind: nil)
             return {} unless period_start
 
+            ecosystem = Domain::Ecosystem.require_supported!(ecosystem)
             arguments = {
               ecosystem: ecosystem,
               period_start: period_start,

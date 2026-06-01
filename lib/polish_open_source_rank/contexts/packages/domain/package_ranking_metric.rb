@@ -5,7 +5,7 @@ module PolishOpenSourceRank
     module Packages
       module Domain
         module PackageRankingMetric
-          Metric = Struct.new(:slug, :key, :ecosystems, keyword_init: true)
+          Metric = Data.define(:slug, :key, :ecosystems)
 
           METRICS = [
             Metric.new(slug: 'top', key: 'downloads_30d', ecosystems: %w[npm crates packagist homebrew]),

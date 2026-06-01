@@ -15,4 +15,11 @@ RSpec.describe PolishOpenSourceRank::Shared::Domain::Period do
     expect(period.cover_time?(Time.parse('2026-02-28T23:59:59Z'))).to be(true)
     expect(period.cover_time?(Time.parse('2026-03-01T00:00:00Z'))).to be(false)
   end
+
+  it 'is immutable once built' do
+    period = described_class.parse('2026-02')
+
+    expect(period).not_to respond_to(:start_date=)
+    expect(period).not_to respond_to(:[]=)
+  end
 end

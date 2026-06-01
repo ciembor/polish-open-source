@@ -66,4 +66,12 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application do
 
     expect(result).to eq(package_name: 'tool')
   end
+
+  it 'rejects unsupported ecosystems before read-model calls' do
+    use_case = described_class::ShowPackageRankingDetail.new(package_ranking_read_model: read_model)
+
+    expect do
+      use_case.call(ecosystem: 'unknown', metric: 'downloads_total', period_start: '2026-04-01')
+    end.to raise_error(ArgumentError, 'Unsupported package ecosystem: unknown')
+  end
 end

@@ -12,6 +12,7 @@ module PolishOpenSourceRank
           def call(ecosystem:, package_name:, period_start:)
             return unless period_start
 
+            ecosystem = Domain::Ecosystem.require_supported!(ecosystem)
             package_ranking_read_model.package_profile(
               ecosystem: ecosystem,
               package_name: package_name,

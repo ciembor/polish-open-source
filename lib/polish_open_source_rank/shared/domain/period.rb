@@ -3,7 +3,8 @@
 module PolishOpenSourceRank
   module Shared
     module Domain
-      Period = Struct.new(:start_date, :end_date, keyword_init: true) do
+      # Immutable calendar-month range used by ranking and package jobs.
+      Period = Data.define(:start_date, :end_date) do
         def self.previous_month(today = Date.today)
           first_day = Date.new(today.year, today.month, 1)
           from_month(first_day << 1)

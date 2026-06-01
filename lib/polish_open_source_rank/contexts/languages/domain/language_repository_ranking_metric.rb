@@ -5,7 +5,7 @@ module PolishOpenSourceRank
     module Languages
       module Domain
         module LanguageRepositoryRankingMetric
-          Metric = Struct.new(:slug, :key, keyword_init: true)
+          Metric = Data.define(:slug, :key)
 
           METRICS = [
             Metric.new(slug: 'top', key: 'repository_stars_count'),

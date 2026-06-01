@@ -11,6 +11,13 @@ module PolishOpenSourceRank
             include SQLiteUserBadgeQueries
 
             REPOSITORY_LIMIT = 100
+            ORGANIZATION_REPOSITORY_ORDER = Shared::Infrastructure::SQLite::SqlExpressionMap.new(
+              {
+                stargazers_count: 'stats.stargazers_count',
+                monthly_stars_delta: 'stats.monthly_stars_delta'
+              },
+              name: 'organization repository profile order expression'
+            )
 
             def initialize(
               database,
@@ -46,8 +53,8 @@ module PolishOpenSourceRank
               )
             end
 
-            def repository_profile(platform, owner, name, period_start:)
-              repository = fetch_repository_profile(platform, "#{owner}/#{name}", period_start)
+            def repository_profile(platform, full_name, period_start:)
+              repository = fetch_repository_profile(platform, full_name.to_s, period_start)
               return unless repository
 
               public_period = repository[:period_start] || period_start
@@ -83,8 +90,8 @@ module PolishOpenSourceRank
               )
             end
 
-            def organization_repository_profile(platform, owner, name, period_start:)
-              repository = fetch_organization_repository_profile(platform, "#{owner}/#{name}", period_start)
+            def organization_repository_profile(platform, full_name, period_start:)
+              repository = fetch_organization_repository_profile(platform, full_name.to_s, period_start)
               return unless repository
 
               public_period = repository[:period_start] || period_start
@@ -232,6 +239,7 @@ module PolishOpenSourceRank
             end
 
             def organization_repository_rows(platform, organization_id, period_start, limit, order_column:)
+              order_expression = organization_repository_order_expression(order_column)
               database.fetch_all(<<~SQL, [period_start, platform, organization_id])
                 SELECT repositories.platform, repositories.github_id, repositories.full_name, repositories.name,
                        repositories.description, repositories.html_url, repositories.homepage,
@@ -241,9 +249,13 @@ module PolishOpenSourceRank
                   ON repositories.platform = stats.platform
                  AND repositories.github_id = stats.repository_github_id
                 WHERE stats.period_start = ? AND stats.platform = ? AND stats.organization_github_id = ?
-                ORDER BY stats.#{order_column} DESC, repositories.full_name COLLATE NOCASE ASC
+                ORDER BY #{order_expression} DESC, repositories.full_name COLLATE NOCASE ASC
                 LIMIT #{bounded_limit(limit)}
               SQL
+            end
+
+            def organization_repository_order_expression(order_column)
+              ORGANIZATION_REPOSITORY_ORDER.fetch(order_column)
             end
 
             def organization_country_rank(platform, organization_id, period_start)
