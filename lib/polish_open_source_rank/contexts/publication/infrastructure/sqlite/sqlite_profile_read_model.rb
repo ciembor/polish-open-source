@@ -6,21 +6,33 @@ module PolishOpenSourceRank
       module Infrastructure
         module SQLite
           class SQLiteProfileReadModel
+            include SQLitePublicIdentityQueries
+            include SQLiteUserBadgeQueries
+
             REPOSITORY_LIMIT = 100
 
-            def initialize(database, badge_policy: Domain::BadgePolicy.new)
+            def initialize(
+              database,
+              badge_policy: Domain::BadgePolicy.new,
+              user_language_badge_read_model: SQLiteUserLanguageBadgeReadModel.new(database)
+            )
               @database = database
               @badge_policy = badge_policy
+              @user_language_badge_read_model = user_language_badge_read_model
             end
 
             def user_profile(platform, login, period_start:)
               user = fetch_user_profile(platform, login, period_start)
               return unless user
 
-              public_period = user[:period_start] || period_start
+              public_period = effective_public_period(user, period_start)
               country_rank = user_country_rank(user.fetch(:platform), user.fetch(:github_id), public_period)
               city_rank = user_city_rank(user.fetch(:platform), user.fetch(:github_id), user[:city], public_period)
-              badges = user_badges(country_rank: country_rank, city: user[:city], city_rank: city_rank)
+              badges = user_badges_for(
+                user,
+                public_period,
+                { country_rank: country_rank, city: user[:city], city_rank: city_rank }
+              )
               user.merge(
                 elite_rank: country_rank,
                 city_rank: city_rank,
@@ -87,7 +99,7 @@ module PolishOpenSourceRank
 
             private
 
-            attr_reader :badge_policy, :database
+            attr_reader :badge_policy, :database, :user_language_badge_read_model
 
             def fetch_user_profile(platform, login, period_start)
               database.fetch_all(<<~SQL, [period_start, platform, login]).first
@@ -369,30 +381,6 @@ module PolishOpenSourceRank
                 WHERE platform = ? AND user_github_id = ?
               SQL
             end
-
-            def user_badges(country_rank:, city:, city_rank:)
-              badge_policy.user_badges(country_rank: country_rank, city: city, city_rank: city_rank)
-            end
-
-            public
-
-            def public_user_identities
-              database.fetch_all(<<~SQL)
-                SELECT platform, login
-                FROM users
-                ORDER BY platform ASC, login COLLATE NOCASE ASC
-              SQL
-            end
-
-            def public_organization_identities
-              database.fetch_all(<<~SQL)
-                SELECT platform, login
-                FROM organizations
-                ORDER BY platform ASC, login COLLATE NOCASE ASC
-              SQL
-            end
-
-            private
 
             def bounded_limit(limit)
               limit.to_i.clamp(1, REPOSITORY_LIMIT)

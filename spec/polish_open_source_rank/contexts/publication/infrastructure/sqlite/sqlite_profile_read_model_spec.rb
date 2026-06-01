@@ -13,12 +13,16 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
   it 'returns user profiles with ranking badges and top repositories' do
     seed_user(id: 1, login: 'alice', total_stars: 100)
     seed_user(id: 2, login: 'bob', total_stars: 90)
-    seed_repository(id: 10, owner_id: 1, owner: 'alice', full_name: 'alice/app', stars: 30)
+    seed_repository(id: 10, owner_id: 1, owner: 'alice', full_name: 'alice/app', language: 'Ruby', stars: 30)
+    seed_repository(id: 11, owner_id: 2, owner: 'bob', full_name: 'bob/tool', language: 'Ruby', stars: 20)
 
     profile = read_model.user_profile('github', 'alice', period_start: period)
 
     expect(profile).to include(login: 'alice', elite_rank: 1)
     expect(profile.fetch(:profile_badge)).to include(label: 'Polish Open Source', value: '1st', status: 'ranked')
+    expect(profile.fetch(:badges).map { |badge| badge.fetch(:label) }).to eq(
+      ['Polish Open Source', 'Polish RB Top 100', 'Kraków Elite']
+    )
     expect(profile.fetch(:repositories)).to contain_exactly(
       include(full_name: 'alice/app', stargazers_count: 30, polish_repo_badge: include(value: '1st'))
     )
@@ -54,7 +58,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
 
   it 'returns repository profiles with top-100 badges' do
     seed_user(id: 1, login: 'alice', total_stars: 100)
-    seed_repository(id: 10, owner_id: 1, owner: 'alice', full_name: 'alice/app', stars: 30)
+    seed_repository(id: 10, owner_id: 1, owner: 'alice', full_name: 'alice/app', language: 'Ruby', stars: 30)
 
     profile = read_model.repository_profile('github', 'alice', 'app', period_start: period)
 
@@ -64,7 +68,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
 
   it 'returns empty ranking details for records without a public period' do
     seed_user_record(id: 1, login: 'alice')
-    seed_repository_record(id: 10, owner_id: 1, owner: 'alice', full_name: 'alice/app')
+    seed_repository_record(id: 10, owner_id: 1, owner: 'alice', full_name: 'alice/app', language: nil)
 
     user = read_model.user_profile('github', 'alice', period_start: nil)
     repository = read_model.repository_profile('github', 'alice', 'app', period_start: nil)
@@ -147,16 +151,16 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     )
   end
 
-  def seed_repository(id:, owner_id:, owner:, full_name:, stars:)
-    seed_repository_record(id: id, owner_id: owner_id, owner: owner, full_name: full_name)
+  def seed_repository(id:, owner_id:, owner:, full_name:, language:, stars:)
+    seed_repository_record(id: id, owner_id: owner_id, owner: owner, full_name: full_name, language: language)
     database.execute(repository_stats_sql, [period, 'github', id, owner_id, owner, 'Kraków', 'Poland', stars, 0,
                                             '2026-05-01T00:10:00Z'])
   end
 
-  def seed_repository_record(id:, owner_id:, owner:, full_name:)
+  def seed_repository_record(id:, owner_id:, owner:, full_name:, language:)
     database.execute(
       repository_sql,
-      ['github', id, owner_id, owner, full_name.split('/').last, full_name, 'https://github.com/alice/app',
+      ['github', id, owner_id, owner, full_name.split('/').last, full_name, 'https://github.com/alice/app', language,
        '2026-05-01T00:01:00Z']
     )
   end
@@ -174,9 +178,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
   def repository_sql
     <<~SQL
       INSERT INTO repositories(
-        platform, github_id, owner_github_id, owner_login, name, full_name, html_url, fork, archived, updated_at
+        platform, github_id, owner_github_id, owner_login, name, full_name, html_url, language, fork, archived,
+        updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?)
     SQL
   end
 

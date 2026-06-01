@@ -254,12 +254,12 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
   end
 
   it 'maps configured Discord role keys to role IDs' do
-    ENV['DISCORD_ROLE_TOP_10_PL'] = 'top-10-role'
     ENV['DISCORD_ROLE_TOP_100_CITY_KRAKOW'] = 'krakow-role'
+    ENV['DISCORD_ROLE_TOP_100_PL'] = 'top-100-role'
     map = PolishOpenSourceRank::Web::Auth::DiscordRoleMap.new
 
-    expect(map.role_ids(%w[DISCORD_ROLE_TOP_10_PL MISSING])).to eq(['top-10-role'])
-    expect(map.managed_role_ids).to include('top-10-role', 'krakow-role')
+    expect(map.role_ids(%w[DISCORD_ROLE_TOP_100_PL MISSING])).to eq(['top-100-role'])
+    expect(map.managed_role_ids).to include('top-100-role', 'krakow-role')
   end
 
   def capture_http_requests(responses)

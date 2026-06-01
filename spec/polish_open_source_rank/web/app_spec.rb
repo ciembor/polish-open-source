@@ -306,7 +306,6 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     ENV['DISCORD_INVITE_CHANNEL_ID'] = 'invite-channel'
     ENV['DISCORD_GUILD_ID'] = 'guild-1'
-    ENV['DISCORD_ROLE_TOP_10_PL'] = 'role-top-10'
     ENV['DISCORD_ROLE_TOP_100_PL'] = 'role-top-100'
     ENV['DISCORD_ROLE_TOP_100_CITY_KRAKOW'] = 'role-krakow'
     ENV['DISCORD_ROLE_BADGE_TOP_1'] = 'role-gold'
@@ -518,8 +517,10 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     )
 
     expect(profile.body).to include('Dołącz do Elite Discorda')
-    expect(profile.body).to include('Kanały do pisania')
-    expect(profile.body).to include('general')
+    expect(profile.body).to include('Dostępne grupy')
+    expect(profile.body).to include('Ruby')
+    expect(profile.body).to include('Top 100 Ruby')
+    expect(profile.body).to include('Polish RB Top 100')
     expect(profile.body).to include('/auth/discord')
     expect(profile.body).to include('name="csrf_token"')
     expect(invalid_logout.status).to eq(403)
@@ -1597,7 +1598,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'Twój dostęp Discord',
       'Dołącz do Elite Discorda',
       'href="/auth/discord"',
-      'Kanały do pisania',
+      'Dostępne grupy',
       'Odznaka',
       'Odznaki repozytoriów',
       '<p class="badge-preview__label">alice/app</p>',
@@ -1605,8 +1606,6 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'class="badge-markdown__copy js-copy-badge-markdown"',
       'data-copy-label="Kopiuj"',
       'data-copy-done-label="Skopiowano"',
-      'general',
-      'Top 10 PL',
       'Top 100 PL',
       'Top 100 Kraków',
       '/badges/users/github/alice.svg',
