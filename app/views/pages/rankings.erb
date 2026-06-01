@@ -65,7 +65,16 @@
           <%= erb :"rankings/table", locals: { kind: "organizations", heading_id: 'ranking-organizations-top', title: t('rankings.top_10_stars'), rows: @organization_rankings.fetch(:top).first(10), metric: :total_stars, metric_label: t('rankings.metric.stars'), top_path: ranking_path("organizations", "top") } %>
           <%= erb :"rankings/table", locals: { kind: "organizations", heading_id: 'ranking-organizations-trending', title: t('rankings.trending_10_month'), rows: @organization_rankings.fetch(:trending).first(10), metric: :monthly_stars_delta, metric_label: t('rankings.metric.new_stars'), top_path: ranking_path("organizations", "trending") } %>
           <%= erb :"rankings/table", locals: { kind: "organizations", heading_id: 'ranking-organizations-members', title: t('rankings.members_10'), rows: @organization_rankings.fetch(:members).first(10), metric: :members_count, metric_label: t('rankings.metric.members'), top_path: ranking_path("organizations", "members") } %>
-          <%= erb :"rankings/table", locals: { kind: "organization-repositories", heading_id: 'ranking-organization-repositories-top', title: t('rankings.organization_repositories_month'), rows: @organization_repository_rankings.fetch(:top).first(10), metric: :stargazers_count, metric_label: t('rankings.metric.stars'), top_path: ranking_path("organization-repositories", "top") } %>
+        </div>
+      </div>
+    </section>
+
+    <section class="ranking-band ranking-band--alt" aria-labelledby="organization-repositories-heading">
+      <div class="content">
+        <h2 id="organization-repositories-heading"><%= h t('rankings.organization_repositories_month') %></h2>
+        <div class="ranking-grid ranking-grid--two">
+          <%= erb :"rankings/table", locals: { kind: "organization-repositories", heading_id: 'ranking-organization-repositories-top', title: t('rankings.top_10_stars'), rows: @organization_repository_rankings.fetch(:top).first(10), metric: :stargazers_count, metric_label: t('rankings.metric.stars'), top_path: ranking_path("organization-repositories", "top") } %>
+          <%= erb :"rankings/table", locals: { kind: "organization-repositories", heading_id: 'ranking-organization-repositories-trending', title: t('rankings.trending_10_month'), rows: @organization_repository_rankings.fetch(:trending).first(10), metric: :monthly_stars_delta, metric_label: t('rankings.metric.new_stars'), top_path: ranking_path("organization-repositories", "trending") } %>
         </div>
       </div>
     </section>

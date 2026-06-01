@@ -73,10 +73,19 @@ module PolishOpenSourceRank
             item_list_schema(
               t('rankings.members_10'),
               @organization_rankings.fetch(:members).first(10)
-            ) { |row| organization_list_schema(row) },
+            ) { |row| organization_list_schema(row) }
+          ] + organization_repository_ranking_overview_sections
+        end
+
+        def organization_repository_ranking_overview_sections
+          [
             item_list_schema(
-              t('rankings.organization_repositories_month'),
+              t('rankings.top_10_stars'),
               @organization_repository_rankings.fetch(:top).first(10)
+            ) { |row| organization_repository_list_schema(row) },
+            item_list_schema(
+              t('rankings.trending_10_month'),
+              @organization_repository_rankings.fetch(:trending).first(10)
             ) { |row| organization_repository_list_schema(row) }
           ]
         end

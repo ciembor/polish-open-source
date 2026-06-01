@@ -1443,6 +1443,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'href="/latest/organizations/top"',
       'href="/latest/organizations/members"',
       'href="/latest/organization-repositories/top"',
+      'href="/latest/organization-repositories/trending"',
       'Więcej miast'
     )
     expect(response.body).not_to include('href="/latest/users/top"')
