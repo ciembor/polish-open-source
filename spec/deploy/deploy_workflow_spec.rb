@@ -1,0 +1,31 @@
+# frozen_string_literal: true
+
+RSpec.describe File do
+  let(:root) { described_class.expand_path('../..', __dir__) }
+
+  it 'health-gates deploys and keeps a one-step rollback slot' do
+    script = described_class.read(described_class.join(root, 'scripts/deploy.sh'))
+
+    expect(script).to include(
+      'DEPLOY_ACTION',
+      'PREVIOUS_IMAGE_NAME',
+      'ROLLBACK_CANDIDATE_IMAGE_NAME',
+      'curl -fsSL -o /dev/null "http://127.0.0.1:9293/healthz"',
+      'curl -fsSL -o /dev/null "${PUBLIC_BASE_URL}/latest"',
+      'No previous image available for rollback'
+    )
+  end
+
+  it 'lets GitHub Actions dispatch either a deploy or a one-step rollback' do
+    workflow = described_class.read(described_class.join(root, '.github/workflows/deploy.yml'))
+
+    expect(workflow).to include(
+      'workflow_dispatch:',
+      'type: choice',
+      '- deploy',
+      '- rollback',
+      'DEPLOY_ACTION:',
+      'run: scripts/deploy.sh "$DEPLOY_ACTION"'
+    )
+  end
+end

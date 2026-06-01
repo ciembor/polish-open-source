@@ -33,16 +33,18 @@ The host alert timer also reads these optional thresholds from `/home/ciembor/po
 
 1. Push `master`.
 2. Confirm GitHub Actions quality passes.
-3. Confirm the deploy step restarts `polish-open-source-rank.service`.
-4. Smoke test `https://polish-open-source.pl/healthz`, `/latest`, `/en/latest`, one user profile and one badge URL.
-5. Check Sentry for new deploy errors and latency regressions.
+3. Confirm the `Deploy or rollback` step finishes successfully in GitHub Actions.
+4. The workflow waits for built-in smoke checks: local `http://127.0.0.1:9293/healthz`, public `/healthz`, `/latest`, and `/en/latest`.
+5. Manually smoke test one user profile and one badge URL after the workflow finishes.
+6. Check Sentry for new deploy errors and latency regressions.
 
 ## Rollback
 
-1. Revert the bad commit or redeploy the previous known-good commit.
-2. Run `scripts/deploy.sh` through CI or manually with the same `REMOTE_HOST`.
-3. Smoke test the same public URLs.
-4. Keep the Sentry incident open until errors and latency return to baseline.
+1. Open the `Deploy to server` workflow with `Run workflow`.
+2. Choose `action = rollback`.
+3. The workflow swaps only `latest` and `previous`; it does not roll back farther than one version.
+4. Confirm the built-in smoke checks pass, then manually smoke test the same user profile and badge URL as during deploy.
+5. Keep the Sentry incident open until errors and latency return to baseline.
 
 ## Restart services
 

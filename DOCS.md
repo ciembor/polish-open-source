@@ -367,6 +367,15 @@ GitHub Actions runs quality checks and then calls [scripts/deploy.sh](scripts/de
 
 - `SSH_PRIVATE_KEY_B64`: base64-encoded private SSH key accepted for `ciembor@maciej-ciemborowicz.eu`.
 
+The `Deploy to server` workflow supports two actions:
+
+- normal `deploy` on every push to `master`;
+- manual `rollback` through `workflow_dispatch`, limited to swapping back to the immediately previous image.
+
+The deploy script does not touch running monthly or package jobs. It restarts only the
+web and Discord bot services, then waits for built-in smoke checks on local `/healthz`
+plus public `/healthz`, `/latest`, and `/en/latest` before treating the release as healthy.
+
 Operational shape on the live host:
 
 - the production host is reached as `ciembor@maciej-ciemborowicz.eu`;

@@ -90,3 +90,26 @@ that match ranking routes and unsupported package metric/ecosystem combinations.
 Data-dependent misses such as missing profiles, repositories, organizations,
 languages, package ecosystem pages, and badges are not negative-cached because a
 user action or the next published snapshot can make them valid.
+
+## Production Limits
+
+The current production shape stays intentionally conservative:
+
+- one host;
+- one web container behind nginx;
+- one shared SQLite database for web, monthly, packages, and user actions;
+- cache in front of the app, keyed by URL rather than locale cookie.
+
+Do not add systemd socket activation, blue-green deploys, or a second web worker
+until the read-only public snapshot path is stable in production. With the current
+shared SQLite write path, more parallel web capacity can increase lock contention
+instead of reducing user-visible downtime.
+
+## Spike Response
+
+When public traffic spikes, use this order:
+
+1. Keep indexed public PL and EN pages cacheable by URL; do not add a global `noindex`.
+2. Increase CDN or nginx cache aggressiveness for `/latest`, `/en/latest`, rankings, profiles, languages, packages, and badges.
+3. Tighten temporary rate limits on `/auth/*`, `/internal/*`, and other expensive non-indexed paths before indexed ranking pages.
+4. If the app still needs protection, publish a static status page on a separate non-indexed operational path instead of replacing indexed public pages.
