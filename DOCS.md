@@ -199,6 +199,22 @@ Run these from the server as `ciembor` in `/home/ciembor/polish-open-source-rank
 
 The production host does not have a system `sqlite3` binary. When you need to inspect the live database, query it from inside the app container through the bundled Ruby `sqlite3` gem instead of trying `sqlite3 db/...` on the host.
 
+Useful container inventory:
+
+```sh
+sudo podman ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}'
+```
+
+The main container names used by production are:
+
+- `polish-open-source-rank`: long-lived web app container.
+- `polish-open-source-rank-discord-bot`: long-lived Discord bot container.
+- `polish-open-source-rank-monthly`: one-shot monthly ranking job container.
+- `polish-open-source-rank-packages`: one-shot package ranking job container.
+- `polish-open-source-rank-crawl`: one-shot manual monthly crawl container.
+- `polish-open-source-rank-crawl-resume`: one-shot interrupted-crawl resume container.
+- `polish-open-source-rank-packages-manual`: ad hoc manual package crawl container started from the documented `podman run` command.
+
 Example:
 
 ```sh
