@@ -6,8 +6,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  quality:
+  deploy:
     runs-on: ubuntu-latest
+    env:
+      DEPLOY_HOST: maciej-ciemborowicz.eu
 
     steps:
       - name: Checkout
@@ -19,20 +21,18 @@ jobs:
           ruby-version: "3.4"
           bundler-cache: true
 
+      - name: Cache RuboCop
+        uses: actions/cache@v4
+        with:
+          path: tmp/rubocop_cache
+          key: rubocop-${{ runner.os }}-${{ hashFiles('Gemfile.lock', '.rubocop.yml') }}
+          restore-keys: |
+            rubocop-${{ runner.os }}-
+
       - name: Quality
         env:
           KNAPSACK_NODES: "2"
         run: bin/quality
-
-  deploy:
-    needs: quality
-    runs-on: ubuntu-latest
-    env:
-      DEPLOY_HOST: maciej-ciemborowicz.eu
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
 
       - name: Setup SSH
         shell: bash
