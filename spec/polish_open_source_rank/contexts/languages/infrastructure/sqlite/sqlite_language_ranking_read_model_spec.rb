@@ -120,6 +120,9 @@ RSpec.describe PolishOpenSourceRank::Contexts::Languages::Infrastructure::SQLite
     expect do
       read_model.ranked_languages(period_start: period, metric: 'repository_count', repository_kind: 'team')
     end.to raise_error(ArgumentError, 'Unsupported language repository kind: team')
+    expect do
+      read_model.ranked_repositories(period_start: period, language: 'Ruby', metric: 'repository_stars_count; DROP')
+    end.to raise_error(ArgumentError, 'Unsupported language repository ranking metric: repository_stars_count; DROP')
   end
 
   def seed_language_repository_split

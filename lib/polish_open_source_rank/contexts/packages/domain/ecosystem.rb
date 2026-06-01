@@ -17,6 +17,13 @@ module PolishOpenSourceRank
             ecosystem.nil? || SUPPORTED.include?(ecosystem)
           end
 
+          def require_supported!(ecosystem)
+            key = ecosystem.to_s
+            return key if SUPPORTED.include?(key)
+
+            raise ArgumentError, "Unsupported package ecosystem: #{ecosystem}"
+          end
+
           def snapshot_supported?(ecosystem)
             ecosystem.nil? || SNAPSHOT_SUPPORTED.include?(ecosystem)
           end

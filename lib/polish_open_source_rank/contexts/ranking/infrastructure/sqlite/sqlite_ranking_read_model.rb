@@ -6,6 +6,17 @@ module PolishOpenSourceRank
       module Infrastructure
         module SQLite
           class SQLiteRankingReadModel
+            ORDER_EXPRESSIONS = Shared::Infrastructure::SQLite::SqlExpressionMap.new(
+              {
+                total_stars: 'stats.total_stars',
+                monthly_stars_delta: 'stats.monthly_stars_delta',
+                merged_pull_requests_count: 'stats.merged_pull_requests_count',
+                members_count: 'stats.members_count',
+                stargazers_count: 'stats.stargazers_count'
+              },
+              name: 'ranking order expression'
+            )
+
             def initialize(database, catalog: Domain::LocationCatalog)
               @database = database
               @catalog = catalog
@@ -56,20 +67,22 @@ module PolishOpenSourceRank
 
             def ranked_users(scope, period_start, order_column, limit: Domain::RankingPolicy::RANKING_LIMIT)
               sql_scope, params = user_scope(scope)
+              order_expression = order_expression(order_column)
               database.fetch_all(<<~SQL, [period_start, *params])
                 SELECT users.platform, users.login, users.name, users.email, users.homepage, users.html_url,
                        users.avatar_url, stats.city, stats.country, stats.public_repo_count, stats.total_stars,
                        stats.monthly_stars_delta, stats.merged_pull_requests_count
                 FROM user_monthly_stats stats
                 INNER JOIN users ON users.platform = stats.platform AND users.github_id = stats.user_github_id
-                WHERE stats.period_start = ? AND #{sql_scope} #{trending_filter(order_column, 'stats')}
-                ORDER BY stats.#{order_column} DESC, users.platform ASC, users.login COLLATE NOCASE ASC
+                WHERE stats.period_start = ? AND #{sql_scope} #{positive_ranking_filter(order_column)}
+                ORDER BY #{order_expression} DESC, users.platform ASC, users.login COLLATE NOCASE ASC
                 LIMIT #{Domain::RankingPolicy.bounded_limit(limit)}
               SQL
             end
 
             def ranked_repositories(scope, period_start, order_column, limit: Domain::RankingPolicy::RANKING_LIMIT)
               sql_scope, params = repository_scope(scope)
+              order_expression = order_expression(order_column)
               database.fetch_all(<<~SQL, [period_start, *params])
                 SELECT repositories.platform, repositories.full_name, repositories.name, repositories.description,
                        repositories.html_url, repositories.homepage, repositories.language, stats.owner_login,
@@ -78,8 +91,8 @@ module PolishOpenSourceRank
                 INNER JOIN repositories
                   ON repositories.platform = stats.platform
                  AND repositories.github_id = stats.repository_github_id
-                WHERE stats.period_start = ? AND #{sql_scope} #{trending_filter(order_column, 'stats')}
-                ORDER BY stats.#{order_column} DESC, repositories.platform ASC,
+                WHERE stats.period_start = ? AND #{sql_scope} #{positive_ranking_filter(order_column)}
+                ORDER BY #{order_expression} DESC, repositories.platform ASC,
                          repositories.full_name COLLATE NOCASE ASC
                 LIMIT #{Domain::RankingPolicy.bounded_limit(limit)}
               SQL
@@ -87,6 +100,7 @@ module PolishOpenSourceRank
 
             def ranked_organizations(scope, period_start, order_column, limit: Domain::RankingPolicy::RANKING_LIMIT)
               sql_scope, params = organization_scope(scope)
+              order_expression = order_expression(order_column)
               database.fetch_all(<<~SQL, [period_start, *params])
                 SELECT organizations.platform, organizations.login, organizations.name, organizations.email,
                        organizations.homepage, organizations.html_url, organizations.avatar_url,
@@ -96,8 +110,8 @@ module PolishOpenSourceRank
                 INNER JOIN organizations
                   ON organizations.platform = stats.platform
                  AND organizations.github_id = stats.organization_github_id
-                WHERE stats.period_start = ? AND #{sql_scope} #{trending_filter(order_column, 'stats')}
-                ORDER BY stats.#{order_column} DESC, organizations.platform ASC,
+                WHERE stats.period_start = ? AND #{sql_scope} #{positive_ranking_filter(order_column)}
+                ORDER BY #{order_expression} DESC, organizations.platform ASC,
                          organizations.login COLLATE NOCASE ASC
                 LIMIT #{Domain::RankingPolicy.bounded_limit(limit)}
               SQL
@@ -106,6 +120,7 @@ module PolishOpenSourceRank
             def ranked_organization_repositories(scope, period_start, order_column,
                                                  limit: Domain::RankingPolicy::RANKING_LIMIT)
               sql_scope, params = organization_repository_scope(scope)
+              order_expression = order_expression(order_column)
               database.fetch_all(<<~SQL, [period_start, *params])
                 SELECT repositories.platform, repositories.full_name, repositories.name, repositories.description,
                        repositories.html_url, repositories.homepage, repositories.language,
@@ -115,8 +130,8 @@ module PolishOpenSourceRank
                 INNER JOIN organization_repositories repositories
                   ON repositories.platform = stats.platform
                  AND repositories.github_id = stats.repository_github_id
-                WHERE stats.period_start = ? AND #{sql_scope} #{trending_filter(order_column, 'stats')}
-                ORDER BY stats.#{order_column} DESC, repositories.platform ASC,
+                WHERE stats.period_start = ? AND #{sql_scope} #{positive_ranking_filter(order_column)}
+                ORDER BY #{order_expression} DESC, repositories.platform ASC,
                          repositories.full_name COLLATE NOCASE ASC
                 LIMIT #{Domain::RankingPolicy.bounded_limit(limit)}
               SQL
@@ -126,8 +141,14 @@ module PolishOpenSourceRank
 
             attr_reader :catalog, :database
 
-            def trending_filter(order_column, table_alias)
-              Domain::RankingPolicy.positive_ranking?(order_column) ? "AND #{table_alias}.#{order_column} > 0" : ''
+            def order_expression(order_column)
+              ORDER_EXPRESSIONS.fetch(order_column)
+            end
+
+            def positive_ranking_filter(order_column)
+              return '' unless Domain::RankingPolicy.positive_ranking?(order_column)
+
+              "AND #{order_expression(order_column)} > 0"
             end
 
             def user_scope(scope)

@@ -253,6 +253,9 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
       read_model.ranked_packages(ecosystem: 'npm', period_start: period, metric: 'downloads_30d',
                                  repository_kind: 'team')
     end.to raise_error(ArgumentError, 'Unsupported package repository kind: team')
+    expect do
+      read_model.ranked_packages(ecosystem: 'npm', period_start: period, metric: 'downloads_30d; DROP TABLE packages')
+    end.to raise_error(ArgumentError, 'Unsupported package ranking metric: downloads_30d; DROP TABLE packages')
   end
 
   it 'does not expose non-country package scopes' do

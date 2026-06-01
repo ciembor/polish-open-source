@@ -8,7 +8,7 @@ module PolishOpenSourceRank
           RANKING_LIMIT = 100
           TRENDING_COLUMN = 'monthly_stars_delta'
           POSITIVE_RANKING_COLUMNS = [TRENDING_COLUMN, 'members_count'].freeze
-          Metric = Struct.new(:key, :column, :trending, keyword_init: true) do
+          Metric = Data.define(:key, :column, :trending) do
             def trending?
               trending
             end

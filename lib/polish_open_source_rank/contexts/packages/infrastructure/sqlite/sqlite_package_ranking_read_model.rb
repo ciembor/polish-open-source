@@ -8,6 +8,18 @@ module PolishOpenSourceRank
           class SQLitePackageRankingReadModel
             DEFAULT_LIMIT = 100
             MAX_LIMIT = 100
+            METRIC_EXPRESSIONS = Shared::Infrastructure::SQLite::SqlExpressionMap.new(
+              {
+                downloads_30d: 'snapshots.downloads_30d',
+                downloads_total: 'snapshots.downloads_total',
+                dependents_count: 'snapshots.dependents_count',
+                repository_stars_count:
+                  'MAX(COALESCE(user_stats.stargazers_count, organization_stats.stargazers_count))',
+                repository_stars_delta:
+                  'MAX(COALESCE(user_stats.monthly_stars_delta, organization_stats.monthly_stars_delta))'
+              },
+              name: 'package ranking metric expression'
+            )
 
             def initialize(database)
               @database = database
@@ -256,14 +268,7 @@ module PolishOpenSourceRank
             end
 
             def metric_expression(metric)
-              case metric.to_s
-              when 'repository_stars_count'
-                'MAX(COALESCE(user_stats.stargazers_count, organization_stats.stargazers_count))'
-              when 'repository_stars_delta'
-                'MAX(COALESCE(user_stats.monthly_stars_delta, organization_stats.monthly_stars_delta))'
-              else
-                "snapshots.#{metric}"
-              end
+              METRIC_EXPRESSIONS.fetch(metric)
             end
 
             def repository_links(rows)

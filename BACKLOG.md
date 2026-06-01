@@ -117,19 +117,19 @@ Architecture boundaries.
 Goal: remove stringly typed and hash-shaped contracts where mistakes would be
 expensive.
 
-- [ ] Introduce explicit value objects or request models for repository full
+- [x] Introduce explicit value objects or request models for repository full
       names where platform owner/name parsing matters.
-- [ ] Strengthen platform, period, ecosystem, login, and repository identity
+- [x] Strengthen platform, period, ecosystem, login, and repository identity
       boundaries at use-case edges.
-- [ ] Replace mutable domain structs where mutation is not part of the domain
+- [x] Replace mutable domain structs where mutation is not part of the domain
       concept.
-- [ ] Review public read model APIs for plain but typed request/response models
+- [x] Review public read model APIs for plain but typed request/response models
       instead of loose hashes where it reduces caller knowledge.
-- [ ] Whitelist every SQL identifier interpolation through a single explicit
+- [x] Whitelist every SQL identifier interpolation through a single explicit
       metric/order expression API.
-- [ ] Add regression specs proving unsupported metric/order inputs cannot reach
+- [x] Add regression specs proving unsupported metric/order inputs cannot reach
       SQL fragments.
-- [ ] Keep read-model SQL expressive, but hide volatile SQL fragments behind
+- [x] Keep read-model SQL expressive, but hide volatile SQL fragments behind
       semantic methods.
 
 ## Milestone 7: Data Quality and Ranking Trust

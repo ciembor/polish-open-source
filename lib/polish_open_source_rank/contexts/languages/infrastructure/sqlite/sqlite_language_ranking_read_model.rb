@@ -9,15 +9,21 @@ module PolishOpenSourceRank
             DEFAULT_LIMIT = 100
             MAX_LIMIT = 100
             REPOSITORY_KINDS = %w[user organization].freeze
-            LANGUAGE_METRIC_EXPRESSIONS = {
-              'repository_count' => 'COUNT(*)',
-              'repository_stars_count' => 'SUM(stargazers_count)',
-              'repository_stars_delta' => 'SUM(monthly_stars_delta)'
-            }.freeze
-            REPOSITORY_METRIC_EXPRESSIONS = {
-              'repository_stars_count' => 'stargazers_count',
-              'repository_stars_delta' => 'monthly_stars_delta'
-            }.freeze
+            LANGUAGE_METRIC_EXPRESSIONS = Shared::Infrastructure::SQLite::SqlExpressionMap.new(
+              {
+                repository_count: 'COUNT(*)',
+                repository_stars_count: 'SUM(stargazers_count)',
+                repository_stars_delta: 'SUM(monthly_stars_delta)'
+              },
+              name: 'language ranking metric expression'
+            )
+            REPOSITORY_METRIC_EXPRESSIONS = Shared::Infrastructure::SQLite::SqlExpressionMap.new(
+              {
+                repository_stars_count: 'stargazers_count',
+                repository_stars_delta: 'monthly_stars_delta'
+              },
+              name: 'language repository ranking metric expression'
+            )
 
             def initialize(database)
               @database = database
@@ -198,11 +204,11 @@ module PolishOpenSourceRank
             end
 
             def language_metric_expression(metric)
-              LANGUAGE_METRIC_EXPRESSIONS.fetch(metric.to_s)
+              LANGUAGE_METRIC_EXPRESSIONS.fetch(metric)
             end
 
             def repository_metric_expression(metric)
-              REPOSITORY_METRIC_EXPRESSIONS.fetch(metric.to_s)
+              REPOSITORY_METRIC_EXPRESSIONS.fetch(metric)
             end
 
             def validate_language_metric!(metric)
