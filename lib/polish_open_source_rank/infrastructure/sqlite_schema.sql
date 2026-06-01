@@ -293,6 +293,19 @@ CREATE TABLE IF NOT EXISTS public_snapshot_publications (
   updated_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS published_badges (
+  period_start TEXT NOT NULL,
+  badge_kind TEXT NOT NULL,
+  platform TEXT NOT NULL,
+  subject_github_id INTEGER NOT NULL,
+  label TEXT NOT NULL,
+  status TEXT NOT NULL,
+  rank INTEGER,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY(period_start, badge_kind, platform, subject_github_id)
+);
+
 CREATE TABLE IF NOT EXISTS package_repository_scans (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   period_start TEXT NOT NULL,
@@ -421,6 +434,8 @@ CREATE INDEX IF NOT EXISTS idx_job_work_events_finished_at
   ON job_work_events(finished_at);
 CREATE INDEX IF NOT EXISTS idx_discord_connections_user
   ON discord_connections(platform, user_github_id);
+CREATE INDEX IF NOT EXISTS idx_published_badges_identity
+  ON published_badges(badge_kind, platform, subject_github_id, period_start);
 CREATE INDEX IF NOT EXISTS idx_package_repository_scans_status_period
   ON package_repository_scans(period_start, status, repository_kind, platform);
 CREATE INDEX IF NOT EXISTS idx_package_manifests_ecosystem_name

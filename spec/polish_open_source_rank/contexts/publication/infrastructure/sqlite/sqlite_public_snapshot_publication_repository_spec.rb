@@ -31,6 +31,35 @@ RSpec.describe 'SQLitePublicSnapshotPublicationRepository' do
     expect(File.exist?(publication('2026-05-01').fetch(:backup_path))).to be(true)
   end
 
+  it 'materializes badges before exposing the newly published period' do
+    seed_publishable_month('2026-05-01')
+
+    repository.publish('2026-05-01')
+
+    expect(published_badge('user', 1)).to include(label: 'Polish Open Source', rank: 1)
+    expect(published_badge('organization', 2)).to include(label: 'Polish Open Source Org', rank: 1)
+    expect(published_badge('repository', 10)).to include(label: 'Polish .rb Repo', rank: 2)
+    expect(published_badge('organization_repository', 20)).to include(label: 'Polish .rb Repo', rank: 1)
+  end
+
+  it 'keeps the current public period when badge materialization fails' do
+    seed_publishable_month('2026-04-01')
+    seed_publishable_month('2026-05-01')
+    repository.publish('2026-04-01')
+    failing_repository = repository_class.new(
+      database,
+      clock: clock,
+      backup_root: backup_root,
+      badge_materializer: failing_badge_materializer
+    )
+
+    expect { failing_repository.publish('2026-05-01') }.to raise_error('badge materialization failed')
+
+    expect(publication('2026-04-01')).to include(status: 'published')
+    expect(publication('2026-05-01')).to include(status: 'verified')
+    expect(published_badge('repository', 10, period_start: '2026-05-01')).to be_nil
+  end
+
   it 'rejects incomplete snapshots and keeps the failure visible' do
     seed_monthly_run('2026-05-01', status: 'running')
 
@@ -39,6 +68,14 @@ RSpec.describe 'SQLitePublicSnapshotPublicationRepository' do
       /monthly rankings are not finished/
     )
     expect(publication('2026-05-01')).to include(status: 'staged', error: include('monthly rankings'))
+  end
+
+  it 'uses the current UTC time by default' do
+    allow(Time).to receive(:now).and_return(Time.utc(2026, 6, 2, 9, 30, 0))
+
+    repository_class.new(database).stage('2026-05-01')
+
+    expect(publication('2026-05-01')).to include(staged_at: '2026-06-02T09:30:00Z')
   end
 
   it 'rejects snapshots while package crawl data is still running' do
@@ -67,6 +104,17 @@ RSpec.describe 'SQLitePublicSnapshotPublicationRepository' do
     database.fetch_all(
       'SELECT * FROM public_snapshot_publications WHERE period_start = ?',
       [period_start]
+    ).first
+  end
+
+  def published_badge(kind, subject_id, period_start: '2026-05-01')
+    database.fetch_all(
+      <<~SQL,
+        SELECT label, status, rank
+        FROM published_badges
+        WHERE period_start = ? AND badge_kind = ? AND platform = 'github' AND subject_github_id = ?
+      SQL
+      [period_start, kind, subject_id]
     ).first
   end
 
@@ -118,14 +166,15 @@ RSpec.describe 'SQLitePublicSnapshotPublicationRepository' do
   def seed_repository_stats(period_start)
     repository_values = [
       'github', 10, 1, 'alice', 'app', 'alice/app',
-      'https://github.com/alice/app', 0, 0, '2026-06-01T00:00:00Z'
+      'https://github.com/alice/app', 'Ruby', 0, 0, '2026-06-01T00:00:00Z'
     ]
     database.execute(
       <<~SQL,
         INSERT OR IGNORE INTO repositories(
-          platform, github_id, owner_github_id, owner_login, name, full_name, html_url, fork, archived, updated_at
+          platform, github_id, owner_github_id, owner_login, name, full_name, html_url, language, fork, archived,
+          updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       SQL
       repository_values
     )
@@ -151,15 +200,15 @@ RSpec.describe 'SQLitePublicSnapshotPublicationRepository' do
   def seed_organization_repository_stats(period_start)
     repository_values = [
       'github', 20, 2, 'org', 'tool', 'org/tool',
-      'https://github.com/org/tool', 0, 0, '2026-06-01T00:00:00Z'
+      'https://github.com/org/tool', 'Ruby', 0, 0, '2026-06-01T00:00:00Z'
     ]
     database.execute(
       <<~SQL,
         INSERT OR IGNORE INTO organization_repositories(
-          platform, github_id, organization_github_id, organization_login, name, full_name, html_url, fork,
+          platform, github_id, organization_github_id, organization_login, name, full_name, html_url, language, fork,
           archived, updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       SQL
       repository_values
     )
@@ -177,5 +226,11 @@ RSpec.describe 'SQLitePublicSnapshotPublicationRepository' do
       INSERT INTO package_crawl_runs(period_start, ecosystem, status, started_at, finished_at, updated_at)
       VALUES (?, ?, ?, '2026-06-01T00:00:00Z', '2026-06-01T00:10:00Z', '2026-06-01T00:10:00Z')
     SQL
+  end
+
+  def failing_badge_materializer
+    Object.new.tap do |materializer|
+      materializer.define_singleton_method(:materialize) { |*_args, **_kwargs| raise 'badge materialization failed' }
+    end
   end
 end

@@ -21,6 +21,21 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     expect(read_model.public_cache_revision(nil)).to be_nil
   end
 
+  it 'includes materialized badges in the public cache revision' do
+    database = PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(
+      File.join(Dir.mktmpdir, 'rank.sqlite3')
+    )
+    database.execute_batch(PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql)
+    read_model = described_class.new(database)
+
+    seed_run(database)
+    seed_user(database)
+    seed_user_stats(database)
+    seed_published_badge(database, updated_at: '2026-05-01T00:45:00Z')
+
+    expect(read_model.public_cache_revision('2026-04-01')).to eq('2026-05-01T00:45:00Z')
+  end
+
   it 'uses explicit public snapshot publications when present' do
     database = PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(
       File.join(Dir.mktmpdir, 'rank.sqlite3')
@@ -81,6 +96,18 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
         VALUES (?, ?, ?, ?)
       SQL
       [period_start, status, '2026-06-01T00:00:00Z', '2026-06-01T00:00:00Z']
+    )
+  end
+
+  def seed_published_badge(database, updated_at:)
+    database.execute(
+      <<~SQL,
+        INSERT INTO published_badges(
+          period_start, badge_kind, platform, subject_github_id, label, status, rank, created_at, updated_at
+        )
+        VALUES ('2026-04-01', 'user', 'github', 1, 'Polish Open Source', 'ranked', 1, ?, ?)
+      SQL
+      [updated_at, updated_at]
     )
   end
 end

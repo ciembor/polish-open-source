@@ -165,6 +165,7 @@ module PolishOpenSourceRank
         add_column_unless_exists('organization_monthly_stats', 'members_count INTEGER NOT NULL DEFAULT 0')
         create_discord_sync_jobs
         create_public_snapshot_publications
+        create_published_badges
         seed_current_publication
       end
 
@@ -262,6 +263,26 @@ module PolishOpenSourceRank
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
           );
+        SQL
+      end
+
+      def create_published_badges
+        execute_batch(<<~SQL)
+          CREATE TABLE IF NOT EXISTS published_badges (
+            period_start TEXT NOT NULL,
+            badge_kind TEXT NOT NULL,
+            platform TEXT NOT NULL,
+            subject_github_id INTEGER NOT NULL,
+            label TEXT NOT NULL,
+            status TEXT NOT NULL,
+            rank INTEGER,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY(period_start, badge_kind, platform, subject_github_id)
+          );
+
+          CREATE INDEX IF NOT EXISTS idx_published_badges_identity
+            ON published_badges(badge_kind, platform, subject_github_id, period_start);
         SQL
       end
 

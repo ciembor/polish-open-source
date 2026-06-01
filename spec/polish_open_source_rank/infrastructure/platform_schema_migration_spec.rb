@@ -19,6 +19,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration do
       .to include('merged_pull_requests_count')
     expect(database.table_info('organization_monthly_stats').map { |column| column.fetch('name') })
       .to include('merged_pull_requests_count', 'members_count')
+    expect(database.fetch_value(package_table_sql('published_badges'))).to eq(1)
   end
 
   it 'creates package ranking tables and indexes in a fresh database' do
@@ -40,6 +41,15 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration do
       'idx_registry_package_snapshots_ecosystem_downloads',
       'idx_registry_package_snapshots_ecosystem_dependents'
     )
+  end
+
+  it 'creates publication cache tables in a fresh database' do
+    database = open_database
+
+    described_class.new(database, PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql).bootstrap!
+
+    expect(database.fetch_value(package_table_sql('public_snapshot_publications'))).to eq(1)
+    expect(database.fetch_value(package_table_sql('published_badges'))).to eq(1)
   end
 
   it 'migrates a legacy GitHub-only database to platform-qualified records' do
