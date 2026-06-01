@@ -1,0 +1,9 @@
+[Unit]
+Description=Polish Open Source Rank production alert monitor
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/ciembor/polish-open-source-rank
+EnvironmentFile=-/home/ciembor/polish-open-source-rank/.env.local
+ExecStart=/usr/bin/python3 /home/ciembor/polish-open-source-rank/scripts/production_alert_monitor.py

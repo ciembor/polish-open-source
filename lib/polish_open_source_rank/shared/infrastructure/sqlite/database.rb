@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'json'
 require 'sequel'
 
 module PolishOpenSourceRank
@@ -10,6 +11,7 @@ module PolishOpenSourceRank
           DEFAULT_MAX_CONNECTIONS = 8
           SQLITE_WRITE_RETRIES = 8
           SQLITE_WRITE_RETRY_DELAY = 0.25
+          SQLITE_WRITE_RETRY_EVENT = 'sqlite_write_retry'
           SQLITE_LOCK_MESSAGES = [
             /database is locked/i,
             /database table is locked/i,
@@ -118,19 +120,39 @@ module PolishOpenSourceRank
             attempts = 0
 
             begin
+              started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
               yield
             rescue Sequel::DatabaseError => e
               attempts += 1
               raise unless sqlite_lock_error?(e) && attempts <= SQLITE_WRITE_RETRIES
 
+              lock_wait_ms = elapsed_ms_since(started_at)
+              backoff_seconds = SQLITE_WRITE_RETRY_DELAY * (2**(attempts - 1))
               self.class.sqlite_write_retry_count += 1
-              sleep(SQLITE_WRITE_RETRY_DELAY * (2**(attempts - 1)))
+              log_sqlite_write_retry(attempts: attempts, lock_wait_ms: lock_wait_ms, backoff_seconds: backoff_seconds)
+              sleep(backoff_seconds)
               retry
             end
           end
 
           def sqlite_lock_error?(error)
             SQLITE_LOCK_MESSAGES.any? { |pattern| error.message.match?(pattern) }
+          end
+
+          def elapsed_ms_since(started_at)
+            ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at) * 1000).round(1)
+          end
+
+          def log_sqlite_write_retry(attempts:, lock_wait_ms:, backoff_seconds:)
+            payload = {
+              event: SQLITE_WRITE_RETRY_EVENT,
+              database_role: 'primary',
+              attempts: attempts,
+              lock_wait_ms: lock_wait_ms,
+              backoff_ms: (backoff_seconds * 1000).round(1)
+            }
+            $stdout.puts(JSON.generate(payload))
+            $stdout.flush
           end
 
           def with_hash_results

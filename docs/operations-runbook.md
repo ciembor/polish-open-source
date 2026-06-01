@@ -1,6 +1,6 @@
 # Operations runbook
 
-Production observability is centered on Sentry plus the existing uptime monitor.
+Production observability is centered on Sentry plus the existing uptime and host health monitors.
 
 ## Sentry setup
 
@@ -17,7 +17,17 @@ Configure Sentry alerts for:
 - HTTP 5xx growth,
 - p95 transaction latency growth,
 - failed or missed `monthly-rankings` check-ins,
-- failed or missed `package-rankings` check-ins.
+- failed or missed `package-rankings` check-ins,
+- custom events tagged with `monitor=production-alert`.
+
+The host alert timer also reads these optional thresholds from `/home/ciembor/polish-open-source-rank/.env.local`:
+
+- `PRODUCTION_ALERT_JOB_STALE_MINUTES=30`
+- `PRODUCTION_ALERT_LOG_WINDOW_MINUTES=10`
+- `PRODUCTION_ALERT_HTTP_5XX_THRESHOLD=5`
+- `PRODUCTION_ALERT_HTTP_MIN_REQUESTS=20`
+- `PRODUCTION_ALERT_P95_LATENCY_MS_THRESHOLD=1000`
+- `PRODUCTION_ALERT_SQLITE_RETRY_THRESHOLD=10`
 
 ## Deploy
 
@@ -56,8 +66,9 @@ curl -fsS https://polish-open-source.pl/internal/jobs
 
 1. Check `/internal/jobs` for the active section and last heartbeat.
 2. Check Sentry for the matching `monthly-rankings` or `package-rankings` check-in.
-3. Inspect logs with `journalctl -u polish-open-source-rank-monthly.service -n 200 --no-pager` or the packages unit.
-4. If the job is stale and no process is still doing useful work, stop the unit and run `bin/resume_crawls` through `polish-open-source-rank-crawl-resume.service`.
+3. Inspect the host alert timer with `journalctl -u polish-open-source-rank-alerts.service -n 50 --no-pager`.
+4. Inspect job logs with `journalctl -u polish-open-source-rank-monthly.service -n 200 --no-pager` or the packages unit.
+5. If the job is stale and no process is still doing useful work, stop the unit and run `bin/resume_crawls` through `polish-open-source-rank-crawl-resume.service`.
 
 ## Restore backup
 

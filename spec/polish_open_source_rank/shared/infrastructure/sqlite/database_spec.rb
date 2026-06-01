@@ -63,7 +63,8 @@ RSpec.describe PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database do
     allow(database).to receive(:sequel_connection).and_return(connection)
     allow(database).to receive(:sleep)
 
-    expect(database.transaction { :committed }).to eq(:committed)
+    expect { expect(database.transaction { :committed }).to eq(:committed) }
+      .to output(/"event":"sqlite_write_retry".*"attempts":1/).to_stdout
     expect(connection.attempts).to eq(2)
   end
 
@@ -73,12 +74,15 @@ RSpec.describe PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database do
 
     allow(database).to receive(:sleep)
 
-    result = database.write do
-      attempts += 1
-      raise Sequel::DatabaseError, 'SQLite3::BusyException: database is locked' if attempts == 1
+    result = nil
+    expect do
+      result = database.write do
+        attempts += 1
+        raise Sequel::DatabaseError, 'SQLite3::BusyException: database is locked' if attempts == 1
 
-      :written
-    end
+        :written
+      end
+    end.to output(/"event":"sqlite_write_retry".*"attempts":1/).to_stdout
 
     expect(result).to eq(:written)
     expect(attempts).to eq(2)

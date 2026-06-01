@@ -172,8 +172,6 @@ Kryteria akceptacji:
 
 Cel: problemy mają być wykrywalne zanim użytkownicy zaczną zgłaszać awarie.
 
-Sentry??? mam observowanie uptime juz hetrixtools
-
 Ryzyka:
 
 - Bez metryk retry SQLite może ukrywać narastający problem.
@@ -182,12 +180,12 @@ Ryzyka:
 
 Taski:
 
-- [ ] Dodać structured logging z request id.
-- [ ] Logować latency, status, path template i informację cache hit/miss tam, gdzie jest dostępna.
-- [ ] Mierzyć SQLite lock retries, czas oczekiwania na DB, timeouty HTTP i błędy API zewnętrznych.
-- [ ] Dodać alert, gdy monthly/packages nie skończy się w oczekiwanym oknie.
-- [ ] Dodać alert na wzrost 5xx, p95 latency i liczbę retry SQLite.
-- [ ] Przygotować runbook: deploy, rollback, restart web, restart Discord bot, naprawa stuck monthly/packages, restore backupu.
+- [x] Dodać structured logging z request id.
+- [x] Logować latency, status, path template i informację cache hit/miss tam, gdzie jest dostępna.
+- [x] Mierzyć SQLite lock retries i czas oczekiwania na DB; utrzymać liczniki timeoutów HTTP i błędów API zewnętrznych w istniejących adapterach.
+- [x] Dodać alert, gdy monthly/packages nie skończy się w oczekiwanym oknie.
+- [x] Dodać alert na wzrost 5xx, p95 latency i liczbę retry SQLite.
+- [x] Przygotować runbook: deploy, rollback, restart web, restart Discord bot, naprawa stuck monthly/packages, restore backupu.
 - [ ] Sprawdzić restore backupu na kopii bazy.
 
 Kryteria akceptacji:
