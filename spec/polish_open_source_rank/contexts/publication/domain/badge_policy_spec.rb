@@ -35,8 +35,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Domain::BadgePolicy 
   it 'classifies repository badges wherever they are ranked' do
     policy = described_class.new
 
-    expect(policy.repository_badge(13)).to include(value: '13th', status: 'ranked', rank: 13)
-    expect(policy.repository_badge(101)).to include(value: '101st', status: 'ranked', rank: 101)
+    expect(policy.repository_badge(13, language: 'Ruby')).to include(label: 'Polish .rb Repo', value: '13th',
+                                                                     status: 'ranked', rank: 13)
+    expect(policy.repository_badge(101, language: 'Python')).to include(label: 'Polish .py Repo', value: '101st',
+                                                                        status: 'ranked', rank: 101)
+    expect(policy.repository_badge(nil, language: nil)).to include(label: 'Polish Repo', value: nil)
   end
 
   it 'classifies organization badges and organization repository badges' do
@@ -44,11 +47,24 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Domain::BadgePolicy 
 
     expect(policy.organization_badge(3)).to include(label: 'Polish Open Source Org', value: '3rd', rank: 3)
     expect(policy.organization_badge(nil)).to include(label: 'Polish Open Source Org', value: nil)
-    expect(policy.organization_repository_badge(8)).to include(label: 'Polish Org Repo', value: '8th', rank: 8)
-    expect(policy.organization_repository_badge(nil)).to include(label: 'Polish Org Repo', value: nil)
+    expect(policy.organization_repository_badge(8, language: 'Java')).to include(
+      label: 'Polish .java Repo',
+      value: '8th',
+      rank: 8
+    )
+    expect(policy.organization_repository_badge(nil, language: nil)).to include(label: 'Polish Repo', value: nil)
   end
 
   it 'builds fallback codes for unknown language badge labels' do
     expect(PolishOpenSourceRank::Contexts::Publication::Domain::LanguageBadgeLabel.code('Nim Lang')).to eq('NIMLANG')
+    expect(PolishOpenSourceRank::Contexts::Publication::Domain::LanguageBadgeLabel.top_hundred('Ruby')).to eq(
+      'Polish RB Top 100'
+    )
+    expect(PolishOpenSourceRank::Contexts::Publication::Domain::LanguageBadgeLabel.repository('Ruby')).to eq(
+      'Polish .rb Repo'
+    )
+    expect(PolishOpenSourceRank::Contexts::Publication::Domain::LanguageBadgeLabel.repository('Nim Lang')).to eq(
+      'Polish .nimlang Repo'
+    )
   end
 end

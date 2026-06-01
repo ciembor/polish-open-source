@@ -7,6 +7,7 @@ module PolishOpenSourceRank
         module SQLite
           class SQLiteProfileReadModel
             include SQLitePublicIdentityQueries
+            include SQLiteRepositoryBadgeQueries
             include SQLiteUserBadgeQueries
 
             REPOSITORY_LIMIT = 100
@@ -241,32 +242,6 @@ module PolishOpenSourceRank
               SQL
             end
 
-            def repository_elite_rank(platform, repository_id, period_start)
-              return unless period_start
-
-              database.fetch_value(<<~SQL, [period_start, platform, repository_id])
-                SELECT elite_rank
-                FROM (
-                  SELECT stats.platform, stats.repository_github_id,
-                         RANK() OVER (
-                           ORDER BY stats.stargazers_count DESC, stats.platform ASC,
-                                    repositories.full_name COLLATE NOCASE ASC
-                         ) AS elite_rank
-                  FROM repository_monthly_stats stats
-                  INNER JOIN repositories
-                    ON repositories.platform = stats.platform
-                   AND repositories.github_id = stats.repository_github_id
-                  WHERE stats.period_start = ? AND stats.owner_country = 'Poland'
-                )
-                WHERE platform = ? AND repository_github_id = ?
-              SQL
-            end
-
-            def repository_badge(platform, repository_id, period_start)
-              rank = repository_elite_rank(platform, repository_id, period_start)
-              badge_policy.repository_badge(rank)
-            end
-
             def organization_country_rank(platform, organization_id, period_start)
               return unless period_start
 
@@ -282,32 +257,6 @@ module PolishOpenSourceRank
                 )
                 WHERE platform = ? AND organization_github_id = ?
               SQL
-            end
-
-            def organization_repository_rank(platform, repository_id, period_start)
-              return unless period_start
-
-              database.fetch_value(<<~SQL, [period_start, platform, repository_id])
-                SELECT elite_rank
-                FROM (
-                  SELECT stats.platform, stats.repository_github_id,
-                         RANK() OVER (
-                           ORDER BY stats.stargazers_count DESC, stats.platform ASC,
-                                    repositories.full_name COLLATE NOCASE ASC
-                         ) AS elite_rank
-                  FROM organization_repository_monthly_stats stats
-                  INNER JOIN organization_repositories repositories
-                    ON repositories.platform = stats.platform
-                   AND repositories.github_id = stats.repository_github_id
-                  WHERE stats.period_start = ? AND stats.organization_country = 'Poland'
-                )
-                WHERE platform = ? AND repository_github_id = ?
-              SQL
-            end
-
-            def organization_repository_badge(platform, repository_id, period_start)
-              rank = organization_repository_rank(platform, repository_id, period_start)
-              badge_policy.organization_repository_badge(rank)
             end
 
             def organization_ranking(organization, fallback_period)

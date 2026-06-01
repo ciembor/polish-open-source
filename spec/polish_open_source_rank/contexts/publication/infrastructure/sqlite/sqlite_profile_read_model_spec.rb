@@ -20,12 +20,25 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
 
     expect(profile).to include(login: 'alice', elite_rank: 1)
     expect(profile.fetch(:profile_badge)).to include(label: 'Polish Open Source', value: '1st', status: 'ranked')
-    expect(profile.fetch(:badges).map { |badge| badge.fetch(:label) }).to eq(
-      ['Polish Open Source', 'Polish RB Top 100', 'Kraków Elite']
-    )
+    expect(profile.fetch(:badges).map { |badge| badge.fetch(:label) }).to eq(['Polish Open Source', 'Kraków Elite'])
     expect(profile.fetch(:repositories)).to contain_exactly(
-      include(full_name: 'alice/app', stargazers_count: 30, polish_repo_badge: include(value: '1st'))
+      include(
+        full_name: 'alice/app',
+        stargazers_count: 30,
+        polish_repo_badge: include(label: 'Polish .rb Repo', value: '1st')
+      )
     )
+  end
+
+  it 'renders repository badges within one language ranking' do
+    seed_user(id: 1, login: 'alice', total_stars: 100)
+    seed_user(id: 2, login: 'bob', total_stars: 90)
+    seed_repository(id: 10, owner_id: 1, owner: 'alice', full_name: 'alice/app', language: 'Ruby', stars: 30)
+    seed_repository(id: 11, owner_id: 2, owner: 'bob', full_name: 'bob/tool', language: 'Ruby', stars: 20)
+
+    profile = read_model.repository_profile('github', 'bob', 'tool', period_start: period)
+
+    expect(profile.fetch(:polish_repo_badge)).to include(label: 'Polish .rb Repo', value: '2nd', rank: 2)
   end
 
   it 'returns city badges when the user is outside the Poland ranking' do
@@ -63,7 +76,16 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     profile = read_model.repository_profile('github', 'alice', 'app', period_start: period)
 
     expect(profile).to include(full_name: 'alice/app', elite_rank: 1)
-    expect(profile.fetch(:polish_repo_badge)).to include(value: '1st', status: 'ranked')
+    expect(profile.fetch(:polish_repo_badge)).to include(label: 'Polish .rb Repo', value: '1st', status: 'ranked')
+  end
+
+  it 'falls back to the generic repository badge when the repository has no language' do
+    seed_user(id: 1, login: 'alice', total_stars: 100)
+    seed_repository(id: 10, owner_id: 1, owner: 'alice', full_name: 'alice/docs', language: nil, stars: 30)
+
+    profile = read_model.repository_profile('github', 'alice', 'docs', period_start: period)
+
+    expect(profile.fetch(:polish_repo_badge)).to include(label: 'Polish Repo', value: '1st')
   end
 
   it 'returns empty ranking details for records without a public period' do
@@ -116,14 +138,14 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     expect(organization).to include(login: 'polish-org', elite_rank: 1, city_rank: 1)
     expect(organization.fetch(:profile_badge)).to include(label: 'Polish Open Source Org', value: '1st')
     expect(organization.fetch(:repositories)).to contain_exactly(
-      include(full_name: 'polish-org/toolkit', polish_repo_badge: include(label: 'Polish Org Repo', value: '1st')),
-      include(full_name: 'polish-org/monthly', polish_repo_badge: include(label: 'Polish Org Repo', value: '2nd'))
+      include(full_name: 'polish-org/toolkit', polish_repo_badge: include(label: 'Polish Repo', value: '1st')),
+      include(full_name: 'polish-org/monthly', polish_repo_badge: include(label: 'Polish Repo', value: '2nd'))
     )
     expect(organization.fetch(:popular_repositories).map { _1.fetch(:full_name) }).to eq(
       %w[polish-org/monthly polish-org/toolkit]
     )
     expect(repository).to include(full_name: 'polish-org/toolkit', elite_rank: 1)
-    expect(repository.fetch(:polish_repo_badge)).to include(label: 'Polish Org Repo', value: '1st')
+    expect(repository.fetch(:polish_repo_badge)).to include(label: 'Polish Repo', value: '1st')
     expect(read_model.public_organization_identities).to contain_exactly(
       include(platform: 'github', login: 'other-org'),
       include(platform: 'github', login: 'polish-org')

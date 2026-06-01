@@ -520,7 +520,6 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile.body).to include('Dostępne grupy')
     expect(profile.body).to include('Ruby')
     expect(profile.body).to include('Top 100 Ruby')
-    expect(profile.body).to include('Polish RB Top 100')
     expect(profile.body).to include('/auth/discord')
     expect(profile.body).to include('name="csrf_token"')
     expect(invalid_logout.status).to eq(403)
@@ -1653,7 +1652,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     )
     expect(badge_response.status).to eq(200)
     expect(badge_response.content_type).to include('image/svg+xml')
-    expect_body_to_include(badge_response, 'Polish Repo', '1st', '#dc143c', 'href="https://rank.example/latest"')
+    expect_body_to_include(badge_response, 'Polish .rb Repo', '1st', '#dc143c', 'href="https://rank.example/latest"')
     expect(responses.fetch(:short_badge_response).status).to eq(200)
     expect(responses.fetch(:missing_response).status).to eq(404)
   end

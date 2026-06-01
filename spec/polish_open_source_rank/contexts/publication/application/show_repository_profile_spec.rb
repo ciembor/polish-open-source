@@ -8,7 +8,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Application::ShowRep
   it 'wraps repository rows in a repository page response model' do
     read_model = instance_double(
       RepositoryProfileReadModel,
-      repository_profile: { full_name: 'alice/app', polish_repo_badge: { label: 'Polish Top 100' } }
+      repository_profile: { full_name: 'alice/app', polish_repo_badge: { label: 'Polish .rb Repo' } }
     )
 
     result = described_class.new(profile_read_model: read_model).call(
@@ -20,6 +20,6 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Application::ShowRep
 
     expect(result).to be_a(PolishOpenSourceRank::Contexts::Publication::Application::RepositoryPage)
     expect(result.fetch(:full_name)).to eq('alice/app')
-    expect(result.badge).to eq(label: 'Polish Top 100')
+    expect(result.badge).to eq(label: 'Polish .rb Repo')
   end
 end

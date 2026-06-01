@@ -28,7 +28,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Application::RenderB
   it 'wraps repository badges in a badge response model' do
     read_model = instance_double(
       PublicationProfileReadModel,
-      repository_profile: { polish_repo_badge: { label: 'Polish Top 100', value: '1st' } }
+      repository_profile: { polish_repo_badge: { label: 'Polish .rb Repo', value: '1st' } }
     )
 
     result = described_class.new(profile_read_model: read_model).repository(

@@ -7,11 +7,14 @@ module PolishOpenSourceRank
         module SQLite
           # Reads the strongest language badge a public user earned in one period.
           class SQLiteUserLanguageBadgeReadModel
+            ENABLED = false
+
             def initialize(database)
               @database = database
             end
 
             def top_badge(platform:, user_id:, period_start:)
+              return unless ENABLED
               return unless period_start
 
               row = database.fetch_all(top_badge_sql, [period_start, platform, user_id]).first
