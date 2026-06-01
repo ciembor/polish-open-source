@@ -3,22 +3,22 @@
 module PolishOpenSourceRank
   module Web
     module Routes
+      # Coordinates OAuth callback flows while keeping Sinatra route handlers thin.
       class AuthFlow
         DELEGATED_CONTEXT_METHODS = %i[
           app_path
+          community
           current_user
           discord_channel_url
-          discord_oauth_client
           discord_welcome_channel_id
-          github_oauth_client
           halt
           latest_period
           oauth_callback_url
           params
+          publication
           public_github_profile
           redirect
           redirect_to_profile_after_discord_error
-          register_public_github_profile
           secure_oauth_state?
           session
           user_profile_path
@@ -36,7 +36,7 @@ module PolishOpenSourceRank
 
         def start_github_oauth
           session[:github_oauth_state] = SecureRandom.hex(24)
-          redirect github_oauth_client.authorize_url(
+          redirect community.github_oauth_client.authorize_url(
             state: session.fetch(:github_oauth_state),
             redirect_uri: oauth_callback_url('/auth/github/callback')
           )
@@ -58,7 +58,7 @@ module PolishOpenSourceRank
           redirect app_path('/auth/github') unless current_user
 
           session[:discord_oauth_state] = SecureRandom.hex(24)
-          redirect discord_oauth_client.authorize_url(
+          redirect community.discord_oauth_client.authorize_url(
             state: session.fetch(:discord_oauth_state),
             redirect_uri: oauth_callback_url('/auth/discord/callback')
           )
@@ -86,18 +86,19 @@ module PolishOpenSourceRank
         def public_or_registered_github_profile
           github_user = github_oauth_user
           public_github_profile(github_user.fetch('login')) ||
-            register_public_github_profile.call(
+            publication.register_public_github_profile.call(
               github_profile: github_user,
               period_start: latest_period
             )
         end
 
         def github_oauth_user
-          access_token = github_oauth_client.exchange_code(
+          client = community.github_oauth_client
+          access_token = client.exchange_code(
             code: params.fetch('code'),
             redirect_uri: oauth_callback_url('/auth/github/callback')
           )
-          github_oauth_client.user(access_token)
+          client.user(access_token)
         end
 
         def github_session(profile)
@@ -109,17 +110,18 @@ module PolishOpenSourceRank
         end
 
         def discord_oauth_token
-          discord_oauth_client.exchange_code(
+          community.discord_oauth_client.exchange_code(
             code: params.fetch('code'),
             redirect_uri: oauth_callback_url('/auth/discord/callback')
           )
         end
 
         def connect_discord_account(token)
+          access_token = token.fetch('access_token')
           connect_discord_account_use_case.call(
             current_user: current_user,
-            discord_user: discord_oauth_client.user(token.fetch('access_token')),
-            access_token: token.fetch('access_token'),
+            discord_user: community.discord_oauth_client.user(access_token),
+            access_token: access_token,
             period_start: latest_period,
             welcome_channel_id: discord_welcome_channel_id
           )
@@ -130,7 +132,7 @@ module PolishOpenSourceRank
         end
 
         def connect_discord_account_use_case
-          call_context(:connect_discord_account)
+          community.connect_discord_account
         end
 
         def call_context(name, ...)

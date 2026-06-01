@@ -19,7 +19,7 @@ module PolishOpenSourceRank
         end
 
         def render_package_ranking_page(period_slug, ecosystem, metric_slug, metric, repository_kind)
-          ranking = show_package_ranking_detail.call(
+          ranking = packages.show_package_ranking_detail.call(
             ecosystem: ecosystem,
             metric: metric,
             period_start: @period,

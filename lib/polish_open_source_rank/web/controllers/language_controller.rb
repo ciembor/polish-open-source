@@ -14,7 +14,7 @@ module PolishOpenSourceRank
             public_page_state.language_index(
               period_slug: period_slug,
               period_start: @period,
-              cards: show_language_index.call(period_start: @period)
+              cards: languages.show_language_index.call(period_start: @period)
             )
           )
           erb :'languages/index'
@@ -40,7 +40,7 @@ module PolishOpenSourceRank
           @period_slug = period_slug
           @period = period_for(period_slug)
           public_html_cache!('language', period_slug, language, @period, public_cache_revision(@period))
-          ranking_groups = show_language.call(language: language, period_start: @period, limit: 10)
+          ranking_groups = languages.show_language.call(language: language, period_start: @period, limit: 10)
           halt 404 unless ranking_groups.values.any? { |rankings| rankings.values.any?(&:any?) }
 
           assign_public_page(
@@ -55,7 +55,7 @@ module PolishOpenSourceRank
         end
 
         def assign_language_ranking_page(period_slug, metric_slug, metric)
-          ranking = show_language_ranking_detail.call(metric: metric, period_start: @period)
+          ranking = languages.show_language_ranking_detail.call(metric: metric, period_start: @period)
           assign_public_page(
             public_page_state.language_ranking_detail(
               period_slug: period_slug,

@@ -97,19 +97,19 @@ ranking table.
 Goal: reduce central web complexity while preserving the current Clean
 Architecture boundaries.
 
-- [ ] Extract web boot concerns from `Web::App`: middleware, sessions,
+- [x] Extract web boot concerns from `Web::App`: middleware, sessions,
       observability, static config, and route registration.
-- [ ] Extract cache revision calculation from `Web::App`.
-- [ ] Replace the manual `HTML_REVISION_FILES` list with a directory or manifest
+- [x] Extract cache revision calculation from `Web::App`.
+- [x] Replace the manual `HTML_REVISION_FILES` list with a directory or manifest
       mechanism that cannot silently miss new views.
-- [ ] Split `Web::Composition` by bounded context or use-case cluster while
+- [x] Split `Web::Composition` by bounded context or use-case cluster while
       keeping construction in the outer layer.
-- [ ] Reduce `Web::App` delegators by routing through narrower context-specific
+- [x] Reduce `Web::App` delegators by routing through narrower context-specific
       collaborators.
-- [ ] Keep architecture specs updated so new boundaries are enforced, not only
+- [x] Keep architecture specs updated so new boundaries are enforced, not only
       documented.
-- [ ] Add tests around composition wiring before and after extraction.
-- [ ] Document the intended web composition model in `docs/web-app.md` or
+- [x] Add tests around composition wiring before and after extraction.
+- [x] Document the intended web composition model in `docs/web-app.md` or
       `docs/development.md`.
 
 ## Milestone 6: Stronger Domain Contracts

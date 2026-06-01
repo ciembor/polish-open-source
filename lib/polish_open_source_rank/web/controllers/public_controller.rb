@@ -6,16 +6,20 @@ module PolishOpenSourceRank
       module PublicController
         include SitemapSupport
 
+        CITY_SLUGS = Contexts::Ranking::Domain::LocationCatalog.city_slugs
+
         private
 
         def render_city(period_slug, slug, section: 'people')
-          halt_negative_public_404!('city', period_slug, slug, section) unless known_city?(slug)
+          halt_negative_public_404!('city', period_slug, slug, section) unless CITY_SLUGS.include?(slug)
 
           render_rankings(period_slug, slug, section: section)
         end
 
         def render_city_ranking_detail(period_slug, slug, kind, metric)
-          halt_negative_public_404!('city-ranking-detail', period_slug, slug, kind, metric) unless known_city?(slug)
+          unless CITY_SLUGS.include?(slug)
+            halt_negative_public_404!('city-ranking-detail', period_slug, slug, kind, metric)
+          end
 
           render_ranking_detail(period_slug, slug, kind, metric)
         end
@@ -26,7 +30,7 @@ module PolishOpenSourceRank
           @ranking_section = section
           @period = period_for(period_slug)
           public_html_cache!('rankings', section, period_slug, scope, @period, public_cache_revision(@period))
-          page = show_rankings.call(scope: scope, period_start: @period)
+          page = publication.show_rankings.call(scope: scope, period_start: @period)
           assign_public_page(
             public_page_state.rankings(scope: @scope, period_slug: @period_slug, section: @ranking_section, page: page)
           )
@@ -34,7 +38,7 @@ module PolishOpenSourceRank
         end
 
         def render_editions(year = nil)
-          page = list_editions.call(year: year)
+          page = publication.list_editions.call(year: year)
           halt 404 unless page
           public_html_cache!('editions', @year || 'index', latest_public_cache_key)
           assign_public_page(public_page_state.editions(page: page, year: year))
@@ -44,7 +48,7 @@ module PolishOpenSourceRank
         def render_user_profile(platform, login)
           @period_slug = 'latest'
           @period = latest_period
-          @profile = show_user_profile.call(platform: platform, login: login, period_start: @period)
+          @profile = publication.show_user_profile.call(platform: platform, login: login, period_start: @period)
           halt 404 unless @profile
           profile_cache!(@profile)
           assign_public_page(public_page_state.user_profile(profile: @profile, own_profile: own_profile?(@profile)))
@@ -54,8 +58,8 @@ module PolishOpenSourceRank
         def render_repository_profile(platform, owner, name)
           @period_slug = 'latest'
           @period = latest_period
-          @repository = show_repository_profile.call(platform: platform, owner: owner, name: name,
-                                                     period_start: @period)
+          @repository = publication.show_repository_profile.call(platform: platform, owner: owner, name: name,
+                                                                 period_start: @period)
           halt 404 unless @repository
           repository_profile_cache!(@repository)
           assign_public_page(
@@ -67,7 +71,8 @@ module PolishOpenSourceRank
         def render_organization_profile(platform, login)
           @period_slug = 'latest'
           @period = latest_period
-          @organization = show_organization_profile.call(platform: platform, login: login, period_start: @period)
+          @organization = publication.show_organization_profile.call(platform: platform, login: login,
+                                                                     period_start: @period)
           halt 404 unless @organization
           profile_cache!(@organization)
           assign_public_page(public_page_state.organization_profile(organization: @organization))
@@ -77,7 +82,7 @@ module PolishOpenSourceRank
         def render_organization_repository_profile(platform, owner, name)
           @period_slug = 'latest'
           @period = latest_period
-          @organization_repository = show_organization_repository_profile.call(
+          @organization_repository = publication.show_organization_repository_profile.call(
             platform: platform,
             owner: owner,
             name: name,
@@ -101,14 +106,13 @@ module PolishOpenSourceRank
           @metric = metric
           public_html_cache!('ranking-detail', period_slug, scope, kind, metric, @period,
                              public_cache_revision(@period))
-          assign_public_page(
-            public_page_state.ranking_detail(
-              scope: @scope,
-              period_slug: @period_slug,
-              kind: kind,
-              metric: metric,
-              ranking: show_ranking_detail.call(scope: scope, kind: kind, metric: metric, period_start: @period)
-            )
+          assign_public_page public_page_state.ranking_detail(
+            scope: @scope,
+            period_slug: @period_slug,
+            kind: kind,
+            metric: metric,
+            ranking: publication.show_ranking_detail.call(scope: scope, kind: kind, metric: metric,
+                                                          period_start: @period)
           )
           erb :'rankings/detail'
         end
@@ -116,10 +120,6 @@ module PolishOpenSourceRank
         def assign_public_page(attributes) = attributes.each { |name, value| instance_variable_set("@#{name}", value) }
 
         def public_page_state = (@public_page_state ||= Presentation::PublicPageState.new(self))
-
-        def known_city?(slug)
-          Contexts::Ranking::Domain::LocationCatalog.city_slugs.include?(slug)
-        end
       end
     end
   end

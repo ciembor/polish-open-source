@@ -8,19 +8,19 @@ module PolishOpenSourceRank
 
         def render_repository_badge(platform, owner, name)
           render_cached_badge('repository-badge', platform, owner, name) do |period|
-            render_badge.repository(platform: platform, owner: owner, name: name, period_start: period)
+            publication.render_badge.repository(platform: platform, owner: owner, name: name, period_start: period)
           end
         end
 
         def render_user_badge(platform, login)
           render_cached_badge('user-badge', platform, login) do |period|
-            render_badge.user(platform: platform, login: login, period_start: period)
+            publication.render_badge.user(platform: platform, login: login, period_start: period)
           end
         end
 
         def render_organization_badge(platform, login)
           render_cached_badge('organization-badge', platform, login) do |period|
-            render_badge.organization(platform: platform, login: login, period_start: period)
+            publication.render_badge.organization(platform: platform, login: login, period_start: period)
           end
         end
 

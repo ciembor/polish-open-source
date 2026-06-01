@@ -27,7 +27,7 @@ module PolishOpenSourceRank
         end
 
         def show_discord_panel_for(profile)
-          show_discord_panel.call(
+          community.show_discord_panel.call(
             platform: profile.fetch(:platform),
             source_id: profile.fetch(:github_id),
             period_start: @period
@@ -35,18 +35,18 @@ module PolishOpenSourceRank
         end
 
         def period_for(period_slug)
-          period = resolve_period.call(period_slug: period_slug)
+          period = publication.resolve_period.call(period_slug: period_slug)
           return period if period || period_slug == 'latest'
 
           halt 404
         end
 
         def latest_period
-          resolve_period.call(period_slug: 'latest')
+          publication.resolve_period.call(period_slug: 'latest')
         end
 
         def public_github_profile(login)
-          show_user_profile.call(platform: 'github', login: login, period_start: latest_period)
+          publication.show_user_profile.call(platform: 'github', login: login, period_start: latest_period)
         end
 
         def auth_notice

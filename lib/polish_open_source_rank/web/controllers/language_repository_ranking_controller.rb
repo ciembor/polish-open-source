@@ -33,7 +33,7 @@ module PolishOpenSourceRank
         end
 
         def language_repository_ranking(language, repository_kind, metric)
-          show_language_repository_ranking_detail.call(
+          languages.show_language_repository_ranking_detail.call(
             language: language,
             metric: metric,
             repository_kind: repository_kind,

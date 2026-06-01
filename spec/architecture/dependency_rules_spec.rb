@@ -93,6 +93,20 @@ RSpec.describe ArchitectureDependencyRules do
     end
   end
 
+  it 'keeps Sinatra bootstrapping out of Web::App request flow' do
+    app = file_body(PolishOpenSourceRank.root.join('lib/polish_open_source_rank/web/app.rb'))
+
+    expect(app).not_to include('use Rack::Session::Cookie')
+    expect(app).not_to include('register Routes::')
+    expect(app).not_to include('HTML_REVISION_FILES')
+  end
+
+  it 'keeps Web::App routed through context-specific composition collaborators' do
+    app = file_body(PolishOpenSourceRank.root.join('lib/polish_open_source_rank/web/app.rb'))
+
+    expect(app).not_to include('def_delegators :composition')
+  end
+
   it 'keeps production composition off the SQLiteStore facade', :aggregate_failures do
     forbidden = /\bSQLiteStore\b/
     production_files = files_under('lib/polish_open_source_rank') + files_under('bin')
