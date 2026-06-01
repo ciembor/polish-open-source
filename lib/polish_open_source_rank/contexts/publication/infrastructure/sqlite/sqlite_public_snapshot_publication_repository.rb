@@ -15,10 +15,16 @@ module PolishOpenSourceRank
 
             class VerificationFailed < StandardError; end
 
-            def initialize(database, clock: -> { Time.now.utc }, backup_root: nil)
+            def initialize(
+              database,
+              clock: -> { Time.now.utc },
+              backup_root: nil,
+              badge_materializer: SQLitePublishedBadgeMaterializer.new(database)
+            )
               @database = database
               @clock = clock
               @backup_root = backup_root
+              @badge_materializer = badge_materializer
             end
 
             def stage(period_start)
@@ -40,13 +46,15 @@ module PolishOpenSourceRank
               verify(period_start)
               backup_path = checkpoint_and_backup(period_start)
               database.transaction do
+                published_at = timestamp
                 previous = published_period
-                publications.where(status: 'published').update(status: 'superseded', updated_at: timestamp)
+                badge_materializer.materialize(period_start, timestamp: published_at)
+                publications.where(status: 'published').update(status: 'superseded', updated_at: published_at)
                 upsert_publication(
                   period_start,
                   status: 'published',
                   previous_period_start: previous,
-                  published_at: timestamp,
+                  published_at: published_at,
                   backup_path: backup_path,
                   error: nil
                 )
@@ -67,7 +75,7 @@ module PolishOpenSourceRank
 
             private
 
-            attr_reader :backup_root, :clock, :database
+            attr_reader :backup_root, :badge_materializer, :clock, :database
 
             def verification_failures(period_start)
               [

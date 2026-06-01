@@ -15,10 +15,12 @@ module PolishOpenSourceRank
             def initialize(
               database,
               badge_policy: Domain::BadgePolicy.new,
+              published_badge_read_model: SQLitePublishedBadgeReadModel.new(database),
               user_language_badge_read_model: SQLiteUserLanguageBadgeReadModel.new(database)
             )
               @database = database
               @badge_policy = badge_policy
+              @published_badge_read_model = published_badge_read_model
               @user_language_badge_read_model = user_language_badge_read_model
             end
 
@@ -38,7 +40,8 @@ module PolishOpenSourceRank
                 elite_rank: country_rank,
                 city_rank: city_rank,
                 badges: badges,
-                profile_badge: badges.first,
+                profile_badge: published_badge(:user, user.fetch(:platform), user.fetch(:github_id), public_period) ||
+                  badges.first,
                 repositories: top_user_repositories(user.fetch(:platform), user.fetch(:github_id), public_period)
               )
             end
@@ -71,7 +74,8 @@ module PolishOpenSourceRank
                 elite_rank: ranking.fetch(:country_rank),
                 city_rank: ranking.fetch(:city_rank),
                 badges: [ranking.fetch(:badge)],
-                profile_badge: ranking.fetch(:badge),
+                profile_badge: published_badge(:organization, platform, organization_id, ranking_period) ||
+                  ranking.fetch(:badge),
                 repositories: organization_repositories(platform, organization_id, ranking_period,
                                                         order_column: 'stargazers_count'),
                 popular_repositories: organization_repositories(platform, organization_id, ranking_period,
@@ -100,7 +104,7 @@ module PolishOpenSourceRank
 
             private
 
-            attr_reader :badge_policy, :database, :user_language_badge_read_model
+            attr_reader :badge_policy, :database, :published_badge_read_model, :user_language_badge_read_model
 
             def fetch_user_profile(platform, login, period_start)
               database.fetch_all(<<~SQL, [period_start, platform, login]).first

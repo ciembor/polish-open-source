@@ -60,6 +60,7 @@ module PolishOpenSourceRank
                 repository_monthly_stats
                 organization_monthly_stats
                 organization_repository_monthly_stats
+                published_badges
               ]
             end
 

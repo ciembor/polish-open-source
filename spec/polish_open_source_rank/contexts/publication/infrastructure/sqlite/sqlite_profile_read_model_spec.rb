@@ -41,6 +41,16 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     expect(profile.fetch(:polish_repo_badge)).to include(label: 'Polish .rb Repo', value: '2nd', rank: 2)
   end
 
+  it 'prefers published badges over live ranking calculations' do
+    seed_user(id: 1, login: 'alice', total_stars: 100)
+    seed_repository(id: 10, owner_id: 1, owner: 'alice', full_name: 'alice/app', language: 'Ruby', stars: 30)
+    seed_published_badge('repository', subject_id: 10, label: 'Polish .rb Repo', rank: 9)
+
+    profile = read_model.repository_profile('github', 'alice', 'app', period_start: period)
+
+    expect(profile.fetch(:polish_repo_badge)).to include(label: 'Polish .rb Repo', value: '9th', rank: 9)
+  end
+
   it 'returns city badges when the user is outside the Poland ranking' do
     100.times do |index|
       seed_user(
@@ -154,6 +164,18 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
 
   def period
     '2026-04-01'
+  end
+
+  def seed_published_badge(kind, subject_id:, label:, rank:)
+    database.execute(
+      <<~SQL,
+        INSERT INTO published_badges(
+          period_start, badge_kind, platform, subject_github_id, label, status, rank, created_at, updated_at
+        )
+        VALUES (?, ?, 'github', ?, ?, 'ranked', ?, '2026-05-01T00:00:00Z', '2026-05-01T00:00:00Z')
+      SQL
+      [period, kind, subject_id, label, rank]
+    )
   end
 
   def seed_user(id:, login:, total_stars:, period_start: period, city: 'Kraków', country: 'Poland')

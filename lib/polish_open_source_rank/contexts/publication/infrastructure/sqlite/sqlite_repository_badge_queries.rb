@@ -12,15 +12,30 @@ module PolishOpenSourceRank
             private
 
             def repository_badge(platform, repository_id, period_start)
+              published = published_badge(:repository, platform, repository_id, period_start)
+              return published if published
+
               language = repository_language(platform, repository_id)
               rank = repository_rank(platform, repository_id, period_start, language)
               badge_policy.repository_badge(rank, language: language)
             end
 
             def organization_repository_badge(platform, repository_id, period_start)
+              published = published_badge(:organization_repository, platform, repository_id, period_start)
+              return published if published
+
               language = organization_repository_language(platform, repository_id)
               rank = organization_repository_badge_rank(platform, repository_id, period_start, language)
               badge_policy.organization_repository_badge(rank, language: language)
+            end
+
+            def published_badge(kind, platform, subject_id, period_start)
+              published_badge_read_model.badge(
+                kind: kind.to_s,
+                platform: platform,
+                subject_id: subject_id,
+                period_start: period_start
+              )
             end
 
             def repository_rank(platform, repository_id, period_start, language)
