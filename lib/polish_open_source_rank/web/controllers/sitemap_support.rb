@@ -9,6 +9,7 @@ module PolishOpenSourceRank
         def render_robots_txt
           <<~TXT
             User-agent: *
+            Disallow: /internal/
             Allow: /
 
             Sitemap: #{full_url(app_path('/sitemap.xml'))}

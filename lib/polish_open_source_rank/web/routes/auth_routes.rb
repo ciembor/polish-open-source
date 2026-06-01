@@ -37,6 +37,8 @@ module PolishOpenSourceRank
           def register_session_routes(app)
             app.post '/logout' do
               no_store!
+              halt 403 unless valid_csrf_token?
+
               session.clear
               redirect app_path('/latest')
             end

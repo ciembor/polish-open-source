@@ -479,12 +479,21 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'HTTP_COOKIE' => cookie_header(github_start)
     )
     profile = request.get('/users/github/alice', 'HTTP_COOKIE' => cookie_header(github_callback))
-    logout = request.post('/logout', 'HTTP_COOKIE' => cookie_header(github_callback))
+    session_cookie = cookie_header(profile)
+    invalid_logout = request.post('/logout', 'HTTP_COOKIE' => session_cookie)
+    logout = request.post(
+      '/logout',
+      'HTTP_COOKIE' => session_cookie,
+      'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
+      input: Rack::Utils.build_query(csrf_token: csrf_token_from(profile))
+    )
 
     expect(profile.body).to include('Dołącz do Elite Discorda')
     expect(profile.body).to include('Kanały do pisania')
     expect(profile.body).to include('general')
     expect(profile.body).to include('/auth/discord')
+    expect(profile.body).to include('name="csrf_token"')
+    expect(invalid_logout.status).to eq(403)
     expect(logout.status).to eq(303)
     expect(logout.location).to eq('http://example.org/latest')
   end
@@ -638,15 +647,15 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     expect(english_redirect.status).to eq(302)
     expect(english_redirect.location).to eq('http://example.org/en/latest')
-    expect(english_redirect['Set-Cookie']).to include('locale=en')
+    expect_locale_cookie(english_redirect, 'locale=en')
 
     expect(polish_redirect.status).to eq(302)
     expect(polish_redirect.location).to eq('http://example.org/latest')
-    expect(polish_redirect['Set-Cookie']).to include('locale=pl')
+    expect_locale_cookie(polish_redirect, 'locale=pl')
 
     expect(prefixed_polish_redirect.status).to eq(302)
     expect(prefixed_polish_redirect.location).to eq('http://example.org/latest')
-    expect(prefixed_polish_redirect['Set-Cookie']).to include('locale=pl')
+    expect_locale_cookie(prefixed_polish_redirect, 'locale=pl')
   end
 
   it 'renders links and assets under a configured app base path' do
@@ -774,6 +783,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     expect(robots.status).to eq(200)
     expect(robots.content_type).to include('text/plain')
+    expect(robots.body).to include('Disallow: /internal/')
     expect(robots.body).to include('Sitemap: https://rank.example/sitemap.xml')
     expect(sitemap.status).to eq(200)
     expect(sitemap.content_type).to include('application/xml')
@@ -790,6 +800,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(sitemap_locations).to include('https://rank.example/latest/locations/krakow/organizations/top')
     expect(sitemap_locations).to include('https://rank.example/packages')
     expect(sitemap_locations).to include('https://rank.example/en/latest/packages/npm/top')
+    expect(sitemap_locations).not_to include('https://rank.example/internal/jobs')
     expect(REXML::XPath.match(xml_document(sitemap.body), '//url/lastmod')).not_to be_empty
   end
 
@@ -831,9 +842,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     expect(response.status).to eq(200)
     expect(response.content_type).to include('text/html')
-    expect(response['X-Robots-Tag']).to eq('noindex')
+    expect(response['X-Robots-Tag']).to eq('noindex, nofollow, noarchive')
     expect(response.body).to include('<title>Job monitor</title>')
-    expect(response.body).to include('noindex,nofollow')
+    expect(response.body).to include('noindex,nofollow,noarchive')
     expect(response.body).to include('2026-04-01 to 2026-05-01')
     expect(response.body).to include('CEST')
     expect(response.body).to include('Independent job stages')
@@ -1379,6 +1390,16 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   def cookie_header(response)
     Array(response['Set-Cookie']).map { |cookie| cookie.split(';').first }.join('; ')
+  end
+
+  def csrf_token_from(response)
+    response.body.match(/name="csrf_token" value="([^"]+)"/).captures.first
+  end
+
+  def expect_locale_cookie(response, value)
+    expect(response['Set-Cookie']).to include(value)
+    expect(response['Set-Cookie']).to include('httponly')
+    expect(response['Set-Cookie']).to include('samesite=lax')
   end
 
   def sign_in_with_github(request)

@@ -28,6 +28,16 @@ module PolishOpenSourceRank
           redirect app_path(user_profile_path(current_user))
         end
 
+        def csrf_token
+          session[:csrf_token] ||= SecureRandom.hex(32)
+        end
+
+        def valid_csrf_token?
+          expected = session[:csrf_token]
+          given = params.fetch('csrf_token', nil)
+          expected && given && expected.bytesize == given.bytesize && Rack::Utils.secure_compare(expected, given)
+        end
+
         def secure_oauth_state?(session_key)
           expected = session.delete(session_key)
           given = params.fetch('state', nil)

@@ -11,8 +11,8 @@ module PolishOpenSourceRank
           end
 
           app.get '/internal/jobs' do
-            headers 'Cache-Control' => 'no-store', 'X-Robots-Tag' => 'noindex'
-            @robots = 'noindex,nofollow'
+            headers 'Cache-Control' => 'no-store', 'X-Robots-Tag' => 'noindex, nofollow, noarchive'
+            @robots = 'noindex,nofollow,noarchive'
             @refresh_seconds = 15
             @progress = show_job_progress.call
             @title = 'Job monitor'

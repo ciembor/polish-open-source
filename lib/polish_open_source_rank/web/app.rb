@@ -99,6 +99,8 @@ module PolishOpenSourceRank
       use Rack::Session::Cookie,
           key: SESSION_COOKIE_KEY,
           path: '/',
+          httponly: true,
+          secure: Configuration.load.rack_env == 'production',
           same_site: :lax,
           secret: Configuration.load.session_secret
       helpers Presentation::LogoIconHelpers
@@ -205,6 +207,8 @@ module PolishOpenSourceRank
           value: locale,
           path: locale_cookie_path,
           max_age: 31_536_000,
+          httponly: true,
+          secure: configuration.rack_env == 'production',
           same_site: :lax
         )
       end

@@ -66,6 +66,7 @@
           </details>
           <% if current_user %>
             <form class="nav-form js-fixed-control" method="post" action="<%= h app_path('/logout') %>">
+              <input type="hidden" name="csrf_token" value="<%= h csrf_token %>">
               <button class="nav-pill" type="submit"><%= h t('auth.logout') %></button>
             </form>
           <% else %>
