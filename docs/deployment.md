@@ -35,6 +35,11 @@ release is treated as healthy.
 - The production host is `ciembor@maciej-ciemborowicz.eu`.
 - The app checkout lives in `/home/ciembor/polish-open-source-rank`.
 - The web app runs in the `polish-open-source-rank` Podman container.
+- nginx terminates TLS and protects `/internal/*` with Basic Auth before those
+  requests reach the Rack app. The htpasswd file lives outside the repository at
+  `/etc/nginx/.htpasswd-polish-open-source-rank`; use
+  [deploy/nginx-polish-open-source-rank-internal.conf](../deploy/nginx-polish-open-source-rank-internal.conf)
+  as the expected server block snippet.
 - Monthly, package, and resume crawls are started by systemd one-shot services
   and use the same mounted `db/` and `log/` directories as the web app.
 - `/internal/jobs` reflects SQLite state from that shared app database, so stale

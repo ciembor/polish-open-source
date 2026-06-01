@@ -68,12 +68,13 @@ before checking whether they are actively writing:
 ```sh
 systemctl status polish-open-source-rank-monthly.service --no-pager
 systemctl status polish-open-source-rank-packages.service --no-pager
-curl -fsS https://polish-open-source.pl/internal/jobs
+curl -fsS -u ciembor https://polish-open-source.pl/internal/jobs
 ```
 
 ## Stuck monthly or packages
 
-1. Check `/internal/jobs` for the active section and last heartbeat.
+1. Check `/internal/jobs` with the nginx Basic Auth credentials for the active
+   section and last heartbeat.
 2. Check Sentry for the matching `monthly-rankings` or `package-rankings` check-in.
 3. Inspect the host alert timer with `journalctl -u polish-open-source-rank-alerts.service -n 50 --no-pager`.
 4. Inspect job logs with `journalctl -u polish-open-source-rank-monthly.service -n 200 --no-pager` or the packages unit.

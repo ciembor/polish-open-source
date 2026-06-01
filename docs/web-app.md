@@ -41,3 +41,14 @@ Recommended edge rules:
 - Do not rate-limit normal search crawler access to indexed Polish and English
   pages. If crawler-specific limits are needed, verify them at the edge with
   reverse DNS instead of trusting `User-Agent`.
+
+## Internal Operations Access
+
+`/internal/*` routes are operational pages and must be protected at nginx before
+requests reach the Rack app. The app still marks those responses as `no-store`
+and `noindex`, but indexing headers are not access control.
+
+The Rack rate limiter remains in-process for the current production shape: one
+web container behind nginx plus nginx edge rate limits. It only trusts
+`X-Real-IP` or `X-Forwarded-For` when `REMOTE_ADDR` belongs to a trusted local or
+private proxy address.

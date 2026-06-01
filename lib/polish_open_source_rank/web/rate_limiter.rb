@@ -1,10 +1,38 @@
 # frozen_string_literal: true
 
+require 'ipaddr'
+
 module PolishOpenSourceRank
   module Web
     class RateLimiter
       Rule = Struct.new(:name, :limit, :window, keyword_init: true)
       Response = Struct.new(:allowed?, :rule, :remaining, :reset_at, keyword_init: true)
+      TrustedProxy = Struct.new(:ranges, keyword_init: true) do
+        def self.default
+          new(
+            ranges: %w[
+              127.0.0.0/8
+              ::1/128
+              10.0.0.0/8
+              172.16.0.0/12
+              192.168.0.0/16
+            ].map { |range| IPAddr.new(range) }
+          )
+        end
+
+        def include?(address)
+          ip = parse_ip(address)
+          ip && ranges.any? { |range| range.include?(ip) }
+        end
+
+        private
+
+        def parse_ip(address)
+          IPAddr.new(address.to_s)
+        rescue IPAddr::InvalidAddressError
+          nil
+        end
+      end
 
       RULES = {
         %r{\A/(auth/|logout\z)} => Rule.new(name: 'auth', limit: 30, window: 60),
@@ -60,10 +88,11 @@ module PolishOpenSourceRank
         store.reset
       end
 
-      def initialize(app, store: self.class.store, rules: RULES)
+      def initialize(app, store: self.class.store, rules: RULES, trusted_proxy: TrustedProxy.default)
         @app = app
         @store = store
         @rules = rules
+        @trusted_proxy = trusted_proxy
       end
 
       def call(env)
@@ -78,7 +107,7 @@ module PolishOpenSourceRank
 
       private
 
-      attr_reader :app, :rules, :store
+      attr_reader :app, :rules, :store, :trusted_proxy
 
       def rule_for(path)
         rules.each do |pattern, rule|
@@ -92,10 +121,30 @@ module PolishOpenSourceRank
       end
 
       def client_ip(env)
-        forwarded_for = env['HTTP_X_FORWARDED_FOR'].to_s.split(',').first.to_s.strip
-        return forwarded_for unless forwarded_for.empty?
+        remote_addr = env.fetch('REMOTE_ADDR', 'unknown')
+        return remote_addr unless trusted_proxy.include?(remote_addr)
 
-        env.fetch('REMOTE_ADDR', 'unknown')
+        real_ip = valid_ip(env['HTTP_X_REAL_IP'])
+        return real_ip if real_ip
+
+        forwarded_client_ip(env.fetch('HTTP_X_FORWARDED_FOR', ''), remote_addr)
+      end
+
+      def forwarded_client_ip(forwarded_for, remote_addr)
+        chain = forwarded_for.to_s.split(',').map(&:strip).reject(&:empty?) + [remote_addr]
+        chain.reverse_each do |address|
+          normalized = valid_ip(address)
+          next unless normalized
+          return normalized unless trusted_proxy.include?(normalized)
+        end
+
+        remote_addr
+      end
+
+      def valid_ip(address)
+        IPAddr.new(address.to_s).to_s
+      rescue IPAddr::InvalidAddressError
+        nil
       end
 
       def rate_limited_response(result)
