@@ -1,6 +1,7 @@
 # Operations runbook
 
-Production observability is centered on Sentry plus the existing uptime and host health monitors.
+Production observability is centered on Sentry plus the existing uptime and host
+health monitors.
 
 ## Sentry setup
 
@@ -20,7 +21,8 @@ Configure Sentry alerts for:
 - failed or missed `package-rankings` check-ins,
 - custom events tagged with `monitor=production-alert`.
 
-The host alert timer also reads these optional thresholds from `/home/ciembor/polish-open-source-rank/.env.local`:
+The host alert timer also reads these optional thresholds from
+`/home/ciembor/polish-open-source-rank/.env.local`:
 
 - `PRODUCTION_ALERT_JOB_STALE_MINUTES=30`
 - `PRODUCTION_ALERT_LOG_WINDOW_MINUTES=10`
@@ -34,7 +36,9 @@ The host alert timer also reads these optional thresholds from `/home/ciembor/po
 1. Push `master`.
 2. Confirm GitHub Actions quality passes.
 3. Confirm the `Deploy or rollback` step finishes successfully in GitHub Actions.
-4. The workflow waits for built-in smoke checks: local `http://127.0.0.1:9293/healthz`, public `/healthz`, `/latest`, and `/en/latest`.
+4. The workflow waits for built-in smoke checks: local
+   `http://127.0.0.1:9293/healthz`, public `/healthz`, `/latest`, and
+   `/en/latest`.
 5. Manually smoke test one user profile and one badge URL after the workflow finishes.
 6. Check Sentry for new deploy errors and latency regressions.
 
@@ -42,8 +46,10 @@ The host alert timer also reads these optional thresholds from `/home/ciembor/po
 
 1. Open the `Deploy to server` workflow with `Run workflow`.
 2. Choose `action = rollback`.
-3. The workflow swaps only `latest` and `previous`; it does not roll back farther than one version.
-4. Confirm the built-in smoke checks pass, then manually smoke test the same user profile and badge URL as during deploy.
+3. The workflow swaps only `latest` and `previous`; it does not roll back farther
+   than one version.
+4. Confirm the built-in smoke checks pass, then manually smoke test the same
+   user profile and badge URL as during deploy.
 5. Keep the Sentry incident open until errors and latency return to baseline.
 
 ## Restart services
@@ -56,7 +62,8 @@ sudo systemctl restart polish-open-source-rank-discord-bot.service
 sudo systemctl restart polish-open-source-rank-crawl-resume.service
 ```
 
-Monthly and package jobs are long-running oneshot units. Do not restart them before checking whether they are actively writing:
+Monthly and package jobs are long-running one-shot units. Do not restart them
+before checking whether they are actively writing:
 
 ```sh
 systemctl status polish-open-source-rank-monthly.service --no-pager
@@ -70,7 +77,9 @@ curl -fsS https://polish-open-source.pl/internal/jobs
 2. Check Sentry for the matching `monthly-rankings` or `package-rankings` check-in.
 3. Inspect the host alert timer with `journalctl -u polish-open-source-rank-alerts.service -n 50 --no-pager`.
 4. Inspect job logs with `journalctl -u polish-open-source-rank-monthly.service -n 200 --no-pager` or the packages unit.
-5. If the job is stale and no process is still doing useful work, stop the unit and run `bin/resume_crawls` through `polish-open-source-rank-crawl-resume.service`.
+5. If the job is stale and no process is still doing useful work, stop the unit
+   and run `bin/resume_crawls` through
+   `polish-open-source-rank-crawl-resume.service`.
 
 ## Restore backup
 
