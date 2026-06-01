@@ -244,7 +244,7 @@ Goal: turn the project from a ranking site into a credible community asset.
 
 ## Manual Follow-Up
 
-- [ ] Add or update the `SSH_KNOWN_HOSTS` GitHub Actions secret with the pinned
+- [x] Add or update the `SSH_KNOWN_HOSTS` GitHub Actions secret with the pinned
       `maciej-ciemborowicz.eu` host key from a trusted administrative source.
 - [ ] Decide whether to create a `production` GitHub Environment with required
       reviewers before adding any additional deploy-capable maintainers.
