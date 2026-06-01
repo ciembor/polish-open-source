@@ -39,8 +39,17 @@ module PolishOpenSourceRank
         ).flat_map { |response| response.body.map { |repository| repository(repository) } }
       end
 
-      def repository_stars_delta(_repository, _period)
-        0
+      def repository_star_snapshot(repository, _period)
+        observed_stars = repository.fetch(:stars, 0).to_i
+        {
+          stars: observed_stars,
+          stargazers_count: observed_stars,
+          monthly_stars_delta: 0
+        }
+      end
+
+      def repository_stars_delta(repository, period)
+        repository_star_snapshot(repository, period).fetch(:monthly_stars_delta)
       end
 
       def public_activity_count(profile, period)

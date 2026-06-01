@@ -82,6 +82,29 @@ RSpec.describe PolishOpenSourceRank::Contexts::Languages::Infrastructure::SQLite
     )
   end
 
+  it 'uses repository stats from the requested period for both user and organization rankings' do
+    seed_user_repository(id: 1, full_name: 'alice/ruby-a', language: 'Ruby', stars: 10, delta: 1)
+    seed_user_repository_stats(period_start: '2026-03-01', id: 1, full_name: 'alice/ruby-a', stars: 999, delta: 99)
+    seed_organization_repository(id: 2, full_name: 'org/ruby-b', language: 'Ruby', stars: 20, delta: 2)
+    seed_organization_repository_stats(
+      period_start: '2026-03-01',
+      id: 2,
+      full_name: 'org/ruby-b',
+      stars: 888,
+      delta: 88
+    )
+
+    april = read_model.repository_rankings(language: 'Ruby', period_start: period, limit: 10)
+    march = read_model.repository_rankings(language: 'Ruby', period_start: '2026-03-01', limit: 10)
+
+    expect(april.fetch(:repository_stars_count).map(&method(:repository_star_totals)))
+      .to eq([['org/ruby-b', 20], ['alice/ruby-a', 10]])
+    expect(april.fetch(:repository_stars_delta).map(&method(:repository_star_deltas)))
+      .to eq([['org/ruby-b', 2], ['alice/ruby-a', 1]])
+    expect(march.fetch(:repository_stars_count).map(&method(:repository_star_totals)))
+      .to eq([['alice/ruby-a', 999], ['org/ruby-b', 888]])
+  end
+
   it 'bounds limits and rejects unsupported metrics' do
     seed_user_repository(id: 1, full_name: 'alice/ruby-a', language: 'Ruby', stars: 100, delta: 2)
 
@@ -146,14 +169,31 @@ RSpec.describe PolishOpenSourceRank::Contexts::Languages::Infrastructure::SQLite
                                                           organization_login: full_name.split('/').first
                                                         ))
     database.dataset(:organization_repository_monthly_stats).insert(
-      period_start: period,
-      platform: 'github',
-      repository_github_id: id,
-      organization_github_id: owner_id,
-      organization_login: full_name.split('/').first,
-      stargazers_count: stars,
-      monthly_stars_delta: delta,
-      updated_at: '2026-05-01T00:00:00Z'
+      organization_repository_stats_attributes(
+        period_start: period,
+        id: id,
+        full_name: full_name,
+        stars: stars,
+        delta: delta
+      )
+    )
+  end
+
+  def seed_user_repository_stats(period_start:, id:, full_name:, stars:, delta:)
+    database.dataset(:repository_monthly_stats).insert(
+      repository_stats_attributes(period_start: period_start, id: id, full_name: full_name, stars: stars, delta: delta)
+    )
+  end
+
+  def seed_organization_repository_stats(period_start:, id:, full_name:, stars:, delta:)
+    database.dataset(:organization_repository_monthly_stats).insert(
+      organization_repository_stats_attributes(
+        period_start: period_start,
+        id: id,
+        full_name: full_name,
+        stars: stars,
+        delta: delta
+      )
     )
   end
 
@@ -173,5 +213,39 @@ RSpec.describe PolishOpenSourceRank::Contexts::Languages::Infrastructure::SQLite
 
   def source_owner_id(full_name)
     full_name.split('/').first.bytes.sum
+  end
+
+  def repository_stats_attributes(period_start:, id:, full_name:, stars:, delta:)
+    {
+      period_start: period_start,
+      platform: 'github',
+      repository_github_id: id,
+      owner_github_id: source_owner_id(full_name),
+      owner_login: full_name.split('/').first,
+      stargazers_count: stars,
+      monthly_stars_delta: delta,
+      updated_at: '2026-05-01T00:00:00Z'
+    }
+  end
+
+  def organization_repository_stats_attributes(period_start:, id:, full_name:, stars:, delta:)
+    {
+      period_start: period_start,
+      platform: 'github',
+      repository_github_id: id,
+      organization_github_id: source_owner_id(full_name),
+      organization_login: full_name.split('/').first,
+      stargazers_count: stars,
+      monthly_stars_delta: delta,
+      updated_at: '2026-05-01T00:00:00Z'
+    }
+  end
+
+  def repository_star_totals(row)
+    [row.fetch(:full_name), row.fetch(:repository_stars_count)]
+  end
+
+  def repository_star_deltas(row)
+    [row.fetch(:full_name), row.fetch(:repository_stars_delta)]
   end
 end

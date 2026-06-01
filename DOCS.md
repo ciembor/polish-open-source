@@ -87,9 +87,12 @@ The job intentionally favors stability over speed:
 
 For GitHub repositories, monthly `stargazers_count` is historical at the period end and
 `monthly_stars_delta` counts stars gained inside that calendar month. For platforms
-without dated star history, repository stars may remain the value observed during the
-monthly crawl, while `monthly_stars_delta` falls back to the best available source
-calculation.
+without dated star history, repository stars stay the value observed during the
+monthly crawl and `monthly_stars_delta` falls back to `0`.
+
+Languages and packages join repository monthly stats on the same `period_start`, so
+published monthly views do not mix April package or language snapshots with March
+repository star totals.
 
 By default, monthly star deltas are fetched from source history for the requested
 calendar month. `--use-stars-diff` uses the difference between the current observation

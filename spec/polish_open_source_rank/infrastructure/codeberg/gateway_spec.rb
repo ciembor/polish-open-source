@@ -95,8 +95,16 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::CodebergGateway do
     expect(client.params.last).to include(page: 1)
   end
 
+  it 'falls back to observed repository stars when Codeberg has no dated star history' do
+    expect(gateway.repository_star_snapshot({ stars: 11 }, period)).to include(
+      stars: 11,
+      stargazers_count: 11,
+      monthly_stars_delta: 0
+    )
+    expect(gateway.repository_stars_delta({ stars: 11, full_name: 'alice/app' }, period)).to eq(0)
+  end
+
   it 'uses zero for unsupported Codeberg monthly star deltas and missing activity' do
-    expect(gateway.repository_stars_delta({}, period)).to eq(0)
     client.queue_error(
       PolishOpenSourceRank::Infrastructure::CodebergClient::NotFound.new('missing', status: 404, body: '{}')
     )
