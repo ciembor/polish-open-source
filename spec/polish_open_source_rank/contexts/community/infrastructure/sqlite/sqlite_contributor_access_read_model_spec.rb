@@ -14,9 +14,9 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
     seed_user(id: 1, login: 'alice', city: 'Kraków', total_stars: 100)
     seed_user(id: 2, login: 'bob', city: 'Kraków', total_stars: 90)
     seed_user(id: 3, login: 'carol', city: 'Wrocław', total_stars: 80)
-    seed_repository(id: 10, owner_id: 1, owner: 'alice', language: 'Ruby', stars: 30)
-    seed_repository(id: 11, owner_id: 1, owner: 'alice', language: 'JavaScript', stars: 3)
-    seed_repository(id: 12, owner_id: 2, owner: 'bob', language: 'Ruby', stars: 20)
+    seed_repository(id: 10, owner: { id: 1, login: 'alice' }, language: 'Ruby', stars: 30)
+    seed_repository(id: 11, owner: { id: 1, login: 'alice' }, language: 'JavaScript', stars: 3)
+    seed_repository(id: 12, owner: { id: 2, login: 'bob' }, language: 'Ruby', stars: 20)
 
     expect(read_model.access('github', 1, period_start: period)).to include(
       country_rank: 1,
@@ -70,7 +70,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
   it 'lists published languages for the effective public period' do
     seed_run(period)
     seed_user(id: 1, login: 'alice', city: 'Kraków', total_stars: 100)
-    seed_repository(id: 10, owner_id: 1, owner: 'alice', language: 'Ruby', stars: 30)
+    seed_repository(id: 10, owner: { id: 1, login: 'alice' }, language: 'Ruby', stars: 30)
 
     expect(read_model.published_languages(period_start: period)).to eq(['Ruby'])
     expect(read_model.published_languages(period_start: nil)).to eq(['Ruby'])
@@ -100,7 +100,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
                                       '2026-05-01T00:10:00Z'])
   end
 
-  def seed_repository(id:, owner_id:, owner:, language:, stars:, period_start: period)
+  def seed_repository(id:, owner:, language:, stars:, period_start: period)
     database.execute(
       <<~SQL,
         INSERT INTO repositories(
@@ -109,7 +109,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?)
       SQL
-      ['github', id, owner_id, owner, "repo-#{id}", "#{owner}/repo-#{id}", "https://github.com/#{owner}/repo-#{id}",
+      ['github', id, owner.fetch(:id), owner.fetch(:login), "repo-#{id}", "#{owner.fetch(:login)}/repo-#{id}",
+       "https://github.com/#{owner.fetch(:login)}/repo-#{id}",
        language, '2026-05-01T00:01:00Z']
     )
     database.execute(
@@ -120,7 +121,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       SQL
-      [period_start, 'github', id, owner_id, owner, 'Kraków', 'Poland', stars, 0, '2026-05-01T00:10:00Z']
+      [period_start, 'github', id, owner.fetch(:id), owner.fetch(:login), 'Kraków', 'Poland', stars, 0,
+       '2026-05-01T00:10:00Z']
     )
   end
 

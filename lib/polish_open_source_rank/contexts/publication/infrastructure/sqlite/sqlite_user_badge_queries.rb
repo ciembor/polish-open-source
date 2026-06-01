@@ -17,14 +17,10 @@ module PolishOpenSourceRank
               record[:period_start] || requested_period
             end
 
-            def user_badges_for(user, public_period, profile)
+            def user_badges_for(_user, _public_period, profile)
               user_badges(
                 profile: profile,
-                language_badge: user_language_badge_read_model.top_badge(
-                  platform: user.fetch(:platform),
-                  user_id: user.fetch(:github_id),
-                  period_start: public_period
-                )
+                language_badge: nil
               )
             end
           end

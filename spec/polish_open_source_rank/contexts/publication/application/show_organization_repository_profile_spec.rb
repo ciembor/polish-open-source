@@ -10,7 +10,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Application::ShowOrg
       OrganizationRepositoryProfileReadModel,
       organization_repository_profile: {
         full_name: 'polish-org/toolkit',
-        polish_repo_badge: { label: 'Polish Org Repo' }
+        polish_repo_badge: { label: 'Polish Repo' }
       }
     )
 
@@ -23,6 +23,6 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Application::ShowOrg
 
     expect(result).to be_a(PolishOpenSourceRank::Contexts::Publication::Application::RepositoryPage)
     expect(result.fetch(:full_name)).to eq('polish-org/toolkit')
-    expect(result.badge).to eq(label: 'Polish Org Repo')
+    expect(result.badge).to eq(label: 'Polish Repo')
   end
 end

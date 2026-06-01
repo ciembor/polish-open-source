@@ -20,10 +20,11 @@ module PolishOpenSourceRank
             user_badges(profile: profile, language_badge: language_badge).first
           end
 
-          def repository_badge(rank)
-            return { label: 'Polish Repo', value: Rank.place(rank), status: 'ranked', rank: rank } if rank
+          def repository_badge(rank, language: nil)
+            label = repository_label(language)
+            return { label: label, value: Rank.place(rank), status: 'ranked', rank: rank } if rank
 
-            { label: 'Polish Repo', value: nil, status: 'outside_top_100', rank: rank }
+            { label: label, value: nil, status: 'outside_top_100', rank: rank }
           end
 
           def organization_badge(rank, city: nil, city_rank: nil)
@@ -34,10 +35,11 @@ module PolishOpenSourceRank
             { label: 'Polish Open Source Org', value: nil, status: 'outside_top_100', rank: rank }
           end
 
-          def organization_repository_badge(rank)
-            return { label: 'Polish Org Repo', value: Rank.place(rank), status: 'ranked', rank: rank } if rank
+          def organization_repository_badge(rank, language: nil)
+            label = repository_label(language)
+            return { label: label, value: Rank.place(rank), status: 'ranked', rank: rank } if rank
 
-            { label: 'Polish Org Repo', value: nil, status: 'outside_top_100', rank: rank }
+            { label: label, value: nil, status: 'outside_top_100', rank: rank }
           end
 
           private
@@ -60,6 +62,12 @@ module PolishOpenSourceRank
 
           def top?(rank, limit)
             rank && rank <= limit
+          end
+
+          def repository_label(language)
+            return 'Polish Repo' unless language && !language.empty?
+
+            LanguageBadgeLabel.repository(language)
           end
         end
       end
