@@ -11,7 +11,7 @@ module PolishOpenSourceRank
             <svg xmlns="http://www.w3.org/2000/svg" width="#{width}" height="20" role="img" aria-label="#{labels.fetch(:aria)}">
               <title>#{Rack::Utils.escape_html(labels.fetch(:aria))}</title>
               #{defs(width)}
-              <a href="#{Rack::Utils.escape_html(home_url)}" target="_blank">
+              <a href="#{Rack::Utils.escape_html(home_url)}" target="_blank" rel="noopener noreferrer">
                 #{background(labels.fetch(:left_width), labels.fetch(:right_width), width)}
                 #{text(labels)}
               </a>

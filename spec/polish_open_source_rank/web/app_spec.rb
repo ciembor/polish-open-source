@@ -527,6 +527,21 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(logout.location).to eq('http://example.org/latest')
   end
 
+  it 'rejects replayed GitHub OAuth callback states' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
+    request = Rack::MockRequest.new(described_class)
+
+    github_start = request.get('/auth/github')
+    github_state = Rack::Utils.parse_query(URI(github_start.location).query).fetch('state')
+    callback_path = "/auth/github/callback?code=github-code&state=#{github_state}"
+    github_callback = request.get(callback_path, 'HTTP_COOKIE' => cookie_header(github_start))
+    replay = request.get(callback_path, 'HTTP_COOKIE' => cookie_header(github_callback))
+
+    expect(github_callback.status).to eq(302)
+    expect(replay.status).to eq(400)
+  end
+
   it 'keeps podium medals on profile pages', :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     request = Rack::MockRequest.new(described_class)
@@ -811,6 +826,37 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(github_start['Cache-Control']).to eq('no-store')
     expect(profile['Cache-Control']).to eq('private, no-cache')
     expect(internal['Cache-Control']).to eq('no-store')
+  end
+
+  it 'adds security headers to public, auth, badge, and internal responses', :aggregate_failures do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_running_database}"
+    described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
+    request = Rack::MockRequest.new(described_class)
+
+    responses = [
+      request.get('/latest'),
+      request.get('/auth/github'),
+      request.get('/badges/users/github/alice.svg'),
+      request.get('/internal/jobs')
+    ]
+
+    responses.each do |response|
+      expect(response['Content-Security-Policy']).to include("default-src 'self'")
+      expect(response['Content-Security-Policy']).to include("frame-ancestors 'none'")
+      expect(response['X-Content-Type-Options']).to eq('nosniff')
+      expect(response['Referrer-Policy']).to eq('strict-origin-when-cross-origin')
+      expect(response['Permissions-Policy']).to include('camera=()')
+    end
+  end
+
+  it 'marks every external target blank link as opener-safe', :aggregate_failures do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+
+    html = Rack::MockRequest.new(described_class).get('/latest').body
+    target_blank_links = html.scan(/<a\b[^>]*target="_blank"[^>]*>/)
+
+    expect(target_blank_links).not_to be_empty
+    expect(target_blank_links).to all(include('rel="noopener noreferrer"'))
   end
 
   it 'serves health checks and 404 pages' do

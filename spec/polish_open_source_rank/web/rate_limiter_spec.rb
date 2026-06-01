@@ -38,6 +38,73 @@ RSpec.describe PolishOpenSourceRank::Web::RateLimiter do
     expect(reset_status).to eq(200)
   end
 
+  it 'ignores spoofed forwarded headers when the request is not from a trusted proxy' do
+    rule = described_class::Rule.new(name: 'test', limit: 1, window: 60)
+    store = described_class::Store.new(clock: -> { 10.0 })
+    app = ->(_env) { [200, {}, ['ok']] }
+    limiter = described_class.new(app, store: store, rules: { %r{\A/limited} => rule })
+
+    first_status, = limiter.call(
+      'PATH_INFO' => '/limited',
+      'REMOTE_ADDR' => '198.51.100.10',
+      'HTTP_X_FORWARDED_FOR' => '203.0.113.1'
+    )
+    limited_status, = limiter.call(
+      'PATH_INFO' => '/limited',
+      'REMOTE_ADDR' => '198.51.100.10',
+      'HTTP_X_FORWARDED_FOR' => '203.0.113.2'
+    )
+
+    expect(first_status).to eq(200)
+    expect(limited_status).to eq(429)
+  end
+
+  it 'uses proxy-controlled real client addresses from trusted proxies' do
+    rule = described_class::Rule.new(name: 'test', limit: 1, window: 60)
+    store = described_class::Store.new(clock: -> { 10.0 })
+    app = ->(_env) { [200, {}, ['ok']] }
+    limiter = described_class.new(app, store: store, rules: { %r{\A/limited} => rule })
+
+    first_status, = limiter.call(
+      'PATH_INFO' => '/limited',
+      'REMOTE_ADDR' => '127.0.0.1',
+      'HTTP_X_REAL_IP' => '203.0.113.10'
+    )
+    other_status, = limiter.call(
+      'PATH_INFO' => '/limited',
+      'REMOTE_ADDR' => '127.0.0.1',
+      'HTTP_X_REAL_IP' => '203.0.113.11'
+    )
+    limited_status, = limiter.call(
+      'PATH_INFO' => '/limited',
+      'REMOTE_ADDR' => '127.0.0.1',
+      'HTTP_X_REAL_IP' => '203.0.113.10'
+    )
+
+    expect(first_status).to eq(200)
+    expect(other_status).to eq(200)
+    expect(limited_status).to eq(429)
+  end
+
+  it 'falls back to the proxy address when every forwarded address is trusted or invalid' do
+    rule = described_class::Rule.new(name: 'test', limit: 1, window: 60)
+    store = described_class::Store.new(clock: -> { 10.0 })
+    app = ->(_env) { [200, {}, ['ok']] }
+    limiter = described_class.new(app, store: store, rules: { %r{\A/limited} => rule })
+    env = {
+      'PATH_INFO' => '/limited',
+      'REMOTE_ADDR' => '127.0.0.1',
+      'HTTP_X_REAL_IP' => 'not-an-ip',
+      'HTTP_X_FORWARDED_FOR' => 'also-not-an-ip, 10.0.0.2'
+    }
+
+    first_status, = limiter.call(env)
+    limited_status, = limiter.call(env)
+
+    expect(first_status).to eq(200)
+    expect(limited_status).to eq(429)
+  end
+
   it 'opens a new bucket after the window expires' do
     now = 0.0
     clock = -> { now }

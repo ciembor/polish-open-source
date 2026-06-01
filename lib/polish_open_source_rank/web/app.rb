@@ -97,6 +97,7 @@ module PolishOpenSourceRank
       Observability::Sentry.configure(Configuration.load)
       use ::Sentry::Rack::CaptureExceptions if Observability::Sentry.configured?
       use RequestTelemetry
+      use SecurityHeaders
       use RateLimiter
       use Rack::Deflater
       use Rack::Session::Cookie,

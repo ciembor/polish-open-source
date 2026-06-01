@@ -42,7 +42,7 @@ Read only the files needed for the task:
      `sudo podman ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}'`
    - Check systemd units with `systemctl status ... --no-pager`
    - Check logs with `journalctl -u ...`
-   - Check public job state with `curl -fsS https://polish-open-source.pl/internal/jobs`
+   - Check job state with `curl -fsS -u ciembor https://polish-open-source.pl/internal/jobs`
 3. Choose the narrowest action that matches the problem:
    - web app: `polish-open-source-rank.service`
    - Discord bot: `polish-open-source-rank-discord-bot.service`
@@ -63,8 +63,9 @@ Read only the files needed for the task:
   progressing, or better resumed through `crawl-resume`.
 - Use the GitHub Actions deploy workflow for normal deploys and the built-in one-step
   rollback for rollbacks.
-- Treat `/internal/jobs`, systemd status, container status, and recent logs as the
-  primary sources of truth before drawing conclusions.
+- Treat `/internal/jobs`, systemd status, container status, and recent logs as
+  the primary sources of truth before drawing conclusions. `/internal/jobs` is
+  protected by nginx Basic Auth in production.
 - Any destructive action or workaround that bypasses the documented deploy flow needs
   explicit user approval.
 

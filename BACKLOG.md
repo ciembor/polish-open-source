@@ -17,22 +17,22 @@ Rules for executing this backlog:
 
 Goal: remove public security footguns before spending more time on polish.
 
-- [ ] Protect `/internal/jobs` with production-grade access control.
-- [ ] Add regression tests proving anonymous users cannot access internal
+- [x] Protect `/internal/jobs` with production-grade access control.
+- [x] Add regression tests proving anonymous users cannot access internal
       operational pages in production mode.
-- [ ] Replace direct trust in arbitrary `X-Forwarded-For` with a trusted proxy
+- [x] Replace direct trust in arbitrary `X-Forwarded-For` with a trusted proxy
       client IP policy.
-- [ ] Add tests for spoofed forwarded headers and rate-limit key selection.
-- [ ] Decide whether rate limiter state should remain in-process or move to a
+- [x] Add tests for spoofed forwarded headers and rate-limit key selection.
+- [x] Decide whether rate limiter state should remain in-process or move to a
       shared store for the current production shape.
-- [ ] Add global security headers: `Content-Security-Policy`,
+- [x] Add global security headers: `Content-Security-Policy`,
       `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, and
       `frame-ancestors`.
-- [ ] Add regression specs for security headers on public, auth, badge, and
+- [x] Add regression specs for security headers on public, auth, badge, and
       internal responses.
-- [ ] Add `rel="noopener noreferrer"` to every external
+- [x] Add `rel="noopener noreferrer"` to every external
       `target="_blank"` link, including generated badge HTML.
-- [ ] Add focused auth security regression specs for logout CSRF, OAuth state
+- [x] Add focused auth security regression specs for logout CSRF, OAuth state
       replay, and failed OAuth callback behavior.
 
 ## Milestone 2: CI and Supply Chain Security
