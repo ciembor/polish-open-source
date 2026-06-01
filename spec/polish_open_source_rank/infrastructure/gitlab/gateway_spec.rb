@@ -78,8 +78,16 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitLabGateway do
     expect { gateway.user('missing', 404) }.to raise_error(PolishOpenSourceRank::Contexts::Ranking::Application::SourceNotFound)
   end
 
+  it 'falls back to observed repository stars when GitLab has no dated star history' do
+    expect(gateway.repository_star_snapshot({ stars: 7 }, period)).to include(
+      stars: 7,
+      stargazers_count: 7,
+      monthly_stars_delta: 0
+    )
+    expect(gateway.repository_stars_delta({ stars: 7, full_name: 'alice/app' }, period)).to eq(0)
+  end
+
   it 'uses zero for unsupported GitLab monthly star deltas and missing activity' do
-    expect(gateway.repository_stars_delta({}, period)).to eq(0)
     client.queue_error(
       PolishOpenSourceRank::Infrastructure::GitLabClient::NotFound.new('missing', status: 404, body: '{}')
     )

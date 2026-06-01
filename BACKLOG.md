@@ -231,18 +231,18 @@ Ryzyka:
 
 Taski:
 
-- [ ] Przywrócić temat historycznych gwiazdek jako osobny plan implementacyjny.
-- [ ] Dla GitHuba liczyć `stargazers_count` na koniec miesiąca, a `monthly_stars_delta` po `starred_at` z danego miesiąca.
-- [ ] Zostawić jawny fallback dla platform bez historycznego API.
-- [ ] Dopisać testy dla repo userów, repo organizacji i rankingów packages korzystających z tego samego `period_start`.
-- [ ] Udokumentować, które metryki są historyczne, a które są wartością obserwowaną w czasie crawla.
-- [ ] Zaplanować backfill tylko po oszacowaniu kosztu API i czasu wykonania.
+- [x] Przywrócić temat historycznych gwiazdek jako osobny plan implementacyjny.
+- [x] Dla GitHuba liczyć `stargazers_count` na koniec miesiąca, a `monthly_stars_delta` po `starred_at` z danego miesiąca.
+- [x] Zostawić jawny fallback dla platform bez historycznego API.
+- [x] Dopisać testy dla repo userów, repo organizacji i rankingów packages korzystających z tego samego `period_start`.
+- [x] Udokumentować, które metryki są historyczne, a które są wartością obserwowaną w czasie crawla.
+- [x] Zaplanować backfill tylko po oszacowaniu kosztu API i czasu wykonania.
 
 Kryteria akceptacji:
 
-- [ ] Miesięczne gwiazdki GitHuba nie zawierają gwiazdek zdobytych po końcu miesiąca.
-- [ ] Packages i languages pokazują dane zgodne z opublikowanym miesiącem.
-- [ ] Dokumentacja jasno mówi, gdzie kończy się precyzja historyczna.
+- [x] Miesięczne gwiazdki GitHuba nie zawierają gwiazdek zdobytych po końcu miesiąca.
+- [x] Packages i languages pokazują dane zgodne z opublikowanym miesiącem.
+- [x] Dokumentacja jasno mówi, gdzie kończy się precyzja historyczna.
 
 ## Milestone 9 - Discord role językowe i kolejność badge'y profilu
 

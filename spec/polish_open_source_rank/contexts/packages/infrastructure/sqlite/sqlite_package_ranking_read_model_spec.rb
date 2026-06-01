@@ -21,11 +21,16 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     seed_package(ecosystem: 'npm', name: 'alpha', downloads_30d: 10)
     seed_package(ecosystem: 'npm', name: 'beta', downloads_30d: 20)
     seed_package(ecosystem: 'rubygems', name: 'tool', downloads_30d: 30)
-    link_repository(name: 'alpha', scan_id: 10, full_name: 'alice/app', repository_kind: 'user',
-                    stats: { stars: 20, delta: 3 })
-    link_repository(name: 'beta', scan_id: 20, full_name: 'org/tool', repository_kind: 'organization',
+    link_repository(
+      name: 'alpha',
+      repository: repository_ref(scan_id: 10, full_name: 'alice/app', repository_kind: 'user'),
+      stats: { stars: 20, delta: 3 }
+    )
+    link_repository(name: 'beta',
+                    repository: repository_ref(scan_id: 20, full_name: 'org/tool', repository_kind: 'organization'),
                     stats: { stars: 30, delta: 1 })
-    link_repository(name: 'tool', scan_id: 30, full_name: 'ruby/gem', repository_kind: 'organization',
+    link_repository(name: 'tool',
+                    repository: repository_ref(scan_id: 30, full_name: 'ruby/gem', repository_kind: 'organization'),
                     ecosystem: 'rubygems', stats: { stars: 100, delta: 5 })
 
     expect(read_model.ecosystem_cards(period_start: period)).to eq(
@@ -95,12 +100,17 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
 
   it 'includes repository ownership from user and organization repositories' do
     seed_package(ecosystem: 'npm', name: 'shared', downloads_30d: 100)
-    link_repository(name: 'shared', scan_id: 10, full_name: 'alice/app', repository_kind: 'user',
+    link_repository(name: 'shared',
+                    repository: repository_ref(scan_id: 10, full_name: 'alice/app', repository_kind: 'user'),
                     stats: { stars: 20, delta: 3 })
-    link_repository(name: 'shared', scan_id: 20, full_name: 'org/tool', repository_kind: 'organization',
+    link_repository(name: 'shared',
+                    repository: repository_ref(scan_id: 20, full_name: 'org/tool', repository_kind: 'organization'),
                     stats: { stars: 30, delta: 1 })
-    link_unmatched_repository(name: 'shared', scan_id: 30, full_name: 'other/dependency',
-                              repository_kind: 'organization', stats: { stars: 500, delta: 50 })
+    link_unmatched_repository(
+      name: 'shared',
+      repository: repository_ref(scan_id: 30, full_name: 'other/dependency', repository_kind: 'organization'),
+      stats: { stars: 500, delta: 50 }
+    )
 
     row = read_model.ranked_packages(ecosystem: 'npm', period_start: period, metric: 'downloads_30d').first
 
@@ -121,9 +131,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     seed_package(ecosystem: 'npm', name: 'user-tool', downloads_30d: 100)
     seed_package(ecosystem: 'npm', name: 'org-tool', downloads_30d: 200)
     seed_package(ecosystem: 'rubygems', name: 'ruby-tool', downloads_30d: 300)
-    link_repository(name: 'user-tool', scan_id: 10, full_name: 'alice/app', repository_kind: 'user',
+    link_repository(name: 'user-tool',
+                    repository: repository_ref(scan_id: 10, full_name: 'alice/app', repository_kind: 'user'),
                     stats: { stars: 20, delta: 3 })
-    link_repository(name: 'org-tool', scan_id: 20, full_name: 'org/tool', repository_kind: 'organization',
+    link_repository(name: 'org-tool',
+                    repository: repository_ref(scan_id: 20, full_name: 'org/tool', repository_kind: 'organization'),
                     stats: { stars: 30, delta: 1 })
 
     user_rankings = read_model.rankings(
@@ -156,17 +168,13 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     link_repository(
       ecosystem: 'maven',
       name: 'pl.example:steady',
-      scan_id: 30,
-      full_name: 'alice/steady',
-      repository_kind: 'user',
+      repository: repository_ref(scan_id: 30, full_name: 'alice/steady', repository_kind: 'user'),
       stats: { stars: 100, delta: 0 }
     )
     link_repository(
       ecosystem: 'maven',
       name: 'pl.example:trending',
-      scan_id: 40,
-      full_name: 'org/trending',
-      repository_kind: 'organization',
+      repository: repository_ref(scan_id: 40, full_name: 'org/trending', repository_kind: 'organization'),
       stats: { stars: 20, delta: 5 }
     )
 
@@ -176,9 +184,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
 
   it 'returns package profiles with linked repositories' do
     seed_package(ecosystem: 'npm', name: 'shared', downloads_30d: 100)
-    link_repository(name: 'shared', scan_id: 10, full_name: 'alice/app', repository_kind: 'user',
+    link_repository(name: 'shared',
+                    repository: repository_ref(scan_id: 10, full_name: 'alice/app', repository_kind: 'user'),
                     stats: { stars: 20, delta: 3 })
-    link_repository(name: 'shared', scan_id: 20, full_name: 'org/tool', repository_kind: 'organization',
+    link_repository(name: 'shared',
+                    repository: repository_ref(scan_id: 20, full_name: 'org/tool', repository_kind: 'organization'),
                     stats: { stars: 30, delta: 1 })
 
     profile = read_model.package_profile(ecosystem: 'npm', package_name: 'SHARED', period_start: period)
@@ -191,6 +201,41 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
       repository_stars_delta: 3,
       repositories: shared_package_repositories
     )
+  end
+
+  it 'uses linked repository stats from the same period as the package snapshot' do
+    seed_package(ecosystem: 'npm', name: 'shared', downloads_30d: 100)
+    seed_snapshot(ecosystem: 'npm', name: 'shared', period_start: '2026-03-01', downloads_30d: 90)
+    link_repository(name: 'shared',
+                    repository: repository_ref(scan_id: 10, full_name: 'alice/app', repository_kind: 'user'),
+                    stats: { stars: 20, delta: 3 })
+    link_repository(name: 'shared',
+                    repository: repository_ref(scan_id: 20, full_name: 'org/tool', repository_kind: 'organization'),
+                    stats: { stars: 30, delta: 1 })
+    link_repository(
+      name: 'shared',
+      repository: repository_ref(
+        scan_id: 110,
+        repository_source_id: 10,
+        full_name: 'alice/app',
+        repository_kind: 'user'
+      ),
+      period_start: '2026-03-01',
+      stats: { stars: 900, delta: 90 }
+    )
+    link_repository(
+      name: 'shared',
+      repository: repository_ref(scan_id: 120, repository_source_id: 20, full_name: 'org/tool',
+                                 repository_kind: 'organization'),
+      period_start: '2026-03-01',
+      stats: { stars: 800, delta: 80 }
+    )
+
+    april = read_model.ranked_packages(ecosystem: 'npm', period_start: period, metric: 'downloads_30d').first
+    march = read_model.ranked_packages(ecosystem: 'npm', period_start: '2026-03-01', metric: 'downloads_30d').first
+
+    expect(april).to include(repository_stars_count: 30, repository_stars_delta: 3)
+    expect(march).to include(repository_stars_count: 900, repository_stars_delta: 90)
   end
 
   it 'bounds limits and rejects unsupported metrics' do
@@ -278,9 +323,25 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     )
   end
 
-  def link_repository(name:, scan_id:, full_name:, repository_kind:, ecosystem: 'npm', stats: nil)
-    seed_scan(scan_id: scan_id, full_name: full_name, repository_kind: repository_kind)
-    seed_repository_stats(scan_id: scan_id, full_name: full_name, repository_kind: repository_kind, stats: stats)
+  def link_repository(name:, repository:, ecosystem: 'npm', period_start: period, stats: nil)
+    scan_id = repository.fetch(:scan_id)
+    repository_source_id = repository.fetch(:repository_source_id)
+    full_name = repository.fetch(:full_name)
+    repository_kind = repository.fetch(:repository_kind)
+    seed_scan(
+      scan_id: scan_id,
+      repository_source_id: repository_source_id,
+      full_name: full_name,
+      repository_kind: repository_kind,
+      period_start: period_start
+    )
+    seed_repository_stats(
+      repository_source_id: repository_source_id,
+      full_name: full_name,
+      repository_kind: repository_kind,
+      period_start: period_start,
+      stats: stats
+    )
     manifest_id = seed_manifest(scan_id: scan_id, name: name, ecosystem: ecosystem)
     database.execute(
       <<~SQL,
@@ -294,23 +355,26 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     manifest_id
   end
 
-  def link_unmatched_repository(name:, scan_id:, full_name:, repository_kind:, ecosystem: 'npm', stats: nil)
-    manifest_id = link_repository(name: name, scan_id: scan_id, full_name: full_name, repository_kind: repository_kind,
-                                  ecosystem: ecosystem, stats: stats)
+  def link_unmatched_repository(name:, repository:, ecosystem: 'npm', stats: nil)
+    manifest_id = link_repository(name: name, repository: repository, ecosystem: ecosystem, stats: stats)
     database.dataset(:registry_package_links)
             .where(manifest_id: manifest_id, ecosystem: ecosystem, normalized_package_name: name.downcase)
             .update(matched: 0)
   end
 
-  def seed_repository_stats(scan_id:, full_name:, repository_kind:, stats:)
+  def seed_repository_stats(repository_source_id:, full_name:, repository_kind:, stats:, period_start: period)
     return unless stats
 
-    seed_ranked_repository(scan_id: scan_id, full_name: full_name, repository_kind: repository_kind)
+    seed_ranked_repository(
+      repository_source_id: repository_source_id,
+      full_name: full_name,
+      repository_kind: repository_kind
+    )
     database.dataset(repository_stats_table(repository_kind)).insert(
-      period_start: period,
+      period_start: period_start,
       platform: 'github',
-      repository_github_id: scan_id,
-      **repository_owner_columns(repository_kind, scan_id, full_name),
+      repository_github_id: repository_source_id,
+      **repository_owner_columns(repository_kind, repository_source_id, full_name),
       stargazers_count: stats.fetch(:stars),
       monthly_stars_delta: stats.fetch(:delta),
       updated_at: '2026-05-23T12:00:00Z'
@@ -321,10 +385,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     repository_kind == 'organization' ? :organization_repository_monthly_stats : :repository_monthly_stats
   end
 
-  def repository_owner_columns(repository_kind, scan_id, full_name)
+  def repository_owner_columns(repository_kind, repository_source_id, full_name)
     if repository_kind == 'organization'
       return {
-        organization_github_id: scan_id + 1000,
+        organization_github_id: repository_source_id + 1000,
         organization_login: full_name.split('/').first,
         organization_city: 'Warszawa',
         organization_country: 'Poland'
@@ -332,52 +396,52 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     end
 
     {
-      owner_github_id: scan_id + 1000,
+      owner_github_id: repository_source_id + 1000,
       owner_login: full_name.split('/').first,
       owner_city: 'Warszawa',
       owner_country: 'Poland'
     }
   end
 
-  def seed_ranked_repository(scan_id:, full_name:, repository_kind:)
+  def seed_ranked_repository(repository_source_id:, full_name:, repository_kind:)
     owner_login = full_name.split('/').first
     if repository_kind == 'organization'
       database.dataset(:organizations).insert_conflict(target: %i[platform github_id], update: { updated_at: 'now' })
               .insert(
                 platform: 'github',
-                github_id: scan_id + 1000,
+                github_id: repository_source_id + 1000,
                 login: owner_login,
                 html_url: "https://github.com/#{owner_login}",
                 updated_at: '2026-05-23T12:00:00Z'
               )
       database.dataset(:organization_repositories)
               .insert_conflict(target: %i[platform github_id], update: { updated_at: 'now' })
-              .insert(repository_attributes(scan_id, full_name).merge(
-                        organization_github_id: scan_id + 1000,
+              .insert(repository_attributes(repository_source_id, full_name).merge(
+                        organization_github_id: repository_source_id + 1000,
                         organization_login: owner_login
                       ))
     else
       database.dataset(:users).insert_conflict(target: %i[platform github_id], update: { updated_at: 'now' })
               .insert(
                 platform: 'github',
-                github_id: scan_id + 1000,
+                github_id: repository_source_id + 1000,
                 login: owner_login,
                 html_url: "https://github.com/#{owner_login}",
                 updated_at: '2026-05-23T12:00:00Z'
               )
       database.dataset(:repositories)
               .insert_conflict(target: %i[platform github_id], update: { updated_at: 'now' })
-              .insert(repository_attributes(scan_id, full_name).merge(
-                        owner_github_id: scan_id + 1000,
+              .insert(repository_attributes(repository_source_id, full_name).merge(
+                        owner_github_id: repository_source_id + 1000,
                         owner_login: owner_login
                       ))
     end
   end
 
-  def repository_attributes(scan_id, full_name)
+  def repository_attributes(repository_source_id, full_name)
     {
       platform: 'github',
-      github_id: scan_id,
+      github_id: repository_source_id,
       name: full_name.split('/').last,
       full_name: full_name,
       html_url: "https://github.com/#{full_name}",
@@ -387,7 +451,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     }
   end
 
-  def seed_scan(scan_id:, full_name:, repository_kind:)
+  def seed_scan(scan_id:, repository_source_id:, full_name:, repository_kind:, period_start: period)
     database.execute(
       <<~SQL,
         INSERT INTO package_repository_scans(
@@ -395,7 +459,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
         )
         VALUES (?, ?, ?, 'github', ?, ?, 'scanned', ?)
       SQL
-      [scan_id, period, repository_kind, scan_id, full_name, '2026-05-23T12:00:00Z']
+      [scan_id, period_start, repository_kind, repository_source_id, full_name, '2026-05-23T12:00:00Z']
     )
   end
 
@@ -423,5 +487,14 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     when 'maven' then "https://central.sonatype.com/artifact/#{name.tr(':', '/')}"
     else "https://example.com/#{ecosystem}/#{name}"
     end
+  end
+
+  def repository_ref(scan_id:, full_name:, repository_kind:, repository_source_id: scan_id)
+    {
+      scan_id: scan_id,
+      repository_source_id: repository_source_id,
+      full_name: full_name,
+      repository_kind: repository_kind
+    }
   end
 end
