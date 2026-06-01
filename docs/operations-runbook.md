@@ -44,7 +44,7 @@ The host alert timer also reads these optional thresholds from
 
 ## Rollback
 
-1. Open the `Deploy to server` workflow with `Run workflow`.
+1. Open the `CI and deploy` workflow with `Run workflow`.
 2. Choose `action = rollback`.
 3. The workflow swaps only `latest` and `previous`; it does not roll back farther
    than one version.

@@ -15,6 +15,7 @@ gem 'sqlite3', '~> 2.9.4'
 gem 'zeitwerk', '~> 2.7'
 
 group :development, :test do
+  gem 'bundler-audit', '~> 0.9.3', require: false
   gem 'knapsack', '~> 4.0', require: false
   gem 'reek', '~> 6.5', require: false
   gem 'rspec', '~> 3.13'

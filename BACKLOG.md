@@ -39,18 +39,18 @@ Goal: remove public security footguns before spending more time on polish.
 
 Goal: make the public repository credible under security review.
 
-- [ ] Replace deploy-time `ssh-keyscan` trust-on-first-use with pinned host key
+- [x] Replace deploy-time `ssh-keyscan` trust-on-first-use with pinned host key
       verification from GitHub Actions secrets.
-- [ ] Pin GitHub Actions permissions to the least required scope.
-- [ ] Pin third-party GitHub Actions by SHA or document why version tags are
+- [x] Pin GitHub Actions permissions to the least required scope.
+- [x] Pin third-party GitHub Actions by SHA or document why version tags are
       acceptable for this repository.
-- [ ] Add Dependabot configuration for Ruby gems and GitHub Actions.
-- [ ] Add `bundler-audit` or equivalent dependency vulnerability scanning to CI.
-- [ ] Add CodeQL, Semgrep, Brakeman, or an equivalent Ruby/web security scan to
+- [x] Add Dependabot configuration for Ruby gems and GitHub Actions.
+- [x] Add `bundler-audit` or equivalent dependency vulnerability scanning to CI.
+- [x] Add CodeQL, Semgrep, Brakeman, or an equivalent Ruby/web security scan to
       CI.
-- [ ] Split CI quality from deploy so deploy depends on a named, inspectable
+- [x] Split CI quality from deploy so deploy depends on a named, inspectable
       quality job.
-- [ ] Consider a GitHub Environment for production deploys and document whether
+- [x] Consider a GitHub Environment for production deploys and document whether
       manual approval is required.
 
 ## Milestone 3: Runtime and Container Hardening
@@ -241,3 +241,12 @@ Goal: turn the project from a ranking site into a credible community asset.
 - [ ] Add stable canonical URLs for historical editions and methodology snapshots.
 - [ ] Decide whether to expose a small public JSON endpoint or downloadable data
       snapshot for community reuse.
+
+## Manual Follow-Up
+
+- [ ] Add or update the `SSH_KNOWN_HOSTS` GitHub Actions secret with the pinned
+      `maciej-ciemborowicz.eu` host key from a trusted administrative source.
+- [ ] Decide whether to create a `production` GitHub Environment with required
+      reviewers before adding any additional deploy-capable maintainers.
+- [ ] Review the first Dependabot PR after SHA pinning to confirm the action
+      update workflow remains understandable.
