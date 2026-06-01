@@ -22,7 +22,6 @@ module PolishOpenSourceRank
 
         def render_language_ranking_detail(period_slug, metric_slug)
           metric = Contexts::Languages::Domain::LanguageRankingMetric.key_for_slug(metric_slug)
-          halt 404 unless metric
 
           @period_slug = period_slug
           @period = period_for(period_slug)

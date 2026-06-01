@@ -9,12 +9,14 @@ module PolishOpenSourceRank
         private
 
         def render_city(period_slug, slug, section: 'people')
-          halt 404 unless Contexts::Ranking::Domain::LocationCatalog.city_slugs.include?(slug)
+          halt_negative_public_404!('city', period_slug, slug, section) unless known_city?(slug)
+
           render_rankings(period_slug, slug, section: section)
         end
 
         def render_city_ranking_detail(period_slug, slug, kind, metric)
-          halt 404 unless Contexts::Ranking::Domain::LocationCatalog.city_slugs.include?(slug)
+          halt_negative_public_404!('city-ranking-detail', period_slug, slug, kind, metric) unless known_city?(slug)
+
           render_ranking_detail(period_slug, slug, kind, metric)
         end
 
@@ -88,7 +90,10 @@ module PolishOpenSourceRank
         end
 
         def render_ranking_detail(period_slug, scope, kind, metric)
-          halt 404 unless ranking_metric?(kind, metric)
+          unless ranking_metric?(kind, metric)
+            halt_negative_public_404!('ranking-detail', period_slug, scope, kind, metric)
+          end
+
           @scope = scope_data(scope)
           @period_slug = period_slug
           @period = period_for(period_slug)
@@ -111,6 +116,10 @@ module PolishOpenSourceRank
         def assign_public_page(attributes) = attributes.each { |name, value| instance_variable_set("@#{name}", value) }
 
         def public_page_state = (@public_page_state ||= Presentation::PublicPageState.new(self))
+
+        def known_city?(slug)
+          Contexts::Ranking::Domain::LocationCatalog.city_slugs.include?(slug)
+        end
       end
     end
   end

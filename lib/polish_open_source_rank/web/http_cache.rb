@@ -55,6 +55,21 @@ module PolishOpenSourceRank
         )
       end
 
+      def negative_public_cache!(*parts)
+        cache_response!(
+          public_cache_allowed? ? negative_public_cache_control : 'private, no-cache',
+          'not-found',
+          current_locale,
+          html_revision,
+          *parts
+        )
+      end
+
+      def halt_negative_public_404!(*parts)
+        negative_public_cache!(*parts)
+        halt 404
+      end
+
       def cache_response!(cache_control, *etag_parts)
         response_headers = { 'Cache-Control' => cache_control, 'ETag' => cache_etag(*etag_parts) }
         vary = cache_vary_header(cache_control)
@@ -77,6 +92,10 @@ module PolishOpenSourceRank
 
       def public_html_cache_control
         'public, max-age=60, stale-while-revalidate=300'
+      end
+
+      def negative_public_cache_control
+        'public, max-age=30, stale-while-revalidate=120'
       end
 
       def cache_vary_header(cache_control)

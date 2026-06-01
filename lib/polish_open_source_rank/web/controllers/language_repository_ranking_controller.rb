@@ -9,7 +9,6 @@ module PolishOpenSourceRank
         def render_language_repository_ranking_detail(period_slug, language, repository_kind_slug, metric_slug)
           repository_kind = language_repository_kind_for_slug(repository_kind_slug)
           metric = Contexts::Languages::Domain::LanguageRepositoryRankingMetric.key_for_slug(metric_slug)
-          halt 404 unless repository_kind && metric
 
           @period_slug = period_slug
           @period = period_for(period_slug)

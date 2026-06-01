@@ -9,9 +9,9 @@ module PolishOpenSourceRank
         def render_package_ranking_detail(period_slug, ecosystem, metric_slug, repository_kind_slug: nil)
           metric = Contexts::Packages::Domain::PackageRankingMetric.key_for_slug(metric_slug)
           repository_kind = repository_kind_for_slug(repository_kind_slug)
-          halt 404 unless metric
-          halt 404 if repository_kind_slug && repository_kind.nil?
-          halt 404 unless Contexts::Packages::Domain::PackageRankingMetric.supported_for_ecosystem?(ecosystem, metric)
+          unless Contexts::Packages::Domain::PackageRankingMetric.supported_for_ecosystem?(ecosystem, metric)
+            halt_negative_public_404!('package-ranking-unsupported-metric', period_slug, ecosystem, metric_slug)
+          end
           @period_slug = period_slug
           @period = period_for(period_slug)
           cache_package_ranking!(period_slug, ecosystem, metric_slug, repository_kind_slug)

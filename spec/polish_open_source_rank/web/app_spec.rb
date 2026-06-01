@@ -723,6 +723,23 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(missing_badge['Cache-Control']).to be_nil
   end
 
+  it 'short-caches safe public 404 responses without caching data-dependent misses', :aggregate_failures do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    request = Rack::MockRequest.new(described_class)
+
+    invalid_ranking = request.get('/latest/locations/not-a-city')
+    unsupported_package_metric = request.get('/latest/packages/nuget/top')
+    missing_profile = request.get('/users/github/missing')
+
+    expect(invalid_ranking.status).to eq(404)
+    expect(invalid_ranking['Cache-Control']).to eq('public, max-age=30, stale-while-revalidate=120')
+    expect(invalid_ranking['ETag']).to match(/\A".+"\z/)
+    expect(unsupported_package_metric.status).to eq(404)
+    expect(unsupported_package_metric['Cache-Control']).to eq('public, max-age=30, stale-while-revalidate=120')
+    expect(missing_profile.status).to eq(404)
+    expect(missing_profile['Cache-Control']).to be_nil
+  end
+
   it 'keeps public cache separate from private session responses', :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     request = Rack::MockRequest.new(described_class)
