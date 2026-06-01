@@ -28,6 +28,7 @@ module PolishOpenSourceRank
                                 '(top|trending|active|members)'
       SUPPORTED_LOCALES = %w[en pl].freeze
       DEFAULT_LOCALE = 'pl'
+      SESSION_COOKIE_KEY = 'polish_open_source_rank.session'
       CSS_ASSET_FILES = [
         '/css/application.css',
         '/css/components/navigation.css',
@@ -93,9 +94,10 @@ module PolishOpenSourceRank
       set :discord_oauth_client, nil
       set :discord_gateway, nil
       set :discord_role_map, nil
+      use RateLimiter
       use Rack::Deflater
       use Rack::Session::Cookie,
-          key: 'polish_open_source_rank.session',
+          key: SESSION_COOKIE_KEY,
           path: '/',
           same_site: :lax,
           secret: Configuration.load.session_secret
@@ -158,7 +160,8 @@ module PolishOpenSourceRank
           accept_language: request.env.fetch('HTTP_ACCEPT_LANGUAGE', nil)
         )
         redirect_to_locale_variant! if request.get?
-        set_locale_cookie!(@locale)
+        set_locale_cookie!(@locale) if persist_selected_locale?
+        defer_anonymous_session_cookie! if anonymous_public_request?
       end
 
       not_found do
@@ -195,6 +198,8 @@ module PolishOpenSourceRank
       end
 
       def set_locale_cookie!(locale)
+        return if request.cookies['locale'] == locale
+
         response.set_cookie(
           'locale',
           value: locale,
@@ -202,6 +207,25 @@ module PolishOpenSourceRank
           max_age: 31_536_000,
           same_site: :lax
         )
+      end
+
+      def persist_selected_locale?
+        return false unless request.get?
+        return true if SUPPORTED_LOCALES.include?(params['lang'])
+        return true if locale_prefix(request.path_info) == DEFAULT_LOCALE
+
+        false
+      end
+
+      def anonymous_public_request?
+        request.get? &&
+          !auth_path? &&
+          !request.cookies.key?(SESSION_COOKIE_KEY) &&
+          localizable_public_path?(env.fetch('polish_open_source_rank.unlocalized_path', request.path_info))
+      end
+
+      def defer_anonymous_session_cookie!
+        env['rack.session.options'][:defer] = true
       end
 
       def asset_path(path)

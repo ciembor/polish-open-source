@@ -114,8 +114,10 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     old_discord_gateway = described_class.discord_gateway
     ENV['BASE_URL'] = 'https://rank.example'
     ENV.delete('APP_BASE_PATH')
+    PolishOpenSourceRank::Web::RateLimiter.reset!
     example.run
   ensure
+    PolishOpenSourceRank::Web::RateLimiter.reset!
     ENV.replace(old_env)
     described_class.set :github_oauth_client, old_github_oauth_client
     described_class.set :discord_oauth_client, old_discord_oauth_client
@@ -613,21 +615,15 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(polish_response.body).to include('href="/en"')
   end
 
-  it 'renders English content by explicit locale and cookie' do
+  it 'renders English content by explicit locale and keeps explicit locale pages cookie-free' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     request = Rack::MockRequest.new(described_class)
 
     english_response = request.get('/en/latest')
     cookie_response = request.get('/latest', 'HTTP_COOKIE' => 'locale=en')
 
-    expect(english_response.body).to include('<html lang="en">')
-    expect(english_response.body).to include('>Poland</a>')
-    expect(english_response.body).to include('>More cities</summary>')
-    expect(english_response.body).to include('Top 10 by stars')
-    expect(english_response.body).to include('Repositories')
-    expect(english_response.body).to include('rel="canonical" href="https://rank.example/en/latest"')
-    expect(english_response.body).to include('href="/latest?lang=pl"')
-    expect(Array(english_response['Set-Cookie']).join("\n")).to include('locale=en')
+    expect_english_locale_page(english_response)
+    expect(english_response['Set-Cookie']).to be_nil
     expect(cookie_response.status).to eq(302)
     expect(cookie_response.location).to eq('http://example.org/en/latest')
   end
@@ -684,13 +680,43 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     expect(response['Cache-Control']).to eq('public, max-age=60, stale-while-revalidate=300')
     expect(response['ETag']).to match(/\A".+"\z/)
-    expect(response['Vary']).to include('Accept-Language')
-    expect(response['Vary']).to include('Cookie')
+    expect(response['Vary']).not_to include('Cookie')
     expect(not_modified.status).to eq(304)
     expect(badge_response['Cache-Control']).to eq('public, max-age=3600, stale-while-revalidate=86400')
     expect(badge_response['ETag']).to match(/\A".+"\z/)
     expect(badge_not_modified.status).to eq(304)
     expect(missing_badge['Cache-Control']).to be_nil
+  end
+
+  it 'keeps public cache separate from private session responses', :aggregate_failures do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    request = Rack::MockRequest.new(described_class)
+    described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
+
+    github_start = request.get('/auth/github')
+    github_state = Rack::Utils.parse_query(URI(github_start.location).query).fetch('state')
+    github_callback = request.get(
+      "/auth/github/callback?code=github-code&state=#{github_state}",
+      'HTTP_COOKIE' => cookie_header(github_start)
+    )
+    signed_in_latest = request.get('/latest', 'HTTP_COOKIE' => cookie_header(github_callback))
+
+    expect(signed_in_latest['Cache-Control']).to eq('private, no-cache')
+    expect(signed_in_latest['Vary']).to include('Cookie')
+  end
+
+  it 'rate limits abusive operational and auth paths without limiting normal public pages', :aggregate_failures do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    request = Rack::MockRequest.new(described_class)
+
+    30.times { expect(request.get('/auth/github').status).to eq(302) }
+    limited = request.get('/auth/github')
+    public_page = request.get('/latest')
+
+    expect(limited.status).to eq(429)
+    expect(limited['Cache-Control']).to eq('no-store')
+    expect(limited['Retry-After']).to match(/\A\d+\z/)
+    expect(public_page.status).to eq(200)
   end
 
   it 'compresses public HTML and badge responses when clients support gzip', :aggregate_failures do
@@ -1423,6 +1449,22 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     )
     expect(response.body).not_to include('href="/latest/organizations/top"')
     expect(response.body).not_to include('href="/latest/organization-repositories/top"')
+  end
+
+  def expect_english_locale_page(response)
+    expect_body_to_include(
+      response,
+      '<html lang="en">',
+      '>Poland</a>',
+      '>More cities</summary>',
+      'Top 10 by stars',
+      'Repositories',
+      'rel="canonical" href="https://rank.example/en/latest"',
+      'rel="alternate" hreflang="pl" href="https://rank.example/latest"',
+      'rel="alternate" hreflang="x-default" href="https://rank.example/latest"',
+      '<meta name="robots" content="index,follow">',
+      'href="/latest?lang=pl"'
+    )
   end
 
   def expect_organization_ranking_page(response)

@@ -56,7 +56,10 @@ module PolishOpenSourceRank
       end
 
       def cache_response!(cache_control, *etag_parts)
-        headers 'Cache-Control' => cache_control, 'ETag' => cache_etag(*etag_parts), 'Vary' => cache_vary_header
+        response_headers = { 'Cache-Control' => cache_control, 'ETag' => cache_etag(*etag_parts) }
+        vary = cache_vary_header(cache_control)
+        response_headers['Vary'] = vary if vary
+        headers response_headers
         halt 304 if request.get? && etag_matches?(response.headers.fetch('ETag'))
       end
 
@@ -76,8 +79,10 @@ module PolishOpenSourceRank
         'public, max-age=60, stale-while-revalidate=300'
       end
 
-      def cache_vary_header
-        'Accept-Language, Cookie'
+      def cache_vary_header(cache_control)
+        return 'Cookie' unless cache_control.start_with?('public')
+
+        nil
       end
     end
   end

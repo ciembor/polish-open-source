@@ -62,7 +62,7 @@ module PolishOpenSourceRank
           return {} unless localized_page?
 
           App::SUPPORTED_LOCALES.to_h do |locale|
-            [locale, full_url(localized_public_path(canonical_path, locale: locale))]
+            [locale, full_url(localized_public_path(canonical_unlocalized_path, locale: locale))]
           end
         end
 
@@ -101,20 +101,18 @@ module PolishOpenSourceRank
         end
 
         def localized_page?
-          localized_page_path?(canonical_path)
+          localized_page_path?(canonical_unlocalized_path)
         end
 
         def localized_public_path(path, locale:)
           Localization::PublicPathPolicy.localized(path: path, locale: locale, default_locale: settings.default_locale)
         end
 
-        def localized_path?(path)
-          !Localization::PublicPathPolicy.locale_prefix(path).nil?
-        end
+        def canonical_unlocalized_path = Localization::PublicPathPolicy.strip_locale_prefix(canonical_path)
 
-        def localized_page_path?(path)
-          Localization::PublicPathPolicy.localizable?(path)
-        end
+        def localized_path?(path) = !Localization::PublicPathPolicy.locale_prefix(path).nil?
+
+        def localized_page_path?(path) = Localization::PublicPathPolicy.localizable?(path)
 
         def unlocalized_request_path
           env.fetch('polish_open_source_rank.unlocalized_path', request.path_info)

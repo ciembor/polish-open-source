@@ -310,6 +310,17 @@ Routes:
 
 The HTML uses semantic sections, tables, canonical URLs, meta descriptions, and JSON-LD dataset metadata.
 
+Public pages are intentionally cacheable by URL. Polish pages use the default unprefixed routes, English pages use `/en/...`, and both variants expose self-canonical and `hreflang` links. Do not make shared cache depend on the `locale` cookie; the cookie is only a user preference for redirects and must not be the CDN cache key for indexed pages.
+
+Recommended edge rules:
+
+- cache anonymous `GET`/`HEAD` HTML for public ranking, profile, language, package, and badge routes;
+- bypass shared cache whenever the request has the signed session cookie `polish_open_source_rank.session`;
+- vary public cached HTML by path and query string, not by arbitrary cookies;
+- keep `/auth/*`, `/logout`, `/internal/*`, and responses with `Cache-Control: private` or `no-store` out of shared cache;
+- rate-limit `/auth/*`, `/badges/*`, `/internal/*`, and ranking detail bursts before the Rack app;
+- do not rate-limit normal search crawler access to indexed PL/EN pages; if crawler-specific limits are needed, verify them at the edge with reverse DNS instead of trusting `User-Agent`.
+
 ## Deployment
 
 The app is deployed behind Nginx at `https://polish-open-source.pl`. Nginx is configured on the server. The application and jobs run as Podman containers via systemd:
