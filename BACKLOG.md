@@ -206,19 +206,19 @@ Ryzyka:
 
 Taski:
 
-- [ ] Dodać health check po starcie nowego kontenera przed uznaniem deployu za udany.
-- [ ] Upewnić się, że deploy nie restartuje ani nie przerywa aktywnego monthly/packages.
-- [ ] Dodać rollback obrazu albo wersji release.
-- [ ] Rozważyć systemd socket activation, blue-green albo drugi web worker dopiero po ustabilizowaniu read-only snapshotu.
-- [ ] Spisać limit obecnej architektury: jeden host, jeden web container, SQLite, cache przed aplikacją.
-- [ ] Przygotować plan awaryjny na duży publiczny spike: włączenie agresywniejszego CDN cache, tymczasowe rate limity, statyczna strona statusowa.
-- [ ] Przy planie awaryjnym zachować indeksowalność publicznych stron PL/EN i nie włączać globalnego `noindex`.
+- [x] Dodać health check po starcie nowego kontenera przed uznaniem deployu za udany.
+- [x] Upewnić się, że deploy nie restartuje ani nie przerywa aktywnego monthly/packages.
+- [x] Dodać rollback obrazu albo wersji release.
+- [x] Rozważyć systemd socket activation, blue-green albo drugi web worker dopiero po ustabilizowaniu read-only snapshotu.
+- [x] Spisać limit obecnej architektury: jeden host, jeden web container, SQLite, cache przed aplikacją.
+- [x] Przygotować plan awaryjny na duży publiczny spike: włączenie agresywniejszego CDN cache, tymczasowe rate limity, statyczna strona statusowa.
+- [x] Przy planie awaryjnym zachować indeksowalność publicznych stron PL/EN i nie włączać globalnego `noindex`.
 
 Kryteria akceptacji:
 
-- [ ] Deploy ma jasny smoke test i rollback.
-- [ ] Wiadomo, co zrobić przy nagłym wzroście ruchu.
-- [ ] Skalowanie nie zwiększa ryzyka locków SQLite.
+- [x] Deploy ma jasny smoke test i rollback.
+- [x] Wiadomo, co zrobić przy nagłym wzroście ruchu.
+- [x] Skalowanie nie zwiększa ryzyka locków SQLite.
 
 ## Milestone 8 - Poprawność danych i historyczne metryki
 

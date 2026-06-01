@@ -4,6 +4,15 @@ on:
   push:
     branches: [ master ]
   workflow_dispatch:
+    inputs:
+      action:
+        description: Deploy the current master image or roll back one version
+        required: true
+        default: deploy
+        type: choice
+        options:
+          - deploy
+          - rollback
 
 jobs:
   deploy:
@@ -48,8 +57,9 @@ jobs:
           ssh-keygen -lf ~/.ssh/id_ed25519
           ssh-keyscan -H "${DEPLOY_HOST}" >> ~/.ssh/known_hosts
 
-      - name: Deploy
+      - name: Deploy or rollback
         env:
           REMOTE_HOST: ciembor@${{ env.DEPLOY_HOST }}
-        run: scripts/deploy.sh
+          DEPLOY_ACTION: ${{ github.event_name == 'workflow_dispatch' && inputs.action || 'deploy' }}
+        run: scripts/deploy.sh "$DEPLOY_ACTION"
         shell: bash
