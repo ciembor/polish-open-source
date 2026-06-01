@@ -7,4 +7,4 @@ configuration = PolishOpenSourceRank::Configuration.load
 composition = PolishOpenSourceRank::Web::Composition.new(configuration: configuration)
 period = PolishOpenSourceRank::Shared::Domain::Period.previous_month.start_date.to_s
 
-composition.sync_discord_connection.call(period_start: period, limit: Integer(ARGV.fetch(0, 10)))
+composition.community.sync_discord_connection.call(period_start: period, limit: Integer(ARGV.fetch(0, 10)))

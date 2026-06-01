@@ -183,19 +183,19 @@ module PolishOpenSourceRank
         end
 
         def package_ranking_read_model
-          context.__send__(:package_ranking_read_model)
+          context.__send__(:packages).package_ranking_read_model
         end
 
         def profile_read_model
-          context.__send__(:profile_read_model)
+          context.__send__(:publication).profile_read_model
         end
 
         def show_rankings
-          context.__send__(:show_rankings)
+          context.__send__(:publication).show_rankings
         end
 
         def list_editions
-          context.__send__(:list_editions)
+          context.__send__(:publication).list_editions
         end
       end
     end

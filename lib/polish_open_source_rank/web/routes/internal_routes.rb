@@ -14,7 +14,7 @@ module PolishOpenSourceRank
             headers 'Cache-Control' => 'no-store', 'X-Robots-Tag' => 'noindex, nofollow, noarchive'
             @robots = 'noindex,nofollow,noarchive'
             @refresh_seconds = 15
-            @progress = show_job_progress.call
+            @progress = operations.show_job_progress.call
             @title = 'Job monitor'
             @description = 'Internal monthly ranking job monitor.'
             @canonical_path = '/internal/jobs'

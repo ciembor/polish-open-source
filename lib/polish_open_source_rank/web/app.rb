@@ -3,12 +3,10 @@
 require 'sinatra/base'
 require 'securerandom'
 require 'digest'
-require 'forwardable'
 
 module PolishOpenSourceRank
   module Web
     class App < Sinatra::Base
-      extend Forwardable
       include Controllers::AuthController
       include Controllers::BadgeController
       include Controllers::InternalController
@@ -19,141 +17,13 @@ module PolishOpenSourceRank
       include Controllers::PublicController
       include Controllers::SharedController
 
-      ENV['TZ'] = 'Europe/Warsaw'
-
-      set :public_folder, PolishOpenSourceRank.root.join('app/public').to_s
-      set :views, PolishOpenSourceRank.root.join('app/views').to_s
-
       RANKING_DETAIL_SEGMENTS = '(users|repositories|organizations|organization-repositories)/' \
                                 '(top|trending|active|members)'
-      SUPPORTED_LOCALES = %w[en pl].freeze
-      DEFAULT_LOCALE = 'pl'
-      SESSION_COOKIE_KEY = 'polish_open_source_rank.session'
-      CSS_ASSET_FILES = [
-        '/css/application.css',
-        '/css/components/navigation.css',
-        '/css/components/hero.css',
-        '/css/components/rankings.css',
-        '/css/pages/editions.css',
-        '/css/pages/about.css',
-        '/css/pages/profiles.css',
-        '/css/components/notices.css',
-        '/css/pages/operations.css',
-        '/css/components/footer.css',
-        '/css/responsive.css'
-      ].freeze
-      HTML_REVISION_FILES = [
-        'app/views/layout.erb',
-        'app/views/auth/discord_panel.erb',
-        'app/views/internal/job_monitor.erb',
-        'app/views/languages/index.erb',
-        'app/views/languages/ranking_detail.erb',
-        'app/views/languages/ranking_table.erb',
-        'app/views/languages/repository_ranking_detail.erb',
-        'app/views/languages/repository_ranking_table.erb',
-        'app/views/languages/show.erb',
-        'app/views/packages/ecosystem.erb',
-        'app/views/packages/index.erb',
-        'app/views/packages/ranking_detail.erb',
-        'app/views/packages/ranking_table.erb',
-        'app/views/pages/about.erb',
-        'app/views/pages/editions.erb',
-        'app/views/pages/not_found.erb',
-        'app/views/pages/rankings.erb',
-        'app/views/profiles/badge_preview.erb',
-        'app/views/profiles/fact_card.erb',
-        'app/views/profiles/metric_card.erb',
-        'app/views/profiles/organization.erb',
-        'app/views/profiles/organization_repository.erb',
-        'app/views/profiles/project_hero.erb',
-        'app/views/profiles/repository.erb',
-        'app/views/profiles/repository_badge_preview.erb',
-        'app/views/profiles/repository_grid.erb',
-        'app/views/profiles/spotlight.erb',
-        'app/views/profiles/subject_hero.erb',
-        'app/views/profiles/user.erb',
-        'app/views/profiles/user_repository_badge_preview.erb',
-        'app/views/rankings/detail.erb',
-        'app/views/rankings/table.erb',
-        'app/views/shared/elite_medal.erb',
-        'app/views/shared/location_notice.erb',
-        'app/views/shared/platform_icon.erb',
-        *CSS_ASSET_FILES.map { |path| "app/public#{path}" },
-        'app/public/js/navigation.js'
-      ].freeze
-      set :default_locale, DEFAULT_LOCALE
-      set :css_asset_files, CSS_ASSET_FILES
-      set :localized_text,
-          Localization::TranslationCatalog.load(root: PolishOpenSourceRank.root, locales: SUPPORTED_LOCALES)
-      set :locale_selector, Localization::LocaleSelector.new(supported: SUPPORTED_LOCALES, default: DEFAULT_LOCALE)
-      set :badge_renderer, Presentation::BadgeRenderer.new
-      set :platform_catalog, Presentation::PlatformCatalog.new
-      set :ranking_catalog, Presentation::RankingCatalog.new
-      set :static_cache_control, [:public, :immutable, { max_age: 31_536_000 }]
-      set :github_oauth_client, nil
-      set :discord_oauth_client, nil
-      set :discord_gateway, nil
-      set :discord_role_map, nil
-      Observability::Sentry.configure(Configuration.load)
-      use ::Sentry::Rack::CaptureExceptions if Observability::Sentry.configured?
-      use RequestTelemetry
-      use SecurityHeaders
-      use RateLimiter
-      use Rack::Deflater
-      use Rack::Session::Cookie,
-          key: SESSION_COOKIE_KEY,
-          path: '/',
-          httponly: true,
-          secure: Configuration.load.rack_env == 'production',
-          same_site: :lax,
-          secret: Configuration.load.session_secret
-      helpers Presentation::LogoIconHelpers
-      helpers Presentation::RoutingHelpers
-      helpers Presentation::BadgeHelpers
-      helpers Presentation::ViewHelpers
-      helpers HttpCache
+      SUPPORTED_LOCALES = Boot::SUPPORTED_LOCALES
+      DEFAULT_LOCALE = Boot::DEFAULT_LOCALE
+      SESSION_COOKIE_KEY = Boot::SESSION_COOKIE_KEY
 
-      register Routes::LanguageRoutes
-      register Routes::PackageRoutes
-      register Routes::PublicRoutes
-      register Routes::AuthRoutes
-      register Routes::BadgeRoutes
-      register Routes::InternalRoutes
-
-      def_delegators :composition,
-                     :cache_revision_read_model,
-                     :connect_discord_account,
-                     :contributor_access_read_model,
-                     :discord_connection_repository,
-                     :discord_gateway,
-                     :discord_oauth_client,
-                     :discord_role_map,
-                     :github_oauth_client,
-                     :job_progress_read_model,
-                     :language_ranking_read_model,
-                     :list_editions,
-                     :profile_read_model,
-                     :public_profile_repository,
-                     :package_ranking_read_model,
-                     :ranking_read_model,
-                     :register_public_github_profile,
-                     :render_badge,
-                     :resolve_period,
-                     :show_discord_panel,
-                     :show_job_progress,
-                     :show_language,
-                     :show_language_index,
-                     :show_language_ranking_detail,
-                     :show_language_repository_ranking_detail,
-                     :show_organization_profile,
-                     :show_organization_repository_profile,
-                     :show_package_ecosystem_rankings,
-                     :show_package_index,
-                     :show_package_ranking_detail,
-                     :show_rankings,
-                     :show_ranking_detail,
-                     :show_repository_profile,
-                     :show_user_profile
+      Boot.configure(self)
 
       before do
         redirect_param_locale! if request.get?
@@ -180,23 +50,15 @@ module PolishOpenSourceRank
       private
 
       def public_cache_revision(period)
-        cache_revision_read_model.public_cache_revision(period) || 'empty'
+        publication.cache_revision.for_period(period)
       end
 
       def latest_public_cache_key
-        period = latest_period
-        "#{period}:#{public_cache_revision(period)}"
+        publication.cache_revision.latest_key(latest_period)
       end
 
       def html_revision
-        files_revision(
-          *HTML_REVISION_FILES,
-          "config/locales/#{current_locale}.yml"
-        )
-      end
-
-      def files_revision(*relative_paths)
-        relative_paths.map { |path| PolishOpenSourceRank.root.join(path).mtime.to_i }.max
+        settings.html_revision.value(locale: current_locale)
       end
 
       def locale_cookie_path
@@ -254,6 +116,26 @@ module PolishOpenSourceRank
           discord_gateway: settings.discord_gateway,
           discord_role_map: settings.discord_role_map
         )
+      end
+
+      def publication
+        composition.publication
+      end
+
+      def packages
+        composition.packages
+      end
+
+      def languages
+        composition.languages
+      end
+
+      def community
+        composition.community
+      end
+
+      def operations
+        composition.operations
       end
 
       def ranking_metric?(kind, metric)
