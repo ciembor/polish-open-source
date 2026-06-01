@@ -52,7 +52,7 @@ GEM
     http-accept (1.7.0)
     http-cookie (1.1.6)
       domain_name (~> 0.5)
-    json (2.19.5)
+    json (2.19.7)
     knapsack (4.0.0)
       rake
     language_server-protocol (3.17.0.5)
@@ -74,7 +74,7 @@ GEM
       ast (~> 2.4.1)
       racc
     prism (1.9.0)
-    puma (8.0.1)
+    puma (8.0.2)
       nio4r (~> 2.0)
     racc (1.8.1)
     rack (3.2.6)
@@ -115,7 +115,7 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.13.0)
     rspec-support (3.13.7)
-    rubocop (1.86.2)
+    rubocop (1.87.0)
       json (~> 2.3)
       language_server-protocol (~> 3.17.0.2)
       lint_roller (~> 1.1.0)
