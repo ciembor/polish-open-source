@@ -9,6 +9,9 @@
     </div>
     <% if panel[:connection] %>
       <p class="discord-panel__status"><%= h t('users.discord.connected', user: panel.fetch(:connection).fetch(:discord_username)) %></p>
+      <% if panel[:sync_status] && panel[:sync_status] != 'synced' %>
+        <p class="profile-empty"><%= h t("users.discord.sync_status.#{panel[:sync_status]}") %></p>
+      <% end %>
     <% else %>
       <p class="discord-panel__status"><%= h t('users.discord.connect_body') %></p>
     <% end %>

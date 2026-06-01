@@ -106,6 +106,13 @@ class FailingDiscordOAuthClient < FakeDiscordOAuthClient
     raise PolishOpenSourceRank::Web::Auth::DiscordOAuthClient::Error, '400 invalid_grant'
   end
 end
+
+class BrokenDiscordUserClient < FakeDiscordOAuthClient
+  def user(_access_token)
+    raise StandardError, 'discord user timeout'
+  end
+end
+
 RSpec.describe PolishOpenSourceRank::Web::App do
   around do |example|
     old_env = ENV.to_h
@@ -317,7 +324,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     discord_callback = finish_discord_auth(request, github_callback)
 
-    expect_synced_discord(discord_callback, discord_gateway)
+    expect_queued_discord_sync(request, discord_callback)
     expect(github_client.exchanged).to eq(['github-code'])
     expect(discord_client.exchanged).to eq(['discord-code'])
   end
@@ -429,7 +436,26 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile.body).to include('Discord odrzucił logowanie')
   end
 
-  it 'returns to the profile with a retry message when Discord member sync fails' do
+  it 'returns to the profile with a retry message when Discord user loading fails' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
+    described_class.set :discord_oauth_client, BrokenDiscordUserClient.new
+    request = Rack::MockRequest.new(described_class)
+
+    github_callback = sign_in_with_github(request)
+    discord_start = request.get('/auth/discord', 'HTTP_COOKIE' => cookie_header(github_callback))
+    discord_state = Rack::Utils.parse_query(URI(discord_start.location).query).fetch('state')
+    discord_callback = request.get(
+      "/auth/discord/callback?code=discord-code&state=#{discord_state}",
+      'HTTP_COOKIE' => cookie_header(discord_start)
+    )
+    profile = request.get(discord_callback.location, 'HTTP_COOKIE' => cookie_header(discord_callback))
+
+    expect(discord_callback.location).to eq('http://example.org/users/github/alice')
+    expect(profile.body).to include('Nie udało się zsynchronizować konta Discord')
+  end
+
+  it 'queues Discord member sync without waiting for the gateway' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
     described_class.set :discord_oauth_client, FakeDiscordOAuthClient.new
@@ -443,11 +469,11 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       "/auth/discord/callback?code=discord-code&state=#{discord_state}",
       'HTTP_COOKIE' => cookie_header(discord_start)
     )
-    profile = request.get(discord_callback.location, 'HTTP_COOKIE' => cookie_header(discord_callback))
+    profile = request.get('/users/github/alice', 'HTTP_COOKIE' => cookie_header(discord_callback))
 
     expect(discord_callback.status).to eq(302)
-    expect(discord_callback.location).to eq('http://example.org/users/github/alice')
-    expect(profile.body).to include('Nie udało się zsynchronizować konta Discord')
+    expect(discord_callback.location).to eq('https://discord.com/channels/1505949566229286972/1505949566699176050')
+    expect(profile.body).to include('Synchronizacja Discord jest w kolejce')
   end
 
   it 'rejects Discord sync when the logged-in GitHub profile is no longer ranked' do
@@ -1574,24 +1600,12 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile.body).not_to include('Discord niepołączony')
   end
 
-  def expect_synced_discord(discord_callback, discord_gateway)
+  def expect_queued_discord_sync(request, discord_callback)
     expect(discord_callback.status).to eq(302)
     expect(discord_callback.location).to eq('https://discord.com/channels/guild-1/invite-channel')
-    expect(discord_gateway.synced).to include(
-      discord_user_id: 'discord-1',
-      access_token: 'discord-access',
-      github_login: 'alice'
-    )
-    expect(discord_gateway.welcome).to include(channel_id: 'invite-channel', discord_user_id: 'discord-1')
-    expect(discord_gateway.welcome.fetch(:profile)).to include(login: 'alice', html_url: 'https://github.com/alice')
-    expect(discord_gateway.welcome.fetch(:profile).fetch(:repositories).first).to include(
-      full_name: 'alice/app',
-      html_url: 'https://github.com/alice/app',
-      stargazers_count: 12_345
-    )
-    expect(discord_gateway.welcome.fetch(:access)).to include(country_rank: 1, city_rank: 1)
-    expect(discord_gateway.welcome.fetch(:role_ids)).to include('role-top-10', 'role-top-100', 'role-krakow')
-    expect(discord_gateway.synced.fetch(:desired_role_ids)).to include('role-top-10', 'role-top-100', 'role-krakow')
+    profile = request.get('/users/github/alice', 'HTTP_COOKIE' => cookie_header(discord_callback))
+    expect(profile.body).to include('Alice Discord')
+    expect(profile.body).to include('Synchronizacja Discord jest w kolejce')
   end
 
   def expect_repository_profile_page(**responses)

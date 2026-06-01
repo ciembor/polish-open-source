@@ -91,6 +91,9 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
     ENV['HTTP_OPEN_TIMEOUT'] = '7'
     ENV['HTTP_READ_TIMEOUT'] = '31'
     ENV['HTTP_WRITE_TIMEOUT'] = '29'
+    ENV['USER_ACTION_HTTP_OPEN_TIMEOUT'] = '2'
+    ENV['USER_ACTION_HTTP_READ_TIMEOUT'] = '8'
+    ENV['USER_ACTION_HTTP_WRITE_TIMEOUT'] = '6'
     configuration = PolishOpenSourceRank::Configuration.load
     github_client = described_class.new(configuration)
     discord_client = PolishOpenSourceRank::Web::Auth::DiscordOAuthClient.new(configuration)
@@ -107,7 +110,8 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
     expect(gateway.invite_available?('used')).to be(false)
 
     expect(requests.map(&:method)).to eq(%w[POST POST GET])
-    expect(options).to all(include(use_ssl: true, open_timeout: 7, read_timeout: 31, write_timeout: 29))
+    expect(options.first(2)).to all(include(use_ssl: true, open_timeout: 2, read_timeout: 8, write_timeout: 6))
+    expect(options.fetch(2)).to include(use_ssl: true, open_timeout: 7, read_timeout: 31, write_timeout: 29)
   end
 
   it 'creates one-use invites and syncs Discord guild members' do
@@ -222,6 +226,31 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
         managed_role_ids: []
       )
     end.to raise_error(PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway::Error)
+  end
+
+  it 'counts OAuth and Discord API timeouts before reraising them' do
+    configuration = PolishOpenSourceRank::Configuration.load
+    github_client = described_class.new(configuration)
+    gateway = PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway.new(configuration)
+    PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::OAuthHTTP.timeout_count = 0
+
+    allow(Net::HTTP).to receive(:start).and_raise(Net::ReadTimeout)
+    expect do
+      github_client.exchange_code(code: 'code-1', redirect_uri: 'https://rank/auth/github/callback')
+    end.to raise_error(Net::ReadTimeout)
+
+    allow(Net::HTTP).to receive(:start).and_raise(Net::OpenTimeout)
+    expect do
+      gateway.sync_member(
+        discord_user_id: 'discord-1',
+        access_token: 'user-token',
+        github_login: 'alice',
+        desired_role_ids: [],
+        managed_role_ids: []
+      )
+    end.to raise_error(Net::OpenTimeout)
+
+    expect(PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::OAuthHTTP.timeout_count).to eq(2)
   end
 
   it 'maps configured Discord role keys to role IDs' do

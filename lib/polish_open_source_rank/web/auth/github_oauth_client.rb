@@ -61,6 +61,10 @@ module PolishOpenSourceRank
         private
 
         attr_reader :configuration
+
+        def http_options(uri)
+          configuration.user_action_http_timeouts.merge(use_ssl: uri.scheme == 'https')
+        end
       end
     end
   end

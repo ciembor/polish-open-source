@@ -163,6 +163,7 @@ module PolishOpenSourceRank
         add_column_unless_exists('user_monthly_stats', 'merged_pull_requests_count INTEGER NOT NULL DEFAULT 0')
         add_column_unless_exists('organization_monthly_stats', 'merged_pull_requests_count INTEGER NOT NULL DEFAULT 0')
         add_column_unless_exists('organization_monthly_stats', 'members_count INTEGER NOT NULL DEFAULT 0')
+        create_discord_sync_jobs
       end
 
       def rebuild_user_monthly_stats_without_public_activity_count
@@ -220,6 +221,28 @@ module PolishOpenSourceRank
         return if table_columns(table_name).include?(column_name)
 
         database.execute("ALTER TABLE #{table_name} ADD COLUMN #{column_definition}")
+      end
+
+      def create_discord_sync_jobs
+        execute_batch(<<~SQL)
+          CREATE TABLE IF NOT EXISTS discord_sync_jobs (
+            platform TEXT NOT NULL,
+            user_github_id INTEGER NOT NULL,
+            action_kind TEXT NOT NULL,
+            discord_user_id TEXT NOT NULL,
+            discord_username TEXT,
+            access_token TEXT,
+            welcome_channel_id TEXT,
+            status TEXT NOT NULL,
+            attempts INTEGER NOT NULL DEFAULT 0,
+            error TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            synced_at TEXT,
+            PRIMARY KEY(platform, user_github_id, action_kind),
+            FOREIGN KEY(platform, user_github_id) REFERENCES users(platform, github_id)
+          );
+        SQL
       end
     end
   end

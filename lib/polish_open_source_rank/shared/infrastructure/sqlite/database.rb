@@ -16,6 +16,12 @@ module PolishOpenSourceRank
             /database schema is locked/i
           ].freeze
 
+          @sqlite_write_retry_count = 0
+
+          class << self
+            attr_accessor :sqlite_write_retry_count
+          end
+
           def self.open(path)
             new(path).open
           end
@@ -111,6 +117,7 @@ module PolishOpenSourceRank
               attempts += 1
               raise unless sqlite_lock_error?(e) && attempts <= SQLITE_WRITE_RETRIES
 
+              self.class.sqlite_write_retry_count += 1
               sleep(SQLITE_WRITE_RETRY_DELAY * (2**(attempts - 1)))
               retry
             end

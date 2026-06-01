@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require_relative '../lib/polish_open_source_rank'
+
+configuration = PolishOpenSourceRank::Configuration.load
+composition = PolishOpenSourceRank::Web::Composition.new(configuration: configuration)
+period = PolishOpenSourceRank::Shared::Domain::Period.previous_month.start_date.to_s
+
+composition.sync_discord_connection.call(period_start: period, limit: Integer(ARGV.fetch(0, 10)))

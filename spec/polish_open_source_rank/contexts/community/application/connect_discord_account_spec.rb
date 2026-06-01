@@ -22,21 +22,11 @@ class RecordingConnectionRepository
   end
 end
 
-class RecordingMemberGateway
-  attr_reader :synced, :welcome
+class RecordingSyncJobRepository
+  attr_reader :oauth_sync
 
-  def sync_member(**attributes)
-    @synced = attributes
-  end
-
-  def post_welcome_message(**attributes)
-    @welcome = attributes
-  end
-end
-
-class FailingWelcomeMemberGateway < RecordingMemberGateway
-  def post_welcome_message(**_attributes)
-    raise StandardError
+  def request_oauth_sync(**attributes)
+    @oauth_sync = attributes
   end
 end
 
@@ -51,14 +41,14 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::ConnectDi
       discord_access: { role_keys: %w[top city], country_rank: 1, city_rank: 1 }
     )
     connection_repository = RecordingConnectionRepository.new
-    member_gateway = RecordingMemberGateway.new
+    sync_job_repository = RecordingSyncJobRepository.new
     role_map = ranking_role_map
 
     result = described_class.new(
       profile_read_model: profile_read_model,
       connection_repository: connection_repository,
+      sync_job_repository: sync_job_repository,
       access_read_model: access_read_model,
-      member_gateway: member_gateway,
       role_map: role_map
     ).call(
       current_user: { platform: 'github', login: 'alice' },
@@ -68,14 +58,21 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::ConnectDi
       welcome_channel_id: 'welcome'
     )
 
-    expect_connected_discord(result, connection_repository, member_gateway)
+    expect_connected_discord(result, connection_repository, sync_job_repository)
   end
 
-  def expect_connected_discord(result, connection_repository, member_gateway)
+  def expect_connected_discord(result, connection_repository, sync_job_repository)
     expect(result.role_ids).to eq(%w[role-top role-city])
+    expect(result.sync_status).to eq('pending')
     expect(connection_repository.connection).to include(discord_username: 'Alice Discord')
-    expect(member_gateway.synced).to include(github_login: 'alice', desired_role_ids: %w[role-top role-city])
-    expect(member_gateway.welcome).to include(channel_id: 'welcome', role_ids: %w[role-top role-city])
+    expect(sync_job_repository.oauth_sync).to include(
+      platform: 'github',
+      source_id: 1,
+      discord_user_id: 'discord-1',
+      discord_username: 'Alice Discord',
+      access_token: 'access-token',
+      welcome_channel_id: 'welcome'
+    )
   end
 
   def ranking_role_map
@@ -86,8 +83,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::ConnectDi
     use_case = described_class.new(
       profile_read_model: instance_double(ProfileReadModel, user_profile: nil),
       connection_repository: RecordingConnectionRepository.new,
+      sync_job_repository: RecordingSyncJobRepository.new,
       access_read_model: instance_double(AccessReadModel),
-      member_gateway: RecordingMemberGateway.new,
       role_map: instance_double(RoleMap)
     )
 
@@ -109,8 +106,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::ConnectDi
         user_profile: { platform: 'github', login: 'alice', source_id: 1, period_start: nil }
       ),
       connection_repository: RecordingConnectionRepository.new,
+      sync_job_repository: RecordingSyncJobRepository.new,
       access_read_model: instance_double(AccessReadModel, discord_access: { role_keys: [] }),
-      member_gateway: RecordingMemberGateway.new,
       role_map: instance_double(RoleMap, role_ids: [], managed_role_ids: [])
     )
 
@@ -120,29 +117,6 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::ConnectDi
         discord_user: { 'id' => 'discord-1', 'username' => 'alice-discord' },
         access_token: 'access-token',
         period_start: nil,
-        welcome_channel_id: 'welcome'
-      )
-    end.not_to raise_error
-  end
-
-  it 'keeps Discord login successful when welcome delivery fails' do
-    use_case = described_class.new(
-      profile_read_model: instance_double(
-        ProfileReadModel,
-        user_profile: { platform: 'github', login: 'alice', source_id: 1, period_start: '2026-04-01' }
-      ),
-      connection_repository: RecordingConnectionRepository.new,
-      access_read_model: instance_double(AccessReadModel, discord_access: { role_keys: [] }),
-      member_gateway: FailingWelcomeMemberGateway.new,
-      role_map: instance_double(RoleMap, role_ids: [], managed_role_ids: [])
-    )
-
-    expect do
-      use_case.call(
-        current_user: { platform: 'github', login: 'alice' },
-        discord_user: { 'id' => 'discord-1', 'username' => 'alice-discord' },
-        access_token: 'access-token',
-        period_start: '2026-04-01',
         welcome_channel_id: 'welcome'
       )
     end.not_to raise_error

@@ -390,6 +390,10 @@ pl:
       errors:
         oauth: "Discord odrzucił logowanie. Zacznij ponownie od przycisku dołączenia."
         sync: "Nie udało się zsynchronizować konta Discord. Spróbuj ponownie za chwilę."
+      sync_status:
+        failed: "Synchronizacja Discord wymaga ręcznej obsługi."
+        pending: "Synchronizacja Discord jest w kolejce. Dostęp zaktualizuje się za chwilę."
+        retryable: "Synchronizacja Discord ponawia się po tymczasowym błędzie."
       invite_action: "Dołącz do Discorda"
       invite_body: "To osobiste zaproszenie działa raz. Po dołączeniu bot powiąże ten invite z Twoim profilem w rankingu i automatycznie ustawi nick oraz role na serwerze."
       invite_unavailable: "Zaproszenie Discord jest chwilowo niedostępne."

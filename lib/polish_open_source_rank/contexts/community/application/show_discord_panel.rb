@@ -5,14 +5,16 @@ module PolishOpenSourceRank
     module Community
       module Application
         class ShowDiscordPanel
-          Panel = Struct.new(:connection, :access, :access_channels, keyword_init: true) do
+          Panel = Struct.new(:connection, :sync_status, :access, :access_channels, keyword_init: true) do
             def fetch(key, *fallback, &)
               to_h.fetch(key, *fallback, &)
             end
           end
 
-          def initialize(connection_repository:, access_read_model:, catalog: Contexts::Ranking::Domain::LocationCatalog)
+          def initialize(connection_repository:, sync_job_repository:, access_read_model:,
+                         catalog: Contexts::Ranking::Domain::LocationCatalog)
             @connection_repository = connection_repository
+            @sync_job_repository = sync_job_repository
             @access_read_model = access_read_model
             @catalog = catalog
           end
@@ -21,6 +23,7 @@ module PolishOpenSourceRank
             access = access_read_model.discord_access(platform, source_id, period_start: period_start)
             Panel.new(
               connection: connection_repository.discord_connection(platform, source_id),
+              sync_status: sync_job_repository.sync_status(platform, source_id),
               access: access,
               access_channels: access_channels(access.fetch(:role_keys))
             )
@@ -28,7 +31,7 @@ module PolishOpenSourceRank
 
           private
 
-          attr_reader :access_read_model, :catalog, :connection_repository
+          attr_reader :access_read_model, :catalog, :connection_repository, :sync_job_repository
 
           def access_channels(role_keys)
             ['general'] + role_keys.filter_map do |role_key|

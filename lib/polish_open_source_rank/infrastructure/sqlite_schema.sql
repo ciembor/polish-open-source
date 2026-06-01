@@ -249,6 +249,24 @@ CREATE TABLE IF NOT EXISTS discord_invites (
   FOREIGN KEY(platform, user_github_id) REFERENCES users(platform, github_id)
 );
 
+CREATE TABLE IF NOT EXISTS discord_sync_jobs (
+  platform TEXT NOT NULL,
+  user_github_id INTEGER NOT NULL,
+  action_kind TEXT NOT NULL,
+  discord_user_id TEXT NOT NULL,
+  discord_username TEXT,
+  access_token TEXT,
+  welcome_channel_id TEXT,
+  status TEXT NOT NULL,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  error TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  synced_at TEXT,
+  PRIMARY KEY(platform, user_github_id, action_kind),
+  FOREIGN KEY(platform, user_github_id) REFERENCES users(platform, github_id)
+);
+
 CREATE TABLE IF NOT EXISTS package_crawl_runs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   period_start TEXT NOT NULL,

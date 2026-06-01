@@ -9,6 +9,12 @@ module PolishOpenSourceRank
       module Infrastructure
         module Discord
           module OAuthHTTP
+            @timeout_count = 0
+
+            class << self
+              attr_accessor :timeout_count
+            end
+
             private
 
             def json_request(uri, request)
@@ -18,6 +24,9 @@ module PolishOpenSourceRank
               raise self.class::Error, "#{response.code} #{response.body}" unless response.is_a?(Net::HTTPSuccess)
 
               JSON.parse(response.body)
+            rescue Net::OpenTimeout, Net::ReadTimeout, Net::WriteTimeout
+              OAuthHTTP.timeout_count += 1
+              raise
             end
 
             def perform_plain(uri, request)
@@ -29,6 +38,9 @@ module PolishOpenSourceRank
               end
 
               response
+            rescue Net::OpenTimeout, Net::ReadTimeout, Net::WriteTimeout
+              OAuthHTTP.timeout_count += 1
+              raise
             end
 
             def http_options(uri)

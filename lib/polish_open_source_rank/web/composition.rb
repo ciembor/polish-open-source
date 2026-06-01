@@ -126,6 +126,7 @@ module PolishOpenSourceRank
       def show_discord_panel
         @show_discord_panel ||= Contexts::Community::Application::ShowDiscordPanel.new(
           connection_repository: discord_connection_repository,
+          sync_job_repository: discord_sync_job_repository,
           access_read_model: contributor_access_read_model
         )
       end
@@ -134,6 +135,16 @@ module PolishOpenSourceRank
         @connect_discord_account ||= Contexts::Community::Application::ConnectDiscordAccount.new(
           profile_read_model: profile_read_model,
           connection_repository: discord_connection_repository,
+          sync_job_repository: discord_sync_job_repository,
+          access_read_model: contributor_access_read_model,
+          role_map: discord_role_map
+        )
+      end
+
+      def sync_discord_connection
+        @sync_discord_connection ||= Contexts::Community::Application::SyncDiscordConnection.new(
+          sync_job_repository: discord_sync_job_repository,
+          profile_read_model: profile_read_model,
           access_read_model: contributor_access_read_model,
           member_gateway: discord_gateway,
           role_map: discord_role_map
@@ -191,6 +202,11 @@ module PolishOpenSourceRank
       def discord_connection_repository
         @discord_connection_repository ||=
           Contexts::Community::Infrastructure::SQLite::SQLiteDiscordConnectionRepository.new(database)
+      end
+
+      def discord_sync_job_repository
+        @discord_sync_job_repository ||=
+          Contexts::Community::Infrastructure::SQLite::SQLiteDiscordSyncJobRepository.new(database)
       end
 
       def job_progress_read_model

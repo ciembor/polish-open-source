@@ -25,6 +25,21 @@ module PolishOpenSourceRank
       http_open_timeout: { env: 'HTTP_OPEN_TIMEOUT', default: 5, constructor: INTEGER_CONSTRUCTOR },
       http_read_timeout: { env: 'HTTP_READ_TIMEOUT', default: 30, constructor: INTEGER_CONSTRUCTOR },
       http_write_timeout: { env: 'HTTP_WRITE_TIMEOUT', default: 30, constructor: INTEGER_CONSTRUCTOR },
+      user_action_http_open_timeout: {
+        env: 'USER_ACTION_HTTP_OPEN_TIMEOUT',
+        default: 3,
+        constructor: INTEGER_CONSTRUCTOR
+      },
+      user_action_http_read_timeout: {
+        env: 'USER_ACTION_HTTP_READ_TIMEOUT',
+        default: 10,
+        constructor: INTEGER_CONSTRUCTOR
+      },
+      user_action_http_write_timeout: {
+        env: 'USER_ACTION_HTTP_WRITE_TIMEOUT',
+        default: 10,
+        constructor: INTEGER_CONSTRUCTOR
+      },
       npm_registry_requests_per_minute: {
         env: 'NPM_REGISTRY_REQUESTS_PER_MINUTE',
         default: 30,
@@ -213,6 +228,14 @@ module PolishOpenSourceRank
         open_timeout: http_open_timeout,
         read_timeout: http_read_timeout,
         write_timeout: http_write_timeout
+      }
+    end
+
+    def user_action_http_timeouts
+      {
+        open_timeout: user_action_http_open_timeout,
+        read_timeout: user_action_http_read_timeout,
+        write_timeout: user_action_http_write_timeout
       }
     end
 

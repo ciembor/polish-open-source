@@ -9,26 +9,26 @@ module PolishOpenSourceRank
         module Discord
           class DiscordInviteBot
             def self.build(configuration:, logger: $stdout)
-              invite_repository, connection_repository, access_read_model = repositories_from_database(configuration)
+              repositories = repositories_from_database(configuration)
               new(
                 guild_id: configuration.discord_guild_id,
                 bot: Discordrb::Bot.new(token: configuration.discord_bot_token, intents: %i[server_invites]),
                 join_handler: Contexts::Community::Application::DiscordInviteJoin.new(
-                  discord_gateway: DiscordApiGateway.new(configuration),
-                  discord_role_map: DiscordRoleMap.new,
-                  invite_repository: invite_repository,
-                  connection_repository: connection_repository,
-                  access_read_model: access_read_model
+                  invite_repository: repositories.fetch(:invite_repository),
+                  connection_repository: repositories.fetch(:connection_repository),
+                  sync_job_repository: repositories.fetch(:sync_job_repository)
                 ),
+                sync_handler: sync_handler(configuration, repositories),
                 logger: logger
               )
             end
 
-            def initialize(guild_id:, bot:, join_handler:, logger: $stdout,
+            def initialize(guild_id:, bot:, join_handler:, sync_handler: nil, logger: $stdout,
                            detector: Contexts::Community::Application::DiscordInviteUseDetector.new)
               @bot = bot
               @guild_id = guild_id.to_i
               @join_handler = join_handler
+              @sync_handler = sync_handler
               @detector = detector
               @invite_uses = {}
               @logger = logger
@@ -44,7 +44,7 @@ module PolishOpenSourceRank
 
             private
 
-            attr_reader :bot, :guild_id, :join_handler, :detector, :logger
+            attr_reader :bot, :guild_id, :join_handler, :sync_handler, :detector, :logger
 
             class << self
               private
@@ -55,11 +55,27 @@ module PolishOpenSourceRank
                   database,
                   PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql
                 ).bootstrap!
-                [
-                  Contexts::Community::Infrastructure::SQLite::SQLiteDiscordInviteRepository.new(database),
-                  Contexts::Community::Infrastructure::SQLite::SQLiteDiscordConnectionRepository.new(database),
-                  Contexts::Community::Infrastructure::SQLite::SQLiteContributorAccessReadModel.new(database)
-                ]
+                {
+                  invite_repository: Contexts::Community::Infrastructure::SQLite::SQLiteDiscordInviteRepository.new(database),
+                  connection_repository:
+                    Contexts::Community::Infrastructure::SQLite::SQLiteDiscordConnectionRepository.new(database),
+                  sync_job_repository:
+                    Contexts::Community::Infrastructure::SQLite::SQLiteDiscordSyncJobRepository.new(database),
+                  access_read_model:
+                    Contexts::Community::Infrastructure::SQLite::SQLiteContributorAccessReadModel.new(database),
+                  profile_read_model:
+                    Contexts::Publication::Infrastructure::SQLite::SQLiteProfileReadModel.new(database)
+                }
+              end
+
+              def sync_handler(configuration, repositories)
+                Contexts::Community::Application::SyncDiscordConnection.new(
+                  sync_job_repository: repositories.fetch(:sync_job_repository),
+                  profile_read_model: repositories.fetch(:profile_read_model),
+                  access_read_model: repositories.fetch(:access_read_model),
+                  member_gateway: DiscordApiGateway.new(configuration),
+                  role_map: DiscordRoleMap.new
+                )
               end
             end
 
@@ -79,6 +95,7 @@ module PolishOpenSourceRank
                 discord_user_id: event.user.id.to_s,
                 discord_username: event.user.global_name || event.user.username
               )
+              sync_handler&.call(period_start: nil, limit: 10)
               logger.puts("discord invite #{invite_code} synced for #{event.user.id}: #{synced}")
             rescue StandardError => e
               logger.puts("discord invite join failed for #{event.user.id}: #{e.class}: #{e.message}")

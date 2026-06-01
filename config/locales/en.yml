@@ -388,6 +388,10 @@ en:
       errors:
         oauth: "Discord rejected the login. Start again from the join button."
         sync: "Discord account sync failed. Try again in a moment."
+      sync_status:
+        failed: "Discord sync needs manual attention."
+        pending: "Discord sync is queued. Your access will update shortly."
+        retryable: "Discord sync is retrying after a temporary error."
       invite_action: "Join Discord"
       invite_body: "This personal invite works once. After you join, the bot matches this invite to your ranking profile and sets your server nickname and roles automatically."
       invite_unavailable: "Discord invite is temporarily unavailable."

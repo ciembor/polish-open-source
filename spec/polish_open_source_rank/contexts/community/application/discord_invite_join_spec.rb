@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-class GatewaySpy
-  attr_reader :synced
+class SyncJobRepositorySpy
+  attr_reader :invite_sync
 
-  def sync_joined_member(**attributes)
-    @synced = attributes
+  def request_invite_sync(**attributes)
+    @invite_sync = attributes
   end
 end
 
@@ -22,14 +22,12 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::DiscordIn
 
   it 'syncs a Discord member from a used invite code mapped to a ranked profile', :aggregate_failures do
     dependencies = ranked_invite_dependencies
-    gateway = GatewaySpy.new
+    sync_job_repository = SyncJobRepositorySpy.new
 
     synced = described_class.new(
       invite_repository: dependencies.fetch(:invite_repository),
       connection_repository: dependencies.fetch(:connection_repository),
-      access_read_model: dependencies.fetch(:access_read_model),
-      discord_gateway: gateway,
-      discord_role_map: PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordRoleMap.new
+      sync_job_repository: sync_job_repository
     ).call(invite_code: 'invite-for-alice', discord_user_id: 'discord-1', discord_username: 'Alice D')
 
     expect(synced).to be(true)
@@ -37,12 +35,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::DiscordIn
       discord_user_id: 'discord-1',
       discord_username: 'Alice D'
     )
-    expect(gateway.synced).to include(discord_user_id: 'discord-1', github_login: 'alice')
-    expect(gateway.synced.fetch(:desired_role_ids)).to contain_exactly(
-      'role-top-10',
-      'role-top-100',
-      'role-krakow',
-      'role-gold'
+    expect(sync_job_repository.invite_sync).to include(
+      platform: 'github',
+      source_id: 1,
+      discord_user_id: 'discord-1',
+      discord_username: 'Alice D'
     )
   end
 
@@ -65,7 +62,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::DiscordIn
     {
       invite_repository: invite_repository,
       connection_repository: connection_repository(database),
-      access_read_model: access_read_model(database)
+      sync_job_repository: PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite::SQLiteDiscordSyncJobRepository.new(database)
     }
   end
 
@@ -91,20 +88,16 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::DiscordIn
 
   it 'ignores unknown invite codes' do
     database = migrated_database.fetch(:database)
-    gateway = GatewaySpy.new
 
     synced = described_class.new(
       invite_repository: PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite::SQLiteDiscordInviteRepository.new(database),
       connection_repository:
         PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite::SQLiteDiscordConnectionRepository.new(database),
-      access_read_model:
-        PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite::SQLiteContributorAccessReadModel.new(database),
-      discord_gateway: gateway,
-      discord_role_map: PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordRoleMap.new
+      sync_job_repository:
+        PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite::SQLiteDiscordSyncJobRepository.new(database)
     ).call(invite_code: 'missing', discord_user_id: 'discord-1', discord_username: 'Alice D')
 
     expect(synced).to be(false)
-    expect(gateway.synced).to be_nil
   end
 
   def user_attributes
