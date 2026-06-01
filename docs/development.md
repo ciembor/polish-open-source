@@ -39,7 +39,8 @@ bin/quality
 ```
 
 This runs RuboCop, Reek, and RSpec. SimpleCov enforces 100% line coverage for
-`lib/**/*.rb`.
+`lib/**/*.rb`. CI also runs `bundle exec bundle-audit check --update` and
+CodeQL before deploy.
 
 Mutation checks are available on demand through [Mutant](https://github.com/mbj/mutant):
 

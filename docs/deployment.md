@@ -13,13 +13,24 @@ application and jobs run as Podman containers managed by systemd:
 
 ## GitHub Actions Flow
 
-GitHub Actions runs quality checks and then calls
-[scripts/deploy.sh](../scripts/deploy.sh). Required repository secret:
+GitHub Actions runs named quality and security jobs before deploy. The deploy
+job depends on those inspectable gates and then calls
+[scripts/deploy.sh](../scripts/deploy.sh).
+
+Required repository secrets:
 
 - `SSH_PRIVATE_KEY_B64`: base64-encoded private SSH key accepted for
   `ciembor@maciej-ciemborowicz.eu`.
+- `SSH_KNOWN_HOSTS`: pinned SSH host key lines for
+  `maciej-ciemborowicz.eu`, in OpenSSH `known_hosts` format. Populate this
+  secret from a trusted administrative source, not from deploy-time
+  `ssh-keyscan` output.
 
-The `Deploy to server` workflow supports two actions:
+The workflow pins GitHub Actions by commit SHA. The trailing version comments
+show the reviewed upstream version and are the expected target for dependency
+update PRs.
+
+The `CI and deploy` workflow supports two actions:
 
 - normal `deploy` on every push to `master`;
 - manual `rollback` through `workflow_dispatch`, limited to swapping back to the
@@ -29,6 +40,11 @@ The deploy script does not touch running monthly or package jobs. It restarts
 only the web and Discord bot services, then waits for built-in smoke checks on
 local `/healthz` plus public `/healthz`, `/latest`, and `/en/latest` before the
 release is treated as healthy.
+
+Production deploys currently run directly from the protected `master` branch
+without a GitHub Environment approval gate. That matches the single-operator
+production model; add a `production` GitHub Environment with required reviewers
+before granting additional maintainers deploy permission.
 
 ## Production Topology
 
