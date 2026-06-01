@@ -67,6 +67,17 @@ RSpec.describe File do
     )
   end
 
+  it 'runs production alerts on a dedicated timer with the app env file' do
+    service = described_class.read(described_class.join(root, 'deploy/polish-open-source-rank-alerts.service'))
+    timer = described_class.read(described_class.join(root, 'deploy/polish-open-source-rank-alerts.timer'))
+
+    expect(service).to include(
+      'EnvironmentFile=-/home/ciembor/polish-open-source-rank/.env.local',
+      'ExecStart=/usr/bin/python3 /home/ciembor/polish-open-source-rank/scripts/production_alert_monitor.py'
+    )
+    expect(timer).to include('OnUnitActiveSec=1min', 'Persistent=true')
+  end
+
   it 'runs crawl resume with bounded container resources' do
     unit = described_class.read(described_class.join(root, 'deploy/polish-open-source-rank-crawl-resume.service'))
 

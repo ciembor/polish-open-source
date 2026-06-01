@@ -22,6 +22,8 @@ ssh "${REMOTE_HOST}" "cd ${REMOTE_DIR} && \
   sudo install -m 0644 deploy/${SERVICE_NAME}-crawl.service /etc/systemd/system/${SERVICE_NAME}-crawl.service && \
   sudo install -m 0644 deploy/${SERVICE_NAME}-crawl-resume.service /etc/systemd/system/${SERVICE_NAME}-crawl-resume.service && \
   sudo install -m 0644 deploy/${SERVICE_NAME}-discord-bot.service /etc/systemd/system/${SERVICE_NAME}-discord-bot.service && \
+  sudo install -m 0644 deploy/${SERVICE_NAME}-alerts.service /etc/systemd/system/${SERVICE_NAME}-alerts.service && \
+  sudo install -m 0644 deploy/${SERVICE_NAME}-alerts.timer /etc/systemd/system/${SERVICE_NAME}-alerts.timer && \
   sudo install -m 0644 deploy/${SERVICE_NAME}-monitor.service /etc/systemd/system/${SERVICE_NAME}-monitor.service && \
   sudo install -m 0644 deploy/${SERVICE_NAME}-monitor.timer /etc/systemd/system/${SERVICE_NAME}-monitor.timer && \
   sudo install -m 0644 deploy/${SERVICE_NAME}-monthly.service /etc/systemd/system/${SERVICE_NAME}-monthly.service && \
@@ -32,6 +34,7 @@ ssh "${REMOTE_HOST}" "cd ${REMOTE_DIR} && \
   sudo systemctl enable ${SERVICE_NAME}.service && \
   sudo systemctl enable ${SERVICE_NAME}-crawl-resume.service && \
   sudo systemctl enable ${SERVICE_NAME}-discord-bot.service && \
+  sudo systemctl enable --now ${SERVICE_NAME}-alerts.timer && \
   sudo systemctl enable --now ${SERVICE_NAME}-monitor.timer && \
   sudo systemctl enable --now ${SERVICE_NAME}-monthly.timer && \
   sudo systemctl enable --now ${SERVICE_NAME}-packages.timer && \
