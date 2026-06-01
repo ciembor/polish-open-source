@@ -1,0 +1,68 @@
+# Operations runbook
+
+Production observability is centered on Sentry plus the existing uptime monitor.
+
+## Sentry setup
+
+Set these variables in `/home/ciembor/polish-open-source-rank/.env.local`:
+
+- `SENTRY_DSN`
+- `SENTRY_ENVIRONMENT=production`
+- `SENTRY_RELEASE=<git-sha-or-release-id>`
+- `SENTRY_TRACES_SAMPLE_RATE=0.05`
+
+Configure Sentry alerts for:
+
+- new or regressed exceptions,
+- HTTP 5xx growth,
+- p95 transaction latency growth,
+- failed or missed `monthly-rankings` check-ins,
+- failed or missed `package-rankings` check-ins.
+
+## Deploy
+
+1. Push `master`.
+2. Confirm GitHub Actions quality passes.
+3. Confirm the deploy step restarts `polish-open-source-rank.service`.
+4. Smoke test `https://polish-open-source.pl/healthz`, `/latest`, `/en/latest`, one user profile and one badge URL.
+5. Check Sentry for new deploy errors and latency regressions.
+
+## Rollback
+
+1. Revert the bad commit or redeploy the previous known-good commit.
+2. Run `scripts/deploy.sh` through CI or manually with the same `REMOTE_HOST`.
+3. Smoke test the same public URLs.
+4. Keep the Sentry incident open until errors and latency return to baseline.
+
+## Restart services
+
+Use these commands on the server:
+
+```sh
+sudo systemctl restart polish-open-source-rank.service
+sudo systemctl restart polish-open-source-rank-discord-bot.service
+sudo systemctl restart polish-open-source-rank-crawl-resume.service
+```
+
+Monthly and package jobs are long-running oneshot units. Do not restart them before checking whether they are actively writing:
+
+```sh
+systemctl status polish-open-source-rank-monthly.service --no-pager
+systemctl status polish-open-source-rank-packages.service --no-pager
+curl -fsS https://polish-open-source.pl/internal/jobs
+```
+
+## Stuck monthly or packages
+
+1. Check `/internal/jobs` for the active section and last heartbeat.
+2. Check Sentry for the matching `monthly-rankings` or `package-rankings` check-in.
+3. Inspect logs with `journalctl -u polish-open-source-rank-monthly.service -n 200 --no-pager` or the packages unit.
+4. If the job is stale and no process is still doing useful work, stop the unit and run `bin/resume_crawls` through `polish-open-source-rank-crawl-resume.service`.
+
+## Restore backup
+
+1. Stop web, Discord bot, monthly and packages units.
+2. Copy the selected SQLite backup to a temporary path.
+3. Run an integrity check on the copy.
+4. Replace the active public snapshot or working database only after the integrity check passes.
+5. Start web first, smoke test public pages, then restart background units.

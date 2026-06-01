@@ -7,6 +7,7 @@ RSpec.describe PolishOpenSourceRank::Configuration do
       GITHUB_BASE_URL GITLAB_BASE_URL CODEBERG_BASE_URL BASE_URL
       DISCORD_INVITE_CHANNEL_ID GITHUB_OAUTH_CLIENT_ID
       HTTP_OPEN_TIMEOUT HTTP_READ_TIMEOUT HTTP_WRITE_TIMEOUT RACK_ENV SESSION_SECRET
+      SENTRY_DSN SENTRY_ENVIRONMENT SENTRY_RELEASE SENTRY_TRACES_SAMPLE_RATE
       NPM_REGISTRY_REQUESTS_PER_MINUTE RUBYGEMS_REGISTRY_REQUESTS_PER_MINUTE
       CRATES_REGISTRY_REQUESTS_PER_MINUTE PYPI_REGISTRY_REQUESTS_PER_MINUTE
       HEX_REGISTRY_REQUESTS_PER_MINUTE PACKAGIST_REGISTRY_REQUESTS_PER_MINUTE
@@ -77,6 +78,13 @@ RSpec.describe PolishOpenSourceRank::Configuration do
     expect(configuration.app_base_path).to eq('')
   end
 
+  it 'keeps Sentry disabled without a DSN' do
+    configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
+
+    expect(configuration.sentry_enabled?).to be(false)
+    expect(configuration.sentry_runtime_environment).to eq('development')
+  end
+
   it 'uses an optional public database path for read-only public pages' do
     ENV['DATABASE_URL'] = 'sqlite://tmp/write.sqlite3'
     ENV['PUBLIC_DATABASE_URL'] = 'sqlite://tmp/public.sqlite3'
@@ -136,6 +144,22 @@ RSpec.describe PolishOpenSourceRank::Configuration do
     expect(configuration.http_open_timeout).to eq(7)
     expect(configuration.http_read_timeout).to eq(31)
     expect(configuration.http_write_timeout).to eq(29)
+  end
+
+  it 'exposes Sentry configuration without requiring it locally' do
+    ENV['RACK_ENV'] = 'production'
+    ENV['SENTRY_DSN'] = 'https://public@example.ingest.sentry.io/1'
+    ENV['SENTRY_ENVIRONMENT'] = 'production'
+    ENV['SENTRY_RELEASE'] = 'abc123'
+    ENV['SENTRY_TRACES_SAMPLE_RATE'] = '0.25'
+
+    configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
+
+    expect(configuration.sentry_enabled?).to be(true)
+    expect(configuration.sentry_dsn).to eq('https://public@example.ingest.sentry.io/1')
+    expect(configuration.sentry_runtime_environment).to eq('production')
+    expect(configuration.sentry_release).to eq('abc123')
+    expect(configuration.sentry_traces_sample_rate).to eq(0.25)
   end
 
   it 'exposes conservative package registry request limits' do

@@ -12,6 +12,8 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::PackageRankingsCommand do
   let(:crawl_jobs) { double('crawl jobs', start: 7, finish: nil, fail: nil) }
 
   it 'runs a tracked package ranking job with period, ecosystem, limit, and refresh arguments' do
+    allow(PolishOpenSourceRank::Observability::Sentry).to receive(:capture_check_in)
+
     described_class.call(
       %w[--period 2026-04 --ecosystem npm --limit 25 --refresh],
       job: job,
@@ -30,6 +32,14 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::PackageRankingsCommand do
       arguments: %w[--period 2026-04 --ecosystem npm --limit 25 --refresh]
     )
     expect(crawl_jobs).to have_received(:finish).with(7)
+    expect(PolishOpenSourceRank::Observability::Sentry).to have_received(:capture_check_in).with(
+      'package-rankings',
+      :in_progress
+    )
+    expect(PolishOpenSourceRank::Observability::Sentry).to have_received(:capture_check_in).with(
+      'package-rankings',
+      :ok
+    )
     expect(output.string).to include('Package crawl summary:')
     expect(output.string).to include('registry_fetched=2')
     expect(output.string).to include('Finished package ranking run for 2026-04')

@@ -5,10 +5,19 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
     output = StringIO.new
     job = instance_double(PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlySnapshot)
     allow(job).to receive(:call)
+    allow(PolishOpenSourceRank::Observability::Sentry).to receive(:capture_check_in)
 
     described_class.call(['--month', '2026-04'], job: job, output: output)
 
     expect_default_monthly_call(job)
+    expect(PolishOpenSourceRank::Observability::Sentry).to have_received(:capture_check_in).with(
+      'monthly-rankings',
+      :in_progress
+    )
+    expect(PolishOpenSourceRank::Observability::Sentry).to have_received(:capture_check_in).with(
+      'monthly-rankings',
+      :ok
+    )
     expect(output.string).to include('Finished monthly ranking run for 2026-04')
   end
 

@@ -39,8 +39,10 @@ module PolishOpenSourceRank
           period = Shared::Domain::Period.parse(period_argument || Shared::Domain::Period.previous_month.key)
           require_monthly_complete!(period)
           stats = nil
-          with_crawl_job_tracking do
-            stats = job.call(period, ecosystem: ecosystem_argument, limits: limit_arguments, refresh: refresh?)
+          Observability::Sentry.monitor_check_in('package-rankings') do
+            with_crawl_job_tracking do
+              stats = job.call(period, ecosystem: ecosystem_argument, limits: limit_arguments, refresh: refresh?)
+            end
           end
           print_stats(stats) if stats
           output.puts "Finished package ranking run for #{period.key}"

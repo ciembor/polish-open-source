@@ -94,6 +94,9 @@ module PolishOpenSourceRank
       set :discord_oauth_client, nil
       set :discord_gateway, nil
       set :discord_role_map, nil
+      Observability::Sentry.configure(Configuration.load)
+      use ::Sentry::Rack::CaptureExceptions if Observability::Sentry.configured?
+      use RequestTelemetry
       use RateLimiter
       use Rack::Deflater
       use Rack::Session::Cookie,

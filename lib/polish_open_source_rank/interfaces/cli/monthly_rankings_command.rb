@@ -19,10 +19,12 @@ module PolishOpenSourceRank
 
         def call
           period = Shared::Domain::Period.parse(month_argument || Shared::Domain::Period.previous_month.key)
-          with_crawl_job_tracking do
-            ProcessInterruptHandler.call(
-              error_class: Contexts::Operations::Application::MonthlySnapshotInterrupted
-            ) { job.call(period, **job_options) }
+          Observability::Sentry.monitor_check_in('monthly-rankings') do
+            with_crawl_job_tracking do
+              ProcessInterruptHandler.call(
+                error_class: Contexts::Operations::Application::MonthlySnapshotInterrupted
+              ) { job.call(period, **job_options) }
+            end
           end
           output.puts "Finished monthly ranking run for #{period.key}"
         end

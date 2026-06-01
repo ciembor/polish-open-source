@@ -10,6 +10,7 @@ module PolishOpenSourceRank
     DATABASE_PATH_CONSTRUCTOR = proc { |value| value.delete_prefix('sqlite://') }
     OPTIONAL_DATABASE_PATH_CONSTRUCTOR = proc { |value| value.to_s.delete_prefix('sqlite://') }
     INTEGER_CONSTRUCTOR = proc(&:to_i)
+    FLOAT_CONSTRUCTOR = proc(&:to_f)
     LOCAL_SESSION_SECRET = 'local-development-session-secret-for-polish-open-source-rank-auth-flows'
 
     DEFINITIONS = {
@@ -177,7 +178,11 @@ module PolishOpenSourceRank
       gitlab_base_url: { env: 'GITLAB_BASE_URL', default: 'https://gitlab.com/api/v4' },
       codeberg_base_url: { env: 'CODEBERG_BASE_URL', default: 'https://codeberg.org/api/v1' },
       public_base_url: { env: 'BASE_URL', default: 'http://localhost:9292' },
-      app_base_path: { env: 'APP_BASE_PATH', default: '', constructor: APP_BASE_PATH_CONSTRUCTOR }
+      app_base_path: { env: 'APP_BASE_PATH', default: '', constructor: APP_BASE_PATH_CONSTRUCTOR },
+      sentry_dsn: { env: 'SENTRY_DSN' },
+      sentry_environment: { env: 'SENTRY_ENVIRONMENT' },
+      sentry_release: { env: 'SENTRY_RELEASE' },
+      sentry_traces_sample_rate: { env: 'SENTRY_TRACES_SAMPLE_RATE', default: 0.05, constructor: FLOAT_CONSTRUCTOR }
     }.freeze
 
     DEFINITIONS.each do |name, definition|
@@ -253,6 +258,15 @@ module PolishOpenSourceRank
       package_registry_limit_keys.to_h do |key|
         [key, public_send(:"#{key}_registry_requests_per_minute")]
       end
+    end
+
+    def sentry_enabled?
+      settings.rack_env != 'test' && !sentry_dsn.to_s.empty?
+    end
+
+    def sentry_runtime_environment
+      value = sentry_environment.to_s
+      value.empty? ? rack_env : value
     end
 
     private

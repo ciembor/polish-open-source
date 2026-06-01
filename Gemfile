@@ -24,3 +24,5 @@ group :development, :test do
 end
 
 gem 'discordrb', '~> 3.7'
+
+gem 'sentry-ruby', '~> 6.5', require: false

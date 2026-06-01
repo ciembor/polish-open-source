@@ -50,7 +50,9 @@ module PolishOpenSourceRank
         end
 
         def auth_notice
-          session.delete(:auth_notice)
+          return @auth_notice if defined?(@auth_notice)
+
+          @auth_notice = session.delete(:auth_notice)
         end
       end
     end

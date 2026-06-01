@@ -2,6 +2,8 @@
 
 require 'simplecov'
 
+ENV['RACK_ENV'] ||= 'test'
+
 simplecov_command_name = ENV.fetch('SIMPLECOV_COMMAND_NAME', nil)
 if simplecov_command_name
   SimpleCov.command_name(simplecov_command_name)
