@@ -226,10 +226,14 @@ module PolishOpenSourceRank
       end
 
       def anonymous_public_request?
-        request.get? &&
+        cacheable_public_method? &&
           !auth_path? &&
           !request.cookies.key?(SESSION_COOKIE_KEY) &&
           localizable_public_path?(env.fetch('polish_open_source_rank.unlocalized_path', request.path_info))
+      end
+
+      def cacheable_public_method?
+        request.get? || request.head?
       end
 
       def defer_anonymous_session_cookie!
