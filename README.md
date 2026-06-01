@@ -27,6 +27,8 @@ Log in with GitHub at https://polish-open-source.pl/ to get your Elite Discord i
 
 Run `bin/quality` before committing. It runs RuboCop, Reek, and RSpec through Knapsack; set `KNAPSACK_NODES=2 bin/quality` to run local test shards in parallel. The pre-commit hook uses two Knapsack shards by default.
 
+Project documentation lives in [docs/README.md](docs/README.md).
+
 ## Polish Elite Top 10
 
 | # | User | Name | Website | Stars |

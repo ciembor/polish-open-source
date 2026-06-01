@@ -1,81 +1,92 @@
-# Publikacja publicznego snapshotu
+# Public Snapshot Publication
 
-## Definicja opublikowanego miesiąca
+## Published Month Definition
 
-Miesiąc jest publiczny dopiero wtedy, gdy ma wpis `published` albo `superseded`
-w `public_snapshot_publications`. Status `published` oznacza bieżący `latest`,
-a `superseded` oznacza starszy miesiąc, który nadal może być linkowany w historii,
-sitemapach, canonicalach i `hreflang`.
+A month becomes public only when it has a `published` or `superseded` record in
+`public_snapshot_publications`. `published` is the current `latest`, while
+`superseded` is an older month that can still be linked in history, sitemaps,
+canonical URLs, and `hreflang`.
 
-Snapshot można opublikować, jeśli:
+A snapshot can be published when:
 
-- monthly run w `sync_runs` ma status `finished`,
-- istnieją dane publiczne dla users, repositories, organizations i organization repositories,
-- dla tego miesiąca nie ma package crawl runów w statusie innym niż `finished`.
+- the monthly run in `sync_runs` has status `finished`;
+- public data exists for users, repositories, organizations, and organization
+  repositories;
+- the month has no package crawl runs with a status other than `finished`.
 
-Languages są danymi pochodnymi z publicznych repozytoriów, więc publikują się razem z repository stats.
-Badges, profile, rankingi, packages, languages, sitemap, canonicale i `hreflang` używają tylko opublikowanego miesiąca albo aliasu `latest`.
+Languages are derived from public repositories, so they are published together
+with repository stats. Badges, profiles, rankings, packages, languages,
+sitemaps, canonical URLs, and `hreflang` use only the published month or the
+`latest` alias.
 
-## Semantyka historycznych metryk
+## Historical Metric Semantics
 
-Dla GitHuba publiczne repozytoria i repozytoria organizacji zapisują dwie różne metryki miesięczne:
+For GitHub, public repositories and organization repositories store two distinct
+monthly metrics:
 
-- `stargazers_count` oznacza liczbę gwiazdek na końcu publikowanego miesiąca,
-- `monthly_stars_delta` oznacza tylko gwiazdki zdobyte w tym miesiącu według `starred_at`.
+- `stargazers_count`: the number of stars at the end of the published month;
+- `monthly_stars_delta`: only the stars gained in that month according to
+  `starred_at`.
 
-Dla GitLaba i Codeberga nie mamy dziś datowanej historii gwiazdek, więc:
+GitLab and Codeberg do not expose dated star history today, so:
 
-- `stargazers_count` pozostaje wartością zaobserwowaną podczas monthly crawla,
-- `monthly_stars_delta` jawnie zapisuje `0`, zamiast udawać historyczny diff.
+- `stargazers_count` remains the value observed during the monthly crawl;
+- `monthly_stars_delta` is explicitly stored as `0` instead of pretending to be
+  a historical diff.
 
-Languages i packages nie liczą tych liczb osobno. Obie sekcje dołączają
-`repository_monthly_stats` albo `organization_repository_monthly_stats` po tym samym
-`period_start`, więc opublikowany miesiąc nie miesza danych repozytorium z innego okresu.
+Languages and packages do not recalculate these values independently. Both
+sections join `repository_monthly_stats` or
+`organization_repository_monthly_stats` on the same `period_start`, so a
+published month does not mix repository data from another period.
 
-## Plan backfillu historycznych gwiazdek
+## Historical Star Backfill Plan
 
-Backfill dotyczy tylko miesięcy GitHuba, które były policzone przed wprowadzeniem
-historycznych snapshotów albo zostały uruchomione z `--use-stars-diff`.
+Backfill applies only to GitHub months that were computed before historical star
+snapshots were introduced or that were run with `--use-stars-diff`.
 
-Szacowanie kosztu zaczyna się od prostego dolnego ograniczenia:
+Cost estimation starts with a simple lower bound:
 
-- co najmniej jedno żądanie historii stargazerów na repozytorium i miesiąc,
-- czas minimalny `repo_count / REQUESTS_PER_MINUTE`,
-- przy bieżącym `REQUESTS_PER_MINUTE=60` przykład z lokalnego snapshotu z `300`
-  repozytoriami daje dolne ograniczenie około `5` minut na jeden miesiąc GitHuba,
-  bez dodatkowych stron historii, retry i czekania na rate limit.
+- at least one stargazer-history request per repository and month;
+- minimum time of `repo_count / REQUESTS_PER_MINUTE`;
+- with the current `REQUESTS_PER_MINUTE=60`, a local snapshot with `300`
+  repositories gives a lower bound of about `5` minutes for one GitHub month,
+  before extra history pages, retries, and rate-limit waits.
 
-Kolejność wykonania:
+Recommended order:
 
-1. Najstarszy opublikowany miesiąc bez historycznych gwiazdek.
-2. Jeden miesiąc na uruchomienie, z możliwością resume po statusach w SQLite.
-3. Wstrzymanie kolejnych miesięcy, jeśli Sentry pokaże wzrost retry, 5xx albo latency.
+1. Start with the oldest published month missing historical stars.
+2. Run one month at a time, with resume support from SQLite job status.
+3. Pause further months if Sentry shows higher retries, 5xx responses, or
+   latency.
 
-## Promocja
+## Promotion
 
-`bin/publish_snapshot YYYY-MM` wykonuje:
+`bin/publish_snapshot YYYY-MM` performs:
 
-1. `staged` dla wskazanego miesiąca,
-2. weryfikację warunków publikacji,
-3. checkpoint WAL,
-4. backup pliku SQLite do `db/publication_backups`,
-5. atomową zmianę aktualnego `published` na `superseded` i nowego miesiąca na `published`.
+1. `staged` for the requested month;
+2. publication prerequisite verification;
+3. a WAL checkpoint;
+4. a SQLite file backup to `db/publication_backups`;
+5. an atomic switch from the current `published` month to `superseded`, and the
+   new month to `published`.
 
-Rollback nie dotyka danych roboczych:
+Rollback does not touch working data:
 
 ```sh
 bin/publish_snapshot --rollback
 ```
 
-Rollback oznacza aktualny snapshot jako `rolled_back` i przywraca poprzedni `published`.
+Rollback marks the current snapshot as `rolled_back` and restores the previous
+`published` snapshot.
 
-## Osobny snapshot do publicznego odczytu
+## Separate Snapshot for Public Reads
 
-Domyślnie web czyta publiczne strony z `DATABASE_URL`, żeby zachować kompatybilność z istniejącym jobem.
-Po przygotowaniu osobnego pliku można ustawić:
+By default, the web app serves public pages from `DATABASE_URL` to stay
+compatible with the existing job flow. After preparing a separate file, set:
 
 ```sh
 PUBLIC_DATABASE_URL=sqlite://db/public.sqlite3
 ```
 
-Wtedy publiczne read modele otwierają ten plik z `PRAGMA query_only = ON`, a user actions i job state nadal zapisują do `DATABASE_URL`.
+Public read models then open that file with `PRAGMA query_only = ON`, while user
+actions and job state continue writing to `DATABASE_URL`.
