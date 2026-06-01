@@ -726,6 +726,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     request = Rack::MockRequest.new(described_class)
 
     response = request.get('/latest')
+    head_response = request.head('/latest')
     not_modified = request.get('/latest', 'HTTP_IF_NONE_MATCH' => response['ETag'])
     badge_response = request.get('/badges/users/github/alice.svg')
     badge_not_modified = request.get('/badges/users/github/alice.svg', 'HTTP_IF_NONE_MATCH' => badge_response['ETag'])
@@ -734,6 +735,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response['Cache-Control']).to eq('public, max-age=60, stale-while-revalidate=300')
     expect(response['ETag']).to match(/\A".+"\z/)
     expect(response['Vary']).not_to include('Cookie')
+    expect(head_response['Set-Cookie']).to be_nil
     expect(not_modified.status).to eq(304)
     expect(badge_response['Cache-Control']).to eq('public, max-age=3600, stale-while-revalidate=86400')
     expect(badge_response['ETag']).to match(/\A".+"\z/)
