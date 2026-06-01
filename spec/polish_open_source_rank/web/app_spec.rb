@@ -122,6 +122,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     ENV['BASE_URL'] = 'https://rank.example'
     ENV.delete('APP_BASE_PATH')
     PolishOpenSourceRank::Web::RateLimiter.reset!
+    reset_app_memoized_dependencies
     example.run
   ensure
     PolishOpenSourceRank::Web::RateLimiter.reset!
@@ -1465,6 +1466,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   def reset_app_memoized_dependencies
     %i[
+      @configuration
       @composition
       @public_page_state
     ].each do |ivar|
