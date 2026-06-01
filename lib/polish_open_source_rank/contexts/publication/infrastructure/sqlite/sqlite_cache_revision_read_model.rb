@@ -11,7 +11,10 @@ module PolishOpenSourceRank
             end
 
             def latest_period
-              database.fetch_value(public_period_sql('MAX(sync_runs.period_start)'))
+              explicit = database.fetch_value(
+                "SELECT MAX(period_start) FROM public_snapshot_publications WHERE status = 'published'"
+              )
+              explicit || database.fetch_value(public_period_sql('MAX(sync_runs.period_start)'))
             end
 
             def public_cache_revision(period_start)
@@ -23,12 +26,33 @@ module PolishOpenSourceRank
             def recorded_period?(period_start)
               return false unless period_start
 
+              return published_period?(period_start) if explicit_publications?
+
               database.fetch_value(public_period_sql('1', 'sync_runs.period_start = ?'), [period_start]) == 1
             end
 
             private
 
             attr_reader :database
+
+            def published_period?(period_start)
+              return false unless explicit_publications?
+
+              database.fetch_value(<<~SQL, [period_start]) == 1
+                SELECT 1
+                FROM public_snapshot_publications
+                WHERE period_start = ?
+                  AND status IN ('published', 'superseded')
+              SQL
+            end
+
+            def explicit_publications?
+              database.fetch_value(published_publication_count_sql).to_i.positive?
+            end
+
+            def published_publication_count_sql
+              "SELECT COUNT(*) FROM public_snapshot_publications WHERE status = 'published'"
+            end
 
             def revision_tables
               %i[

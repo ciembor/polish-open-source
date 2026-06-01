@@ -8,6 +8,7 @@ module PolishOpenSourceRank
 
     APP_BASE_PATH_CONSTRUCTOR = proc { |value| normalize_app_base_path(value) }
     DATABASE_PATH_CONSTRUCTOR = proc { |value| value.delete_prefix('sqlite://') }
+    OPTIONAL_DATABASE_PATH_CONSTRUCTOR = proc { |value| value.to_s.delete_prefix('sqlite://') }
     INTEGER_CONSTRUCTOR = proc(&:to_i)
     LOCAL_SESSION_SECRET = 'local-development-session-secret-for-polish-open-source-rank-auth-flows'
 
@@ -20,6 +21,10 @@ module PolishOpenSourceRank
         env: 'DATABASE_URL',
         default: 'sqlite://db/polish_open_source_rank.sqlite3',
         constructor: DATABASE_PATH_CONSTRUCTOR
+      },
+      public_database_path: {
+        env: 'PUBLIC_DATABASE_URL',
+        constructor: OPTIONAL_DATABASE_PATH_CONSTRUCTOR
       },
       requests_per_minute: { env: 'REQUESTS_PER_MINUTE', default: 60, constructor: INTEGER_CONSTRUCTOR },
       http_open_timeout: { env: 'HTTP_OPEN_TIMEOUT', default: 5, constructor: INTEGER_CONSTRUCTOR },
@@ -221,6 +226,11 @@ module PolishOpenSourceRank
       return LOCAL_SESSION_SECRET unless production?
 
       ENV.fetch('SESSION_SECRET')
+    end
+
+    def public_database_path
+      value = settings.public_database_path.to_s
+      value.empty? ? database_path : value
     end
 
     def http_timeouts

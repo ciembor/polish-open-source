@@ -21,6 +21,27 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     expect(read_model.public_cache_revision(nil)).to be_nil
   end
 
+  it 'uses explicit public snapshot publications when present' do
+    database = PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(
+      File.join(Dir.mktmpdir, 'rank.sqlite3')
+    )
+    database.execute_batch(PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql)
+    read_model = described_class.new(database)
+
+    seed_run(database, period_start: '2026-04-01')
+    seed_run(database, period_start: '2026-05-01')
+    seed_user(database)
+    seed_user_stats(database, period_start: '2026-04-01')
+    seed_user_stats(database, period_start: '2026-05-01')
+    seed_publication(database, '2026-04-01', status: 'superseded')
+    seed_publication(database, '2026-05-01')
+
+    expect(read_model.latest_period).to eq('2026-05-01')
+    expect(read_model.recorded_period?('2026-04-01')).to be(true)
+    expect(read_model.recorded_period?('2026-05-01')).to be(true)
+    expect(read_model.recorded_period?('2026-06-01')).to be(false)
+  end
+
   def seed_run(database, period_start: '2026-04-01', period_end: '2026-05-01', status: 'finished',
                finished_at: '2026-05-01T00:30:00Z')
     database.execute(
@@ -50,6 +71,16 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
         period_start, 'github', 1, 'alice', 'Kraków', 'Poland', 1, 10, 2, 3,
         '2026-05-01T00:10:00Z'
       ]
+    )
+  end
+
+  def seed_publication(database, period_start, status: 'published')
+    database.execute(
+      <<~SQL,
+        INSERT INTO public_snapshot_publications(period_start, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?)
+      SQL
+      [period_start, status, '2026-06-01T00:00:00Z', '2026-06-01T00:00:00Z']
     )
   end
 end

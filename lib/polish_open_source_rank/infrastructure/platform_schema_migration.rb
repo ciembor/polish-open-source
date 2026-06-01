@@ -164,6 +164,8 @@ module PolishOpenSourceRank
         add_column_unless_exists('organization_monthly_stats', 'merged_pull_requests_count INTEGER NOT NULL DEFAULT 0')
         add_column_unless_exists('organization_monthly_stats', 'members_count INTEGER NOT NULL DEFAULT 0')
         create_discord_sync_jobs
+        create_public_snapshot_publications
+        seed_current_publication
       end
 
       def rebuild_user_monthly_stats_without_public_activity_count
@@ -242,6 +244,77 @@ module PolishOpenSourceRank
             PRIMARY KEY(platform, user_github_id, action_kind),
             FOREIGN KEY(platform, user_github_id) REFERENCES users(platform, github_id)
           );
+        SQL
+      end
+
+      def create_public_snapshot_publications
+        execute_batch(<<~SQL)
+          CREATE TABLE IF NOT EXISTS public_snapshot_publications (
+            period_start TEXT PRIMARY KEY,
+            status TEXT NOT NULL,
+            previous_period_start TEXT,
+            staged_at TEXT,
+            verified_at TEXT,
+            published_at TEXT,
+            rolled_back_at TEXT,
+            backup_path TEXT,
+            error TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+          );
+        SQL
+      end
+
+      def seed_current_publication
+        return if database.fetch_value(published_publication_count_sql).to_i.positive?
+
+        period_starts = database.fetch_all(legacy_public_periods_sql).map { |row| row.fetch(:period_start) }
+        return if period_starts.empty?
+
+        now = Time.now.utc.iso8601
+        period_starts.each_with_index do |period_start, index|
+          status = index.zero? ? 'published' : 'superseded'
+          database.execute(seed_publication_sql, [period_start, status, now, now, now, now, now])
+        end
+      end
+
+      def published_publication_count_sql
+        "SELECT COUNT(*) FROM public_snapshot_publications WHERE status = 'published'"
+      end
+
+      def seed_publication_sql
+        <<~SQL
+          INSERT OR IGNORE INTO public_snapshot_publications(
+            period_start, status, staged_at, verified_at, published_at, created_at, updated_at
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        SQL
+      end
+
+      def legacy_public_periods_sql
+        <<~SQL
+          SELECT sync_runs.period_start
+          FROM sync_runs
+          WHERE sync_runs.status = 'finished'
+            AND (
+              EXISTS (
+                SELECT 1 FROM user_monthly_stats user_stats
+                WHERE user_stats.period_start = sync_runs.period_start
+              )
+              OR EXISTS (
+                SELECT 1 FROM repository_monthly_stats repository_stats
+                WHERE repository_stats.period_start = sync_runs.period_start
+              )
+              OR EXISTS (
+                SELECT 1 FROM organization_monthly_stats organization_stats
+                WHERE organization_stats.period_start = sync_runs.period_start
+              )
+              OR EXISTS (
+                SELECT 1 FROM organization_repository_monthly_stats organization_repository_stats
+                WHERE organization_repository_stats.period_start = sync_runs.period_start
+              )
+            )
+          ORDER BY sync_runs.period_start DESC
         SQL
       end
     end

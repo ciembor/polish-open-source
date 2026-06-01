@@ -279,6 +279,20 @@ CREATE TABLE IF NOT EXISTS package_crawl_runs (
   updated_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS public_snapshot_publications (
+  period_start TEXT PRIMARY KEY,
+  status TEXT NOT NULL,
+  previous_period_start TEXT,
+  staged_at TEXT,
+  verified_at TEXT,
+  published_at TEXT,
+  rolled_back_at TEXT,
+  backup_path TEXT,
+  error TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS package_repository_scans (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   period_start TEXT NOT NULL,

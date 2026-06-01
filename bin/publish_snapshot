@@ -1,0 +1,24 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require_relative '../lib/polish_open_source_rank'
+
+configuration = PolishOpenSourceRank::Configuration.load
+database = PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(configuration.database_path)
+PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration.new(
+  database,
+  PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql
+).bootstrap!
+
+repository_class = PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLite::
+                   SQLitePublicSnapshotPublicationRepository
+repository = repository_class.new(database, backup_root: PolishOpenSourceRank.root.join('db/publication_backups').to_s)
+
+if ARGV.include?('--rollback')
+  period = repository.rollback
+  puts(period ? "Rolled back public snapshot to #{period}" : 'No published snapshot with a rollback target')
+else
+  period = ARGV.fetch(0)
+  repository.publish(PolishOpenSourceRank::Shared::Domain::Period.parse(period).start_date.to_s)
+  puts "Published public snapshot #{period}"
+end

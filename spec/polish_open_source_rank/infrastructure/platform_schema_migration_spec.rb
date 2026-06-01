@@ -13,6 +13,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration do
     expect(database.fetch_value(package_table_sql('job_work_events'))).to eq(1)
     expect(database.fetch_value(package_table_sql('package_crawl_runs'))).to eq(1)
     expect(database.fetch_value(package_table_sql('registry_package_snapshots'))).to eq(1)
+    expect(database.fetch_value(package_table_sql('public_snapshot_publications'))).to eq(1)
     expect(database.table_info('users').map { |column| column.fetch('name') }).to include('platform')
     expect(database.table_info('user_monthly_stats').map { |column| column.fetch('name') })
       .to include('merged_pull_requests_count')
@@ -82,6 +83,23 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration do
     expect(database.fetch_value("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'users'")).to eq(1)
   end
 
+  it 'seeds the current public publication from the latest completed public period' do
+    database = open_database
+    database.execute_batch(PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql)
+    seed_completed_public_period(database, '2025-04-01')
+    seed_completed_public_period(database, '2026-04-01')
+    seed_completed_public_period(database, '2026-05-01', status: 'running')
+
+    described_class.new(database, PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql).bootstrap!
+
+    expect(database.fetch_all(publication_statuses_sql)).to eq(
+      [
+        { period_start: '2025-04-01', status: 'superseded' },
+        { period_start: '2026-04-01', status: 'published' }
+      ]
+    )
+  end
+
   it 'adds new monthly metric columns to an existing current schema' do
     database = open_database
     database.execute_batch(legacy_current_schema_sql)
@@ -121,6 +139,32 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration do
     database.fetch_all(<<~SQL).map { |row| row.fetch(:name) }
       SELECT name FROM sqlite_master
       WHERE type = 'index' AND name LIKE 'idx_package_%' OR name LIKE 'idx_registry_package%'
+    SQL
+  end
+
+  def publication_statuses_sql
+    'SELECT period_start, status FROM public_snapshot_publications ORDER BY period_start'
+  end
+
+  def seed_completed_public_period(database, period_start, status: 'finished')
+    database.execute(
+      'INSERT INTO sync_runs(period_start, period_end, status, started_at, finished_at) VALUES (?, ?, ?, ?, ?)',
+      [period_start, Date.parse(period_start).next_month.to_s, status, '2026-06-01T00:00:00Z', nil]
+    )
+    database.execute(
+      'INSERT OR IGNORE INTO users(platform, github_id, login, html_url, updated_at) VALUES (?, ?, ?, ?, ?)',
+      ['github', 1, 'alice', 'https://github.com/alice', '2026-06-01T00:00:00Z']
+    )
+    database.execute(user_stats_sql, [period_start])
+  end
+
+  def user_stats_sql
+    <<~SQL
+      INSERT INTO user_monthly_stats(
+        period_start, platform, user_github_id, login, city, country, public_repo_count,
+        total_stars, monthly_stars_delta, merged_pull_requests_count, updated_at
+      )
+      VALUES (?, 'github', 1, 'alice', 'Kraków', 'Poland', 1, 10, 1, 0, '2026-06-01T00:00:00Z')
     SQL
   end
 

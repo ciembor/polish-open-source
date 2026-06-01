@@ -29,12 +29,14 @@ module PolishOpenSourceRank
       end
 
       def show_rankings
-        @show_rankings ||= Contexts::Publication::Application::ShowRankings.new(ranking_read_model: ranking_read_model)
+        @show_rankings ||= Contexts::Publication::Application::ShowRankings.new(
+          ranking_read_model: public_ranking_read_model
+        )
       end
 
       def show_ranking_detail
         @show_ranking_detail ||=
-          Contexts::Publication::Application::ShowRankingDetail.new(ranking_read_model: ranking_read_model)
+          Contexts::Publication::Application::ShowRankingDetail.new(ranking_read_model: public_ranking_read_model)
       end
 
       def list_editions
@@ -160,7 +162,7 @@ module PolishOpenSourceRank
 
       def cache_revision_read_model
         @cache_revision_read_model ||= Contexts::Publication::Infrastructure::SQLite::SQLiteCacheRevisionReadModel.new(
-          database
+          public_database
         )
       end
 
@@ -168,25 +170,33 @@ module PolishOpenSourceRank
         @ranking_read_model ||= Contexts::Ranking::Infrastructure::SQLite::SQLiteRankingReadModel.new(database)
       end
 
+      def public_ranking_read_model
+        @public_ranking_read_model ||= Contexts::Ranking::Infrastructure::SQLite::SQLiteRankingReadModel.new(
+          public_database
+        )
+      end
+
       def edition_read_model
         @edition_read_model ||= Contexts::Publication::Infrastructure::SQLite::SQLiteEditionReadModel.new(
-          database,
-          ranking_read_model: ranking_read_model
+          public_database,
+          ranking_read_model: public_ranking_read_model
         )
       end
 
       def profile_read_model
-        @profile_read_model ||= Contexts::Publication::Infrastructure::SQLite::SQLiteProfileReadModel.new(database)
+        @profile_read_model ||= Contexts::Publication::Infrastructure::SQLite::SQLiteProfileReadModel.new(
+          public_database
+        )
       end
 
       def package_ranking_read_model
         @package_ranking_read_model ||=
-          Contexts::Packages::Infrastructure::SQLite::SQLitePackageRankingReadModel.new(database)
+          Contexts::Packages::Infrastructure::SQLite::SQLitePackageRankingReadModel.new(public_database)
       end
 
       def language_ranking_read_model
         @language_ranking_read_model ||=
-          Contexts::Languages::Infrastructure::SQLite::SQLiteLanguageRankingReadModel.new(database)
+          Contexts::Languages::Infrastructure::SQLite::SQLiteLanguageRankingReadModel.new(public_database)
       end
 
       def public_profile_repository
@@ -196,7 +206,7 @@ module PolishOpenSourceRank
 
       def contributor_access_read_model
         @contributor_access_read_model ||=
-          Contexts::Community::Infrastructure::SQLite::SQLiteContributorAccessReadModel.new(database)
+          Contexts::Community::Infrastructure::SQLite::SQLiteContributorAccessReadModel.new(public_database)
       end
 
       def discord_connection_repository
@@ -225,6 +235,15 @@ module PolishOpenSourceRank
           Infrastructure::PlatformSchemaMigration.new(db, Infrastructure::SQLiteSchema.sql).bootstrap!
           db
         end
+      end
+
+      def public_database
+        return database if configuration.public_database_path == configuration.database_path
+
+        @public_database ||= Shared::Infrastructure::SQLite::Database.open(
+          configuration.public_database_path,
+          readonly: true
+        )
       end
     end
   end

@@ -111,4 +111,18 @@ RSpec.describe PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database do
     expect(deleted_count).to eq(1)
     expect(database.fetch_value('SELECT COUNT(*) FROM records')).to eq(0)
   end
+
+  it 'opens read-only public snapshots with SQLite query_only enabled' do
+    path = File.join(Dir.mktmpdir, 'rank.sqlite3')
+    writable = described_class.open(path)
+    writable.execute('CREATE TABLE records(name TEXT)')
+    writable.execute('INSERT INTO records(name) VALUES (?)', ['alice'])
+    writable.close
+
+    readonly = described_class.open(path, readonly: true)
+
+    expect(readonly.fetch_value('PRAGMA query_only')).to eq(1)
+    expect(readonly.fetch_value('SELECT COUNT(*) FROM records')).to eq(1)
+    expect { readonly.execute('INSERT INTO records(name) VALUES (?)', ['bob']) }.to raise_error(Sequel::DatabaseError)
+  end
 end

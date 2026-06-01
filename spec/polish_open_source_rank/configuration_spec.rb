@@ -3,7 +3,7 @@
 RSpec.describe PolishOpenSourceRank::Configuration do
   around do |example|
     keys = %w[
-      GITHUB_TOKEN GITLAB_TOKEN CODEBERG_TOKEN DATABASE_URL REQUESTS_PER_MINUTE
+      GITHUB_TOKEN GITLAB_TOKEN CODEBERG_TOKEN DATABASE_URL PUBLIC_DATABASE_URL REQUESTS_PER_MINUTE
       GITHUB_BASE_URL GITLAB_BASE_URL CODEBERG_BASE_URL BASE_URL
       DISCORD_INVITE_CHANNEL_ID GITHUB_OAUTH_CLIENT_ID
       HTTP_OPEN_TIMEOUT HTTP_READ_TIMEOUT HTTP_WRITE_TIMEOUT RACK_ENV SESSION_SECRET
@@ -66,6 +66,7 @@ RSpec.describe PolishOpenSourceRank::Configuration do
     configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
 
     expect(configuration.database_path).to eq('db/polish_open_source_rank.sqlite3')
+    expect(configuration.public_database_path).to eq('db/polish_open_source_rank.sqlite3')
     expect(configuration.requests_per_minute).to eq(60)
     expect(configuration.github_base_url).to eq('https://api.github.com')
     expect(configuration.gitlab_token).to be_nil
@@ -74,6 +75,16 @@ RSpec.describe PolishOpenSourceRank::Configuration do
     expect(configuration.codeberg_base_url).to eq('https://codeberg.org/api/v1')
     expect(configuration.public_base_url).to eq('http://localhost:9292')
     expect(configuration.app_base_path).to eq('')
+  end
+
+  it 'uses an optional public database path for read-only public pages' do
+    ENV['DATABASE_URL'] = 'sqlite://tmp/write.sqlite3'
+    ENV['PUBLIC_DATABASE_URL'] = 'sqlite://tmp/public.sqlite3'
+
+    configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
+
+    expect(configuration.database_path).to eq('tmp/write.sqlite3')
+    expect(configuration.public_database_path).to eq('tmp/public.sqlite3')
   end
 
   it 'uses stable local HTTP and session defaults without an env file' do

@@ -22,19 +22,22 @@ module PolishOpenSourceRank
             attr_accessor :sqlite_write_retry_count
           end
 
-          def self.open(path)
-            new(path).open
+          def self.open(path, readonly: false)
+            new(path, readonly: readonly).open
           end
 
-          def initialize(path)
+          def initialize(path, readonly: false)
             @path = Pathname(path)
+            @readonly = readonly
           end
 
           def open
-            FileUtils.mkdir_p(path.dirname)
+            FileUtils.mkdir_p(@path.dirname) unless readonly
             connect
             self
           end
+
+          def path = @path.to_s
 
           def close
             @sequel_connection&.disconnect
@@ -77,7 +80,7 @@ module PolishOpenSourceRank
 
           private
 
-          attr_reader :path
+          attr_reader :readonly
 
           def connect
             sequel_connection
@@ -91,7 +94,7 @@ module PolishOpenSourceRank
 
           def sequel_connection
             @sequel_connection ||= Sequel.connect(
-              "sqlite://#{path}",
+              "sqlite://#{@path}",
               max_connections: sqlite_max_connections,
               after_connect: method(:configure_connection)
             )
@@ -103,6 +106,9 @@ module PolishOpenSourceRank
 
           def configure_connection(connection)
             connection.busy_timeout = 120_000
+            connection.execute('PRAGMA query_only = ON') if readonly
+            return if readonly
+
             connection.execute('PRAGMA foreign_keys = ON')
             connection.execute('PRAGMA journal_mode = WAL')
             connection.execute('PRAGMA synchronous = NORMAL')

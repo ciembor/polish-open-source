@@ -64,11 +64,31 @@ module PolishOpenSourceRank
             end
 
             def edition_period_starts
+              return explicit_edition_period_starts if explicit_publications?
+
               database.fetch_all(<<~SQL)
                 SELECT period_start
                 FROM sync_runs
                 WHERE sync_runs.status = 'finished'
                   AND #{edition_period_condition}
+                ORDER BY period_start DESC
+              SQL
+                      .map { |row| row.fetch(:period_start) }
+            end
+
+            def explicit_publications?
+              database.fetch_value(published_publication_count_sql).to_i.positive?
+            end
+
+            def published_publication_count_sql
+              "SELECT COUNT(*) FROM public_snapshot_publications WHERE status = 'published'"
+            end
+
+            def explicit_edition_period_starts
+              database.fetch_all(<<~SQL)
+                SELECT period_start
+                FROM public_snapshot_publications
+                WHERE status IN ('published', 'superseded')
                 ORDER BY period_start DESC
               SQL
                       .map { |row| row.fetch(:period_start) }
