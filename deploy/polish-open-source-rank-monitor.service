@@ -4,4 +4,11 @@ Description=Polish Open Source Rank server health snapshot
 [Service]
 Type=oneshot
 WorkingDirectory=/home/ciembor/polish-open-source-rank
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/ciembor/polish-open-source-rank/log
+RestrictSUIDSGID=true
+LockPersonality=true
 ExecStart=/home/ciembor/polish-open-source-rank/scripts/server-health-snapshot.sh

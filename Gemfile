@@ -2,7 +2,7 @@
 
 source 'https://rubygems.org'
 
-ruby '>= 3.2'
+ruby '>= 4.0', '< 4.1'
 
 gem 'dry-configurable', '~> 1.4'
 gem 'puma', '~> 8.0'

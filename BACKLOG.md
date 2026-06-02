@@ -58,17 +58,17 @@ Goal: make the public repository credible under security review.
 Goal: ensure production runtime matches the tested runtime and follows container
 basics.
 
-- [ ] Align Docker Ruby version with the project runtime declared in CI and the
+- [x] Align Docker Ruby version with the project runtime declared in CI and the
       lockfile.
-- [ ] Pin the base image version or digest and document the update policy.
-- [ ] Run the production container as a non-root user.
-- [ ] Ensure writable runtime directories (`db`, `log`, `tmp`) work correctly
+- [x] Pin the base image version or digest and document the update policy.
+- [x] Run the production container as a non-root user.
+- [x] Ensure writable runtime directories (`db`, `log`, `tmp`) work correctly
       under the non-root user.
-- [ ] Add a container build smoke test to CI.
-- [ ] Add a production-like container health smoke test for `/healthz`.
-- [ ] Review systemd unit hardening options for web, bot, monthly, packages,
+- [x] Add a container build smoke test to CI.
+- [x] Add a production-like container health smoke test for `/healthz`.
+- [x] Review systemd unit hardening options for web, bot, monthly, packages,
       crawl, alerts, and monitor services.
-- [ ] Document the exact runtime parity expectations in `docs/deployment.md`.
+- [x] Document the exact runtime parity expectations in `docs/deployment.md`.
 
 ## Milestone 4: Public Product Polish
 

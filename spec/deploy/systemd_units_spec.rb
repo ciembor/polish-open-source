@@ -7,7 +7,10 @@ RSpec.describe File do
     unit = described_class.read(described_class.join(root, 'deploy/polish-open-source-rank.service'))
 
     expect(unit).to include(
-      'ExecStartPost=-/usr/bin/systemctl start --no-block polish-open-source-rank-crawl-resume.service'
+      'ExecStartPost=-/usr/bin/systemctl start --no-block polish-open-source-rank-crawl-resume.service',
+      '--user=1000:1000 --read-only --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m',
+      '-v /home/ciembor/polish-open-source-rank/db:/app/db:rw',
+      '-v /home/ciembor/polish-open-source-rank/log:/app/log:rw'
     )
   end
 
@@ -15,13 +18,16 @@ RSpec.describe File do
     unit = described_class.read(described_class.join(root, 'deploy/polish-open-source-rank-monthly.service'))
     timer = described_class.read(described_class.join(root, 'deploy/polish-open-source-rank-monthly.timer'))
 
-    expect(unit).to include('Restart=on-failure')
-    expect(unit).to include('TimeoutStartSec=infinity')
-    expect(unit).to include('Nice=10')
-    expect(unit).to include('CPUWeight=20')
-    expect(unit).to include('IOWeight=20')
-    expect(unit).to include('/usr/bin/flock -n /home/ciembor/polish-open-source-rank/tmp/crawl.lock')
-    expect(unit).to include('--name=polish-open-source-rank-monthly')
+    expect(unit).to include(
+      'Restart=on-failure',
+      'TimeoutStartSec=infinity',
+      'Nice=10',
+      'CPUWeight=20',
+      'IOWeight=20',
+      '/usr/bin/flock -n /home/ciembor/polish-open-source-rank/tmp/crawl.lock',
+      '--name=polish-open-source-rank-monthly',
+      '--user=1000:1000 --read-only --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m'
+    )
     expect(unit).to include(
       '--memory=768m --memory-swap=768m --memory-reservation=512m --cpus=0.5 --cpu-shares=128 --pids-limit=256'
     )
@@ -39,7 +45,8 @@ RSpec.describe File do
       'CPUWeight=20',
       'IOWeight=20',
       '/usr/bin/flock /home/ciembor/polish-open-source-rank/tmp/packages.lock',
-      '-v /home/ciembor/polish-open-source-rank/db:/app/db'
+      '--user=1000:1000 --read-only --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m',
+      '-v /home/ciembor/polish-open-source-rank/db:/app/db:rw'
     )
     expect(service).to include(
       '--memory=768m --memory-swap=768m --memory-reservation=512m --cpus=0.5 --cpu-shares=128 --pids-limit=256'
@@ -63,19 +70,34 @@ RSpec.describe File do
     expect(unit).to include('CPUWeight=20')
     expect(unit).to include('IOWeight=20')
     expect(unit).to include(
+      '--user=1000:1000 --read-only --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m',
       '--memory=768m --memory-swap=768m --memory-reservation=512m --cpus=0.5 --cpu-shares=128 --pids-limit=256'
     )
   end
 
-  it 'runs production alerts on a dedicated timer with the app env file' do
+  it 'runs production alerts on a dedicated timer with the app env file and host sandboxing' do
     service = described_class.read(described_class.join(root, 'deploy/polish-open-source-rank-alerts.service'))
     timer = described_class.read(described_class.join(root, 'deploy/polish-open-source-rank-alerts.timer'))
 
     expect(service).to include(
       'EnvironmentFile=-/home/ciembor/polish-open-source-rank/.env.local',
+      'NoNewPrivileges=true',
+      'ProtectSystem=strict',
+      'ReadWritePaths=/home/ciembor/polish-open-source-rank/tmp /home/ciembor/polish-open-source-rank/log',
       'ExecStart=/usr/bin/python3 /home/ciembor/polish-open-source-rank/scripts/production_alert_monitor.py'
     )
     expect(timer).to include('OnUnitActiveSec=1min', 'Persistent=true')
+  end
+
+  it 'runs the host monitor with host sandboxing while keeping the log writable' do
+    service = described_class.read(described_class.join(root, 'deploy/polish-open-source-rank-monitor.service'))
+
+    expect(service).to include(
+      'NoNewPrivileges=true',
+      'ProtectSystem=strict',
+      'ProtectHome=read-only',
+      'ReadWritePaths=/home/ciembor/polish-open-source-rank/log'
+    )
   end
 
   it 'runs crawl resume with bounded container resources' do
@@ -88,6 +110,7 @@ RSpec.describe File do
     expect(unit).to include('CPUWeight=20')
     expect(unit).to include('IOWeight=20')
     expect(unit).to include(
+      '--user=1000:1000 --read-only --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m',
       '--memory=768m --memory-swap=768m --memory-reservation=512m --cpus=0.5 --cpu-shares=128 --pids-limit=256'
     )
   end

@@ -369,7 +369,6 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
     klass = code.start_with?('2') ? Net::HTTPOK : Net::HTTPResponse
     klass = Net::HTTPNotFound if code == '404'
     klass = Net::HTTPTooManyRequests if code == '429'
-    Net::HTTPResponse::CODE_TO_OBJ[code] = klass
     response = klass.new('1.1', code, 'status')
     headers.each { |key, value| response[key] = value }
     response.instance_variable_set(:@read, true)
