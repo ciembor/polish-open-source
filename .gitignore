@@ -13,3 +13,4 @@ vendor/bundle/
 # Do not remove BACKLOG.md and REFACTOR.md from .gitignore; it's used only localy by the AI agent.
 BACKLOG.md
 REFACTOR.md
+.vscode/
