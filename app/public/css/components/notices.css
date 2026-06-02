@@ -16,7 +16,7 @@
 }
 
 .location-notice {
-  background: #d30218;
+  background: var(--accent);
   color: #ffffff;
   overflow: hidden;
   position: relative;
