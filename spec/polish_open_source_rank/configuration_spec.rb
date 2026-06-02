@@ -7,6 +7,7 @@ RSpec.describe PolishOpenSourceRank::Configuration do
       GITHUB_BASE_URL GITLAB_BASE_URL CODEBERG_BASE_URL BASE_URL
       DISCORD_INVITE_CHANNEL_ID GITHUB_OAUTH_CLIENT_ID
       HTTP_OPEN_TIMEOUT HTTP_READ_TIMEOUT HTTP_WRITE_TIMEOUT RACK_ENV SESSION_SECRET
+      INTERNAL_BASIC_AUTH_USERNAME INTERNAL_BASIC_AUTH_PASSWORD
       SENTRY_DSN SENTRY_ENVIRONMENT SENTRY_RELEASE SENTRY_TRACES_SAMPLE_RATE
       NPM_REGISTRY_REQUESTS_PER_MINUTE RUBYGEMS_REGISTRY_REQUESTS_PER_MINUTE
       CRATES_REGISTRY_REQUESTS_PER_MINUTE PYPI_REGISTRY_REQUESTS_PER_MINUTE
@@ -104,6 +105,22 @@ RSpec.describe PolishOpenSourceRank::Configuration do
     expect(configuration.http_timeouts).to eq(open_timeout: 5, read_timeout: 30, write_timeout: 30)
     expect(configuration.session_secret).to eq(
       'local-development-session-secret-for-polish-open-source-rank-auth-flows'
+    )
+    expect(configuration.internal_basic_auth).to eq(
+      username: 'internal',
+      password: 'local-internal-basic-auth-password'
+    )
+  end
+
+  it 'exposes configured internal Basic Auth credentials' do
+    ENV['INTERNAL_BASIC_AUTH_USERNAME'] = 'ops'
+    ENV['INTERNAL_BASIC_AUTH_PASSWORD'] = 'production-internal-basic-auth-secret'
+
+    configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
+
+    expect(configuration.internal_basic_auth).to eq(
+      username: 'ops',
+      password: 'production-internal-basic-auth-secret'
     )
   end
 
@@ -223,6 +240,25 @@ RSpec.describe PolishOpenSourceRank::Configuration do
     expect { configuration.session_secret }.to raise_error(
       ArgumentError,
       'SESSION_SECRET must be at least 64 characters in production'
+    )
+  end
+
+  it 'requires strong internal Basic Auth credentials in production' do
+    ENV['RACK_ENV'] = 'production'
+    configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
+
+    expect { configuration.internal_basic_auth }.to raise_error(
+      ArgumentError,
+      'INTERNAL_BASIC_AUTH_USERNAME must be configured'
+    )
+
+    ENV['INTERNAL_BASIC_AUTH_USERNAME'] = 'ops'
+    ENV['INTERNAL_BASIC_AUTH_PASSWORD'] = 'short'
+    configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
+
+    expect { configuration.internal_basic_auth }.to raise_error(
+      ArgumentError,
+      'INTERNAL_BASIC_AUTH_PASSWORD must be at least 32 characters'
     )
   end
 end

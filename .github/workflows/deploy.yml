@@ -108,6 +108,8 @@ jobs:
             -e APP_BASE_PATH=/ \
             -e BASE_URL=http://127.0.0.1:9293 \
             -e SESSION_SECRET=container-smoke-session-secret-for-polish-open-source-rank-ci-2026 \
+            -e INTERNAL_BASIC_AUTH_USERNAME=container-smoke-ops \
+            -e INTERNAL_BASIC_AUTH_PASSWORD=container-smoke-internal-basic-auth-secret \
             -e GITHUB_TOKEN=container-smoke-github-token \
             -e GITHUB_OAUTH_CLIENT_ID=container-smoke-github-client \
             -e GITHUB_OAUTH_CLIENT_SECRET=container-smoke-github-secret \

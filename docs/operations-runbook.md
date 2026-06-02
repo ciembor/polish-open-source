@@ -40,6 +40,21 @@ at least 64 characters. Generate a value with:
 ruby -rsecurerandom -e 'puts SecureRandom.hex(32)'
 ```
 
+## Internal operations access
+
+`/internal/*` is protected by application Basic Auth. Set these variables in
+`/home/ciembor/polish-open-source-rank/.env.local`:
+
+- `INTERNAL_BASIC_AUTH_USERNAME`
+- `INTERNAL_BASIC_AUTH_PASSWORD`
+
+`INTERNAL_BASIC_AUTH_PASSWORD` must be at least 32 characters. Generate a value
+with:
+
+```sh
+ruby -rsecurerandom -e 'puts SecureRandom.hex(24)'
+```
+
 ## Deploy
 
 1. Push `master`.
@@ -77,11 +92,11 @@ before checking whether they are actively writing:
 ```sh
 systemctl status polish-open-source-rank-monthly.service --no-pager
 systemctl status polish-open-source-rank-packages.service --no-pager
-curl -fsS -u ciembor https://polish-open-source.pl/internal/jobs
+curl -fsS -u "$INTERNAL_BASIC_AUTH_USERNAME" https://polish-open-source.pl/internal/jobs
 ```
 
-Internal operations pages must require nginx Basic Auth. A request without
-credentials should fail before reaching the Rack app:
+Internal operations pages must require application Basic Auth. A request without
+credentials should fail with the app-owned challenge:
 
 ```sh
 curl -fsS -o /dev/null -w '%{http_code}\n' https://polish-open-source.pl/internal/jobs
@@ -91,7 +106,7 @@ Expected status: `401`.
 
 ## Stuck monthly or packages
 
-1. Check `/internal/jobs` with the nginx Basic Auth credentials for the active
+1. Check `/internal/jobs` with the application Basic Auth credentials for the active
    section and last heartbeat.
 2. Check Sentry for the matching `monthly-rankings` or `package-rankings` check-in.
 3. Inspect the host alert timer with `journalctl -u polish-open-source-rank-alerts.service -n 50 --no-pager`.

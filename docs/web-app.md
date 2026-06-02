@@ -140,9 +140,13 @@ public HTML prefixes.
 
 ## Internal Operations Access
 
-`/internal/*` routes are operational pages and must be protected at nginx before
-requests reach the Rack app. The app still marks those responses as `no-store`
-and `noindex`, but indexing headers are not access control.
+`/internal/*` routes are operational pages protected by application-owned Basic
+Auth before the route handlers run. Production must configure
+`INTERNAL_BASIC_AUTH_USERNAME` and `INTERNAL_BASIC_AUTH_PASSWORD`; the deploy
+script rejects missing credentials. nginx still forwards only the expected
+internal prefix and applies edge rate limits, but it does not own credentials.
+The app marks internal responses as `no-store` and `noindex`, but indexing
+headers are not access control.
 
 Public views render external URLs through one presentation helper that only
 allows browser-safe `http` and `https` URLs without embedded credentials. Source

@@ -823,7 +823,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'HTTP_COOKIE' => cookie_header(github_start)
     )
     profile = request.get('/users/github/alice', 'HTTP_COOKIE' => cookie_header(github_callback))
-    internal = request.get('/internal/jobs')
+    internal = request.get('/internal/jobs', internal_auth_env)
 
     expect(github_start['Cache-Control']).to eq('no-store')
     expect(profile['Cache-Control']).to eq('private, no-cache')
@@ -839,17 +839,36 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       request.get('/latest'),
       request.get('/auth/github'),
       request.get('/badges/users/github/alice.svg'),
-      request.get('/internal/jobs')
+      request.get('/internal/jobs', internal_auth_env)
     ]
 
     responses.each do |response|
       expect(response['Content-Security-Policy']).to include("default-src 'self'")
       expect(response['Content-Security-Policy']).to include("frame-ancestors 'none'")
+      expect(response['Content-Security-Policy']).not_to include("'unsafe-inline'")
       expect(response['X-Content-Type-Options']).to eq('nosniff')
       expect(response['Strict-Transport-Security']).to eq('max-age=31536000; includeSubDomains')
       expect(response['Referrer-Policy']).to eq('strict-origin-when-cross-origin')
       expect(response['Permissions-Policy']).to include('camera=()')
     end
+  end
+
+  it 'requires application Basic Auth for internal operation pages', :aggregate_failures do
+    request = Rack::MockRequest.new(described_class)
+
+    unauthenticated = request.get('/internal/jobs')
+    wrong_password = request.get(
+      '/internal/jobs',
+      internal_auth_env(password: 'wrong-internal-password')
+    )
+
+    expect(unauthenticated.status).to eq(401)
+    expect(wrong_password.status).to eq(401)
+    expect(unauthenticated['WWW-Authenticate']).to eq(
+      'Basic realm="Polish Open Source operations", charset="UTF-8"'
+    )
+    expect(unauthenticated['Cache-Control']).to eq('no-store')
+    expect(unauthenticated['Content-Security-Policy']).to include("default-src 'self'")
   end
 
   it 'marks every external target blank link as opener-safe', :aggregate_failures do
@@ -953,7 +972,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   it 'serves internal job progress as a noindex monitor page', :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_running_database}"
 
-    response = Rack::MockRequest.new(described_class).get('/internal/jobs')
+    response = Rack::MockRequest.new(described_class).get('/internal/jobs', internal_auth_env)
 
     expect(response.status).to eq(200)
     expect(response.content_type).to include('text/html')
@@ -1534,6 +1553,11 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   def cookie_header(response)
     Array(response['Set-Cookie']).map { |cookie| cookie.split(';').first }.join('; ')
+  end
+
+  def internal_auth_env(username: 'internal', password: 'local-internal-basic-auth-password')
+    credentials = ["#{username}:#{password}"].pack('m0')
+    { 'HTTP_AUTHORIZATION' => "Basic #{credentials}" }
   end
 
   def csrf_token_from(response)

@@ -122,6 +122,39 @@ assert_production_session_secret() {
   exit 78
 }
 
+env_value() {
+  local env_file="$1"
+  local key="$2"
+  local line=""
+
+  if [ -f "$env_file" ]; then
+    line="$(grep -m 1 "^${key}=" "$env_file" || true)"
+  fi
+  printf '%s' "${line#${key}=}"
+}
+
+assert_internal_basic_auth() {
+  local env_file="${REMOTE_DIR}/.env.local"
+  local username=""
+  local password=""
+
+  username="$(env_value "$env_file" INTERNAL_BASIC_AUTH_USERNAME)"
+  password="$(env_value "$env_file" INTERNAL_BASIC_AUTH_PASSWORD)"
+
+  if [ -z "$username" ]; then
+    echo "INTERNAL_BASIC_AUTH_USERNAME in ${env_file} must be configured before deploy." >&2
+    exit 78
+  fi
+
+  if [ "${#password}" -ge 32 ]; then
+    return 0
+  fi
+
+  echo "INTERNAL_BASIC_AUTH_PASSWORD in ${env_file} must be at least 32 characters before deploy." >&2
+  echo "Generate one with: ruby -rsecurerandom -e 'puts SecureRandom.hex(24)'" >&2
+  exit 78
+}
+
 install_units() {
   cd "${REMOTE_DIR}"
   for unit in \
@@ -154,6 +187,7 @@ deploy_release() {
   local previous_release=""
 
   assert_production_session_secret
+  assert_internal_basic_auth
   install_units
   report_running_jobs
 
@@ -193,6 +227,7 @@ rollback_release() {
   local previous_release="unknown"
 
   assert_production_session_secret
+  assert_internal_basic_auth
 
   if ! image_exists "${PREVIOUS_IMAGE_NAME}"; then
     echo "No previous image available for rollback" >&2

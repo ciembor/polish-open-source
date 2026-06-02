@@ -12,7 +12,7 @@ module PolishOpenSourceRank
         "frame-ancestors 'none'",
         "img-src 'self' https: data:",
         "object-src 'none'",
-        "script-src 'self' 'unsafe-inline'",
+        "script-src 'self'",
         "style-src 'self'"
       ].join('; ')
       PERMISSIONS_POLICY = [

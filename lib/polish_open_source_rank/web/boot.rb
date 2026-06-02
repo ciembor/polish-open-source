@@ -76,6 +76,7 @@ module PolishOpenSourceRank
           app.use RequestTelemetry
           app.use SecurityHeaders
           app.use RateLimiter
+          app.use InternalBasicAuth, **configuration.internal_basic_auth
           app.use Rack::Deflater
           app.use Rack::Session::Cookie,
                   key: SESSION_COOKIE_KEY,

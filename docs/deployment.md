@@ -56,9 +56,9 @@ before granting additional maintainers deploy permission.
 - The production host is `ciembor@maciej-ciemborowicz.eu`.
 - The app checkout lives in `/home/ciembor/polish-open-source-rank`.
 - The web app runs in the `polish-open-source-rank` Podman container.
-- nginx terminates TLS and protects `/internal/*` with Basic Auth before those
-  requests reach the Rack app. The htpasswd file lives outside the repository at
-  `/etc/nginx/.htpasswd-polish-open-source-rank`; use
+- nginx terminates TLS and forwards `/internal/*` to the Rack app. The app owns
+  Basic Auth for those routes through `INTERNAL_BASIC_AUTH_USERNAME` and
+  `INTERNAL_BASIC_AUTH_PASSWORD` in `.env.local`; use
   [deploy/nginx-polish-open-source-rank-internal.conf](../deploy/nginx-polish-open-source-rank-internal.conf)
   as the expected server block snippet.
 - The Rack app emits security headers, including HSTS, for public, auth, badge,
