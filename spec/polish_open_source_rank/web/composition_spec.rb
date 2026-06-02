@@ -47,6 +47,12 @@ RSpec.describe PolishOpenSourceRank::Web::Composition do
     expect(composition.operations.show_job_progress).to be_a(
       PolishOpenSourceRank::Contexts::Operations::Application::ShowJobProgress
     )
+    expect(composition.sitemap_catalog).to be_a(
+      PolishOpenSourceRank::Web::Composition::SitemapCatalog
+    )
+    expect(composition.development).to be_a(
+      PolishOpenSourceRank::Web::Composition::DeveloperAccess
+    )
   end
 
   it 'opens a configured public database as a read-only snapshot' do

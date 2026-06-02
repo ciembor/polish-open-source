@@ -5,8 +5,8 @@ module PolishOpenSourceRank
     class Composition
       # Wires public ranking and profile use cases to publication-facing adapters.
       class Publication
-        def initialize(persistence:)
-          @read_models = PublicationReadModels.new(persistence: persistence)
+        def initialize(read_models:)
+          @read_models = read_models
         end
 
         def show_rankings
@@ -68,14 +68,6 @@ module PolishOpenSourceRank
 
         def cache_revision
           @cache_revision ||= PublicCacheRevision.new(read_model: read_models.cache_revision)
-        end
-
-        def ranking_read_model
-          read_models.ranking
-        end
-
-        def profile_read_model
-          read_models.profile
         end
 
         private

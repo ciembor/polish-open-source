@@ -107,6 +107,17 @@ RSpec.describe ArchitectureDependencyRules do
     expect(app).not_to include('def_delegators :composition')
   end
 
+  it 'keeps web request handlers off composition read-model seams', :aggregate_failures do
+    forbidden = /\b(ranking_read_model|profile_read_model|package_ranking_read_model)\b/
+    request_handler_files = files_under('lib/polish_open_source_rank/web/controllers') +
+                            files_under('lib/polish_open_source_rank/web/routes') +
+                            [PolishOpenSourceRank.root.join('lib/polish_open_source_rank/web/app.rb').to_s]
+
+    request_handler_files.each do |path|
+      expect(file_body(path)).not_to match(forbidden), "#{path} reaches through a composition read-model seam"
+    end
+  end
+
   it 'keeps web composition boundaries outside core policy', :aggregate_failures do
     forbidden = /\bPolishOpenSourceRank::Web::Composition\b|\bWeb::Composition\b/
     core_policy_files = files_under('lib/polish_open_source_rank/shared/domain') +

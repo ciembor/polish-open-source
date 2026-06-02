@@ -35,7 +35,7 @@ module PolishOpenSourceRank
         end
 
         def sitemap_entries
-          SitemapEntries.new(self).call
+          SitemapEntries.new(self, catalog: sitemap_catalog).call
         end
       end
     end

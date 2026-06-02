@@ -172,11 +172,19 @@ collaborators instead of individual use-case delegators:
 - `community` for OAuth clients, Discord role sync, Discord panel state, and
   contributor access.
 - `operations` for internal job progress.
+- `sitemap_catalog` for the public URL inventory used by `sitemap.xml`.
+- `development` for development-only login candidates.
 
 Controllers should call those context collaborators directly, for example
 `publication.show_rankings` or `packages.show_package_index`. New web use cases
 should be added to the narrow owning context instead of adding pass-through
 delegators to `Web::App`.
+
+The composition boundary owns read-model construction. Request handlers must not
+reach through to `ranking_read_model`, `profile_read_model`, or
+`package_ranking_read_model`; when a route needs a higher-level view of public
+data, add a semantic collaborator such as `sitemap_catalog` or `development`
+that hides the read-model and metric details.
 
 HTML cache revisions are calculated by `PolishOpenSourceRank::Web::HtmlRevision`.
 It watches all ERB views, public CSS, public JavaScript, and the selected locale

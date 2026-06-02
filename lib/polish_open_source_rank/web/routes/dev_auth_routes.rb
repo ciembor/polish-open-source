@@ -15,15 +15,7 @@ module PolishOpenSourceRank
         def self.register_dev_index(app)
           app.get '/auth/dev' do
             no_store!
-            period = latest_period
-            @users = if period
-                       publication.ranking_read_model
-                                  .user_rankings('poland', period_start: period)
-                                  .fetch(:top)
-                                  .first(100)
-                     else
-                       []
-                     end
+            @users = development.github_user_options(period_start: latest_period)
             erb :'auth/dev'
           end
         end

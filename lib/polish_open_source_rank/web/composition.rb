@@ -17,11 +17,11 @@ module PolishOpenSourceRank
       end
 
       def publication
-        contexts[:publication] ||= Publication.new(persistence: persistence)
+        contexts[:publication] ||= Publication.new(read_models: publication_read_models)
       end
 
       def packages
-        contexts[:packages] ||= Packages.new(persistence: persistence)
+        contexts[:packages] ||= Packages.new(package_ranking_read_model: package_ranking_read_model)
       end
 
       def languages
@@ -32,7 +32,7 @@ module PolishOpenSourceRank
         contexts[:community] ||= Community.new(
           configuration: configuration,
           persistence: persistence,
-          profile_read_model: publication.profile_read_model,
+          profile_read_model: publication_read_models.profile,
           overrides: overrides
         )
       end
@@ -45,12 +45,34 @@ module PolishOpenSourceRank
         persistence.public_database
       end
 
+      def sitemap_catalog
+        contexts[:sitemap_catalog] ||= SitemapCatalog.new(
+          publication_read_models: publication_read_models,
+          package_ranking_read_model: package_ranking_read_model,
+          show_rankings: publication.show_rankings,
+          list_editions: publication.list_editions
+        )
+      end
+
+      def development
+        contexts[:development] ||= DeveloperAccess.new(ranking_read_model: publication_read_models.ranking)
+      end
+
       private
 
       attr_reader :configuration, :contexts, :overrides
 
       def persistence
         contexts[:persistence] ||= Persistence.new(configuration: configuration)
+      end
+
+      def publication_read_models
+        contexts[:publication_read_models] ||= PublicationReadModels.new(persistence: persistence)
+      end
+
+      def package_ranking_read_model
+        contexts[:package_ranking_read_model] ||=
+          Contexts::Packages::Infrastructure::SQLite::SQLitePackageRankingReadModel.new(persistence.public_database)
       end
     end
   end

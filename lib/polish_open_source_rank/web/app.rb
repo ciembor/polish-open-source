@@ -138,6 +138,14 @@ module PolishOpenSourceRank
         composition.operations
       end
 
+      def sitemap_catalog
+        composition.sitemap_catalog
+      end
+
+      def development
+        composition.development
+      end
+
       def ranking_metric?(kind, metric)
         settings.ranking_catalog.include?(kind, metric)
       end
