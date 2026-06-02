@@ -5,6 +5,7 @@ This directory is the canonical home for project documentation.
 ## Guides
 
 - [Overview](overview.md): product scope, collected data, and ranking model.
+- [SQLite Data Ownership](data-ownership.md): table ownership, shared read dependencies, and schema change conventions.
 - [Development](development.md): local setup, quality checks, and day-to-day development commands.
 - [Web App](web-app.md): local web server usage, public routes, and cache expectations.
 - [Crawl Jobs](crawl-jobs.md): monthly and package job behavior, production services, resume semantics, and server commands.

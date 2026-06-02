@@ -12,6 +12,10 @@ RSpec.describe ArchitectureDependencyRules do
     File.read(path, encoding: 'UTF-8')
   end
 
+  def sqlite_schema
+    file_body(PolishOpenSourceRank.root.join('lib/polish_open_source_rank/infrastructure/sqlite_schema.sql'))
+  end
+
   it 'keeps new domain code independent from outer layers', :aggregate_failures do
     forbidden = /\b(Infrastructure::|Web::|Sinatra|SQLite3|Sequel|Net::HTTP|Discordrb|ENV\b)/
     domain_files = files_under('lib/polish_open_source_rank/shared/domain') +
@@ -163,5 +167,26 @@ RSpec.describe ArchitectureDependencyRules do
     production_files.each do |path|
       expect(file_body(path)).not_to match(forbidden), "#{path} references Sequel outside infrastructure"
     end
+  end
+
+  it 'keeps SQLite table ownership visible in the schema', :aggregate_failures do
+    allowed_contexts = %w[community languages operations packages publication ranking]
+    tables = sqlite_schema.scan(/CREATE TABLE IF NOT EXISTS ([a-z_]+) \(/).flatten
+
+    expect(tables).not_to be_empty
+    tables.each do |table|
+      owner = owner_for_table(table)
+
+      expect(owner).to be_a(String), "#{table} has no @owner marker before its CREATE TABLE"
+      expect(allowed_contexts).to include(owner), "#{table} has unknown owner #{owner.inspect}"
+    end
+  end
+
+  def owner_for_table(table)
+    owner_match = sqlite_schema.match(
+      /(?:-- @owner (?<owner>[a-z_]+)\n(?:-- @readers [a-z_, ]+\n)?)CREATE TABLE IF NOT EXISTS #{table} \(/
+    )
+
+    owner_match&.[](:owner)
   end
 end

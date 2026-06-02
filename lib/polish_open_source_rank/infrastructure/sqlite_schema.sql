@@ -1,3 +1,5 @@
+-- @owner ranking
+-- @readers publication, operations, packages
 CREATE TABLE IF NOT EXISTS sync_runs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   period_start TEXT NOT NULL UNIQUE,
@@ -8,6 +10,7 @@ CREATE TABLE IF NOT EXISTS sync_runs (
   error TEXT
 );
 
+-- @owner operations
 CREATE TABLE IF NOT EXISTS crawl_job_runs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   command TEXT NOT NULL,
@@ -20,6 +23,8 @@ CREATE TABLE IF NOT EXISTS crawl_job_runs (
   updated_at TEXT NOT NULL
 );
 
+-- @owner ranking
+-- @readers operations
 CREATE TABLE IF NOT EXISTS candidate_users (
   period_start TEXT NOT NULL,
   platform TEXT NOT NULL DEFAULT 'github',
@@ -33,6 +38,8 @@ CREATE TABLE IF NOT EXISTS candidate_users (
   PRIMARY KEY(period_start, platform, login)
 );
 
+-- @owner ranking
+-- @readers operations
 CREATE TABLE IF NOT EXISTS candidate_organizations (
   period_start TEXT NOT NULL,
   platform TEXT NOT NULL DEFAULT 'github',
@@ -46,6 +53,8 @@ CREATE TABLE IF NOT EXISTS candidate_organizations (
   PRIMARY KEY(period_start, platform, login)
 );
 
+-- @owner ranking
+-- @readers publication, community
 CREATE TABLE IF NOT EXISTS users (
   platform TEXT NOT NULL DEFAULT 'github',
   github_id INTEGER NOT NULL,
@@ -63,6 +72,8 @@ CREATE TABLE IF NOT EXISTS users (
   UNIQUE(platform, login)
 );
 
+-- @owner ranking
+-- @readers publication
 CREATE TABLE IF NOT EXISTS organizations (
   platform TEXT NOT NULL DEFAULT 'github',
   github_id INTEGER NOT NULL,
@@ -80,6 +91,8 @@ CREATE TABLE IF NOT EXISTS organizations (
   UNIQUE(platform, login)
 );
 
+-- @owner ranking
+-- @readers publication, languages, community, operations
 CREATE TABLE IF NOT EXISTS user_monthly_stats (
   period_start TEXT NOT NULL,
   platform TEXT NOT NULL DEFAULT 'github',
@@ -96,6 +109,8 @@ CREATE TABLE IF NOT EXISTS user_monthly_stats (
   FOREIGN KEY(platform, user_github_id) REFERENCES users(platform, github_id)
 );
 
+-- @owner ranking
+-- @readers publication, languages, operations
 CREATE TABLE IF NOT EXISTS organization_monthly_stats (
   period_start TEXT NOT NULL,
   platform TEXT NOT NULL DEFAULT 'github',
@@ -113,6 +128,8 @@ CREATE TABLE IF NOT EXISTS organization_monthly_stats (
   FOREIGN KEY(platform, organization_github_id) REFERENCES organizations(platform, github_id)
 );
 
+-- @owner ranking
+-- @readers publication, languages, packages, operations
 CREATE TABLE IF NOT EXISTS repositories (
   platform TEXT NOT NULL DEFAULT 'github',
   github_id INTEGER NOT NULL,
@@ -132,6 +149,8 @@ CREATE TABLE IF NOT EXISTS repositories (
   FOREIGN KEY(platform, owner_github_id) REFERENCES users(platform, github_id)
 );
 
+-- @owner ranking
+-- @readers publication, languages, packages, operations
 CREATE TABLE IF NOT EXISTS organization_repositories (
   platform TEXT NOT NULL DEFAULT 'github',
   github_id INTEGER NOT NULL,
@@ -151,6 +170,8 @@ CREATE TABLE IF NOT EXISTS organization_repositories (
   FOREIGN KEY(platform, organization_github_id) REFERENCES organizations(platform, github_id)
 );
 
+-- @owner ranking
+-- @readers publication, languages, operations
 CREATE TABLE IF NOT EXISTS repository_monthly_stats (
   period_start TEXT NOT NULL,
   platform TEXT NOT NULL DEFAULT 'github',
@@ -167,6 +188,8 @@ CREATE TABLE IF NOT EXISTS repository_monthly_stats (
   FOREIGN KEY(platform, owner_github_id) REFERENCES users(platform, github_id)
 );
 
+-- @owner ranking
+-- @readers publication, languages, operations
 CREATE TABLE IF NOT EXISTS organization_repository_monthly_stats (
   period_start TEXT NOT NULL,
   platform TEXT NOT NULL DEFAULT 'github',
@@ -183,6 +206,7 @@ CREATE TABLE IF NOT EXISTS organization_repository_monthly_stats (
   FOREIGN KEY(platform, organization_github_id) REFERENCES organizations(platform, github_id)
 );
 
+-- @owner ranking
 CREATE TABLE IF NOT EXISTS repository_star_observations (
   period_start TEXT NOT NULL,
   platform TEXT NOT NULL DEFAULT 'github',
@@ -192,6 +216,7 @@ CREATE TABLE IF NOT EXISTS repository_star_observations (
   PRIMARY KEY(period_start, platform, repository_github_id)
 );
 
+-- @owner ranking
 CREATE TABLE IF NOT EXISTS organization_repository_star_observations (
   period_start TEXT NOT NULL,
   platform TEXT NOT NULL DEFAULT 'github',
@@ -201,6 +226,8 @@ CREATE TABLE IF NOT EXISTS organization_repository_star_observations (
   PRIMARY KEY(period_start, platform, repository_github_id)
 );
 
+-- @owner ranking
+-- @readers operations
 CREATE TABLE IF NOT EXISTS api_request_events (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   platform TEXT NOT NULL,
@@ -209,6 +236,7 @@ CREATE TABLE IF NOT EXISTS api_request_events (
   recorded_at TEXT NOT NULL
 );
 
+-- @owner operations
 CREATE TABLE IF NOT EXISTS job_work_events (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   job_run_id INTEGER,
@@ -227,6 +255,7 @@ CREATE TABLE IF NOT EXISTS job_work_events (
   error TEXT
 );
 
+-- @owner community
 CREATE TABLE IF NOT EXISTS discord_connections (
   platform TEXT NOT NULL,
   user_github_id INTEGER NOT NULL,
@@ -238,6 +267,7 @@ CREATE TABLE IF NOT EXISTS discord_connections (
   FOREIGN KEY(platform, user_github_id) REFERENCES users(platform, github_id)
 );
 
+-- @owner community
 CREATE TABLE IF NOT EXISTS discord_invites (
   platform TEXT NOT NULL,
   user_github_id INTEGER NOT NULL,
@@ -249,6 +279,7 @@ CREATE TABLE IF NOT EXISTS discord_invites (
   FOREIGN KEY(platform, user_github_id) REFERENCES users(platform, github_id)
 );
 
+-- @owner community
 CREATE TABLE IF NOT EXISTS discord_sync_jobs (
   platform TEXT NOT NULL,
   user_github_id INTEGER NOT NULL,
@@ -267,6 +298,8 @@ CREATE TABLE IF NOT EXISTS discord_sync_jobs (
   FOREIGN KEY(platform, user_github_id) REFERENCES users(platform, github_id)
 );
 
+-- @owner packages
+-- @readers operations
 CREATE TABLE IF NOT EXISTS package_crawl_runs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   period_start TEXT NOT NULL,
@@ -279,6 +312,7 @@ CREATE TABLE IF NOT EXISTS package_crawl_runs (
   updated_at TEXT NOT NULL
 );
 
+-- @owner publication
 CREATE TABLE IF NOT EXISTS public_snapshot_publications (
   period_start TEXT PRIMARY KEY,
   status TEXT NOT NULL,
@@ -293,6 +327,7 @@ CREATE TABLE IF NOT EXISTS public_snapshot_publications (
   updated_at TEXT NOT NULL
 );
 
+-- @owner publication
 CREATE TABLE IF NOT EXISTS published_badges (
   period_start TEXT NOT NULL,
   badge_kind TEXT NOT NULL,
@@ -306,6 +341,8 @@ CREATE TABLE IF NOT EXISTS published_badges (
   PRIMARY KEY(period_start, badge_kind, platform, subject_github_id)
 );
 
+-- @owner packages
+-- @readers operations
 CREATE TABLE IF NOT EXISTS package_repository_scans (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   period_start TEXT NOT NULL,
@@ -324,6 +361,8 @@ CREATE TABLE IF NOT EXISTS package_repository_scans (
   UNIQUE(period_start, repository_kind, platform, repository_source_id)
 );
 
+-- @owner packages
+-- @readers operations
 CREATE TABLE IF NOT EXISTS package_manifests (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   repository_scan_id INTEGER NOT NULL,
@@ -346,6 +385,8 @@ CREATE TABLE IF NOT EXISTS package_manifests (
   FOREIGN KEY(repository_scan_id) REFERENCES package_repository_scans(id)
 );
 
+-- @owner packages
+-- @readers operations
 CREATE TABLE IF NOT EXISTS registry_packages (
   ecosystem TEXT NOT NULL,
   package_name TEXT NOT NULL,
@@ -362,6 +403,7 @@ CREATE TABLE IF NOT EXISTS registry_packages (
   PRIMARY KEY(ecosystem, normalized_package_name)
 );
 
+-- @owner packages
 CREATE TABLE IF NOT EXISTS registry_package_links (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   manifest_id INTEGER NOT NULL,
@@ -376,6 +418,8 @@ CREATE TABLE IF NOT EXISTS registry_package_links (
     REFERENCES registry_packages(ecosystem, normalized_package_name)
 );
 
+-- @owner packages
+-- @readers operations
 CREATE TABLE IF NOT EXISTS registry_package_snapshots (
   ecosystem TEXT NOT NULL,
   normalized_package_name TEXT NOT NULL,
