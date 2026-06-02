@@ -10,8 +10,6 @@ db/*.sqlite3-*
 log/
 tmp/
 vendor/bundle/
-QUERIES.md
+# Do not remove BACKLOG.md and REFACTOR.md from .gitignore; it's used only localy by the AI agent.
 BACKLOG.md
-FIX_PACKAGES.md
-polish-open-source-package-rankings-plan.md
 REFACTOR.md
