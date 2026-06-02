@@ -27,12 +27,12 @@ decisions live in a plain, testable flow object.
 Goal: make `Configuration` a stable public API while volatile env definition
 and parsing details live below it.
 
-- [ ] Move raw setting definitions into a dedicated definition object or module.
-- [ ] Keep legacy getters stable while grouping related settings behind deeper
+- [x] Move raw setting definitions into a dedicated definition object or module.
+- [x] Keep legacy getters stable while grouping related settings behind deeper
       value objects.
-- [ ] Add tests for required, optional, defaulted, and transformed env values.
-- [ ] Verify Reek stays clean without suppressions.
-- [ ] Run the full pre-commit hook and commit the completed milestone.
+- [x] Add tests for required, optional, defaulted, and transformed env values.
+- [x] Verify Reek stays clean without suppressions.
+- [x] Run the full pre-commit hook and commit the completed milestone.
 
 ## Milestone 3: Strengthen Auth And Session Contracts
 

@@ -104,6 +104,22 @@ RSpec.describe PolishOpenSourceRank::Configuration do
     expect(configuration.app_base_path).to eq('')
   end
 
+  it 'applies required, optional, defaulted, and transformed env definitions through the public API' do
+    ENV['GITHUB_TOKEN'] = 'required-secret'
+    ENV['DATABASE_URL'] = 'sqlite://tmp/transformed.sqlite3'
+    ENV['REQUESTS_PER_MINUTE'] = '44'
+    ENV['APP_BASE_PATH'] = 'rank/'
+
+    configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
+
+    expect(configuration.github_token).to eq('required-secret')
+    expect(configuration.gitlab_token).to be_nil
+    expect(configuration.github_base_url).to eq('https://api.github.com')
+    expect(configuration.database_path).to eq('tmp/transformed.sqlite3')
+    expect(configuration.requests_per_minute).to eq(44)
+    expect(configuration.app_base_path).to eq('/rank')
+  end
+
   it 'keeps Sentry disabled without a DSN' do
     configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
 
@@ -119,6 +135,10 @@ RSpec.describe PolishOpenSourceRank::Configuration do
 
     expect(configuration.database_path).to eq('tmp/write.sqlite3')
     expect(configuration.public_database_path).to eq('tmp/public.sqlite3')
+    expect(configuration.database_paths).to have_attributes(
+      primary: 'tmp/write.sqlite3',
+      public: 'tmp/public.sqlite3'
+    )
   end
 
   it 'uses stable local HTTP and session defaults without an env file' do
@@ -137,7 +157,7 @@ RSpec.describe PolishOpenSourceRank::Configuration do
     )
   end
 
-  it 'exposes grouped network, OAuth, and Discord settings' do
+  it 'exposes grouped network, OAuth, Discord, and database settings' do
     ENV['GITHUB_OAUTH_CLIENT_ID'] = 'github-client'
     ENV['GITHUB_OAUTH_CLIENT_SECRET'] = 'github-secret'
     ENV['DISCORD_OAUTH_CLIENT_ID'] = 'discord-client'
@@ -163,6 +183,10 @@ RSpec.describe PolishOpenSourceRank::Configuration do
       bot_token: 'discord-bot',
       guild_id: 'discord-guild',
       invite_channel_id: 'discord-invite-channel'
+    )
+    expect(configuration.database_paths).to have_attributes(
+      primary: 'db/polish_open_source_rank.sqlite3',
+      public: 'db/polish_open_source_rank.sqlite3'
     )
   end
 
