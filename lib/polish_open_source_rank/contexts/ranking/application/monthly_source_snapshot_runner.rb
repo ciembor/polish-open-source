@@ -8,17 +8,6 @@ module PolishOpenSourceRank
         class MonthlySourceSnapshotRunner
           BATCH_SIZE = 50
 
-          def self.build(store:, sources:, classifier:, catalog:, logger:, work_events:)
-            MonthlySourceSnapshotRunnerBuilder.new(
-              store: store,
-              sources: sources,
-              classifier: classifier,
-              catalog: catalog,
-              logger: logger,
-              work_events: work_events
-            ).build
-          end
-
           CandidateProcessors = Struct.new(:user, :organization, keyword_init: true)
 
           def initialize(store:, sources:, logger:, candidate_discovery:, candidate_processors:, store_mutex:)

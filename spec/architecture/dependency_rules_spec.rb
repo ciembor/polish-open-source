@@ -49,6 +49,35 @@ RSpec.describe ArchitectureDependencyRules do
     end
   end
 
+  it 'keeps the monthly snapshot facade from rebuilding lower-level collaborators', :aggregate_failures do
+    source = file_body(
+      PolishOpenSourceRank.root.join('lib/polish_open_source_rank/contexts/ranking/application/run_monthly_snapshot.rb')
+    )
+    forbidden = /
+      MonthlyCandidateDiscovery|
+      MonthlyUserCandidateProcessor|
+      MonthlyOrganizationCandidateProcessor|
+      MonthlyProfileSnapshotWriter|
+      MonthlyRepositorySnapshotCollector|
+      MonthlySnapshotFactory
+    /x
+
+    expect(source.lines.count).to be <= 90
+    expect(source).not_to match(forbidden)
+  end
+
+  it 'keeps monthly snapshot concrete wiring in composition' do
+    composition = file_body(
+      PolishOpenSourceRank.root.join(
+        'lib/polish_open_source_rank/interfaces/composition/monthly_snapshot_use_case_factory.rb'
+      )
+    )
+
+    expect(composition).to include('MonthlySourceSnapshotRunner.new')
+    expect(composition).to include('MonthlyCandidateDiscovery.new')
+    expect(composition).to include('MonthlyRepositorySnapshotCollector.new')
+  end
+
   it 'keeps community use cases from speaking SQLite identity column names', :aggregate_failures do
     forbidden = /\b(github_id|user_github_id)\b/
     application_files = files_under('lib/polish_open_source_rank/contexts/community/application')

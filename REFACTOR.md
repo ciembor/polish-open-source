@@ -168,12 +168,12 @@ coordinates source-level workflow without owning lower-level decisions.
 Goal: make the new boundaries discoverable and keep future changes from
 rebuilding the same orchestrator god object.
 
-- [ ] Document the monthly snapshot flow and collaborator responsibilities in
+- [x] Document the monthly snapshot flow and collaborator responsibilities in
       the nearest architecture or ranking documentation.
-- [ ] Add an architecture spec if dependency direction or package boundaries
+- [x] Add an architecture spec if dependency direction or package boundaries
       need enforcement after extraction.
-- [ ] Keep adapters humble: composition wires concrete collaborators, while
+- [x] Keep adapters humble: composition wires concrete collaborators, while
       application objects depend on plain interfaces and domain objects.
-- [ ] Record the size or smell expectations for monthly snapshot application
+- [x] Record the size or smell expectations for monthly snapshot application
       objects where the project already tracks quality gates.
-- [ ] Run the full pre-commit hook and commit the completed milestone.
+- [x] Run the full pre-commit hook and commit the completed milestone.

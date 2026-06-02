@@ -32,17 +32,11 @@ module PolishOpenSourceRank
             end
           end
 
-          def initialize(store:, store_mutex:, work_events:, snapshot_factory: MonthlySnapshotFactory.new,
-                         repository_collector: nil)
+          def initialize(store:, store_mutex:, snapshot_factory:, repository_collector:)
             @store = store
             @store_mutex = store_mutex
             @snapshot_factory = snapshot_factory
-            @repository_collector = repository_collector || MonthlyRepositorySnapshotCollector.new(
-              store: store,
-              store_mutex: store_mutex,
-              work_events: work_events,
-              snapshot_factory: snapshot_factory
-            )
+            @repository_collector = repository_collector
           end
 
           def accepted_profile(period:, source:, profile:, location:, use_snapshot_star_diff:)

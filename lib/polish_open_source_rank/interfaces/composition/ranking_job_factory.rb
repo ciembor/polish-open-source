@@ -40,36 +40,16 @@ module PolishOpenSourceRank
 
         def job
           logger = Contexts::Ranking::Application::MonthlySnapshotLogger.new(output)
-          Contexts::Ranking::Application::RunMonthlySnapshot.new(
+          MonthlySnapshotUseCaseFactory.new(
             store: monthly_snapshot_store,
             sources: sources,
-            source_runner: monthly_source_snapshot_runner(logger),
-            source_metric_backfill: monthly_source_metric_backfill(logger)
-          )
+            logger: logger,
+            work_events: job_work_events
+          ).run_monthly_snapshot
         end
 
         def sources
           @sources ||= selected_platforms.map { |platform| source_for(platform) }
-        end
-
-        def monthly_source_snapshot_runner(logger)
-          Contexts::Ranking::Application::MonthlySourceSnapshotRunner.build(
-            store: monthly_snapshot_store,
-            sources: sources,
-            classifier: Contexts::Ranking::Domain::LocationClassifier.new,
-            catalog: Contexts::Ranking::Domain::LocationCatalog,
-            logger: logger,
-            work_events: job_work_events
-          )
-        end
-
-        def monthly_source_metric_backfill(logger)
-          Contexts::Ranking::Application::MonthlySourceMetricBackfill.new(
-            store: monthly_snapshot_store,
-            sources: sources,
-            logger: logger,
-            work_events: job_work_events
-          )
         end
 
         def selected_platforms

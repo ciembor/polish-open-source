@@ -576,7 +576,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     organization_source.organization_repositories = { 'polish-org' => [repository(90, 'polish-org/toolkit', 33)] }
     seed_alice_and_bob_discovery
 
-    described_class.build(store: store, sources: [organization_source], catalog: catalog, logger: StringIO.new).call(
+    build_job(store: store, sources: [organization_source], catalog: catalog, logger: StringIO.new).call(
       period,
       scope: :organizations
     )
@@ -611,7 +611,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     record_user_stats(user_stats(1, 'alice'))
     github.merged_pull_requests = { 'alice' => 11 }
 
-    described_class.build(store: store, sources: [github], catalog: catalog, logger: StringIO.new).call(
+    build_job(store: store, sources: [github], catalog: catalog, logger: StringIO.new).call(
       period,
       existing_only: true,
       backfill: { refresh_user_merged_prs: true }
@@ -626,7 +626,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     organization_source = FakeOrganizationGitHub.new
     organization_source.organization_members = { 'polish-org' => 23 }
 
-    described_class.build(
+    build_job(
       store: store,
       sources: [organization_source],
       catalog: catalog,
@@ -646,7 +646,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     organization_source = FakeOrganizationGitHub.new
     organization_source.organization_merged_pull_requests = { 'polish-org' => 17 }
 
-    described_class.build(
+    build_job(
       store: store,
       sources: [organization_source],
       catalog: catalog,
@@ -669,7 +669,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     organization_source.organization_repositories = { 'polish-org' => [repository(90, 'polish-org/toolkit', 33)] }
     store.record_candidate(period, platform: 'github', source_id: 1, login: 'alice', source_query: 'Poland')
 
-    described_class.build(store: store, sources: [organization_source], catalog: catalog, logger: StringIO.new).call(
+    build_job(store: store, sources: [organization_source], catalog: catalog, logger: StringIO.new).call(
       period,
       scope: :organizations
     )
@@ -700,7 +700,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       ]
     }
 
-    described_class.build(store: store, sources: [organization_source], catalog: catalog, logger: StringIO.new).call(
+    build_job(store: store, sources: [organization_source], catalog: catalog, logger: StringIO.new).call(
       period,
       scope: :users
     )
@@ -722,7 +722,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     source.repositories = { 'alice' => [], 'bob' => [] }
     store.record_candidate(period, platform: 'github', source_id: 2, login: 'bob', source_query: 'Poland')
 
-    described_class.build(store: store, sources: [source], catalog: catalog, logger: StringIO.new).call(period)
+    build_job(store: store, sources: [source], catalog: catalog, logger: StringIO.new).call(period)
 
     expect(source.user_calls).to eq([['bob', 2], ['alice', 1]])
     expect(fetch_candidate('bob')).to include(status: 'processed', error: nil)
@@ -736,7 +736,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     source.repositories = { 'bob' => [] }
     store.record_candidate(period, platform: 'github', source_id: 2, login: 'bob', source_query: 'Poland')
 
-    described_class.build(store: store, sources: [source], catalog: catalog, logger: StringIO.new).call(
+    build_job(store: store, sources: [source], catalog: catalog, logger: StringIO.new).call(
       period,
       existing_only: true
     )
@@ -803,7 +803,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     organization_source = ranked_organization_source
     organization_source.deltas = { 'polish-org/toolkit' => 30 }
 
-    described_class.build(
+    build_job(
       store: store,
       sources: [organization_source],
       catalog: catalog,
@@ -934,7 +934,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     gitlab.profiles = { 'alice' => profile(1, 'alice', 'Krakow, Poland') }
     gitlab.repositories = { 'alice' => [] }
 
-    described_class.build(store: store, sources: [gitlab], catalog: catalog, logger: StringIO.new).call(period)
+    build_job(store: store, sources: [gitlab], catalog: catalog, logger: StringIO.new).call(period)
 
     expect(gitlab.user_calls).to eq([['alice', 1]])
     expect(fetch_candidate('alice', platform: 'gitlab')).to include(status: 'processed', error: nil)
@@ -946,7 +946,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     record_user_stats(user_stats(1, 'alice').merge(platform: 'gitlab'))
     store.record_candidate(period, platform: 'gitlab', source_id: 1, login: 'alice', source_query: 'Poland')
 
-    described_class.build(store: store, sources: [gitlab], catalog: catalog, logger: StringIO.new).call(period)
+    build_job(store: store, sources: [gitlab], catalog: catalog, logger: StringIO.new).call(period)
 
     expect(gitlab.user_calls).to be_empty
     expect(fetch_candidate('alice', platform: 'gitlab')).to include(status: 'processed', error: nil)
@@ -962,7 +962,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     gitlab.profiles = { 'alice' => profile(1, 'alice', 'Krakow, Poland') }
     gitlab.repositories = { 'alice' => [] }
 
-    described_class.build(
+    build_job(
       store: store,
       sources: [gitlab],
       catalog: FakeLocationCatalog.new([]),
@@ -977,7 +977,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     gitlab = FakeJobGitLab.new
     store.record_candidate(period, platform: 'github', source_id: 1, login: 'alice', source_query: 'Poland')
 
-    described_class.build(
+    build_job(
       store: store,
       sources: [gitlab],
       catalog: FakeLocationCatalog.new([]),
@@ -1006,7 +1006,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
 
   it 'uses production defaults for catalog and logger' do
     expect do
-      described_class.build(store: store, sources: [github]).call(period)
+      build_job(store: store, sources: [github]).call(period)
     end.to output(/\[github\] candidate discovery finished/).to_stdout
   end
 
@@ -1037,7 +1037,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     gitlab.candidates = { 'Poland' => [{ source_id: 404, login: 'missing' }] }
     gitlab.missing_logins = ['missing']
 
-    described_class.build(store: store, sources: [gitlab], catalog: catalog, logger: StringIO.new).call(period)
+    build_job(store: store, sources: [gitlab], catalog: catalog, logger: StringIO.new).call(period)
 
     expect(store.pending_candidates(period)).to be_empty
     expect(fetch_candidate('missing', platform: 'gitlab')).to include(status: 'missing', error: nil)
@@ -1060,7 +1060,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     gitlab.candidates = { 'Poland' => [{ source_id: 404, login: 'outsider' }] }
     gitlab.profiles = { 'outsider' => profile(404, 'outsider', 'Berlin, Germany') }
 
-    described_class.build(store: store, sources: [gitlab], catalog: catalog, logger: StringIO.new).call(period)
+    build_job(store: store, sources: [gitlab], catalog: catalog, logger: StringIO.new).call(period)
 
     expect(fetch_candidate('outsider', platform: 'gitlab')).to include(status: 'rejected', error: nil)
     expect_finished_run
@@ -1072,7 +1072,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     codeberg.profiles = { 'celina' => codeberg_profile }
     codeberg.repositories = { 'celina' => [codeberg_repository] }
 
-    described_class.build(store: store, sources: [codeberg], catalog: catalog, logger: StringIO.new).call(period)
+    build_job(store: store, sources: [codeberg], catalog: catalog, logger: StringIO.new).call(period)
 
     expect(user_rankings('warszawa').fetch(:top).first).to include(
       platform: 'codeberg',
@@ -1106,7 +1106,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     gitlab.profiles = { 'bob' => profile(2, 'bob', 'Warsaw, Poland') }
     gitlab.repositories = { 'bob' => [repository(20, 'bob/tool', 5)] }
 
-    described_class.build(
+    build_job(
       store: store,
       sources: [gitlab],
       catalog: FakeLocationCatalog.new([]),
@@ -1138,7 +1138,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     logger = StringIO.new
 
     expect do
-      described_class.build(store: store, sources: [github], catalog: catalog, logger: logger).call(period)
+      build_job(store: store, sources: [github], catalog: catalog, logger: logger).call(period)
     end.not_to(
       raise_error
     )
@@ -1163,7 +1163,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       original.call(*args)
     end
 
-    described_class.build(store: store, sources: [github], catalog: catalog, logger: StringIO.new).call(period)
+    build_job(store: store, sources: [github], catalog: catalog, logger: StringIO.new).call(period)
 
     expect(fetch_candidate('broken')).to include(status: 'processed', error: nil)
     expect(fetch_repository_stats('broken/tool')).to include(owner_login: 'broken', stargazers_count: 5)
@@ -1182,7 +1182,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     github.profiles = { 'alice' => profile(1, 'alice', 'Krakow, Poland') }
     logger = StringIO.new
 
-    described_class.build(store: store, sources: [github], catalog: catalog, logger: logger).call(period)
+    build_job(store: store, sources: [github], catalog: catalog, logger: logger).call(period)
 
     expect(logger.string).to include('[github] processing 2 candidates')
     expect(logger.string).to include('[github] candidate processing finished')
@@ -1200,7 +1200,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     github.profiles = { 'alice' => profile(1, 'alice', 'Krakow, Poland') }
     github.repositories = { 'alice' => [] }
 
-    described_class.build(
+    build_job(
       store: fake_store,
       sources: [github],
       catalog: FakeLocationCatalog.new([]),
@@ -1219,7 +1219,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       BlockingDiscoverySource.new('gitlab', started, release)
     ]
     thread = Thread.new do
-      described_class.build(store: store, sources: sources, catalog: catalog, logger: logger).call(period)
+      build_job(store: store, sources: sources, catalog: catalog, logger: logger).call(period)
     end
 
     expect([started.pop, started.pop].sort).to eq(%w[github gitlab])
@@ -1239,8 +1239,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     gitlab.profiles = { 'bob' => profile(2, 'bob', 'Warsaw, Poland') }
     gitlab.repositories = { 'bob' => [repository(20, 'bob/tool', 5)] }
     thread = Thread.new do
-      described_class.build(store: store, sources: [slow_github, gitlab], catalog: catalog, logger: StringIO.new)
-                     .call(period)
+      build_job(store: store, sources: [slow_github, gitlab], catalog: catalog, logger: StringIO.new)
+        .call(period)
     end
 
     expect(started.pop).to eq('github')
@@ -1256,7 +1256,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
   it 'flushes job logs as they are written' do
     logger = FlushTrackingLogger.new
 
-    described_class.build(store: store, sources: [github], catalog: catalog, logger: logger).call(period)
+    build_job(store: store, sources: [github], catalog: catalog, logger: logger).call(period)
 
     expect(logger.lines).not_to be_empty
     expect(logger.flushes).to eq(logger.lines.length)
@@ -1264,7 +1264,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
 
   it 'accepts loggers without flush support' do
     expect do
-      described_class.build(store: store, sources: [github], catalog: catalog, logger: NoFlushLogger.new).call(period)
+      build_job(store: store, sources: [github], catalog: catalog, logger: NoFlushLogger.new).call(period)
     end.not_to raise_error
   end
 
@@ -1277,7 +1277,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       BlockingCandidateDiscoverySource.new('gitlab', started, release, { source_id: 2, login: 'bob' })
     ]
     thread = Thread.new do
-      described_class.build(store: guarded_store, sources: sources, catalog: catalog, logger: StringIO.new).call(period)
+      build_job(store: guarded_store, sources: sources, catalog: catalog, logger: StringIO.new).call(period)
     end
 
     expect([started.pop, started.pop].sort).to eq(%w[github gitlab])
@@ -1298,7 +1298,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     gitlab.profiles = { 'bob' => profile(2, 'bob', 'Warsaw, Poland') }
     gitlab.repositories = { 'bob' => [repository(20, 'bob/tool', 4)] }
 
-    described_class.build(
+    build_job(
       store: guarded_store,
       sources: [github, gitlab],
       catalog: catalog,
@@ -1321,7 +1321,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     gitlab.profiles = { 'bob' => profile(2, 'bob', 'Warsaw, Poland') }
     gitlab.repositories = { 'bob' => [repository(20, 'bob/tool', 4)] }
 
-    described_class.build(
+    build_job(
       store: guarded_store,
       sources: [github, gitlab],
       catalog: catalog,
@@ -1343,7 +1343,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     gitlab.profiles = { 'bob' => profile(2, 'bob', 'Warsaw, Poland') }
     gitlab.repositories = { 'bob' => [repository(20, 'bob/tool', 4)] }
 
-    described_class.build(
+    build_job(
       store: guarded_store,
       sources: [github, gitlab],
       catalog: catalog,
@@ -1365,7 +1365,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     gitlab.profiles = { 'bob' => profile(2, 'bob', 'Warsaw, Poland') }
     gitlab.repositories = { 'bob' => [repository(20, 'bob/tool', 4)] }
 
-    described_class.build(
+    build_job(
       store: guarded_store,
       sources: [github, gitlab],
       catalog: catalog,
@@ -1383,7 +1383,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     logger = StringIO.new
 
     expect do
-      described_class.build(
+      build_job(
         store: FailingPendingCandidatesStore.new(store),
         sources: [github],
         catalog: catalog,
@@ -1401,7 +1401,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     failing_source = FailingDiscoverySource.new('github', error: DistinctToStringError.new('discovery failed'))
     sources = [failing_source, healthy_source]
 
-    described_class.build(store: store, sources: sources, catalog: catalog, logger: logger).call(period)
+    build_job(store: store, sources: sources, catalog: catalog, logger: logger).call(period)
 
     expect(logger.string).to include('[github] discover failed: DistinctToStringError: discovery failed')
     expect(logger.string).to include('[gitlab] candidate discovery finished')
@@ -1414,7 +1414,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     ]
 
     expect do
-      described_class.build(store: store, sources: sources, catalog: catalog, logger: StringIO.new).call(period)
+      build_job(store: store, sources: sources, catalog: catalog, logger: StringIO.new).call(period)
     end.to raise_error(DistinctToStringError)
     expect(fetch_row('SELECT status, error FROM sync_runs WHERE period_start = ?', ['2026-04-01'])).to include(
       status: 'failed',
@@ -1426,8 +1426,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     failing_store = FailingCreateRunStore.new
 
     expect do
-      described_class
-        .build(store: failing_store, sources: [github], catalog: catalog, logger: StringIO.new)
+      build_job(store: failing_store, sources: [github], catalog: catalog, logger: StringIO.new)
         .call(period)
     end.to raise_error(RuntimeError, 'database unavailable')
   end
@@ -1454,7 +1453,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     allow(Thread).to receive(:new).and_return(thread)
 
     expect do
-      described_class.build(store: store, sources: [github], catalog: catalog, logger: StringIO.new).call(period)
+      build_job(store: store, sources: [github], catalog: catalog, logger: StringIO.new).call(period)
     end.to raise_error(interrupted_error, 'Received SIGTERM')
 
     expect(thread).to be_killed
@@ -1587,7 +1586,113 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
   end
 
   def job
-    described_class.build(store: store, sources: [github], catalog: catalog, logger: StringIO.new)
+    build_job(store: store, sources: [github], catalog: catalog, logger: StringIO.new)
+  end
+
+  def build_job(store:, sources:, catalog: PolishOpenSourceRank::Contexts::Ranking::Domain::LocationCatalog,
+                logger: $stdout, work_events: nil)
+    work_events ||= PolishOpenSourceRank::Contexts::Operations::Application::JobWorkEventRecorder.new
+    monthly_logger = PolishOpenSourceRank::Contexts::Ranking::Application::MonthlySnapshotLogger.new(logger)
+    store_mutex = Mutex.new
+    profile_writer = monthly_profile_snapshot_writer(store, store_mutex, work_events)
+
+    described_class.new(
+      store: store,
+      sources: sources,
+      source_runner: monthly_source_snapshot_runner(
+        store: store,
+        sources: sources,
+        catalog: catalog,
+        logger: monthly_logger,
+        store_mutex: store_mutex,
+        profile_writer: profile_writer,
+        work_events: work_events
+      ),
+      source_metric_backfill: PolishOpenSourceRank::Contexts::Ranking::Application::MonthlySourceMetricBackfill.new(
+        store: store,
+        sources: sources,
+        logger: monthly_logger,
+        work_events: work_events
+      )
+    )
+  end
+
+  def monthly_profile_snapshot_writer(store, store_mutex, work_events)
+    snapshot_factory = PolishOpenSourceRank::Contexts::Ranking::Application::MonthlySnapshotFactory.new
+    PolishOpenSourceRank::Contexts::Ranking::Application::MonthlyProfileSnapshotWriter.new(
+      store: store,
+      store_mutex: store_mutex,
+      snapshot_factory: snapshot_factory,
+      repository_collector: PolishOpenSourceRank::Contexts::Ranking::Application::MonthlyRepositorySnapshotCollector.new(
+        store: store,
+        store_mutex: store_mutex,
+        work_events: work_events,
+        snapshot_factory: snapshot_factory
+      )
+    )
+  end
+
+  def monthly_source_snapshot_runner(dependencies)
+    PolishOpenSourceRank::Contexts::Ranking::Application::MonthlySourceSnapshotRunner.new(
+      store: dependencies.fetch(:store),
+      sources: dependencies.fetch(:sources),
+      logger: dependencies.fetch(:logger),
+      candidate_discovery: monthly_candidate_discovery(
+        dependencies.fetch(:store),
+        dependencies.fetch(:catalog),
+        dependencies.fetch(:logger),
+        dependencies.fetch(:store_mutex)
+      ),
+      candidate_processors: monthly_candidate_processors(
+        dependencies.fetch(:store),
+        dependencies.fetch(:store_mutex),
+        dependencies.fetch(:profile_writer),
+        dependencies.fetch(:logger),
+        dependencies.fetch(:work_events)
+      ),
+      store_mutex: dependencies.fetch(:store_mutex)
+    )
+  end
+
+  def monthly_candidate_discovery(store, catalog, logger, store_mutex)
+    PolishOpenSourceRank::Contexts::Ranking::Application::MonthlyCandidateDiscovery.new(
+      store: store,
+      catalog: catalog,
+      logger: logger,
+      store_mutex: store_mutex
+    )
+  end
+
+  def monthly_candidate_processors(store, store_mutex, profile_writer, logger, work_events)
+    processors = PolishOpenSourceRank::Contexts::Ranking::Application::MonthlySourceSnapshotRunner::CandidateProcessors
+    processors.new(
+      user: monthly_user_candidate_processor(store, store_mutex, profile_writer, logger, work_events),
+      organization: monthly_organization_candidate_processor(store, store_mutex, profile_writer, logger, work_events)
+    )
+  end
+
+  def monthly_user_candidate_processor(store, store_mutex, profile_writer, logger, work_events)
+    PolishOpenSourceRank::Contexts::Ranking::Application::MonthlyUserCandidateProcessor.new(
+      **candidate_processor_dependencies(store, store_mutex, logger, work_events),
+      profile_writer: profile_writer
+    )
+  end
+
+  def monthly_organization_candidate_processor(store, store_mutex, profile_writer, logger, work_events)
+    PolishOpenSourceRank::Contexts::Ranking::Application::MonthlyOrganizationCandidateProcessor.new(
+      **candidate_processor_dependencies(store, store_mutex, logger, work_events),
+      profile_writer: profile_writer
+    )
+  end
+
+  def candidate_processor_dependencies(store, store_mutex, logger, work_events)
+    {
+      store: store,
+      store_mutex: store_mutex,
+      classifier: PolishOpenSourceRank::Contexts::Ranking::Domain::LocationClassifier.new,
+      logger: logger,
+      work_events: work_events
+    }
   end
 
   def upsert_user(attributes)
@@ -1615,7 +1720,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
   end
 
   def run_job_with(source:)
-    described_class.build(
+    build_job(
       store: store,
       sources: [source],
       catalog: catalog,

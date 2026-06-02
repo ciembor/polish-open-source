@@ -36,6 +36,8 @@ current observation and the previous stored monthly snapshot instead.
 
 Production uses
 [deploy/polish-open-source-rank-monthly.timer](../deploy/polish-open-source-rank-monthly.timer).
+The application flow and collaborator boundaries are documented in
+[Monthly Snapshot Architecture](monthly-snapshot.md).
 
 ## Package Job
 

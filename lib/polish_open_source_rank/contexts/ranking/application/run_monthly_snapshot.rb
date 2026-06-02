@@ -7,30 +7,6 @@ module PolishOpenSourceRank
         class RunMonthlySnapshot
           BATCH_SIZE = MonthlySourceSnapshotRunner::BATCH_SIZE
 
-          def self.build(store:, sources:, classifier: Domain::LocationClassifier.new,
-                         catalog: Domain::LocationCatalog, logger: $stdout,
-                         work_events: Operations::Application::JobWorkEventRecorder.new)
-            monthly_logger = MonthlySnapshotLogger.new(logger)
-            new(
-              store: store,
-              sources: sources,
-              source_runner: MonthlySourceSnapshotRunner.build(
-                store: store,
-                sources: sources,
-                classifier: classifier,
-                catalog: catalog,
-                logger: monthly_logger,
-                work_events: work_events
-              ),
-              source_metric_backfill: MonthlySourceMetricBackfill.new(
-                store: store,
-                sources: sources,
-                logger: monthly_logger,
-                work_events: work_events
-              )
-            )
-          end
-
           def initialize(store:, sources:, source_runner:, source_metric_backfill:)
             @store = store
             @sources = sources
