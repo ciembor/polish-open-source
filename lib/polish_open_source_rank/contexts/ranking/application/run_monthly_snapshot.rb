@@ -166,7 +166,7 @@ module PolishOpenSourceRank
 
           def process_unseen_candidate(period, source, login, source_id)
             profile = source.user(login, source_id)
-            location = classifier.call(profile[:location])
+            location = classifier.call(profile.location_evidence)
             unless location.polish?
               with_store { store.mark_candidate(period, source.platform, login, 'rejected') }
               return 'rejected'
@@ -199,7 +199,7 @@ module PolishOpenSourceRank
 
           def process_unseen_organization_candidate(period, source, login, source_id)
             profile = source.organization(login, source_id)
-            location = classifier.without_foreign_countries(profile[:location])
+            location = classifier.without_foreign_countries(profile.location_evidence)
             unless location.polish?
               with_store { store.mark_organization_candidate(period, source.platform, login, 'rejected') }
               return 'rejected'
@@ -230,11 +230,11 @@ module PolishOpenSourceRank
           end
 
           def repository_delta(source, repository, period)
-            current_stars = repository.fetch(:stars)
+            current_stars = repository.stars
             return 0 if current_stars.zero?
 
             previous_stars = with_store do
-              store.previous_repository_stars(period, source.platform, repository.fetch(:source_id))
+              store.previous_repository_stars(period, source.platform, repository.source_id)
             end
             return [current_stars - previous_stars.to_i, 0].max if previous_stars && use_snapshot_star_diff?
 
@@ -242,11 +242,11 @@ module PolishOpenSourceRank
           end
 
           def organization_repository_delta(source, repository, period)
-            current_stars = repository.fetch(:stars)
+            current_stars = repository.stars
             return 0 if current_stars.zero?
 
             previous_stars = with_store do
-              store.previous_organization_repository_stars(period, source.platform, repository.fetch(:source_id))
+              store.previous_organization_repository_stars(period, source.platform, repository.source_id)
             end
             return [current_stars - previous_stars.to_i, 0].max if previous_stars && use_snapshot_star_diff?
 
@@ -260,8 +260,8 @@ module PolishOpenSourceRank
               stage: 'user_repositories',
               unit_kind: 'user_repository_collection',
               platform: source.platform,
-              subject_id: profile.fetch(:source_id),
-              subject_label: profile.fetch(:login)
+              subject_id: profile.source_id,
+              subject_label: profile.login
             ) do
               metrics = Domain::RepositoryMetrics.empty
               each_repository_for(source, profile) do |repository|
@@ -278,8 +278,8 @@ module PolishOpenSourceRank
               stage: 'organization_repositories',
               unit_kind: 'organization_repository_collection',
               platform: source.platform,
-              subject_id: profile.fetch(:source_id),
-              subject_label: profile.fetch(:login)
+              subject_id: profile.source_id,
+              subject_label: profile.login
             ) do
               metrics = Domain::RepositoryMetrics.empty
               each_organization_repository_for(source, profile) do |repository|
@@ -296,8 +296,8 @@ module PolishOpenSourceRank
               stage: 'user_repository',
               unit_kind: 'repository',
               platform: source.platform,
-              subject_id: repository.fetch(:source_id),
-              subject_label: repository.fetch(:full_name)
+              subject_id: repository.source_id,
+              subject_label: repository.full_name
             ) do
               next 'skipped' unless catalog_repository?(repository)
 
@@ -328,8 +328,8 @@ module PolishOpenSourceRank
               stage: 'organization_repository',
               unit_kind: 'repository',
               platform: source.platform,
-              subject_id: repository.fetch(:source_id),
-              subject_label: repository.fetch(:full_name)
+              subject_id: repository.source_id,
+              subject_label: repository.full_name
             ) do
               next 'skipped' unless catalog_repository?(repository)
 
@@ -357,17 +357,17 @@ module PolishOpenSourceRank
             return source.repository_star_snapshot(repository, period) if source.respond_to?(:repository_star_snapshot)
 
             {
-              stars: repository.fetch(:stars),
+              stars: repository.stars,
               monthly_stars_delta: yield
             }
           end
 
           def repository_with_stars(repository, stars)
-            repository.to_h.merge(stars: stars)
+            repository.with_stars(stars)
           end
 
           def catalog_repository?(repository)
-            repository.fetch(:stars) >= MINIMUM_REPOSITORY_STARS
+            repository.at_least_stars?(MINIMUM_REPOSITORY_STARS)
           end
 
           def each_repository_for(source, profile, &)

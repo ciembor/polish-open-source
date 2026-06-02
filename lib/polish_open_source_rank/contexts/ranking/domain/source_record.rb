@@ -26,6 +26,31 @@ module PolishOpenSourceRank
 
             to_h.include?(expected)
           end
+
+          private
+
+          def required_string(value, name)
+            normalized = value.to_s
+            raise ArgumentError, "#{name} is required" if normalized.empty?
+
+            normalized
+          end
+
+          def required_source_id(value)
+            raise ArgumentError, 'source_id is required' if value.nil?
+
+            value
+          end
+
+          def optional_string(value)
+            return if value.nil?
+
+            value.to_s
+          end
+
+          def explicitly_true?(value)
+            value == true
+          end
         end
       end
     end

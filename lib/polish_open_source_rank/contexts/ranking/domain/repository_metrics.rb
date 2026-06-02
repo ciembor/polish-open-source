@@ -16,7 +16,7 @@ module PolishOpenSourceRank
 
           def add(repository, monthly_delta)
             self.public_repository_count += 1
-            self.total_stars += repository.fetch(:stars)
+            self.total_stars += repository.stars
             self.monthly_stars_delta += monthly_delta
           end
         end

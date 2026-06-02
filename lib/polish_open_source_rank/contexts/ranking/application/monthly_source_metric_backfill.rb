@@ -95,7 +95,7 @@ module PolishOpenSourceRank
                 subject_id: row.fetch(:source_id),
                 subject_label: row.fetch(:login)
               ) do
-                members_count = source.organization_members_count(row)
+                members_count = source.organization_members_count(source_subject(row, source))
                 store.record_organization_stats(row.merge(members_count: members_count))
               end
             end
@@ -115,7 +115,8 @@ module PolishOpenSourceRank
                 subject_id: row.fetch(:source_id),
                 subject_label: row.fetch(:login)
               ) do
-                merged_pull_requests_count = source.organization_merged_pull_requests_count(row, period)
+                merged_pull_requests_count =
+                  source.organization_merged_pull_requests_count(source_subject(row, source), period)
                 store.record_organization_stats(row.merge(merged_pull_requests_count: merged_pull_requests_count))
               end
             end
@@ -175,11 +176,19 @@ module PolishOpenSourceRank
               subject_id: row.fetch(:source_id),
               subject_label: row.fetch(:login)
             ) do
-              merged_pull_requests_count = source.merged_pull_requests_count(row, period)
+              merged_pull_requests_count = source.merged_pull_requests_count(source_subject(row, source), period)
               store.record_user_stats(row.merge(merged_pull_requests_count: merged_pull_requests_count))
             end
           rescue StandardError => e
             log(source, "refresh merged pull requests skipped for #{row.fetch(:login)}: #{e.class}: #{e.message}")
+          end
+
+          def source_subject(row, source)
+            Domain::SourceCandidate.new(
+              platform: row.fetch(:platform, source.platform),
+              source_id: row.fetch(:source_id),
+              login: row.fetch(:login)
+            )
           end
         end
       end

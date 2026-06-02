@@ -77,36 +77,36 @@ class FakeJobGitHub
   end
 
   def repositories_for(profile)
-    repositories.fetch(profile.fetch(:login), [])
+    repositories.fetch(profile.login, [])
   end
 
   def repositories_for_organization(profile)
-    organization_repositories.fetch(profile.fetch(:login), [])
+    organization_repositories.fetch(profile.login, [])
   end
 
   def repository_stars_delta(repository, period)
-    delta_periods << [repository.fetch(:full_name), period]
-    deltas.fetch(repository.fetch(:full_name), 0)
+    delta_periods << [repository.full_name, period]
+    deltas.fetch(repository.full_name, 0)
   end
 
   def public_activity_count(profile, period)
-    activity_periods << [profile.fetch(:login), period]
-    activities.fetch(profile.fetch(:login), 0)
+    activity_periods << [profile.login, period]
+    activities.fetch(profile.login, 0)
   end
 
   def merged_pull_requests_count(profile, period)
-    merged_pull_request_periods << [profile.fetch(:login), period]
-    merged_pull_requests.fetch(profile.fetch(:login), 0)
+    merged_pull_request_periods << [profile.login, period]
+    merged_pull_requests.fetch(profile.login, 0)
   end
 
   def organization_members_count(profile)
-    organization_member_calls << profile.fetch(:login)
-    organization_members.fetch(profile.fetch(:login), 0)
+    organization_member_calls << profile.login
+    organization_members.fetch(profile.login, 0)
   end
 
   def organization_merged_pull_requests_count(profile, period)
-    organization_merged_pull_request_periods << [profile.fetch(:login), period]
-    organization_merged_pull_requests.fetch(profile.fetch(:login), 0)
+    organization_merged_pull_request_periods << [profile.login, period]
+    organization_merged_pull_requests.fetch(profile.login, 0)
   end
 
   private
@@ -202,8 +202,8 @@ class HistoricalStarGitHub < FakeJobGitHub
   end
 
   def repository_star_snapshot(repository, period)
-    star_snapshot_periods << [repository.fetch(:full_name), period]
-    star_snapshots.fetch(repository.fetch(:full_name))
+    star_snapshot_periods << [repository.full_name, period]
+    star_snapshots.fetch(repository.full_name)
   end
 end
 
@@ -219,7 +219,7 @@ class StreamingOrganizationGitHub < FakeOrganizationGitHub
   end
 
   def each_repository_for_organization(profile, &)
-    organization_repositories.fetch(profile.fetch(:login), []).each(&)
+    organization_repositories.fetch(profile.login, []).each(&)
   end
 end
 
@@ -1025,7 +1025,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
   it 'rejects profiles without a location field' do
     github.candidates = { 'Poland' => [{ source_id: 404, login: 'no-location' }] }
     github.profiles = {
-      'no-location' => { source_id: 404, login: 'no-location', html_url: 'https://github.com/no-location' }
+      'no-location' => profile(404, 'no-location', nil)
     }
 
     job.call(period)
@@ -1442,7 +1442,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
   end
 
   def profile(id, login, location, blog: 'https://example.com')
-    {
+    PolishOpenSourceRank::Contexts::Ranking::Domain::SourceContributor.new(
       source_id: id,
       login: login,
       name: login.capitalize,
@@ -1451,11 +1451,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       homepage: blog,
       html_url: "https://github.com/#{login}",
       avatar_url: "https://avatars.example/#{login}.png"
-    }
+    )
   end
 
   def repository(id, full_name, stars, homepage: 'https://repo.example', fork: false, archived: false)
-    {
+    PolishOpenSourceRank::Contexts::Ranking::Domain::SourceRepository.new(
       source_id: id,
       name: full_name.split('/').last,
       full_name: full_name,
@@ -1466,11 +1466,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       fork: fork,
       archived: archived,
       stars: stars
-    }
+    )
   end
 
   def codeberg_profile
-    {
+    PolishOpenSourceRank::Contexts::Ranking::Domain::SourceContributor.new(
       source_id: 3,
       login: 'celina',
       name: 'Celina C',
@@ -1479,11 +1479,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       homepage: 'https://celina.example',
       html_url: 'https://codeberg.org/celina',
       avatar_url: nil
-    }
+    )
   end
 
   def codeberg_repository
-    {
+    PolishOpenSourceRank::Contexts::Ranking::Domain::SourceRepository.new(
       source_id: 30,
       name: 'tool',
       full_name: 'celina/tool',
@@ -1494,20 +1494,20 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       fork: false,
       archived: false,
       stars: 9
-    }
+    )
   end
 
   def optional_profile
-    {
+    PolishOpenSourceRank::Contexts::Ranking::Domain::SourceContributor.new(
       source_id: 3,
       login: 'optional',
       location: 'Warsaw, Poland',
       html_url: 'https://github.com/optional'
-    }
+    )
   end
 
   def optional_repository
-    {
+    PolishOpenSourceRank::Contexts::Ranking::Domain::SourceRepository.new(
       source_id: 30,
       name: 'tool',
       full_name: 'optional/tool',
@@ -1515,7 +1515,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       fork: false,
       archived: false,
       stars: 5
-    }
+    )
   end
 
   def user_attributes(id, login)
