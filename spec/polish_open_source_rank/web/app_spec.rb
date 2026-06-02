@@ -1278,25 +1278,51 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   def expect_primary_ranking_pages(responses)
     expect(responses.fetch(:user).status).to eq(200)
-    expect(responses.fetch(:user).body).to include('Ranking open source: ludzie')
+    expect_ranking_page_hero(
+      responses.fetch(:user),
+      eyebrow: 'Ranking open source: ludzie',
+      title: 'Top 100 według zmergowanych PR'
+    )
     expect(responses.fetch(:user).body).to include('Top 100 według zmergowanych PR')
     expect(responses.fetch(:user).body).to include('🚀 8')
     expect(responses.fetch(:repository).status).to eq(200)
-    expect(responses.fetch(:repository).body).to include('Ranking open source: ludzie')
+    expect_ranking_page_hero(
+      responses.fetch(:repository),
+      eyebrow: 'Ranking open source: ludzie',
+      title: 'Top 100 popularnych repozytoriów'
+    )
     expect(responses.fetch(:repository).body).to include('Top 100 popularnych repozytoriów')
     expect(responses.fetch(:organization).status).to eq(200)
-    expect(responses.fetch(:organization).body).to include('Ranking open source: organizacje')
+    expect_ranking_page_hero(
+      responses.fetch(:organization),
+      eyebrow: 'Ranking open source: organizacje',
+      title: 'Top 100 według gwiazdek'
+    )
     expect(responses.fetch(:organization).body).to include('Top 100 według gwiazdek')
+    expect(responses.fetch(:organization).body).not_to include('Top 100 organizacji według gwiazdek')
     expect(responses.fetch(:organization_members).status).to eq(200)
+    expect_ranking_page_hero(
+      responses.fetch(:organization_members),
+      eyebrow: 'Ranking open source: organizacje',
+      title: 'Top 100 według liczby członków'
+    )
     expect(responses.fetch(:organization_members).body).to include('Top 100 według liczby członków')
+    expect(responses.fetch(:organization_members).body).not_to include('Top 100 organizacji według liczby członków')
     expect(responses.fetch(:organization_members).body).to include('👥 42')
     expect(responses.fetch(:organization_repository).status).to eq(200)
-    expect(responses.fetch(:organization_repository).body).to include('Ranking open source: organizacje')
+    expect_ranking_page_hero(
+      responses.fetch(:organization_repository),
+      eyebrow: 'Ranking open source: organizacje',
+      title: 'Top 100 popularnych repozytoriów organizacji'
+    )
     expect(responses.fetch(:organization_repository).body).to include('Top 100 popularnych repozytoriów organizacji')
   end
 
   def expect_latest_user_ranking_page(response)
     expect(response.status).to eq(200)
+    expect_ranking_page_hero(response, eyebrow: 'Ranking open source: ludzie', title: 'Top 100 według gwiazdek')
+    expect(response.body).to include('Top 100 według gwiazdek')
+    expect(response.body).not_to include('Top 100 użytkowników według gwiazdek')
     expect(response.body).to include('Gwiazdek')
     expect(response.body).not_to include('/icons/medal-gold.svg')
     expect(html_element(response.body, "//ol[@class='ranking-list' and @aria-labelledby='ranking-detail-users']"))
@@ -1312,7 +1338,17 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   def expect_latest_city_repository_ranking_page(response)
     expect(response.status).to eq(200)
+    expect_ranking_page_hero(
+      response,
+      eyebrow: 'Ranking open source: ludzie',
+      title: 'Top 100 repozytoriów według gwiazdek'
+    )
     expect(response.body).to include('Top 100 repozytoriów według gwiazdek')
+  end
+
+  def expect_ranking_page_hero(response, eyebrow:, title:)
+    expect(html_element(response.body, "//section[contains(@class, 'hero')]//p[text()='#{eyebrow}']")).not_to be_nil
+    expect(html_element(response.body, "//section[contains(@class, 'hero')]//h1[text()='#{title}']")).not_to be_nil
   end
 
   def seed_extra_ranked_records(snapshot_repository, period)
@@ -1627,7 +1663,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'rel="alternate" hreflang="en" href="https://rank.example/en/latest"',
       'property="og:title" content="Polska open-source ranking"',
       'property="og:image" content="https://rank.example/images/polish_open_source_banner.webp"',
-      '<h1>Ranking open source: ludzie</h1>',
+      '<p class="eyebrow">Ranking open source: ludzie</p>',
+      '<h1>Polska</h1>',
       '"@type": "WebSite"',
       '"@type": "CollectionPage"',
       '"name": "Top 10 według gwiazdek"',
@@ -1686,8 +1723,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'rel="canonical" href="https://rank.example/latest/organizations"',
       'rel="alternate" hreflang="en" href="https://rank.example/en/latest/organizations"',
       'property="og:title" content="Organizacje open source - Polska"',
-      '<p class="eyebrow">Polska</p>',
-      '<h1>Ranking open source: organizacje</h1>',
+      '<p class="eyebrow">Ranking open source: organizacje</p>',
+      '<h1>Polska</h1>',
       'Organizacje i ich repozytoria uporządkowane według gwiazdek, liczby członków oraz miesięcznej popularności.',
       'Top 10 według członków',
       '👥 42',

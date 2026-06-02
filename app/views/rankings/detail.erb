@@ -1,9 +1,9 @@
 <section class="hero">
   <div class="hero__inner">
     <div>
-    <p class="eyebrow"><%= h scope_name(@scope) %></p>
-    <h1><%= h ranking_section_title(@kind) %></h1>
-    <p class="lede"><%= h ranking_title(@kind, @metric) %></p>
+    <p class="eyebrow"><%= h ranking_section_title(@kind) %></p>
+    <h1><%= h ranking_title(@kind, @metric) %></h1>
+    <p class="lede"><%= h scope_name(@scope) %></p>
     <% if @period %>
       <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @period %>"><%= h period_label(@period) %></time></p>
     <% end %>
