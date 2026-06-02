@@ -4,9 +4,9 @@ en:
       eyebrow: "About"
       lede: "The ranking shows public work by people connected with Poland across open source platforms."
     mission:
-      body: "The project recognizes developers who contribute to open source and encourages creating free software. The ranking helps discover active people, repositories and local technical communities."
+      body: "The project recognizes developers and organizations who contribute to open source and encourages creating free software. The ranking helps discover active people, repositories and local technical communities."
       eyebrow: "Mission"
-      title: "Promote people who build free software"
+      title: "Promote people who build open source"
     platforms:
       eyebrow: "Supported platforms"
       title: "Public ranking sources"

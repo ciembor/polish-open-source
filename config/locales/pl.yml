@@ -4,9 +4,9 @@ pl:
       eyebrow: "O projekcie"
       lede: "Ranking pokazuje publiczną pracę osób związanych z Polską na platformach open source."
     mission:
-      body: "Celem projektu jest docenianie programistek i programistów zasłużonych dla open source oraz zachęcanie do tworzenia wolnego oprogramowania. Ranking ma ułatwiać odkrywanie aktywnych osób, repozytoriów i lokalnych społeczności technicznych."
+      body: "Celem projektu jest docenianie programistek, programistów i organizacji zasłużonych dla open source oraz zachęcanie do tworzenia wolnego oprogramowania. Ranking ma ułatwiać odkrywanie aktywnych osób, repozytoriów i lokalnych społeczności technicznych."
       eyebrow: "Misja"
-      title: "Promować ludzi, którzy budują wolne oprogramowanie"
+      title: "Promować ludzi, którzy tworzą open source"
     platforms:
       eyebrow: "Wspierane platformy"
       title: "Publiczne źródła rankingu"
