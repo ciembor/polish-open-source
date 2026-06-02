@@ -3,7 +3,7 @@ plugins:
 
 AllCops:
   NewCops: enable
-  TargetRubyVersion: 3.2
+  TargetRubyVersion: 4.0
   Exclude:
     - "vendor/**/*"
     - "coverage/**/*"
@@ -17,7 +17,7 @@ Metrics/BlockLength:
     - "spec/**/*"
 
 Metrics/AbcSize:
-  Max: 30
+  Max: 29
   Exclude:
     - "spec/**/*"
 
@@ -48,4 +48,4 @@ RSpec/SpecFilePathFormat:
   Enabled: false
 
 RSpec/VerifiedDoubles:
-  Enabled: false
+  Enabled: true

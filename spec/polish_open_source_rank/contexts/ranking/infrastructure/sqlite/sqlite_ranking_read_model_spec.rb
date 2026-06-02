@@ -20,10 +20,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
       id: 20, owner_id: 2, owner: 'bob', full_name: 'bob/app', city: 'Wrocław', stars: 60, delta: 6
     )
 
-    expect(read_model.user_rankings('poland', period_start: period).fetch(:top).map { _1.fetch(:login) }).to eq(
+    expect(read_model.user_rankings('poland', period_start: period).fetch(:top).map { it.fetch(:login) }).to eq(
       %w[alice bob]
     )
-    expect(read_model.user_rankings('krakow', period_start: period).fetch(:active).map { _1.fetch(:login) }).to eq(
+    expect(read_model.user_rankings('krakow', period_start: period).fetch(:active).map { it.fetch(:login) }).to eq(
       ['alice']
     )
     expect(read_model.repository_rankings('poland', period_start: period).fetch(:trending).map do |row|
@@ -90,13 +90,13 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     seed_organization(id: 200, login: 'second-org', city: 'Kraków', stars: 70, delta: 4, members: 30)
     seed_organization(id: 300, login: 'zero-members-org', stars: 60, delta: 2)
 
-    expect(read_model.organization_rankings(period_start: period).fetch(:top).map { _1.fetch(:login) }).to eq(
+    expect(read_model.organization_rankings(period_start: period).fetch(:top).map { it.fetch(:login) }).to eq(
       %w[polish-org second-org zero-members-org]
     )
-    expect(read_model.organization_rankings('krakow', period_start: period).fetch(:top).map { _1.fetch(:login) }).to eq(
+    expect(read_model.organization_rankings('krakow', period_start: period).fetch(:top).map { it.fetch(:login) }).to eq(
       ['second-org']
     )
-    expect(read_model.organization_rankings(period_start: period).fetch(:members).map { _1.fetch(:login) }).to eq(
+    expect(read_model.organization_rankings(period_start: period).fetch(:members).map { it.fetch(:login) }).to eq(
       %w[second-org polish-org]
     )
     expect(read_model.organization_rankings(period_start: period).fetch(:members).first).to include(members_count: 30)
@@ -120,11 +120,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     )
 
     expect(
-      read_model.organization_repository_rankings(period_start: period).fetch(:trending).map { _1.fetch(:full_name) }
+      read_model.organization_repository_rankings(period_start: period).fetch(:trending).map { it.fetch(:full_name) }
     ).to eq(['polish-org/toolkit', 'second-org/widget'])
     expect(
       read_model.organization_repository_rankings('krakow', period_start: period)
-                .fetch(:trending).map { _1.fetch(:full_name) }
+                .fetch(:trending).map { it.fetch(:full_name) }
     ).to eq(['second-org/widget'])
     expect(read_model.ranked_organization_repository_metric('poland', period, :organization_repository_top).first)
       .to include(

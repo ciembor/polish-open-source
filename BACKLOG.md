@@ -197,16 +197,16 @@ Goal: make production operation boring, observable, and easy to recover.
 
 Goal: keep the project pleasant to change as it grows.
 
-- [ ] Remove duplicated `RSpec.configure` setup from `spec/spec_helper.rb`.
-- [ ] Re-enable or consciously replace `RSpec/VerifiedDoubles`.
-- [ ] Tighten RuboCop limits gradually where the current limits hide real design
+- [x] Remove duplicated `RSpec.configure` setup from `spec/spec_helper.rb`.
+- [x] Re-enable or consciously replace `RSpec/VerifiedDoubles`.
+- [x] Tighten RuboCop limits gradually where the current limits hide real design
       pressure.
-- [ ] Align `.rubocop.yml` `TargetRubyVersion` with the supported runtime.
-- [ ] Add mutation testing to the documented quality workflow for high-risk
+- [x] Align `.rubocop.yml` `TargetRubyVersion` with the supported runtime.
+- [x] Add mutation testing to the documented quality workflow for high-risk
       changed domain/application code.
-- [ ] Add security regression specs to the normal quality gate.
-- [ ] Add targeted architecture specs for any new web composition boundaries.
-- [ ] Keep Reek clean and avoid suppressions unless the design rationale is
+- [x] Add security regression specs to the normal quality gate.
+- [x] Add targeted architecture specs for any new web composition boundaries.
+- [x] Keep Reek clean and avoid suppressions unless the design rationale is
       documented.
 
 ## Milestone 11: Documentation and Public Credibility

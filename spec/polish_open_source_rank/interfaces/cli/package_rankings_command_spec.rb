@@ -4,12 +4,19 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::PackageRankingsCommand do
   let(:output) { StringIO.new }
   let(:heartbeat) { instance_double(PolishOpenSourceRank::Contexts::Operations::Application::ProgressHeartbeat) }
   let(:job) do
-    double(
-      'package snapshot job',
+    instance_double(
+      PolishOpenSourceRank::Contexts::Packages::Application::RunPackageSnapshot,
       call: { scanned: 1, failed: 0, registry_fetched: 2, registry_ok: 1, registry_failed: 1 }
     )
   end
-  let(:crawl_jobs) { double('crawl jobs', start: 7, finish: nil, fail: nil) }
+  let(:crawl_jobs) do
+    instance_double(
+      PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteCrawlJobRepository,
+      start: 7,
+      finish: nil,
+      fail: nil
+    )
+  end
 
   it 'runs a tracked package ranking job with period, ecosystem, limit, and refresh arguments' do
     allow(PolishOpenSourceRank::Observability::Sentry).to receive(:capture_check_in)

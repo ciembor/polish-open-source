@@ -116,6 +116,14 @@ class FakeJobGitHub
   end
 end
 
+class FakeLocationCatalog
+  attr_reader :search_terms
+
+  def initialize(search_terms)
+    @search_terms = search_terms
+  end
+end
+
 class FakeJobGitLab < FakeJobGitHub
   def platform
     'gitlab'
@@ -454,7 +462,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       ranking_retention: ranking_retention
     )
   end
-  let(:catalog) { double('catalog', search_terms: ['Poland']) }
+  let(:catalog) { FakeLocationCatalog.new(['Poland']) }
   let(:github) { FakeJobGitHub.new }
   let(:path) { File.join(@tmpdir, 'job.sqlite3') }
 
@@ -936,7 +944,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     described_class.new(
       store: store,
       sources: [gitlab],
-      catalog: double('catalog', search_terms: []),
+      catalog: FakeLocationCatalog.new([]),
       logger: StringIO.new
     ).call(period, refresh: true)
 
@@ -951,7 +959,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     described_class.new(
       store: store,
       sources: [gitlab],
-      catalog: double('catalog', search_terms: []),
+      catalog: FakeLocationCatalog.new([]),
       logger: StringIO.new
     ).call(period)
 
@@ -1080,7 +1088,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     described_class.new(
       store: store,
       sources: [gitlab],
-      catalog: double('catalog', search_terms: []),
+      catalog: FakeLocationCatalog.new([]),
       logger: StringIO.new
     ).call(period)
 
@@ -1174,7 +1182,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     described_class.new(
       store: fake_store,
       sources: [github],
-      catalog: double('catalog', search_terms: []),
+      catalog: FakeLocationCatalog.new([]),
       logger: StringIO.new
     ).call(period)
 

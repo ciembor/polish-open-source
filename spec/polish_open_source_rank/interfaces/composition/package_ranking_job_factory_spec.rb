@@ -61,15 +61,25 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::PackageRankingJobF
 
   def stub_package_sqlite_collaborators(database)
     allow(PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite::SQLitePackageCrawlRunRepository)
-      .to receive(:new).with(database).and_return(double('package crawl runs'))
+      .to receive(:new).with(database).and_return(
+        instance_double(PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite::SQLitePackageCrawlRunRepository)
+      )
     allow(PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite::SQLitePackageRepositoryQueue)
-      .to receive(:new).with(database).and_return(double('package repository queue'))
+      .to receive(:new).with(database).and_return(
+        instance_double(PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite::SQLitePackageRepositoryQueue)
+      )
     allow(PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite::SQLitePackageManifestRepository)
-      .to receive(:new).with(database, work_events: anything).and_return(double('package manifest repository'))
+      .to receive(:new).with(database, work_events: anything).and_return(
+        instance_double(PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite::SQLitePackageManifestRepository)
+      )
     allow(PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite::SQLiteRegistryPackageRepository)
-      .to receive(:new).with(database, work_events: anything).and_return(double('registry package repository'))
+      .to receive(:new).with(database, work_events: anything).and_return(
+        instance_double(PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite::SQLiteRegistryPackageRepository)
+      )
     allow(PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite::SQLiteMonthlySnapshotCompletion)
-      .to receive(:new).with(database).and_return(double('monthly completion'))
+      .to receive(:new).with(database).and_return(
+        instance_double(PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite::SQLiteMonthlySnapshotCompletion)
+      )
   end
 
   def stub_operations_sqlite_collaborators(database, crawl_jobs)
@@ -78,14 +88,18 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::PackageRankingJobF
     allow(PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteJobWorkEventRepository)
       .to receive(:new).with(database, heartbeat: kind_of(
         PolishOpenSourceRank::Contexts::Operations::Application::ProgressHeartbeat
-      )).and_return(double('job work events'))
+      )).and_return(
+        instance_double(PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteJobWorkEventRepository)
+      )
   end
 
   def stub_github_collaborators
     github_client = instance_double(PolishOpenSourceRank::Infrastructure::GitHubClient)
     allow(PolishOpenSourceRank::Infrastructure::GitHubClient).to receive(:new).and_return(github_client)
     allow(PolishOpenSourceRank::Contexts::Packages::Infrastructure::GitHub::GitHubRepositoryTreeGateway)
-      .to receive(:new).with(github_client).and_return(double('package tree gateway'))
+      .to receive(:new).with(github_client).and_return(
+        instance_double(PolishOpenSourceRank::Contexts::Packages::Infrastructure::GitHub::GitHubRepositoryTreeGateway)
+      )
   end
 
   def stub_registry_clients

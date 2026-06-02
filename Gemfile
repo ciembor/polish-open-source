@@ -17,6 +17,7 @@ gem 'zeitwerk', '~> 2.7'
 group :development, :test do
   gem 'bundler-audit', '~> 0.9.3', require: false
   gem 'knapsack', '~> 4.0', require: false
+  gem 'mutant-rspec', '~> 0.16.3', require: false
   gem 'reek', '~> 6.5', require: false
   gem 'rspec', '~> 3.13'
   gem 'rubocop', '~> 1.81', require: false

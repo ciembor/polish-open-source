@@ -29,7 +29,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::Discor
       roles, channels, created_roles, created_channels =
         gateway_data.values_at(:roles, :channels, :created_roles, :created_channels)
 
-      double('DiscordGateway').tap do |stub|
+      object_double(discord_gateway_contract).tap do |stub|
         allow(stub).to receive_messages(guild_roles: roles, guild_channels: channels)
         allow(stub).to receive(:private_channel_overwrites) { |role_id| [{ id: role_id }] }
         allow(stub).to receive(:create_role) do |name:, color: nil|
@@ -53,7 +53,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::Discor
       end
     end
     let(:published_language_source) do
-      double('PublishedLanguageSource').tap do |source|
+      object_double(published_language_source_contract).tap do |source|
         allow(source).to receive(:published_languages)
           .with(period_start: '2026-04-01')
           .and_return(['Ruby'])
@@ -92,6 +92,22 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::Discor
           .to eq(%w[ruby top-100-ruby])
         expect(gateway_data.fetch(:created_channels).map { |channel| channel.fetch('parent_id') })
           .to all(eq('category-1'))
+      end
+    end
+
+    def discord_gateway_contract
+      Object.new.tap do |gateway|
+        def gateway.guild_roles; end
+        def gateway.guild_channels; end
+        def gateway.private_channel_overwrites(_role_id); end
+        def gateway.create_role(name:, color: nil); end
+        def gateway.create_channel(name:, type:, parent_id: nil, permission_overwrites: nil); end
+      end
+    end
+
+    def published_language_source_contract
+      Object.new.tap do |source|
+        def source.published_languages(period_start:); end
       end
     end
   end

@@ -59,9 +59,9 @@ module PolishOpenSourceRank
           raise MonthlySnapshotIncomplete, "Monthly rankings are not complete for #{period.key}"
         end
 
-        def with_crawl_job_tracking(&block)
+        def with_crawl_job_tracking(&)
           crawl_job_id = crawl_jobs&.start(command: 'package_rankings', arguments: argv)
-          run_with_job_retry(crawl_job_id) { run_interruptible_package_job { run_with_stall_watchdog(&block) } }
+          run_with_job_retry(crawl_job_id) { run_interruptible_package_job { run_with_stall_watchdog(&) } }
           crawl_jobs&.finish(crawl_job_id) if crawl_job_id
         rescue Contexts::Operations::Application::CrawlInterrupted => e
           interrupt_crawl_job(crawl_job_id, e)

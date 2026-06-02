@@ -3,7 +3,6 @@
 require 'date'
 require 'fileutils'
 require 'json'
-require 'pathname'
 require 'time'
 require 'zeitwerk'
 

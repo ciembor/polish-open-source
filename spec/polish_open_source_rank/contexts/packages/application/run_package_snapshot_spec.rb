@@ -176,11 +176,20 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application::RunPackage
   end
 
   def repository_queue
-    @repository_queue ||= double('package repository queue', reset_stale_processing: 0, enqueue: nil)
+    @repository_queue ||=
+      instance_double(
+        PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite::SQLitePackageRepositoryQueue,
+        reset_stale_processing: 0,
+        enqueue: nil
+      )
   end
 
   def manifest_scanner
-    @manifest_scanner ||= double('manifest scanner', call: { scanned: 1, failed: 0, manifests: 2 })
+    @manifest_scanner ||=
+      instance_double(
+        PolishOpenSourceRank::Contexts::Packages::Application::ScanRepositoryManifests,
+        call: { scanned: 1, failed: 0, manifests: 2 }
+      )
   end
 
   def registry_packages
