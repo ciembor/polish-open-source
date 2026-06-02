@@ -156,7 +156,6 @@ module PolishOpenSourceRank
 
           def log(source, message)
             logger.puts "[#{source.platform}] #{message}"
-            logger.flush if logger.respond_to?(:flush)
           end
 
           def record_work_event(period, attributes, &)

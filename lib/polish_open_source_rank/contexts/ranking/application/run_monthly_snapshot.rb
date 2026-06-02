@@ -15,15 +15,20 @@ module PolishOpenSourceRank
             @store = store
             @sources = sources
             @classifier = classifier
-            @catalog = catalog
-            @logger = logger
+            @logger = MonthlySnapshotLogger.new(logger)
             @store_mutex = Mutex.new
             @work_events = work_events
             @snapshot_factory = MonthlySnapshotFactory.new
+            @candidate_discovery = MonthlyCandidateDiscovery.new(
+              store: store,
+              catalog: catalog,
+              logger: @logger,
+              store_mutex: store_mutex
+            )
             @source_metric_backfill = MonthlySourceMetricBackfill.new(
               store: store,
               sources: sources,
-              logger: logger,
+              logger: @logger,
               work_events: work_events
             )
           end
@@ -51,45 +56,15 @@ module PolishOpenSourceRank
 
           private
 
-          attr_reader :catalog, :classifier, :logger, :snapshot_factory, :source_metric_backfill, :sources, :store,
-                      :store_mutex, :work_events
+          attr_reader :classifier, :logger, :snapshot_factory, :source_metric_backfill, :sources, :store,
+                      :store_mutex, :work_events, :candidate_discovery
 
           def discover_source_candidates(period, source)
-            catalog.search_terms.each do |term|
-              log(source, "discovering users for location #{term.inspect}")
-              source.search_users_by_location(term).each do |candidate|
-                with_store do
-                  store.record_candidate(
-                    period,
-                    platform: source.platform,
-                    source_id: candidate.fetch(:source_id),
-                    login: candidate_login(candidate),
-                    source_query: term
-                  )
-                end
-              end
-            end
-            log(source, 'candidate discovery finished')
+            candidate_discovery.discover_users(period, source)
           end
 
           def discover_source_organizations(period, source)
-            return unless source.supports_organizations?
-
-            catalog.search_terms.each do |term|
-              log(source, "discovering organizations for location #{term.inspect}")
-              source.search_organizations_by_location(term).each do |candidate|
-                with_store do
-                  store.record_organization_candidate(
-                    period,
-                    platform: source.platform,
-                    source_id: candidate.fetch(:source_id),
-                    login: candidate_login(candidate),
-                    source_query: term
-                  )
-                end
-              end
-            end
-            log(source, 'organization discovery finished')
+            candidate_discovery.discover_organizations(period, source)
           end
 
           def process_source_candidates(period, source, refresh:)
@@ -384,10 +359,6 @@ module PolishOpenSourceRank
             source.repositories_for_organization(profile).each(&)
           end
 
-          def candidate_login(candidate)
-            candidate.fetch(:login)
-          end
-
           def source_metric_backfill_only?(backfill)
             @existing_only && backfill.value?(true)
           end
@@ -402,7 +373,6 @@ module PolishOpenSourceRank
 
           def log(source, message)
             logger.puts "[#{source.platform}] #{message}"
-            logger.flush if logger.respond_to?(:flush)
           end
 
           def record_work_event(period, attributes, &)
