@@ -14,7 +14,8 @@ end
 
 commands = [
   %w[bundle exec rubocop --cache-root tmp/rubocop_cache],
-  %w[bundle exec reek]
+  %w[bundle exec reek],
+  %w[bundle exec bundle-audit check]
 ]
 
 commands.each { |command| run_command({}, command) }

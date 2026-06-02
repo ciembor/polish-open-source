@@ -1,0 +1,38 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'English'
+require 'fileutils'
+
+baseline = ENV.fetch('MUTANT_SINCE', 'HEAD')
+changed_paths = IO.popen(
+  ['git', 'diff', '--name-only', '--diff-filter=ACMRTUXB', baseline, '--', 'lib/polish_open_source_rank'],
+  &:read
+)
+paths = changed_paths.lines.map(&:chomp).select do |path|
+  path.end_with?('.rb') && path.match?(%r{/contexts/[^/]+/(domain|application)/|/shared/domain/})
+end
+
+if paths.empty?
+  puts "No changed domain or application Ruby files since #{baseline}."
+  exit 0
+end
+
+FileUtils.mkdir_p('tmp')
+
+command = [
+  'bundle', 'exec', 'mutant', 'run',
+  '--usage', 'opensource',
+  '--integration', 'rspec',
+  '--include', 'lib',
+  '--require', 'polish_open_source_rank',
+  '--since', baseline,
+  'PolishOpenSourceRank*'
+]
+
+puts "$ #{command.join(' ')}"
+system(*command, out: 'tmp/mutant-last.log', err: %i[child out])
+status = $CHILD_STATUS.exitstatus || 1
+
+puts 'Mutant output written to tmp/mutant-last.log'
+exit status

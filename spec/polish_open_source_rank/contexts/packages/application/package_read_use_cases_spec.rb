@@ -2,8 +2,8 @@
 
 RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application do
   let(:read_model) do
-    double(
-      'PackageRankingReadModel',
+    instance_double(
+      PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite::SQLitePackageRankingReadModel,
       ecosystem_cards: [
         { ecosystem: 'npm' },
         { ecosystem: 'rubygems' },

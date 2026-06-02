@@ -107,6 +107,17 @@ RSpec.describe ArchitectureDependencyRules do
     expect(app).not_to include('def_delegators :composition')
   end
 
+  it 'keeps web composition boundaries outside core policy', :aggregate_failures do
+    forbidden = /\bPolishOpenSourceRank::Web::Composition\b|\bWeb::Composition\b/
+    core_policy_files = files_under('lib/polish_open_source_rank/shared/domain') +
+                        files_under('lib/polish_open_source_rank/contexts/*/domain') +
+                        files_under('lib/polish_open_source_rank/contexts/*/application')
+
+    core_policy_files.each do |path|
+      expect(file_body(path)).not_to match(forbidden), "#{path} depends on the web composition boundary"
+    end
+  end
+
   it 'keeps production composition off the SQLiteStore facade', :aggregate_failures do
     forbidden = /\bSQLiteStore\b/
     production_files = files_under('lib/polish_open_source_rank') + files_under('bin')

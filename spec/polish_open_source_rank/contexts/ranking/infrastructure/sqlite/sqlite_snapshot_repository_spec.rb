@@ -74,9 +74,9 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
   end
 
   it 'retries snapshot writes as an update when the insert races with another writer' do
-    initial_scope = double('initial scope')
-    dataset = double('dataset')
-    database = double('database')
+    initial_scope = object_double(update_scope_contract)
+    dataset = object_double(dataset_contract)
+    database = object_double(database_contract)
     repository = described_class.new(database, clock: clock)
 
     allow(database).to receive(:dataset).with(:users).and_return(dataset)
@@ -114,6 +114,26 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
         updated_at: '2026-05-01T12:00:00Z'
       }
     ).twice
+  end
+
+  def update_scope_contract
+    Object.new.tap do |scope|
+      def scope.update(_attributes); end
+    end
+  end
+
+  def dataset_contract
+    Object.new.tap do |dataset|
+      def dataset.where(_conditions); end
+      def dataset.insert(_attributes); end
+    end
+  end
+
+  def database_contract
+    Object.new.tap do |database|
+      def database.dataset(_table); end
+      def database.transaction; end
+    end
   end
 
   def row(table)

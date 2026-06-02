@@ -38,9 +38,9 @@ make monthly runs more stable.
 bin/quality
 ```
 
-This runs RuboCop, Reek, and RSpec. SimpleCov enforces 100% line coverage for
-`lib/**/*.rb`. CI also runs `bundle exec bundle-audit check --update` and
-CodeQL before deploy.
+This runs RuboCop, Reek, Bundler Audit, and RSpec. SimpleCov enforces 100% line
+coverage for `lib/**/*.rb`. CI also runs `bundle exec bundle-audit check
+--update` and CodeQL before deploy.
 
 Mutation checks are available on demand through [Mutant](https://github.com/mbj/mutant):
 
@@ -48,8 +48,9 @@ Mutation checks are available on demand through [Mutant](https://github.com/mbj/
 bin/mutant-changed
 ```
 
-That command mutation-tests staged Ruby production subjects only. Full Mutant
-output is written to `tmp/mutant-last.log`.
+That command mutation-tests changed domain and application subjects under
+`lib/polish_open_source_rank` since `HEAD`. Set `MUTANT_SINCE` to compare
+against another revision. Full Mutant output is written to `tmp/mutant-last.log`.
 
 Pre-commit hooks live in `.githooks/pre-commit`. This checkout is configured
 with:

@@ -151,7 +151,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
       include(full_name: 'polish-org/toolkit', polish_repo_badge: include(label: 'Polish Repo', value: '1st')),
       include(full_name: 'polish-org/monthly', polish_repo_badge: include(label: 'Polish Repo', value: '2nd'))
     )
-    expect(organization.fetch(:popular_repositories).map { _1.fetch(:full_name) }).to eq(
+    expect(organization.fetch(:popular_repositories).map { it.fetch(:full_name) }).to eq(
       %w[polish-org/monthly polish-org/toolkit]
     )
     expect(repository).to include(full_name: 'polish-org/toolkit', elite_rank: 1)

@@ -54,9 +54,9 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
   end
 
   it 'retries as an update when the job insert races with another writer' do
-    scope = double('scope')
-    dataset = double('dataset')
-    database = double('database')
+    scope = object_double(update_scope_contract)
+    dataset = object_double(dataset_contract)
+    database = object_double(database_contract)
     repository = described_class.new(database, clock: clock)
 
     allow(database).to receive(:transaction).and_yield
@@ -73,6 +73,26 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
     )
 
     expect(scope).to have_received(:update).twice
+  end
+
+  def update_scope_contract
+    Object.new.tap do |scope|
+      def scope.update(*); end
+    end
+  end
+
+  def dataset_contract
+    Object.new.tap do |dataset|
+      def dataset.where(*); end
+      def dataset.insert(*); end
+    end
+  end
+
+  def database_contract
+    Object.new.tap do |database|
+      def database.dataset(_table); end
+      def database.transaction; end
+    end
   end
 
   def request_oauth_sync(discord_username: 'Alice')
