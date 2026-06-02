@@ -28,4 +28,18 @@ RSpec.describe File do
       'run: scripts/deploy.sh "$DEPLOY_ACTION"'
     )
   end
+
+  it 'builds and smoke-tests the production container before deploy' do
+    workflow = described_class.read(described_class.join(root, '.github/workflows/deploy.yml'))
+
+    expect(workflow).to include(
+      'container-smoke:',
+      'ruby-version: "4.0.5"',
+      'docker build --pull -t polish-open-source-rank:ci .',
+      'curl -fsS http://127.0.0.1:9293/healthz',
+      'container must not run as root',
+      'runtime dirs are not writable',
+      '- container-smoke'
+    )
+  end
 end

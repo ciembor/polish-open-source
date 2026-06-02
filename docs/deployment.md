@@ -36,6 +36,11 @@ The `CI and deploy` workflow supports two actions:
 - manual `rollback` through `workflow_dispatch`, limited to swapping back to the
   immediately previous image.
 
+The workflow also builds the production container and starts it with
+production-like environment variables before deploy. That smoke test verifies
+`/healthz`, non-root execution, and writable `db`, `log`, and `tmp` runtime
+directories.
+
 The deploy script does not touch running monthly or package jobs. It restarts
 only the web and Discord bot services, then waits for built-in smoke checks on
 local `/healthz` plus public `/healthz`, `/latest`, and `/en/latest` before the
@@ -62,3 +67,49 @@ before granting additional maintainers deploy permission.
   package sections usually mean the package crawl is still running, the process
   died and left scans in `processing`, or the last package run failed while work
   remained pending.
+
+## Runtime Parity
+
+Production, CI, and the lockfile are expected to use the same Ruby patch
+runtime:
+
+- `.ruby-version`: `4.0.5`
+- `Gemfile.lock` Ruby version: `ruby 4.0.5p0`
+- GitHub Actions `ruby/setup-ruby`: `4.0.5`
+- Docker base image: `docker.io/library/ruby:4.0.5-slim-bookworm`
+
+The Docker base image is pinned to the Ruby patch version and Debian variant
+rather than the floating `ruby:4.0-slim` tag. Update it when the project moves to
+a newer stable Ruby patch release; update `.ruby-version`, `Gemfile.lock`, CI,
+this document, and the container smoke test in the same change. Keep the
+trailing Debian variant explicit so production does not silently move between
+Debian releases.
+
+The production image creates an `app` user with UID/GID `1000`. Systemd Podman
+units also pass `--user=1000:1000`, so bind-mounted production directories owned
+by the `ciembor` account remain writable without running the application as root.
+The container root filesystem is read-only in production units. Runtime writes
+are intentionally limited to:
+
+- `/app/db`: SQLite database and publication backup data through the production
+  `db/` bind mount.
+- `/app/log`: application logs through the production `log/` bind mount.
+- `/app/tmp`: ephemeral per-container tmpfs for Rack/Ruby temporary files,
+  `HOME`, `TMPDIR`, and Bundler runtime config.
+
+The CI container smoke test creates disposable `db` and `log` mounts and checks
+that the container can serve `/healthz` while running as a non-root user.
+
+## Systemd Hardening
+
+The Podman-backed web, Discord bot, monthly, package, manual crawl, and resume
+units harden the container runtime with bounded memory/CPU/PID settings,
+`--user=1000:1000`, `--read-only`, and a restricted tmpfs at `/app/tmp`.
+Unit-level sandboxing is intentionally lighter for these services because the
+host-side systemd process must still start Podman and manage container cleanup.
+
+The host-only alert and monitor services do not start containers, so they use
+systemd sandboxing directly: `NoNewPrivileges`, `PrivateTmp`,
+`ProtectSystem=strict`, `ProtectHome=read-only`, `RestrictSUIDSGID`, and
+`LockPersonality`. Their `ReadWritePaths` are limited to the app `tmp/` and/or
+`log/` directories required by the scripts.
