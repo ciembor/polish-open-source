@@ -42,6 +42,102 @@ Recommended edge rules:
   pages. If crawler-specific limits are needed, verify them at the edge with
   reverse DNS instead of trusting `User-Agent`.
 
+Cloudflare cache rules should be ordered from the most specific bypasses to the
+public HTML rule:
+
+1. Bypass dynamic app paths.
+2. Cache badges.
+3. Cache static assets.
+4. Cache anonymous public HTML.
+
+Use this expression for the dynamic bypass rule:
+
+```txt
+(http.host eq "polish-open-source.pl" and (
+  (http.request.method ne "GET" and http.request.method ne "HEAD") or
+  starts_with(http.request.uri.path, "/auth/") or
+  http.request.uri.path eq "/logout" or
+  starts_with(http.request.uri.path, "/internal/") or
+  http.request.uri.path eq "/healthz" or
+  http.cookie contains "polish_open_source_rank.session"
+))
+```
+
+Use this expression for the badge rule:
+
+```txt
+(http.host eq "polish-open-source.pl" and starts_with(http.request.uri.path, "/badges/"))
+```
+
+Use this expression for static assets:
+
+```txt
+(http.host eq "polish-open-source.pl" and (
+  starts_with(http.request.uri.path, "/css/") or
+  starts_with(http.request.uri.path, "/js/") or
+  starts_with(http.request.uri.path, "/icons/")
+))
+```
+
+Use this expression for anonymous public HTML:
+
+```txt
+(http.host eq "polish-open-source.pl")
+and (http.request.method eq "GET" or http.request.method eq "HEAD")
+and http.request.uri.query eq ""
+and not (http.cookie contains "polish_open_source_rank.session")
+and not starts_with(http.request.uri.path, "/badges/")
+and (
+  not (http.cookie contains "locale=")
+  or http.request.uri.path eq "/en"
+  or starts_with(http.request.uri.path, "/en/")
+)
+and (
+  http.request.uri.path eq "/"
+  or http.request.uri.path eq "/latest"
+  or http.request.uri.path eq "/organizations"
+  or http.request.uri.path eq "/about"
+  or http.request.uri.path eq "/editions"
+  or http.request.uri.path eq "/languages"
+  or http.request.uri.path eq "/packages"
+  or http.request.uri.path eq "/en"
+  or http.request.uri.path eq "/en/latest"
+  or http.request.uri.path eq "/en/organizations"
+  or http.request.uri.path eq "/en/about"
+  or http.request.uri.path eq "/en/editions"
+  or http.request.uri.path eq "/en/languages"
+  or http.request.uri.path eq "/en/packages"
+  or starts_with(http.request.uri.path, "/latest/")
+  or starts_with(http.request.uri.path, "/organizations/")
+  or starts_with(http.request.uri.path, "/users/")
+  or starts_with(http.request.uri.path, "/repositories/")
+  or starts_with(http.request.uri.path, "/organization-repositories/")
+  or starts_with(http.request.uri.path, "/languages/")
+  or starts_with(http.request.uri.path, "/packages/")
+  or starts_with(http.request.uri.path, "/editions/")
+  or starts_with(http.request.uri.path, "/20")
+  or starts_with(http.request.uri.path, "/en/latest/")
+  or starts_with(http.request.uri.path, "/en/organizations/")
+  or starts_with(http.request.uri.path, "/en/users/")
+  or starts_with(http.request.uri.path, "/en/repositories/")
+  or starts_with(http.request.uri.path, "/en/organization-repositories/")
+  or starts_with(http.request.uri.path, "/en/languages/")
+  or starts_with(http.request.uri.path, "/en/packages/")
+  or starts_with(http.request.uri.path, "/en/editions/")
+  or starts_with(http.request.uri.path, "/en/20")
+)
+```
+
+The HTML rule must exclude the signed session cookie. It should also cache
+unprefixed pages only when the `locale` cookie is absent, because anonymous
+requests with `locale=en` may need a redirect to the `/en/...` URL. Explicit
+`/en/...` paths can be cached because the language is encoded in the path.
+
+For the HTML rule, keep the edge and browser TTLs on origin headers. Enable
+stale-while-revalidating, strong ETags, and origin error page pass-through.
+Do not force a long edge TTL unless snapshot publish and rollback also purge the
+public HTML prefixes.
+
 ## Internal Operations Access
 
 `/internal/*` routes are operational pages and must be protected at nginx before
