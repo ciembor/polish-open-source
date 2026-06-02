@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require 'dry/configurable'
+require_relative 'configuration_groups'
+require_relative 'env_file'
 
 module PolishOpenSourceRank
   class Configuration
@@ -254,20 +256,40 @@ module PolishOpenSourceRank
       { username: username, password: password }
     end
 
+    def network
+      ConfigurationGroups::Network.new(
+        source_api: timeout_settings(http_open_timeout, http_read_timeout, http_write_timeout),
+        user_action: timeout_settings(
+          user_action_http_open_timeout,
+          user_action_http_read_timeout,
+          user_action_http_write_timeout
+        )
+      )
+    end
+
+    def oauth
+      ConfigurationGroups::OAuth.new(
+        github_client_id: github_oauth_client_id,
+        github_client_secret: github_oauth_client_secret,
+        discord_client_id: discord_oauth_client_id,
+        discord_client_secret: discord_oauth_client_secret
+      )
+    end
+
+    def discord
+      ConfigurationGroups::Discord.new(
+        bot_token: discord_bot_token,
+        guild_id: discord_guild_id,
+        invite_channel_id: discord_invite_channel_id
+      )
+    end
+
     def http_timeouts
-      {
-        open_timeout: http_open_timeout,
-        read_timeout: http_read_timeout,
-        write_timeout: http_write_timeout
-      }
+      network.source_api.to_h
     end
 
     def user_action_http_timeouts
-      {
-        open_timeout: user_action_http_open_timeout,
-        read_timeout: user_action_http_read_timeout,
-        write_timeout: user_action_http_write_timeout
-      }
+      network.user_action.to_h
     end
 
     def package_registry_request_limits
@@ -339,12 +361,15 @@ module PolishOpenSourceRank
     end
 
     def load_env_file
-      return unless env_path.file?
+      EnvFile.new(env_path).apply_to(ENV)
+    end
 
-      env_path.each_line(chomp: true) do |line|
-        key, value = line.split('=', 2)
-        ENV[key] ||= value if key && value && !key.empty?
-      end
+    def timeout_settings(open_timeout, read_timeout, write_timeout)
+      ConfigurationGroups::Timeouts.new(
+        open_timeout: open_timeout,
+        read_timeout: read_timeout,
+        write_timeout: write_timeout
+      )
     end
   end
 end

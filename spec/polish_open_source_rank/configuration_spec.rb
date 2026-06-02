@@ -6,8 +6,13 @@ RSpec.describe PolishOpenSourceRank::Configuration do
       GITHUB_TOKEN GITLAB_TOKEN CODEBERG_TOKEN DATABASE_URL PUBLIC_DATABASE_URL REQUESTS_PER_MINUTE
       GITHUB_BASE_URL GITLAB_BASE_URL CODEBERG_BASE_URL BASE_URL
       DISCORD_INVITE_CHANNEL_ID GITHUB_OAUTH_CLIENT_ID
-      HTTP_OPEN_TIMEOUT HTTP_READ_TIMEOUT HTTP_WRITE_TIMEOUT RACK_ENV SESSION_SECRET
+      GITHUB_OAUTH_CLIENT_SECRET DISCORD_OAUTH_CLIENT_ID DISCORD_OAUTH_CLIENT_SECRET
+      DISCORD_BOT_TOKEN DISCORD_GUILD_ID
+      HTTP_OPEN_TIMEOUT HTTP_READ_TIMEOUT HTTP_WRITE_TIMEOUT
+      USER_ACTION_HTTP_OPEN_TIMEOUT USER_ACTION_HTTP_READ_TIMEOUT USER_ACTION_HTTP_WRITE_TIMEOUT
+      RACK_ENV SESSION_SECRET
       INTERNAL_BASIC_AUTH_USERNAME INTERNAL_BASIC_AUTH_PASSWORD
+      EMPTY_VALUE
       SENTRY_DSN SENTRY_ENVIRONMENT SENTRY_RELEASE SENTRY_TRACES_SAMPLE_RATE
       NPM_REGISTRY_REQUESTS_PER_MINUTE RUBYGEMS_REGISTRY_REQUESTS_PER_MINUTE
       CRATES_REGISTRY_REQUESTS_PER_MINUTE PYPI_REGISTRY_REQUESTS_PER_MINUTE
@@ -55,6 +60,26 @@ RSpec.describe PolishOpenSourceRank::Configuration do
     expect(configuration.codeberg_base_url).to eq('https://codeberg.test/api/v1')
     expect(configuration.public_base_url).to eq('https://rank.test')
     expect(configuration.app_base_path).to eq('')
+  end
+
+  it 'parses local environment files with comments, exports, and quoted values' do
+    path = Pathname(File.join(Dir.mktmpdir, '.env.local'))
+    path.write(<<~ENV_FILE)
+      # local development secrets
+      export GITHUB_TOKEN="quoted secret"
+      DATABASE_URL='sqlite://tmp/quoted.sqlite3'
+      BASE_URL=https://rank.test # inline comment
+      GITHUB_BASE_URL=https://github.test/path#fragment
+      EMPTY_VALUE=
+    ENV_FILE
+
+    configuration = described_class.load(path)
+
+    expect(configuration.github_token).to eq('quoted secret')
+    expect(configuration.database_path).to eq('tmp/quoted.sqlite3')
+    expect(configuration.public_base_url).to eq('https://rank.test')
+    expect(configuration.github_base_url).to eq('https://github.test/path#fragment')
+    expect(ENV.fetch('EMPTY_VALUE')).to eq('')
   end
 
   it 'exposes the configured Discord invite channel' do
@@ -109,6 +134,35 @@ RSpec.describe PolishOpenSourceRank::Configuration do
     expect(configuration.internal_basic_auth).to eq(
       username: 'internal',
       password: 'local-internal-basic-auth-password'
+    )
+  end
+
+  it 'exposes grouped network, OAuth, and Discord settings' do
+    ENV['GITHUB_OAUTH_CLIENT_ID'] = 'github-client'
+    ENV['GITHUB_OAUTH_CLIENT_SECRET'] = 'github-secret'
+    ENV['DISCORD_OAUTH_CLIENT_ID'] = 'discord-client'
+    ENV['DISCORD_OAUTH_CLIENT_SECRET'] = 'discord-secret'
+    ENV['DISCORD_BOT_TOKEN'] = 'discord-bot'
+    ENV['DISCORD_GUILD_ID'] = 'discord-guild'
+    ENV['DISCORD_INVITE_CHANNEL_ID'] = 'discord-invite-channel'
+    ENV['USER_ACTION_HTTP_OPEN_TIMEOUT'] = '2'
+    ENV['USER_ACTION_HTTP_READ_TIMEOUT'] = '8'
+    ENV['USER_ACTION_HTTP_WRITE_TIMEOUT'] = '9'
+
+    configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
+
+    expect(configuration.network.source_api.to_h).to eq(open_timeout: 5, read_timeout: 30, write_timeout: 30)
+    expect(configuration.network.user_action.to_h).to eq(open_timeout: 2, read_timeout: 8, write_timeout: 9)
+    expect(configuration.oauth).to have_attributes(
+      github_client_id: 'github-client',
+      github_client_secret: 'github-secret',
+      discord_client_id: 'discord-client',
+      discord_client_secret: 'discord-secret'
+    )
+    expect(configuration.discord).to have_attributes(
+      bot_token: 'discord-bot',
+      guild_id: 'discord-guild',
+      invite_channel_id: 'discord-invite-channel'
     )
   end
 
