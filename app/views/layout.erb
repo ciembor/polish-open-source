@@ -49,15 +49,15 @@
       <div class="site-header__inner">
         <a class="brand" href="<%= h period_base_path('latest') %>"><img src="/icons/polish-open-source.png" alt="" aria-hidden="true">Polish Open Source</a>
         <nav class="nav js-nav" aria-label="<%= h t('nav.menu') %>">
-          <a class="nav__link js-secondary-control js-collapsible-control" href="<%= h app_path(people_rankings_path(period_slug: 'latest')) %>"><%= h t('nav.people') %></a>
-          <a class="nav__link js-secondary-control js-collapsible-control" href="<%= h app_path(organization_rankings_path(period_slug: 'latest')) %>"><%= h t('nav.organizations') %></a>
+          <a class="nav__link js-secondary-control js-collapsible-control <%= active_nav_link_class(:people) %>" href="<%= h app_path(people_rankings_path(period_slug: 'latest')) %>"><%= h t('nav.people') %></a>
+          <a class="nav__link js-secondary-control js-collapsible-control <%= active_nav_link_class(:organizations) %>" href="<%= h app_path(organization_rankings_path(period_slug: 'latest')) %>"><%= h t('nav.organizations') %></a>
           <div class="nav-slot js-secondary-controls-slot">
-            <a class="nav__link js-secondary-control js-collapsible-control" href="<%= h app_path(language_index_path(period_slug: 'latest')) %>"><%= h t('nav.languages') %></a>
-            <a class="nav__link js-secondary-control js-collapsible-control" href="<%= h app_path(package_index_path(period_slug: 'latest')) %>"><%= h t('nav.packages') %></a>
-            <a class="nav__link js-secondary-control js-collapsible-control" href="<%= h app_path(editions_path) %>"><%= h t('nav.editions') %></a>
-            <a class="nav__link js-secondary-control js-collapsible-control" href="<%= h app_path('/about') %>"><%= h t('nav.about') %></a>
+            <a class="nav__link js-secondary-control js-collapsible-control <%= active_nav_link_class(:languages) %>" href="<%= h app_path(language_index_path(period_slug: 'latest')) %>"><%= h t('nav.languages') %></a>
+            <a class="nav__link js-secondary-control js-collapsible-control <%= active_nav_link_class(:packages) %>" href="<%= h app_path(package_index_path(period_slug: 'latest')) %>"><%= h t('nav.packages') %></a>
+            <a class="nav__link js-secondary-control js-collapsible-control <%= active_nav_link_class(:editions) %>" href="<%= h app_path(editions_path) %>"><%= h t('nav.editions') %></a>
+            <a class="nav__link js-secondary-control js-collapsible-control <%= active_nav_link_class(:about) %>" href="<%= h app_path('/about') %>"><%= h t('nav.about') %></a>
             <% if current_user %>
-              <a class="nav__link js-secondary-control js-collapsible-control" href="<%= h app_path(user_profile_path(current_user)) %>"><%= h t('nav.profile') %></a>
+              <a class="nav__link js-secondary-control js-collapsible-control <%= active_nav_link_class(:profile) %>" href="<%= h app_path(user_profile_path(current_user)) %>"><%= h t('nav.profile') %></a>
             <% end %>
           </div>
           <details class="nav-menu nav-menu--hamburger js-hamburger" hidden>

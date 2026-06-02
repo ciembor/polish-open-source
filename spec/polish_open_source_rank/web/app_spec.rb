@@ -1695,6 +1695,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'href="/editions"',
       'application/ld+json'
     )
+    expect_active_nav_link(response.body, '/latest')
     expect(response.body).not_to include('href="/latest/organizations/top"')
     expect(response.body).not_to include('href="/latest/organization-repositories/top"')
   end
@@ -1737,6 +1738,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'href="/latest/organization-repositories/trending"',
       'Więcej miast'
     )
+    expect_active_nav_link(response.body, '/latest/organizations')
     expect(response.body).not_to include('href="/latest/users/top"')
     expect(response.body).not_to include('href="/latest/repositories/top"')
   end
@@ -1795,6 +1797,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile.body).not_to include('Ranking Kraków')
     expect(profile.body).not_to include('Nie ma cię w rankingu?')
     expect(profile.body).not_to include('polishOpenSourceRank.locationNoticeSeen')
+    expect_active_nav_link(profile.body, '/users/github/alice')
     expect(profile.body.index('id="profile-discord-heading"')).to be < profile.body.index('id="profile-badge-heading"')
     expect(profile.body.index('id="profile-badge-heading"')).to be < profile.body.index('id="profile-summary-heading"')
     expect(profile.body).not_to include('Discord niepołączony')
@@ -1852,6 +1855,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'href="/2026-04"',
       'href="/editions/2025"'
     )
+    expect_active_nav_link(response.body, '/editions')
   end
 
   def expect_about_page(response)
@@ -1871,8 +1875,15 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'src="/images/maciej-ciemborowicz.jpg"',
       'href="/latest"'
     )
+    expect_active_nav_link(response.body, '/about')
     expect(response.body).not_to include('Programista i autor projektu')
     expect(response.body).not_to include('//locations')
+  end
+
+  def expect_active_nav_link(body, href)
+    xpath = "//nav[contains(@class, 'nav')]//a[@href='#{href}' and contains(@class, 'is-active')]"
+
+    expect(html_element(body, xpath)).not_to be_nil
   end
 
   def expect_body_to_include(response, *fragments)

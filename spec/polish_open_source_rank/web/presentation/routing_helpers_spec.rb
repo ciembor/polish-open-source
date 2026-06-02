@@ -5,6 +5,13 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::RoutingHelpers do
     Class.new do
       include PolishOpenSourceRank::Web::Presentation::RoutingHelpers
 
+      attr_accessor :current_user, :env, :request
+
+      def initialize
+        @env = {}
+        @request = Struct.new(:path_info, :query_string).new('/', '')
+      end
+
       def settings
         Struct.new(:default_locale).new('pl')
       end
@@ -58,5 +65,33 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::RoutingHelpers do
 
   it 'returns no collection schema for pages without list content' do
     expect(helper_host.send(:collection_schema)).to be_nil
+  end
+
+  it 'marks navigation links active for section pages and subpages', :aggregate_failures do
+    helper_host.request.path_info = '/2026-04/locations/krakow/users/active'
+    helper_host.env['polish_open_source_rank.unlocalized_path'] = '/2026-04/locations/krakow/users/active'
+    expect(helper_host.nav_link_active?(:people)).to be(true)
+    expect(helper_host.active_nav_link_class(:people)).to eq('is-active')
+    expect(helper_host.nav_link_active?(:organizations)).to be(false)
+
+    helper_host.request.path_info = '/organizations/github/polish-org'
+    helper_host.env['polish_open_source_rank.unlocalized_path'] = '/organizations/github/polish-org'
+    expect(helper_host.nav_link_active?(:organizations)).to be(true)
+    expect(helper_host.nav_link_active?(:people)).to be(false)
+
+    helper_host.current_user = { platform: 'github', login: 'alice' }
+    helper_host.request.path_info = '/users/github/alice'
+    helper_host.env['polish_open_source_rank.unlocalized_path'] = '/users/github/alice'
+    expect(helper_host.nav_link_active?(:profile)).to be(true)
+    expect(helper_host.nav_link_active?(:people)).to be(false)
+
+    helper_host.request.path_info = '/en/editions/2025'
+    helper_host.env['polish_open_source_rank.unlocalized_path'] = '/editions/2025'
+    expect(helper_host.nav_link_active?(:editions)).to be(true)
+
+    helper_host.request.path_info = '/en/about'
+    helper_host.env['polish_open_source_rank.unlocalized_path'] = '/about'
+    expect(helper_host.nav_link_active?(:about)).to be(true)
+    expect(helper_host.nav_link_active?(:missing)).to be(false)
   end
 end
