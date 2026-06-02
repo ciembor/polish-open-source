@@ -78,43 +78,43 @@ collaborator while `RunMonthlySnapshot` keeps only workflow-level sequencing.
 Goal: isolate candidate retry, profile loading, classification, status marking,
 and per-candidate work-event handling from the top-level snapshot runner.
 
-- [ ] Introduce a candidate processor that handles one user candidate and
+- [x] Introduce a candidate processor that handles one user candidate and
       returns a stable status result.
-- [ ] Introduce an organization candidate processor only if it hides real
+- [x] Introduce an organization candidate processor only if it hides real
       differences; otherwise use a shared processor with role-specific
       dependencies instead of boolean mode flags.
-- [ ] Move processed-existing checks, `SourceNotFound` handling, failure
+- [x] Move processed-existing checks, `SourceNotFound` handling, failure
       marking, and failure logging into the processor boundary.
-- [ ] Keep classification policy in the application layer while source profile
+- [x] Keep classification policy in the application layer while source profile
       fetching and store status updates stay behind narrow collaborators.
-- [ ] Make invalid candidate states unrepresentable or localized, so callers do
+- [x] Make invalid candidate states unrepresentable or localized, so callers do
       not repeat `platform`, `login`, and `source_id` fetch ceremony.
-- [ ] Add specs for refresh vs non-refresh behavior, missing source profiles,
+- [x] Add specs for refresh vs non-refresh behavior, missing source profiles,
       rejected non-Polish locations, successful persistence delegation, and
       failed candidate marking.
-- [ ] Run Reek against the new processors and avoid `UtilityFunction`,
+- [x] Run Reek against the new processors and avoid `UtilityFunction`,
       `FeatureEnvy`, and long parameter-list smells.
-- [ ] Run the full pre-commit hook and commit the completed milestone.
+- [x] Run the full pre-commit hook and commit the completed milestone.
 
 ## Milestone 4: Extract Profile Snapshot Persistence
 
 Goal: hide profile, repository, snapshot factory, and store-write details behind
 one semantic operation for accepted contributors and organizations.
 
-- [ ] Introduce a `MonthlyProfileSnapshotWriter` or equivalent application
+- [x] Introduce a `MonthlyProfileSnapshotWriter` or equivalent application
       collaborator with operations named around business intent, not storage
       mechanics.
-- [ ] Move contributor profile snapshot recording and contributor monthly
+- [x] Move contributor profile snapshot recording and contributor monthly
       snapshot recording out of `RunMonthlySnapshot`.
-- [ ] Move organization profile snapshot recording and organization monthly
+- [x] Move organization profile snapshot recording and organization monthly
       snapshot recording out of `RunMonthlySnapshot`.
-- [ ] Keep `MonthlySnapshotFactory` usage below the writer boundary so callers
+- [x] Keep `MonthlySnapshotFactory` usage below the writer boundary so callers
       do not need to know snapshot object construction order.
-- [ ] Preserve thread-safe store writes without making every caller remember
+- [x] Preserve thread-safe store writes without making every caller remember
       locking rules.
-- [ ] Add focused specs for contributor and organization profile persistence
+- [x] Add focused specs for contributor and organization profile persistence
       through the writer public contract.
-- [ ] Run the full pre-commit hook and commit the completed milestone.
+- [x] Run the full pre-commit hook and commit the completed milestone.
 
 ## Milestone 5: Extract Repository Snapshot Collection
 

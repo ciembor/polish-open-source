@@ -797,6 +797,27 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(organization_source.delta_periods).to be_empty
   end
 
+  it 'can use previous organization repository observations for monthly deltas' do
+    previous_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-03')
+    seed_previous_organization_repository_observation(previous_period)
+    organization_source = ranked_organization_source
+    organization_source.deltas = { 'polish-org/toolkit' => 30 }
+
+    described_class.new(
+      store: store,
+      sources: [organization_source],
+      catalog: catalog,
+      logger: StringIO.new
+    ).call(period, use_snapshot_star_diff: true)
+
+    expect(fetch_organization_stats('polish-org')).to include(monthly_stars_delta: 6)
+    expect(organization_repository_rankings.fetch(:trending).first).to include(
+      full_name: 'polish-org/toolkit',
+      monthly_stars_delta: 6
+    )
+    expect(organization_source.delta_periods).to be_empty
+  end
+
   def ranked_organization_source
     FakeOrganizationGitHub.new.tap do |source|
       source.organization_candidates = { 'Poland' => [{ source_id: 9, login: 'polish-org' }] }
@@ -1636,6 +1657,31 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       owner_country: 'Poland',
       stargazers_count: 10,
       monthly_stars_delta: 0
+    )
+  end
+
+  def seed_previous_organization_repository_observation(previous_period)
+    snapshot_repository.record_organization_profile(organization_snapshot_record(previous_period))
+    snapshot_repository.record_organization_repository_snapshot(
+      PolishOpenSourceRank::Contexts::Ranking::Domain::OrganizationRepositorySnapshot.new(
+        period: previous_period,
+        platform: 'github',
+        source_id: 90,
+        organization_source_id: 9,
+        organization_login: 'polish-org',
+        organization_city: 'Warszawa',
+        organization_country: 'Poland',
+        name: 'toolkit',
+        full_name: 'polish-org/toolkit',
+        description: 'Toolkit',
+        html_url: 'https://github.com/polish-org/toolkit',
+        homepage: nil,
+        language: 'Ruby',
+        fork: false,
+        archived: false,
+        stars: 27,
+        monthly_stars_delta: 0
+      )
     )
   end
 
