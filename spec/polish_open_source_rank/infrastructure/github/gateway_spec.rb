@@ -177,6 +177,39 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubGateway do
     expect(gateway.merged_pull_requests_count({ login: '0x1fff' }, period)).to eq(0)
   end
 
+  it 'treats unavailable public organization search resources as zero merged pull requests' do
+    client.queue_error(
+      PolishOpenSourceRank::Infrastructure::GitHubClient::Error.new(
+        'validation failed',
+        status: 422,
+        body: <<~JSON
+          {
+            "message": "Validation Failed",
+            "errors": [
+              {
+                "message": "The listed users and repositories cannot be searched either because the resources do not exist or you do not have permission to view them.",
+                "resource": "Search",
+                "field": "q",
+                "code": "invalid"
+              }
+            ]
+          }
+        JSON
+      )
+    )
+
+    expect(gateway.organization_merged_pull_requests_count({ login: 'empty-org' }, period)).to eq(0)
+    expect(client.params).to eq(
+      [
+        {
+          q: 'org:empty-org is:pr is:merged is:public merged:2026-04-01..2026-04-30',
+          per_page: 1,
+          page: 1
+        }
+      ]
+    )
+  end
+
   it 'reraises other merged pull request search failures' do
     error = PolishOpenSourceRank::Infrastructure::GitHubClient::Error.new(
       'validation failed',

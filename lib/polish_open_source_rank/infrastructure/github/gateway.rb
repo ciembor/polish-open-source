@@ -8,9 +8,12 @@ module PolishOpenSourceRank
       STAR_ACCEPT = 'application/vnd.github.star+json'
       PER_PAGE = 100
       SEARCH_PAGE_LIMIT = 10
-      UNAVAILABLE_SEARCH_USER_MESSAGE =
+      UNAVAILABLE_SEARCH_MESSAGES = [
         'The listed users cannot be searched either because the users do not exist ' \
-        'or you do not have permission to view the users.'
+        'or you do not have permission to view the users.',
+        'The listed users and repositories cannot be searched either because the resources do not exist ' \
+        'or you do not have permission to view them.'
+      ].freeze
       SourceCandidate = Contexts::Ranking::Domain::SourceCandidate
       SourceContributor = Contexts::Ranking::Domain::SourceContributor
       SourceRepository = Contexts::Ranking::Domain::SourceRepository
@@ -115,24 +118,12 @@ module PolishOpenSourceRank
 
       def merged_pull_requests_count(profile, period)
         login = profile.fetch(:login)
-        response = client.get(
-          '/search/issues',
-          params: { q: merged_pull_request_query(login, period), per_page: 1, page: 1 }
-        )
-        Integer(response.body.fetch('total_count', 0))
-      rescue GitHubClient::Error => e
-        raise unless unavailable_search_user?(e)
-
-        0
+        search_merged_pull_requests_count(merged_pull_request_query(login, period))
       end
 
       def organization_merged_pull_requests_count(profile, period)
         login = profile.fetch(:login)
-        response = client.get(
-          '/search/issues',
-          params: { q: organization_merged_pull_request_query(login, period), per_page: 1, page: 1 }
-        )
-        Integer(response.body.fetch('total_count', 0))
+        search_merged_pull_requests_count(organization_merged_pull_request_query(login, period))
       end
 
       def organization_members_count(profile)
@@ -145,6 +136,18 @@ module PolishOpenSourceRank
       private
 
       attr_reader :client
+
+      def search_merged_pull_requests_count(query)
+        response = client.get(
+          '/search/issues',
+          params: { q: query, per_page: 1, page: 1 }
+        )
+        Integer(response.body.fetch('total_count', 0))
+      rescue GitHubClient::Error => e
+        raise unless unavailable_search_resource?(e)
+
+        0
+      end
 
       def candidate(user)
         SourceCandidate.new(source_id: user.fetch('id'), login: user.fetch('login'))
@@ -276,7 +279,7 @@ module PolishOpenSourceRank
         %("#{value.gsub('"', '\"')}")
       end
 
-      def unavailable_search_user?(error)
+      def unavailable_search_resource?(error)
         return false unless error.status == 422
 
         parsed_body = JSON.parse(error.body.to_s)
@@ -293,7 +296,7 @@ module PolishOpenSourceRank
         entry['resource'] == 'Search' &&
           entry['field'] == 'q' &&
           entry['code'] == 'invalid' &&
-          entry['message'] == UNAVAILABLE_SEARCH_USER_MESSAGE
+          UNAVAILABLE_SEARCH_MESSAGES.include?(entry['message'])
       end
 
       def member_count(response)
