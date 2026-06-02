@@ -110,6 +110,7 @@ instead of reducing user-visible downtime.
 When public traffic spikes, use this order:
 
 1. Keep indexed public PL and EN pages cacheable by URL; do not add a global `noindex`.
-2. Increase CDN or nginx cache aggressiveness for `/latest`, `/en/latest`, rankings, profiles, languages, packages, and badges.
-3. Tighten temporary rate limits on `/auth/*`, `/internal/*`, and other expensive non-indexed paths before indexed ranking pages.
-4. If the app still needs protection, publish a static status page on a separate non-indexed operational path instead of replacing indexed public pages.
+2. Verify Cloudflare is respecting origin cache headers for anonymous public HTML and badges, including `stale-if-error`.
+3. Increase CDN or nginx cache aggressiveness for `/latest`, `/en/latest`, rankings, profiles, languages, packages, and badges.
+4. Tighten temporary rate limits on `/auth/*`, `/internal/*`, and other expensive non-indexed paths before indexed ranking pages.
+5. If the app still needs protection, publish a static status page on a separate non-indexed operational path instead of replacing indexed public pages.

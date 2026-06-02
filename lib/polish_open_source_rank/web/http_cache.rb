@@ -48,7 +48,7 @@ module PolishOpenSourceRank
       def public_badge_cache!(*parts)
         period = parts.last
         cache_response!(
-          'public, max-age=3600, stale-while-revalidate=86400',
+          'public, max-age=3600, stale-while-revalidate=86400, stale-if-error=86400',
           'badge',
           *parts,
           public_cache_revision(period)
@@ -91,11 +91,11 @@ module PolishOpenSourceRank
       end
 
       def public_html_cache_control
-        'public, max-age=60, stale-while-revalidate=300'
+        'public, max-age=60, stale-while-revalidate=300, stale-if-error=86400'
       end
 
       def negative_public_cache_control
-        'public, max-age=30, stale-while-revalidate=120'
+        'public, max-age=30, stale-while-revalidate=120, stale-if-error=300'
       end
 
       def cache_vary_header(cache_control)

@@ -133,8 +133,12 @@ unprefixed pages only when the `locale` cookie is absent, because anonymous
 requests with `locale=en` may need a redirect to the `/en/...` URL. Explicit
 `/en/...` paths can be cached because the language is encoded in the path.
 
-For the HTML rule, keep the edge and browser TTLs on origin headers. Enable
-stale-while-revalidating, strong ETags, and origin error page pass-through.
+For the HTML rule, keep the edge and browser TTLs on origin headers. The app
+marks public HTML as fresh for 60 seconds, allows 5 minutes of
+stale-while-revalidate, and allows 24 hours of stale-if-error so Cloudflare can
+serve the last cached anonymous page instead of surfacing origin `502`, `503`,
+or `504` responses during jobs. Badges use the same 24-hour stale-if-error
+window; stable negative public 404s use a 5-minute stale-if-error window.
 Do not force a long edge TTL unless snapshot publish and rollback also purge the
 public HTML prefixes.
 
