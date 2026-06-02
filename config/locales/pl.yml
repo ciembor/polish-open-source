@@ -137,10 +137,10 @@ pl:
       records: "Brak rekordów."
       title: "Brak danych rankingowych"
     hero:
-      eyebrow: "Ranking open source"
       lede: "Publiczni użytkownicy i repozytoria uporządkowane według gwiazdek, miesięcznej popularności i zmergowanych PR."
       organizations_lede: "Organizacje i ich repozytoria uporządkowane według gwiazdek, liczby członków oraz miesięcznej popularności."
-      organizations_title: "%{scope}"
+      organizations_title: "Ranking open source: organizacje"
+      people_title: "Ranking open source: ludzie"
     metric:
       members: "Członkowie"
       merged_pull_requests: "Zmergowane PR"
@@ -174,16 +174,16 @@ pl:
         top: "Top 100 repozytoriów organizacji według gwiazdek"
         trending: "Top 100 popularnych repozytoriów organizacji"
       organizations:
-        members: "Top 100 organizacji według liczby członków"
-        top: "Top 100 organizacji według gwiazdek"
-        trending: "Top 100 popularnych organizacji"
+        members: "Top 100 według liczby członków"
+        top: "Top 100 według gwiazdek"
+        trending: "Top 100 popularnych w miesiącu"
       repositories:
         top: "Top 100 repozytoriów według gwiazdek"
         trending: "Top 100 popularnych repozytoriów"
       users:
-        active: "Top 100 użytkowników według zmergowanych PR"
-        top: "Top 100 użytkowników według gwiazdek"
-        trending: "Top 100 popularnych użytkowników"
+        active: "Top 100 według zmergowanych PR"
+        top: "Top 100 według gwiazdek"
+        trending: "Top 100 popularnych w miesiącu"
     top_10_stars: "Top 10 według gwiazdek"
     trending_10_month: "Top 10 popularnych w miesiącu"
     users: "Ludzie"

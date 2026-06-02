@@ -137,10 +137,10 @@ en:
       records: "No records."
       title: "No ranking data"
     hero:
-      eyebrow: "Open-source ranking"
       lede: "Public users and repositories ordered by stars, monthly popularity and merged pull requests."
       organizations_lede: "Organizations and their repositories ordered by stars, member count, and monthly popularity."
-      organizations_title: "%{scope}"
+      organizations_title: "Open-source ranking: organizations"
+      people_title: "Open-source ranking: people"
     metric:
       members: "Members"
       merged_pull_requests: "Merged PRs"
@@ -174,16 +174,16 @@ en:
         top: "Top 100 organization repositories by stars"
         trending: "Top 100 popular organization repositories"
       organizations:
-        members: "Top 100 organizations by members"
-        top: "Top 100 organizations by stars"
-        trending: "Top 100 popular organizations"
+        members: "Top 100 by members"
+        top: "Top 100 by stars"
+        trending: "Top 100 popular this month"
       repositories:
         top: "Top 100 repositories by stars"
         trending: "Top 100 popular repositories"
       users:
-        active: "Top 100 users by merged PRs"
-        top: "Top 100 users by stars"
-        trending: "Top 100 popular users"
+        active: "Top 100 by merged PRs"
+        top: "Top 100 by stars"
+        trending: "Top 100 popular this month"
     top_10_stars: "Top 10 by stars"
     trending_10_month: "Popular 10 this month"
     users: "People"

@@ -154,6 +154,18 @@ module PolishOpenSourceRank
         t(settings.ranking_catalog.descriptor(kind, metric).title_key)
       end
 
+      def ranking_overview_title(section)
+        title_key = section == 'organizations' ? 'rankings.hero.organizations_title' : 'rankings.hero.people_title'
+
+        t(title_key)
+      end
+
+      def ranking_section_title(kind)
+        title_key = %w[organizations organization-repositories].include?(kind) ? 'organizations_title' : 'people_title'
+
+        t("rankings.hero.#{title_key}")
+      end
+
       def ranking_metric_column(kind, metric)
         settings.ranking_catalog.descriptor(kind, metric).column
       end
