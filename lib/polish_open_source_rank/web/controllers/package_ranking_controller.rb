@@ -27,7 +27,8 @@ module PolishOpenSourceRank
           )
           halt 404 if repository_kind && ranking.empty?
 
-          assign_package_ranking_page(period_slug, ecosystem, metric_slug, metric, repository_kind, ranking)
+          page = package_ranking_page(period_slug, ecosystem, metric_slug, metric, repository_kind, ranking)
+          assign_public_page(public_page_state.package_ranking_detail(page))
           erb :'packages/ranking_detail'
         end
 
@@ -43,26 +44,20 @@ module PolishOpenSourceRank
           )
         end
 
-        def assign_package_ranking_page(period_slug, ecosystem, metric_slug, metric, repository_kind, ranking)
-          assign_public_page(
-            public_page_state.package_ranking_detail(
-              {
-                period_slug: period_slug,
-                period_start: @period,
-                ecosystem: ecosystem,
-                metric_slug: metric_slug,
-                metric: metric,
-                repository_kind: repository_kind,
-                ranking: ranking
-              }
-            )
-          )
+        def repository_kind_for_slug(slug)
+          Presentation::PublicRepositoryKind.key_for_slug(slug) if slug
         end
 
-        def repository_kind_for_slug(slug)
-          return unless slug
-
-          { 'users' => 'user', 'organizations' => 'organization' }[slug]
+        def package_ranking_page(period_slug, ecosystem, metric_slug, metric, repository_kind, ranking)
+          {
+            period_slug: period_slug,
+            period_start: @period,
+            ecosystem: ecosystem,
+            metric_slug: metric_slug,
+            metric: metric,
+            repository_kind: repository_kind,
+            ranking: ranking
+          }
         end
       end
     end

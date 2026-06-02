@@ -1132,6 +1132,12 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(responses.fetch(:language_user_top).body).to include('Top 100: Ludzie, Ruby, według gwiazdek')
     expect(responses.fetch(:language_user_top).body).to include('alice/app')
     expect(responses.fetch(:language_user_top).body).to include('Nice Ruby app')
+    expect(
+      html_element(
+        responses.fetch(:language_user_top).body,
+        "//ol[@class='ranking-list' and @aria-labelledby='language-repository-ranking-detail-user-top']"
+      )
+    ).not_to be_nil
     expect(responses.fetch(:language_organization_top).body).to include('polish-org/toolkit')
     expect(responses.fetch(:language_organization_top).body).to include('Shared tooling')
   end
@@ -1189,6 +1195,12 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(responses.fetch(:top).body).to include('Top 100 według pobrań z 30 dni')
     expect(responses.fetch(:user_top).body).to include('Top 100: Ludzie, npm, według pobrań z 30 dni')
     expect(responses.fetch(:user_top).body).to include('@scope/tool')
+    expect(
+      html_element(
+        responses.fetch(:user_top).body,
+        "//ol[@class='ranking-list' and @aria-labelledby='package-ranking-detail-top']"
+      )
+    ).not_to be_nil
     expect(responses.fetch(:period_user_top).body).to include('Top 100: Ludzie, npm, według pobrań z 30 dni')
   end
 

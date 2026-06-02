@@ -16,7 +16,8 @@ module PolishOpenSourceRank
           ranking = language_repository_ranking(language, repository_kind, metric)
           halt 404 if ranking.empty?
 
-          assign_language_repository_ranking_page(period_slug, language, repository_kind, metric_slug, metric, ranking)
+          page = language_repository_ranking_page(period_slug, language, repository_kind, metric_slug, metric, ranking)
+          assign_public_page(public_page_state.language_repository_ranking_detail(page))
           erb :'languages/repository_ranking_detail'
         end
 
@@ -41,26 +42,20 @@ module PolishOpenSourceRank
           )
         end
 
-        def assign_language_repository_ranking_page(
-          period_slug, language, repository_kind, metric_slug, metric, ranking
-        )
-          assign_public_page(
-            public_page_state.language_repository_ranking_detail(
-              {
-                period_slug: period_slug,
-                period_start: @period,
-                language: language,
-                repository_kind: repository_kind,
-                metric_slug: metric_slug,
-                metric: metric,
-                ranking: ranking
-              }
-            )
-          )
+        def language_repository_kind_for_slug(slug)
+          Presentation::PublicRepositoryKind.key_for_slug(slug)
         end
 
-        def language_repository_kind_for_slug(slug)
-          { 'users' => 'user', 'organizations' => 'organization' }[slug]
+        def language_repository_ranking_page(period_slug, language, repository_kind, metric_slug, metric, ranking)
+          {
+            period_slug: period_slug,
+            period_start: @period,
+            language: language,
+            repository_kind: repository_kind,
+            metric_slug: metric_slug,
+            metric: metric,
+            ranking: ranking
+          }
         end
       end
     end

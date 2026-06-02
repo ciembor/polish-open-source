@@ -54,6 +54,36 @@ class PublicPageStateFakeViewContext
     "/#{period_slug}/locations/#{scope_slug}/#{kind}/#{metric}"
   end
 
+  def package_metric_label(metric, ecosystem:)
+    {
+      'npm/downloads_30d' => 'Downloads 30d'
+    }.fetch("#{ecosystem}/#{metric}")
+  end
+
+  def package_repository_kind_label(repository_kind)
+    { 'user' => 'People' }.fetch(repository_kind)
+  end
+
+  def package_ranking_path(ecosystem, metric_slug, period_slug:)
+    "/#{period_slug}/packages/#{ecosystem}/#{metric_slug}"
+  end
+
+  def package_repository_ranking_path(ecosystem, repository_kind, metric_slug, period_slug:)
+    "/#{period_slug}/packages/#{ecosystem}/#{repository_kind}s/#{metric_slug}"
+  end
+
+  def language_metric_label(metric)
+    { 'repository_stars_count' => 'Stars' }.fetch(metric)
+  end
+
+  def language_repository_kind_label(repository_kind)
+    { 'organization' => 'Organizations' }.fetch(repository_kind)
+  end
+
+  def language_repository_ranking_path(language, repository_kind, metric_slug, period_slug:)
+    "/#{period_slug}/languages/#{language}/#{repository_kind}s/#{metric_slug}"
+  end
+
   def editions_path(year = nil)
     year ? "/editions/#{year}" : '/editions'
   end
@@ -219,6 +249,62 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
         description:
           'rankings.seo.detail_description|metric=Total stars|period=April 2026|ranking=Users Top|scope=Krakow',
         canonical_path: '/2026-04/locations/krakow/users/top'
+      )
+    end
+  end
+
+  describe '#package_ranking_detail' do
+    it 'builds package repository ranking state from semantic page attributes' do
+      state = page_state.package_ranking_detail(
+        {
+          period_slug: 'latest',
+          period_start: '2026-04-01',
+          ecosystem: 'npm',
+          metric_slug: 'top',
+          metric: 'downloads_30d',
+          repository_kind: 'user',
+          ranking: [{ package_name: '@scope/tool' }]
+        }
+      )
+
+      expect(state).to include(
+        package_ecosystem: 'npm',
+        package_metric_slug: 'top',
+        package_metric: 'downloads_30d',
+        package_repository_kind: 'user',
+        package_ranking: [{ package_name: '@scope/tool' }],
+        title: 'packages.seo.repository_ranking_title|ecosystem=npm|kind=People|metric=Downloads 30d',
+        description: 'packages.seo.repository_ranking_description|ecosystem=npm|kind=People|metric=Downloads 30d',
+        canonical_path: '/latest/packages/npm/users/top',
+        period_start: '2026-04-01'
+      )
+    end
+  end
+
+  describe '#language_repository_ranking_detail' do
+    it 'builds language repository ranking state from semantic page attributes' do
+      state = page_state.language_repository_ranking_detail(
+        {
+          period_slug: '2026-04',
+          period_start: '2026-04-01',
+          language: 'Ruby',
+          repository_kind: 'organization',
+          metric_slug: 'top',
+          metric: 'repository_stars_count',
+          ranking: [{ full_name: 'polish-org/toolkit' }]
+        }
+      )
+
+      expect(state).to include(
+        language: 'Ruby',
+        language_repository_kind: 'organization',
+        language_repository_metric_slug: 'top',
+        language_repository_metric: 'repository_stars_count',
+        language_repository_ranking: [{ full_name: 'polish-org/toolkit' }],
+        title: 'languages.seo.repository_ranking_title|kind=Organizations|language=Ruby|metric=Stars',
+        description: 'languages.seo.repository_ranking_description|kind=Organizations|language=Ruby|metric=Stars',
+        canonical_path: '/2026-04/languages/Ruby/organizations/top',
+        period_start: '2026-04-01'
       )
     end
   end
