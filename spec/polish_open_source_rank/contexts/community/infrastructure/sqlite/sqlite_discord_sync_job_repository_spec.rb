@@ -27,6 +27,12 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
     expect(repository.pending(limit: 1).first).to include(discord_username: 'Alice D', login: 'alice', source_id: 1)
   end
 
+  it 'skips welcome messages when OAuth sync has no welcome channel' do
+    request_oauth_sync(welcome_channel_id: nil)
+
+    expect(repository.pending(limit: 10).map { |job| job.fetch(:action_kind) }).to eq(['member_sync'])
+  end
+
   it 'moves jobs through retryable, failed, and synced states' do
     repository.request_invite_sync(
       platform: 'github',
@@ -112,14 +118,14 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
     end
   end
 
-  def request_oauth_sync(discord_username: 'Alice')
+  def request_oauth_sync(discord_username: 'Alice', welcome_channel_id: 'welcome')
     repository.request_oauth_sync(
       platform: 'github',
       source_id: 1,
       discord_user_id: 'discord-1',
       discord_username: discord_username,
       access_token: 'access-token',
-      welcome_channel_id: 'welcome'
+      welcome_channel_id: welcome_channel_id
     )
   end
 

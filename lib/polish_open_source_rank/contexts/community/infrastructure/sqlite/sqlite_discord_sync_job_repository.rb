@@ -19,9 +19,7 @@ module PolishOpenSourceRank
                                    welcome_channel_id:)
               database.transaction do
                 upsert_job(member_sync_attributes(platform, source_id, discord_user_id, discord_username, access_token))
-                upsert_job(
-                  welcome_attributes(platform, source_id, discord_user_id, discord_username, welcome_channel_id)
-                )
+                upsert_welcome_job(platform, source_id, discord_user_id, discord_username, welcome_channel_id)
               end
             end
 
@@ -118,6 +116,12 @@ module PolishOpenSourceRank
                 discord_username: discord_username,
                 welcome_channel_id: welcome_channel_id
               )
+            end
+
+            def upsert_welcome_job(platform, source_id, discord_user_id, discord_username, welcome_channel_id)
+              return if welcome_channel_id.to_s.strip.empty?
+
+              upsert_job(welcome_attributes(platform, source_id, discord_user_id, discord_username, welcome_channel_id))
             end
 
             def job_attributes(attributes)

@@ -20,7 +20,8 @@ module PolishOpenSourceRank
         end
 
         def discord_welcome_channel_id
-          ENV.fetch('DISCORD_WELCOME_CHANNEL_ID', configuration.discord_invite_channel_id)
+          channel_id = ENV.fetch('DISCORD_WELCOME_CHANNEL_ID') { ENV.fetch('DISCORD_INVITE_CHANNEL_ID', nil) }
+          channel_id.to_s.strip.then { |value| value.empty? ? nil : value }
         end
 
         def redirect_to_profile_after_discord_error(type)

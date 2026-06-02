@@ -417,6 +417,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   it 'returns to the profile with a retry message when Discord rejects the OAuth callback' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    without_discord_channel_env!
     described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
     described_class.set :discord_oauth_client, FailingDiscordOAuthClient.new
     described_class.set :discord_gateway, FakeDiscordGateway.new
@@ -438,6 +439,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   it 'returns to the profile with a retry message when Discord user loading fails' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    without_discord_channel_env!
     described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
     described_class.set :discord_oauth_client, BrokenDiscordUserClient.new
     request = Rack::MockRequest.new(described_class)
@@ -480,6 +482,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   it 'rejects Discord sync when the logged-in GitHub profile is no longer ranked' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    without_discord_channel_env!
     described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
     discord_client = FakeDiscordOAuthClient.new
     allow(discord_client).to receive(:user).and_raise(
@@ -1598,6 +1601,11 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       "/auth/discord/callback?code=discord-code&state=#{discord_state}",
       'HTTP_COOKIE' => cookie_header(discord_start)
     )
+  end
+
+  def without_discord_channel_env!
+    ENV.delete('DISCORD_INVITE_CHANNEL_ID')
+    ENV.delete('DISCORD_WELCOME_CHANNEL_ID')
   end
 
   def reset_app_memoized_dependencies
