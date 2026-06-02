@@ -31,6 +31,15 @@ The host alert timer also reads these optional thresholds from
 - `PRODUCTION_ALERT_P95_LATENCY_MS_THRESHOLD=1000`
 - `PRODUCTION_ALERT_SQLITE_RETRY_THRESHOLD=10`
 
+## Production session secret
+
+`SESSION_SECRET` in `/home/ciembor/polish-open-source-rank/.env.local` must be
+at least 64 characters. Generate a value with:
+
+```sh
+ruby -rsecurerandom -e 'puts SecureRandom.hex(32)'
+```
+
 ## Deploy
 
 1. Push `master`.

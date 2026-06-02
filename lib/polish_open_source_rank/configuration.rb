@@ -11,6 +11,7 @@ module PolishOpenSourceRank
     OPTIONAL_DATABASE_PATH_CONSTRUCTOR = proc { |value| value.to_s.delete_prefix('sqlite://') }
     INTEGER_CONSTRUCTOR = proc(&:to_i)
     FLOAT_CONSTRUCTOR = proc(&:to_f)
+    MINIMUM_SESSION_SECRET_LENGTH = 64
     LOCAL_SESSION_SECRET = 'local-development-session-secret-for-polish-open-source-rank-auth-flows'
 
     DEFINITIONS = {
@@ -227,10 +228,11 @@ module PolishOpenSourceRank
 
     def session_secret
       value = settings.session_secret
-      return value unless value.nil? || value.empty?
-      return LOCAL_SESSION_SECRET unless production?
+      value = nil if value&.empty?
+      return LOCAL_SESSION_SECRET if value.nil? && !production?
 
-      ENV.fetch('SESSION_SECRET')
+      value ||= ENV.fetch('SESSION_SECRET')
+      production? ? validate_production_session_secret(value) : value
     end
 
     def public_database_path
@@ -295,6 +297,15 @@ module PolishOpenSourceRank
 
     def production?
       settings.rack_env == 'production'
+    end
+
+    def validate_production_session_secret(secret)
+      secret.tap do
+        next if secret.length >= MINIMUM_SESSION_SECRET_LENGTH
+
+        raise ArgumentError,
+              "SESSION_SECRET must be at least #{MINIMUM_SESSION_SECRET_LENGTH} characters in production"
+      end
     end
 
     def load_env_file

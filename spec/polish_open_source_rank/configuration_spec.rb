@@ -208,8 +208,21 @@ RSpec.describe PolishOpenSourceRank::Configuration do
 
     expect { configuration.session_secret }.to raise_error(KeyError)
 
-    ENV['SESSION_SECRET'] = 'production-secret'
+    ENV['SESSION_SECRET'] = 'production-session-secret-for-polish-open-source-rank-auth-flows-2026'
 
-    expect(configuration.session_secret).to eq('production-secret')
+    expect(configuration.session_secret).to eq(
+      'production-session-secret-for-polish-open-source-rank-auth-flows-2026'
+    )
+  end
+
+  it 'rejects short production session secrets' do
+    ENV['RACK_ENV'] = 'production'
+    ENV['SESSION_SECRET'] = 'short-production-secret'
+    configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
+
+    expect { configuration.session_secret }.to raise_error(
+      ArgumentError,
+      'SESSION_SECRET must be at least 64 characters in production'
+    )
   end
 end

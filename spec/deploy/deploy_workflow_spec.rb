@@ -10,6 +10,8 @@ RSpec.describe File do
       'DEPLOY_ACTION',
       'PREVIOUS_IMAGE_NAME',
       'ROLLBACK_CANDIDATE_IMAGE_NAME',
+      'assert_production_session_secret',
+      'SESSION_SECRET in ${env_file} must be at least 64 characters before deploy.',
       'curl -fsSL -o /dev/null "http://127.0.0.1:9293/healthz"',
       'curl -fsSL -o /dev/null "${PUBLIC_BASE_URL}/latest"',
       'No previous image available for rollback'
@@ -36,6 +38,7 @@ RSpec.describe File do
       'container-smoke:',
       'ruby-version: "4.0.5"',
       'docker build --pull -t polish-open-source-rank:ci .',
+      'SESSION_SECRET=container-smoke-session-secret-for-polish-open-source-rank-ci-2026',
       'curl -fsS http://127.0.0.1:9293/healthz',
       'container must not run as root',
       'runtime dirs are not writable',

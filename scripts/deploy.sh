@@ -103,6 +103,25 @@ report_running_jobs() {
   fi
 }
 
+assert_production_session_secret() {
+  local env_file="${REMOTE_DIR}/.env.local"
+  local session_secret_line=""
+  local session_secret=""
+
+  if [ -f "$env_file" ]; then
+    session_secret_line="$(grep -m 1 '^SESSION_SECRET=' "$env_file" || true)"
+  fi
+  session_secret="${session_secret_line#SESSION_SECRET=}"
+
+  if [ "${#session_secret}" -ge 64 ]; then
+    return 0
+  fi
+
+  echo "SESSION_SECRET in ${env_file} must be at least 64 characters before deploy." >&2
+  echo "Generate one with: ruby -rsecurerandom -e 'puts SecureRandom.hex(32)'" >&2
+  exit 78
+}
+
 install_units() {
   cd "${REMOTE_DIR}"
   for unit in \
@@ -134,6 +153,7 @@ install_units() {
 deploy_release() {
   local previous_release=""
 
+  assert_production_session_secret
   install_units
   report_running_jobs
 
@@ -171,6 +191,8 @@ deploy_release() {
 rollback_release() {
   local current_release="unknown"
   local previous_release="unknown"
+
+  assert_production_session_secret
 
   if ! image_exists "${PREVIOUS_IMAGE_NAME}"; then
     echo "No previous image available for rollback" >&2
