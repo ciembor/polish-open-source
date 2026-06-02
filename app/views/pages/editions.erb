@@ -48,8 +48,13 @@
                 <h4><%= h t('editions.top_projects') %></h4>
                 <ol class="edition-toplist">
                   <% edition.fetch(:repositories).each do |row| %>
+                    <% source_url = safe_external_url(row[:html_url]) %>
                     <li>
-                      <a class="primary-link" href="<%= h row.fetch(:html_url) %>"><%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:full_name) %></a>
+                      <% if source_url %>
+                        <a class="primary-link" href="<%= h source_url %>"><%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:full_name) %></a>
+                      <% else %>
+                        <span class="primary-link"><%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:full_name) %></span>
+                      <% end %>
                       <span>⭐ <%= number(row.fetch(:stargazers_count)) %> <%= h t('editions.stars_suffix') %></span>
                     </li>
                   <% end %>
@@ -60,8 +65,13 @@
                 <h4><%= h t('editions.top_users_stars') %></h4>
                 <ol class="edition-toplist">
                   <% edition.fetch(:users_by_stars).each do |row| %>
+                    <% source_url = safe_external_url(row[:html_url]) %>
                     <li>
-                      <a class="primary-link" href="<%= h row.fetch(:html_url) %>"><%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:login) %></a>
+                      <% if source_url %>
+                        <a class="primary-link" href="<%= h source_url %>"><%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:login) %></a>
+                      <% else %>
+                        <span class="primary-link"><%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:login) %></span>
+                      <% end %>
                       <span>⭐ <%= number(row.fetch(:total_stars)) %> <%= h t('editions.stars_suffix') %></span>
                     </li>
                   <% end %>
@@ -72,8 +82,13 @@
                 <h4><%= h t('editions.top_users_merged_prs') %></h4>
                 <ol class="edition-toplist">
                   <% edition.fetch(:users_by_merged_prs).each do |row| %>
+                    <% source_url = safe_external_url(row[:html_url]) %>
                     <li>
-                      <a class="primary-link" href="<%= h row.fetch(:html_url) %>"><%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:login) %></a>
+                      <% if source_url %>
+                        <a class="primary-link" href="<%= h source_url %>"><%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:login) %></a>
+                      <% else %>
+                        <span class="primary-link"><%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:login) %></span>
+                      <% end %>
                       <span><%= number(row.fetch(:merged_pull_requests_count)) %> <%= h t('editions.merged_prs_suffix') %></span>
                     </li>
                   <% end %>

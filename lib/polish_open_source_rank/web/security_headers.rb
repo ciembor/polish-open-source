@@ -41,6 +41,7 @@ module PolishOpenSourceRank
         {
           'Content-Security-Policy' => CONTENT_SECURITY_POLICY,
           'X-Content-Type-Options' => 'nosniff',
+          'Strict-Transport-Security' => 'max-age=31536000; includeSubDomains',
           'Referrer-Policy' => 'strict-origin-when-cross-origin',
           'Permissions-Policy' => PERMISSIONS_POLICY
         }

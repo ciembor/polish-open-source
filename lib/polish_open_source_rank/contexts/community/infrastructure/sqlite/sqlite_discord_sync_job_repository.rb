@@ -60,7 +60,7 @@ module PolishOpenSourceRank
             end
 
             def mark_synced(job)
-              update_status(job, status: 'synced', error: nil, synced_at: timestamp)
+              update_status(job, terminal_status_attributes(status: 'synced', error: nil, synced_at: timestamp))
             end
 
             def mark_retryable(job, error)
@@ -68,7 +68,11 @@ module PolishOpenSourceRank
             end
 
             def mark_failed(job, error)
-              update_status(job, status: 'failed', error: error.message, attempts: job.fetch(:attempts).to_i + 1)
+              attempts = job.fetch(:attempts).to_i + 1
+              update_status(
+                job,
+                terminal_status_attributes(status: 'failed', error: error.message, attempts: attempts)
+              )
             end
 
             private
@@ -150,6 +154,10 @@ module PolishOpenSourceRank
 
             def update_status(job, attributes)
               scoped_job(job).update(attributes.merge(updated_at: timestamp))
+            end
+
+            def terminal_status_attributes(attributes)
+              attributes.merge(access_token: nil)
             end
 
             def scoped_job(job)

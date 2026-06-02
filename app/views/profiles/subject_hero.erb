@@ -2,8 +2,11 @@
   <div class="content profile-hero__inner">
     <p class="eyebrow"><%= h platform_name(record.fetch(:platform)) %></p>
     <div class="profile-identity">
-      <% if record[:avatar_url] && !record[:avatar_url].empty? %>
-        <img class="profile-avatar" src="<%= h record[:avatar_url] %>" alt="<%= h t("#{translation_scope}.avatar_alt", translation_value_key => record.fetch(:login)) %>">
+      <% avatar_url = safe_external_url(record[:avatar_url]) %>
+      <% source_url = safe_external_url(record[:html_url]) %>
+      <% homepage_url = safe_external_url(record[:homepage]) %>
+      <% if avatar_url %>
+        <img class="profile-avatar" src="<%= h avatar_url %>" alt="<%= h t("#{translation_scope}.avatar_alt", translation_value_key => record.fetch(:login)) %>">
       <% else %>
         <div class="profile-avatar profile-avatar--fallback" aria-hidden="true"><%= h record.fetch(:login)[0].upcase %></div>
       <% end %>
@@ -14,9 +17,11 @@
         </div>
         <p class="profile-login">@<%= h record.fetch(:login) %></p>
         <div class="profile-actions">
-          <a class="profile-action" href="<%= h record.fetch(:html_url) %>"><%= h t("#{translation_scope}.links.source_profile", platform: platform_name(record.fetch(:platform))) %></a>
-          <% if record[:homepage] && !record[:homepage].empty? %>
-            <a class="profile-action" href="<%= h record[:homepage] %>"><%= h t('users.links.homepage') %></a>
+          <% if source_url %>
+            <a class="profile-action" href="<%= h source_url %>"><%= h t("#{translation_scope}.links.source_profile", platform: platform_name(record.fetch(:platform))) %></a>
+          <% end %>
+          <% if homepage_url %>
+            <a class="profile-action" href="<%= h homepage_url %>"><%= h t('users.links.homepage') %></a>
           <% end %>
         </div>
       </div>

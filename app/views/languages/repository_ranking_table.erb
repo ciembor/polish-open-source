@@ -16,7 +16,10 @@
               <span class="ranking-list__description"><%= h row[:description] %></span>
             <% end %>
             <div class="ranking-list__meta">
-              <a class="muted-link muted-link--standalone" href="<%= h row.fetch(:html_url) %>"><%= h t('repositories.links.source_project', platform: platform_name(row.fetch(:platform))) %></a>
+              <% source_url = safe_external_url(row[:html_url]) %>
+              <% if source_url %>
+                <a class="muted-link muted-link--standalone" href="<%= h source_url %>"><%= h t('repositories.links.source_project', platform: platform_name(row.fetch(:platform))) %></a>
+              <% end %>
             </div>
           </div>
           <div class="ranking-list__metrics">

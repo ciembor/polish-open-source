@@ -23,6 +23,10 @@ module PolishOpenSourceRank
           Rack::Utils.escape_html(value.to_s)
         end
 
+        def safe_external_url(value)
+          SafeExternalUrl.normalize(value)
+        end
+
         def number(value)
           value.to_i.to_s.reverse.gsub(/(\d{3})(?=\d)/, '\1 ').reverse
         end

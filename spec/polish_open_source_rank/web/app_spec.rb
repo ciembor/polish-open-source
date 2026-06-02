@@ -846,6 +846,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       expect(response['Content-Security-Policy']).to include("default-src 'self'")
       expect(response['Content-Security-Policy']).to include("frame-ancestors 'none'")
       expect(response['X-Content-Type-Options']).to eq('nosniff')
+      expect(response['Strict-Transport-Security']).to eq('max-age=31536000; includeSubDomains')
       expect(response['Referrer-Policy']).to eq('strict-origin-when-cross-origin')
       expect(response['Permissions-Policy']).to include('camera=()')
     end
@@ -859,6 +860,25 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     expect(target_blank_links).not_to be_empty
     expect(target_blank_links).to all(include('rel="noopener noreferrer"'))
+  end
+
+  it 'does not render unsafe external URLs from public data as href or src attributes', :aggregate_failures do
+    path = seed_database
+    ENV['DATABASE_URL'] = "sqlite://#{path}"
+    poison_public_urls(path)
+
+    request = Rack::MockRequest.new(described_class)
+    html = [
+      request.get('/latest').body,
+      request.get('/users/github/alice').body,
+      request.get('/repositories/github/alice/app').body,
+      request.get('/latest/packages/npm/top').body
+    ].join("\n")
+
+    expect(html).not_to include('href="javascript:')
+    expect(html).not_to include('href="data:')
+    expect(html).not_to include('href="ftp:')
+    expect(html).not_to include('src="https://user:password@')
   end
 
   it 'serves health checks and 404 pages' do
@@ -982,6 +1002,23 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     snapshot_repository.record_user_stats(user_stats(period))
     snapshot_repository.record_repository_stats(repository_stats(period))
     path
+  end
+
+  def poison_public_urls(path)
+    database = bootstrapped_database(path)
+    database.execute(
+      'UPDATE users SET html_url = ?, homepage = ?, avatar_url = ? WHERE login = ?',
+      ['javascript:alert(1)', 'data:text/html,<script>alert(1)</script>', 'https://user:password@example.test/a.png',
+       'alice']
+    )
+    database.execute(
+      'UPDATE repositories SET html_url = ?, homepage = ? WHERE full_name = ?',
+      ['javascript:alert(1)', 'ftp://example.test/repo', 'alice/app']
+    )
+    database.execute(
+      'UPDATE registry_packages SET registry_url = ?, repository_url = ? WHERE ecosystem = ?',
+      ['javascript:alert(1)', 'data:text/html,<script>alert(1)</script>', 'npm']
+    )
   end
 
   def seed_period(run_repository, snapshot_repository, period)

@@ -49,6 +49,23 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
     expect(repository.pending).to be_empty
   end
 
+  it 'clears OAuth access tokens when sync jobs reach a terminal state' do
+    request_oauth_sync
+    member_sync = repository.pending.find { |job| job.fetch(:action_kind) == 'member_sync' }
+
+    repository.mark_retryable(member_sync, StandardError.new('temporary'))
+    expect(access_token_for('member_sync')).to eq('access-token')
+
+    retryable = repository.pending.find { |job| job.fetch(:action_kind) == 'member_sync' }
+    repository.mark_failed(retryable, StandardError.new('broken'))
+    expect(access_token_for('member_sync')).to be_nil
+
+    request_oauth_sync
+    member_sync = repository.pending.find { |job| job.fetch(:action_kind) == 'member_sync' }
+    repository.mark_synced(member_sync)
+    expect(access_token_for('member_sync')).to be_nil
+  end
+
   it 'returns no status when a profile has no sync job' do
     expect(repository.sync_status('github', 1)).to be_nil
   end
@@ -104,5 +121,12 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
       access_token: 'access-token',
       welcome_channel_id: 'welcome'
     )
+  end
+
+  def access_token_for(action_kind)
+    database.fetch_all(
+      'SELECT access_token FROM discord_sync_jobs WHERE action_kind = ?',
+      [action_kind]
+    ).first.fetch(:access_token)
   end
 end

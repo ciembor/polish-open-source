@@ -144,6 +144,11 @@ public HTML prefixes.
 requests reach the Rack app. The app still marks those responses as `no-store`
 and `noindex`, but indexing headers are not access control.
 
+Public views render external URLs through one presentation helper that only
+allows browser-safe `http` and `https` URLs without embedded credentials. Source
+API, registry, and manifest URLs can still be stored for matching and diagnostics
+without every template re-implementing URL safety rules.
+
 The Rack rate limiter remains in-process for the current production shape: one
 web container behind nginx plus nginx edge rate limits. It only trusts
 `X-Real-IP` or `X-Forwarded-For` when `REMOTE_ADDR` belongs to a trusted local or

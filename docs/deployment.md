@@ -61,6 +61,9 @@ before granting additional maintainers deploy permission.
   `/etc/nginx/.htpasswd-polish-open-source-rank`; use
   [deploy/nginx-polish-open-source-rank-internal.conf](../deploy/nginx-polish-open-source-rank-internal.conf)
   as the expected server block snippet.
+- The Rack app emits security headers, including HSTS, for public, auth, badge,
+  and internal responses. Edge and nginx config may also emit HSTS, but the app
+  middleware is the repository-owned regression surface.
 - Monthly, package, and resume crawls are started by systemd one-shot services
   and use the same mounted `db/` and `log/` directories as the web app.
 - `/internal/jobs` reflects SQLite state from that shared app database, so stale

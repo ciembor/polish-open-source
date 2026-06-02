@@ -71,6 +71,15 @@ systemctl status polish-open-source-rank-packages.service --no-pager
 curl -fsS -u ciembor https://polish-open-source.pl/internal/jobs
 ```
 
+Internal operations pages must require nginx Basic Auth. A request without
+credentials should fail before reaching the Rack app:
+
+```sh
+curl -fsS -o /dev/null -w '%{http_code}\n' https://polish-open-source.pl/internal/jobs
+```
+
+Expected status: `401`.
+
 ## Stuck monthly or packages
 
 1. Check `/internal/jobs` with the nginx Basic Auth credentials for the active
