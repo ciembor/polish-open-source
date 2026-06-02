@@ -32,16 +32,15 @@ module PolishOpenSourceRank
             end
           end
 
-          def initialize(store:, store_mutex:, work_events:, minimum_repository_stars:,
-                         snapshot_factory: MonthlySnapshotFactory.new)
+          def initialize(store:, store_mutex:, work_events:, snapshot_factory: MonthlySnapshotFactory.new,
+                         repository_collector: nil)
             @store = store
             @store_mutex = store_mutex
             @snapshot_factory = snapshot_factory
-            @repository_writer = MonthlyRepositorySnapshotWriter.new(
+            @repository_collector = repository_collector || MonthlyRepositorySnapshotCollector.new(
               store: store,
               store_mutex: store_mutex,
               work_events: work_events,
-              minimum_repository_stars: minimum_repository_stars,
               snapshot_factory: snapshot_factory
             )
           end
@@ -61,7 +60,7 @@ module PolishOpenSourceRank
             with_store do
               store.record_contributor_profile(snapshot_factory.contributor_profile(*accepted_profile.snapshot_args))
             end
-            metrics = repository_writer.contributor_metrics(accepted_profile)
+            metrics = repository_collector.contributor_metrics(accepted_profile)
             snapshot = snapshot_factory.contributor_snapshot(*accepted_profile.snapshot_args, metrics)
             with_store { store.record_contributor_snapshot(snapshot) }
           end
@@ -69,14 +68,14 @@ module PolishOpenSourceRank
           def record_organization(accepted_profile)
             profile_snapshot = snapshot_factory.organization_profile(*accepted_profile.snapshot_args)
             with_store { store.record_organization_profile(profile_snapshot) }
-            metrics = repository_writer.organization_metrics(accepted_profile)
+            metrics = repository_collector.organization_metrics(accepted_profile)
             snapshot = snapshot_factory.organization_snapshot(*accepted_profile.snapshot_args, metrics)
             with_store { store.record_organization_snapshot(snapshot) }
           end
 
           private
 
-          attr_reader :repository_writer, :snapshot_factory, :store, :store_mutex
+          attr_reader :repository_collector, :snapshot_factory, :store, :store_mutex
 
           def with_store(&)
             store_mutex.synchronize(&)

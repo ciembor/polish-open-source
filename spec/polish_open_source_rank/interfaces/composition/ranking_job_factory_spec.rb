@@ -11,10 +11,19 @@ RSpec.describe PolishOpenSourceRank::Interfaces::Composition::RankingJobFactory 
     stub_gateways(clients)
     stub_database(database)
     stub_ranking_adapters(database, source_request_log)
+    allow(PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlySnapshot).to receive(:new).and_call_original
 
     command = described_class.build(['--month', '2026-04'], configuration: configuration, output: StringIO.new)
 
     expect(command).to be_a(PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand)
+    expect(PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlySnapshot).to have_received(:new).with(
+      hash_including(
+        source_runner: be_a(PolishOpenSourceRank::Contexts::Ranking::Application::MonthlySourceSnapshotRunner),
+        source_metric_backfill: be_a(
+          PolishOpenSourceRank::Contexts::Ranking::Application::MonthlySourceMetricBackfill
+        )
+      )
+    )
     expect(PolishOpenSourceRank::Infrastructure::GitHubGateway).to have_received(:new).with(clients.fetch(:github))
     expect(PolishOpenSourceRank::Infrastructure::GitLabGateway).to have_received(:new).with(clients.fetch(:gitlab))
     expect(PolishOpenSourceRank::Infrastructure::CodebergGateway).to have_received(:new).with(clients.fetch(:codeberg))

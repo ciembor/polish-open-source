@@ -4,63 +4,52 @@ module PolishOpenSourceRank
   module Contexts
     module Ranking
       module Application
-        # Persists repository snapshots and returns monthly metrics for an accepted profile.
-        class MonthlyRepositorySnapshotWriter
-          def initialize(store:, store_mutex:, work_events:, minimum_repository_stars:,
-                         snapshot_factory: MonthlySnapshotFactory.new)
+        # Collects repository snapshots for an accepted profile and returns monthly metrics.
+        class MonthlyRepositorySnapshotCollector
+          MINIMUM_REPOSITORY_STARS = 5
+
+          def initialize(store:, store_mutex:, work_events:, minimum_repository_stars: MINIMUM_REPOSITORY_STARS,
+                         snapshot_factory: MonthlySnapshotFactory.new,
+                         star_snapshot_policy: MonthlyRepositoryStarSnapshotPolicy.new)
             @store = store
             @store_mutex = store_mutex
             @work_events = work_events
             @minimum_repository_stars = minimum_repository_stars
             @snapshot_factory = snapshot_factory
+            @star_snapshot_policy = star_snapshot_policy
           end
 
           def contributor_metrics(accepted_profile)
-            repository_metrics(
-              accepted_profile,
-              collection: ContributorRepositoryCollection.new(accepted_profile)
-            )
+            repository_metrics(ContributorRepositoryCollection.new(accepted_profile, star_snapshot_policy))
           end
 
           def organization_metrics(accepted_profile)
-            repository_metrics(
-              accepted_profile,
-              collection: OrganizationRepositoryCollection.new(accepted_profile)
-            )
+            repository_metrics(OrganizationRepositoryCollection.new(accepted_profile, star_snapshot_policy))
           end
 
           private
 
-          attr_reader :minimum_repository_stars, :snapshot_factory, :store, :store_mutex, :work_events
+          attr_reader :minimum_repository_stars, :snapshot_factory, :star_snapshot_policy, :store, :store_mutex,
+                      :work_events
 
-          def repository_metrics(accepted_profile, collection:)
-            record_work_event(
-              accepted_profile.period,
-              collection.work_attributes
-            ) do
+          def repository_metrics(collection)
+            record_work_event(collection.accepted_profile.period, collection.work_attributes) do
               metrics = Domain::RepositoryMetrics.empty
-              collection.each_repository do |repository|
-                record_repository(accepted_profile, collection, repository, metrics)
-              end
+              collection.each_repository { |repository| record_repository(collection, repository, metrics) }
               metrics
             end
           end
 
-          def record_repository(accepted_profile, collection, repository, metrics)
-            record_work_event(
-              accepted_profile.period,
-              collection.repository_work_attributes(repository)
-            ) do
+          def record_repository(collection, repository, metrics)
+            record_work_event(collection.accepted_profile.period, collection.repository_work_attributes(repository)) do
               next 'skipped' unless repository.at_least_stars?(minimum_repository_stars)
 
-              store_repository(accepted_profile, collection, repository, metrics)
+              store_repository(collection, repository, metrics)
             end
           end
 
-          def store_repository(accepted_profile, collection, repository, metrics)
-            star_snapshot = repository_star_snapshot(accepted_profile, repository) do
-              collection.repository_delta(repository) { source_repository_delta(accepted_profile, repository) }
-            end
+          def store_repository(collection, repository, metrics)
+            star_snapshot = collection.star_snapshot(repository)
             monthly_stars_delta = star_snapshot.fetch(:monthly_stars_delta)
             repository = repository.with_stars(star_snapshot.fetch(:stars))
             metrics.add(repository, monthly_stars_delta)
@@ -68,22 +57,6 @@ module PolishOpenSourceRank
               collection.record_repository_snapshot(store, snapshot_factory, repository, monthly_stars_delta)
             end
             'stored'
-          end
-
-          def source_repository_delta(accepted_profile, repository)
-            accepted_profile.source.repository_stars_delta(repository, accepted_profile.period)
-          end
-
-          def repository_star_snapshot(accepted_profile, repository)
-            source = accepted_profile.source
-            return source.repository_star_snapshot(repository, accepted_profile.period) if source.respond_to?(
-              :repository_star_snapshot
-            )
-
-            {
-              stars: repository.stars,
-              monthly_stars_delta: yield
-            }
           end
 
           def record_work_event(period, attributes, &)
@@ -99,8 +72,11 @@ module PolishOpenSourceRank
           end
 
           class ContributorRepositoryCollection
-            def initialize(accepted_profile)
+            attr_reader :accepted_profile
+
+            def initialize(accepted_profile, star_snapshot_policy)
               @accepted_profile = accepted_profile
+              @star_snapshot_policy = star_snapshot_policy
             end
 
             def work_attributes
@@ -130,17 +106,8 @@ module PolishOpenSourceRank
               source.repositories_for(accepted_profile.profile).each(&)
             end
 
-            def repository_delta(repository)
-              return 0 if repository.stars.zero?
-
-              previous_stars = accepted_profile.previous_stars.contributor(
-                accepted_profile.period, accepted_profile.source_platform, repository
-              )
-              if previous_stars && accepted_profile.use_snapshot_star_diff?
-                return [repository.stars - previous_stars.to_i, 0].max
-              end
-
-              yield
+            def star_snapshot(repository)
+              star_snapshot_policy.snapshot(accepted_profile, repository, previous_stars_role: :contributor)
             end
 
             def record_repository_snapshot(store, snapshot_factory, repository, monthly_stars_delta)
@@ -153,12 +120,15 @@ module PolishOpenSourceRank
 
             private
 
-            attr_reader :accepted_profile
+            attr_reader :star_snapshot_policy
           end
 
           class OrganizationRepositoryCollection
-            def initialize(accepted_profile)
+            attr_reader :accepted_profile
+
+            def initialize(accepted_profile, star_snapshot_policy)
               @accepted_profile = accepted_profile
+              @star_snapshot_policy = star_snapshot_policy
             end
 
             def work_attributes
@@ -190,17 +160,8 @@ module PolishOpenSourceRank
               source.repositories_for_organization(accepted_profile.profile).each(&)
             end
 
-            def repository_delta(repository)
-              return 0 if repository.stars.zero?
-
-              previous_stars = accepted_profile.previous_stars.organization(
-                accepted_profile.period, accepted_profile.source_platform, repository
-              )
-              if previous_stars && accepted_profile.use_snapshot_star_diff?
-                return [repository.stars - previous_stars.to_i, 0].max
-              end
-
-              yield
+            def star_snapshot(repository)
+              star_snapshot_policy.snapshot(accepted_profile, repository, previous_stars_role: :organization)
             end
 
             def record_repository_snapshot(store, snapshot_factory, repository, monthly_stars_delta)
@@ -213,7 +174,7 @@ module PolishOpenSourceRank
 
             private
 
-            attr_reader :accepted_profile
+            attr_reader :star_snapshot_policy
           end
         end
       end

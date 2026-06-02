@@ -153,12 +153,12 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::MonthlySour
 
   it 'stops worker threads when joining source refreshes raises' do
     source_threads = instance_double(
-      PolishOpenSourceRank::Contexts::Ranking::Application::MonthlySnapshotWorkflow::SourceThreads,
+      PolishOpenSourceRank::Contexts::Ranking::Application::MonthlySourceSnapshotRunner::SourceThreads,
       errors: []
     )
     allow(source_threads).to receive(:join).and_raise('interrupted')
     allow(source_threads).to receive(:stop)
-    allow(PolishOpenSourceRank::Contexts::Ranking::Application::MonthlySnapshotWorkflow::SourceThreads)
+    allow(PolishOpenSourceRank::Contexts::Ranking::Application::MonthlySourceSnapshotRunner::SourceThreads)
       .to receive(:start).and_return(source_threads)
 
     backfill = described_class.new(store: store, sources: [], logger: logger, work_events: work_events)

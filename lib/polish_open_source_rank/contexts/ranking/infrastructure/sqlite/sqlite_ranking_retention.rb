@@ -7,7 +7,7 @@ module PolishOpenSourceRank
         module SQLite
           # Keeps complete contributor snapshots while limiting repository catalog noise.
           class SQLiteRankingRetention
-            MINIMUM_REPOSITORY_STARS = Application::RunMonthlySnapshot::MINIMUM_REPOSITORY_STARS
+            MINIMUM_REPOSITORY_STARS = Application::MonthlyRepositorySnapshotCollector::MINIMUM_REPOSITORY_STARS
 
             def initialize(database, catalog: Domain::LocationCatalog)
               @database = database

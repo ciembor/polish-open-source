@@ -122,46 +122,46 @@ Goal: make repository enumeration, star snapshots, delta calculation,
 minimum-star filtering, metrics aggregation, and repository snapshot writes a
 cohesive module below profile persistence.
 
-- [ ] Introduce a repository snapshot collector that accepts an accepted profile
+- [x] Introduce a repository snapshot collector that accepts an accepted profile
       and returns `Domain::RepositoryMetrics`.
-- [ ] Hide source API differences between eager repository lists and streaming
+- [x] Hide source API differences between eager repository lists and streaming
       repository enumeration inside the collector.
-- [ ] Hide contributor vs organization repository differences behind separate
+- [x] Hide contributor vs organization repository differences behind separate
       semantic entry points or role objects, not scattered conditionals.
-- [ ] Move `MINIMUM_REPOSITORY_STARS` ownership to the collector or a ranking
+- [x] Move `MINIMUM_REPOSITORY_STARS` ownership to the collector or a ranking
       policy object, then update retention references if needed.
-- [ ] Move star delta calculation into a dedicated policy that owns the choice
+- [x] Move star delta calculation into a dedicated policy that owns the choice
       between stored snapshot diffs and source-provided deltas.
-- [ ] Keep repository work-event recording near repository processing so the
+- [x] Keep repository work-event recording near repository processing so the
       top-level runner does not know repository unit labels or stages.
-- [ ] Add specs for minimum-star filtering, zero-star repositories, stored
+- [x] Add specs for minimum-star filtering, zero-star repositories, stored
       snapshot diffs, source-provided deltas, contributor repositories, and
       organization repositories.
-- [ ] Run the full pre-commit hook and commit the completed milestone.
+- [x] Run the full pre-commit hook and commit the completed milestone.
 
 ## Milestone 6: Shrink RunMonthlySnapshot To A Use-Case Facade
 
 Goal: leave `RunMonthlySnapshot` as the stable monthly snapshot use case that
 coordinates source-level workflow without owning lower-level decisions.
 
-- [ ] Replace private discovery, candidate-processing, profile-persistence, and
+- [x] Replace private discovery, candidate-processing, profile-persistence, and
       repository methods with injected collaborators wired from composition.
-- [ ] Keep `RunMonthlySnapshot#call` responsible for run lifecycle,
+- [x] Keep `RunMonthlySnapshot#call` responsible for run lifecycle,
       backfill-only delegation, source workflow sequencing, and top-level
       failure handling only.
-- [ ] Preserve `MonthlySnapshotWorkflow` usage only if it still hides real
+- [x] Preserve `MonthlySnapshotWorkflow` usage only if it still hides real
       source-thread complexity; otherwise move threading behind a clearer
       source-runner collaborator.
-- [ ] Remove instance flags like `@use_snapshot_star_diff` and `@existing_only`
+- [x] Remove instance flags like `@use_snapshot_star_diff` and `@existing_only`
       when a request model or collaborator configuration can make the run
       context explicit.
-- [ ] Verify `RunMonthlySnapshot` has no broad private-method cluster and stays
+- [x] Verify `RunMonthlySnapshot` has no broad private-method cluster and stays
       below the agreed size target.
-- [ ] Update composition specs to assert collaborator wiring without binding
+- [x] Update composition specs to assert collaborator wiring without binding
       tests to construction internals.
-- [ ] Run Reek against the ranking application namespace and fix smells caused
+- [x] Run Reek against the ranking application namespace and fix smells caused
       by the refactor.
-- [ ] Run the full pre-commit hook and commit the completed milestone.
+- [x] Run the full pre-commit hook and commit the completed milestone.
 
 ## Milestone 7: Documentation And Architecture Guardrails
 

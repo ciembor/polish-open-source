@@ -23,7 +23,7 @@ module PolishOpenSourceRank
 
           def call(period, scope: nil, refresh_user_merged_prs: false, refresh_organization_members: false,
                    refresh_organization_merged_prs: false)
-            source_threads = MonthlySnapshotWorkflow::SourceThreads.start(sources, []) do |source, _refresh|
+            source_threads = MonthlySourceSnapshotRunner::SourceThreads.start(sources, []) do |source, _refresh|
               refresh_source_metrics(
                 period,
                 source,
