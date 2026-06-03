@@ -31,10 +31,10 @@ module PolishOpenSourceRank
       REGISTRY_PACKAGE_SQL = <<~SQL
         SELECT ecosystem,
                COUNT(*) AS total,
-               SUM(CASE WHEN status = 'pending' THEN 0 ELSE 1 END) AS done,
-               SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
-               SUM(CASE WHEN status IN ('failed', 'rate_limited') THEN 1 ELSE 0 END) AS failed,
-               SUM(CASE WHEN status = 'not_found' THEN 1 ELSE 0 END) AS skipped
+               COUNT(*) AS done,
+               0 AS pending,
+               0 AS failed,
+               0 AS skipped
         FROM registry_packages
         GROUP BY ecosystem
         ORDER BY ecosystem

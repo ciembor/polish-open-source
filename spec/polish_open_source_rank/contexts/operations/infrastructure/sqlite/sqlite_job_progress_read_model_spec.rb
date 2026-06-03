@@ -23,6 +23,12 @@ RSpec.describe PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLit
       status_detail: 'stored=1, skipped=0, failed=0'
     )
     expect(section(progress, 'package repository scans / user')).to include(total: 2, done: 1, pending: 1, failed: 0)
+    expect(section(progress, 'registry packages / npm')).to include(
+      total: 2,
+      done: 2,
+      pending: 0,
+      state: 'complete'
+    )
     expect(section(progress, 'registry snapshots / npm')).to include(
       total: 2,
       done: 1,
