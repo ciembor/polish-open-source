@@ -89,6 +89,22 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
     )
   end
 
+  it 'retries transient network failures before returning registry metadata' do
+    stub_http(
+      Net::OpenTimeout.new('execution expired'),
+      response('200', rubygems_body),
+      response('200', %w[app plugin cli])
+    )
+
+    result = client(:RubyGemsRegistryClient).fetch('polish-tool')
+
+    expect(result).to be_ok
+    expect(requests).to include(
+      { host: 'rubygems.org', path: '/api/v1/gems/polish-tool.json' }
+    )
+    expect(sleeps).not_to be_empty
+  end
+
   it 'maps malformed registry responses to failed fetches' do
     stub_http(raw_response('200', '{broken json'))
 
@@ -343,7 +359,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::Registr
       allow(http).to receive(:request) do |request|
         requests << { host: request.uri.host, path: request.uri.request_uri }
         request_headers << request.to_hash.transform_values(&:first)
-        @responses.shift
+        response = @responses.shift
+        raise response if response.is_a?(Exception)
+
+        response
       end
       block.call(http)
     end

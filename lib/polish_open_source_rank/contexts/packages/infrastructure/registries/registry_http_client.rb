@@ -28,7 +28,8 @@ module PolishOpenSourceRank
 
               loop do
                 attempts += 1
-                response = perform_get(path, params)
+                response = response_for_attempt(path, params, attempts)
+                return response if response.is_a?(Result)
                 return parsed_response(response) if terminal?(response, attempts)
 
                 wait_seconds = retry_wait_seconds(response, attempts)
@@ -48,6 +49,17 @@ module PolishOpenSourceRank
               uri = build_uri(path, params)
               request = Net::HTTP::Get.new(uri, headers)
               Net::HTTP.start(uri.hostname, uri.port, **http_options(uri)) { |client| client.request(request) }
+            end
+
+            def response_for_attempt(path, params, attempts)
+              perform_get(path, params)
+            rescue StandardError => e
+              return Result.new(status: 'failed', error: e.message) if attempts > max_retries
+
+              wait_seconds = retry_error_wait_seconds(attempts)
+              logger.puts retry_error_message(path, e, wait_seconds)
+              sleeper.call(wait_seconds)
+              response_for_attempt(path, params, attempts + 1)
             end
 
             def terminal?(response, attempts)
@@ -73,6 +85,10 @@ module PolishOpenSourceRank
               "#{registry} registry retry in #{wait_seconds.round(2)}s for #{path} (HTTP #{response.code})"
             end
 
+            def retry_error_message(path, error, wait_seconds)
+              "#{registry} registry retry in #{wait_seconds.round(2)}s for #{path} (#{error.class}: #{error.message})"
+            end
+
             def response_status(response)
               return 'ok' if response.is_a?(Net::HTTPSuccess)
               return 'not_found' if response.code.to_i == 404
@@ -83,6 +99,10 @@ module PolishOpenSourceRank
 
             def retry_wait_seconds(response, attempts)
               retry_after(response) || [60, (2**attempts) + rand].min
+            end
+
+            def retry_error_wait_seconds(attempts)
+              [60, (2**attempts) + rand].min
             end
 
             def retry_after(response)

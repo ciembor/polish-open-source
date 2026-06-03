@@ -174,11 +174,20 @@ module PolishOpenSourceRank
                   normalized_package_name: package_row.fetch(:normalized_package_name)
                 )
                 .update(
-                  status: result.status,
+                  status: failure_package_status(package_row, result),
                   error: result.error,
                   checked_at: timestamp,
                   updated_at: timestamp
                 )
+            end
+
+            def failure_package_status(package_row, result)
+              return result.status unless result.status == 'failed'
+
+              status = package_row.fetch(:status)
+              return status unless status == 'failed'
+
+              'pending'
             end
 
             def mark_ignored_package_row(package_row)

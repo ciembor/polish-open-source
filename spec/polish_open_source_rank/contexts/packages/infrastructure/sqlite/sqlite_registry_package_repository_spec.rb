@@ -144,6 +144,32 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     expect(registry_snapshots).to be_empty
   end
 
+  it 'keeps transient registry failures eligible for future fetches' do
+    seed_pending_package
+    failure = PolishOpenSourceRank::Contexts::Packages::Domain::RegistryFetchResult.new(
+      status: 'failed',
+      error: 'open timeout'
+    )
+
+    repository.record_fetch_result(period, registry_packages.first, failure)
+
+    expect(registry_packages.first).to include(status: 'pending', error: 'open timeout')
+    expect(repository.packages_to_fetch(period, ecosystem: 'npm', limit: 10, refresh: false)).not_to be_empty
+    expect(registry_snapshots).to be_empty
+  end
+
+  it 'returns previously failed transient packages to the pending fetch queue' do
+    seed_pending_package(status: 'failed')
+    failure = PolishOpenSourceRank::Contexts::Packages::Domain::RegistryFetchResult.new(
+      status: 'failed',
+      error: 'open timeout'
+    )
+
+    repository.record_fetch_result(period, registry_packages.first, failure)
+
+    expect(registry_packages.first).to include(status: 'pending', error: 'open timeout')
+  end
+
   it 'preserves package metadata when an optional metric fetch fails' do
     seed_pending_package
     package = PolishOpenSourceRank::Contexts::Packages::Domain::RegistryPackage.new(
@@ -217,7 +243,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
         INSERT INTO registry_packages(
           ecosystem, package_name, normalized_package_name, registry_url, repository_url, license, status, updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       SQL
       [
         ecosystem,
@@ -226,6 +252,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
         attributes.fetch(:registry_url, 'https://www.npmjs.com/package/tool'),
         attributes[:repository_url],
         attributes[:license],
+        attributes.fetch(:status, 'pending'),
         '2026-05-23T12:00:00Z'
       ]
     )
