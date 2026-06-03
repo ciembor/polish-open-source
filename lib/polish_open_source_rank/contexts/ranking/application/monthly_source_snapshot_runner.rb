@@ -102,8 +102,7 @@ module PolishOpenSourceRank
                   request.period,
                   source,
                   candidate,
-                  refresh: refresh,
-                  use_snapshot_star_diff: request.use_snapshot_star_diff?
+                  refresh: refresh
                 )
               end
             end
@@ -123,8 +122,7 @@ module PolishOpenSourceRank
                   request.period,
                   source,
                   candidate,
-                  refresh: refresh,
-                  use_snapshot_star_diff: request.use_snapshot_star_diff?
+                  refresh: refresh
                 )
               end
             end

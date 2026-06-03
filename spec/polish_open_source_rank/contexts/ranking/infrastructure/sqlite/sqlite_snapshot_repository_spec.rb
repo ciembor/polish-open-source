@@ -33,7 +33,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
       merged_pull_requests_count: 6
     )
     expect(row('repository_monthly_stats')).to include(stargazers_count: 27, monthly_stars_delta: 2)
-    expect(repository.previous_repository_stargazers_count(period, 'github', 100)).to eq(27)
+    expect(row('repository_star_observations')).to include(stargazers_count: 27)
   end
 
   it 'updates snapshot records through stable platform-qualified identities' do
@@ -70,7 +70,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     )
     expect(row('organization_repositories')).to include(full_name: 'polish-org/toolkit', archived: 0)
     expect(row('organization_repository_monthly_stats')).to include(stargazers_count: 17, monthly_stars_delta: 2)
-    expect(repository.previous_organization_repository_stargazers_count(period, 'github', 200)).to eq(17)
+    expect(row('organization_repository_star_observations')).to include(stargazers_count: 17)
   end
 
   it 'retries snapshot writes as an update when the insert races with another writer' do

@@ -8,7 +8,7 @@ module PolishOpenSourceRank
         class MonthlyCandidateRequest
           attr_reader :period, :source
 
-          def initialize(period, source, candidate, refresh, use_snapshot_star_diff)
+          def initialize(period, source, candidate, refresh)
             @period = period
             @source = source
             @candidate = Domain::SourceCandidate.new(
@@ -17,7 +17,6 @@ module PolishOpenSourceRank
               login: candidate.fetch(:login)
             )
             @refresh = refresh
-            @use_snapshot_star_diff = use_snapshot_star_diff
           end
 
           def accepted_profile(profile_writer, profile, location)
@@ -25,8 +24,7 @@ module PolishOpenSourceRank
               period: period,
               source: source,
               profile: profile,
-              location: location,
-              use_snapshot_star_diff: use_snapshot_star_diff?
+              location: location
             )
           end
 
@@ -40,10 +38,6 @@ module PolishOpenSourceRank
 
           def source_id
             candidate.source_id
-          end
-
-          def use_snapshot_star_diff?
-            @use_snapshot_star_diff
           end
 
           def refresh?

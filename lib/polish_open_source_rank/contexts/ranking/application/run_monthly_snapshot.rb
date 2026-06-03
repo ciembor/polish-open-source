@@ -14,13 +14,11 @@ module PolishOpenSourceRank
             @source_metric_backfill = source_metric_backfill
           end
 
-          def call(period, refresh: false, scope: nil, use_snapshot_star_diff: false, existing_only: false,
-                   backfill: {})
+          def call(period, refresh: false, scope: nil, existing_only: false, backfill: {})
             request = MonthlySnapshotRunRequest.new(
               period: period,
               refresh: refresh,
               scope: scope,
-              use_snapshot_star_diff: use_snapshot_star_diff,
               existing_only: existing_only,
               backfill: backfill
             )

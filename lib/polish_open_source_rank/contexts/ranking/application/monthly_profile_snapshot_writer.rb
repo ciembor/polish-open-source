@@ -8,16 +8,14 @@ module PolishOpenSourceRank
         class MonthlyProfileSnapshotWriter
           # Carries the accepted source profile and run options across snapshot writers.
           class AcceptedProfile
-            def initialize(period:, source:, profile:, location:, use_snapshot_star_diff:, previous_stars:)
+            def initialize(period:, source:, profile:, location:)
               @period = period
               @source = source
               @profile = profile
               @location = location
-              @use_snapshot_star_diff = use_snapshot_star_diff
-              @previous_stars = previous_stars
             end
 
-            attr_reader :location, :period, :previous_stars, :profile, :source
+            attr_reader :location, :period, :profile, :source
 
             def snapshot_args
               [period, source, profile, location]
@@ -25,10 +23,6 @@ module PolishOpenSourceRank
 
             def source_platform
               source.platform
-            end
-
-            def use_snapshot_star_diff?
-              @use_snapshot_star_diff
             end
           end
 
@@ -39,14 +33,12 @@ module PolishOpenSourceRank
             @repository_collector = repository_collector
           end
 
-          def accepted_profile(period:, source:, profile:, location:, use_snapshot_star_diff:)
+          def accepted_profile(period:, source:, profile:, location:)
             AcceptedProfile.new(
               period: period,
               source: source,
               profile: profile,
-              location: location,
-              use_snapshot_star_diff: use_snapshot_star_diff,
-              previous_stars: PreviousRepositoryStars.new(store, store_mutex)
+              location: location
             )
           end
 
@@ -73,33 +65,6 @@ module PolishOpenSourceRank
 
           def with_store(&)
             store_mutex.synchronize(&)
-          end
-
-          class PreviousRepositoryStars
-            def initialize(store, store_mutex)
-              @store = store
-              @store_mutex = store_mutex
-            end
-
-            def contributor(period, platform, repository)
-              with_store do
-                store.previous_repository_stars(period, platform, repository.source_id)
-              end
-            end
-
-            def organization(period, platform, repository)
-              with_store do
-                store.previous_organization_repository_stars(period, platform, repository.source_id)
-              end
-            end
-
-            private
-
-            attr_reader :store, :store_mutex
-
-            def with_store(&)
-              store_mutex.synchronize(&)
-            end
           end
         end
       end

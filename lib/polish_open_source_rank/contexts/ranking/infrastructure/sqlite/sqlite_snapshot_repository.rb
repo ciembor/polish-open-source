@@ -160,38 +160,6 @@ module PolishOpenSourceRank
               database.transaction { record_repository_stats_without_transaction(attributes, observed_at) }
             end
 
-            def previous_repository_stars(period, platform, repository_source_id)
-              previous_repository_stargazers_count(period, platform, repository_source_id)
-            end
-
-            def previous_organization_repository_stars(period, platform, repository_source_id)
-              previous_organization_repository_stargazers_count(period, platform, repository_source_id)
-            end
-
-            def previous_repository_stargazers_count(period, platform, repository_github_id)
-              database.fetch_value(<<~SQL, [platform, repository_github_id, period.start_date.to_s])
-                SELECT stargazers_count
-                FROM repository_star_observations
-                WHERE platform = ?
-                  AND repository_github_id = ?
-                  AND period_start < ?
-                ORDER BY period_start DESC
-                LIMIT 1
-              SQL
-            end
-
-            def previous_organization_repository_stargazers_count(period, platform, repository_github_id)
-              database.fetch_value(<<~SQL, [platform, repository_github_id, period.start_date.to_s])
-                SELECT stargazers_count
-                FROM organization_repository_star_observations
-                WHERE platform = ?
-                  AND repository_github_id = ?
-                  AND period_start < ?
-                ORDER BY period_start DESC
-                LIMIT 1
-              SQL
-            end
-
             private
 
             attr_reader :clock, :database, :record_mapper

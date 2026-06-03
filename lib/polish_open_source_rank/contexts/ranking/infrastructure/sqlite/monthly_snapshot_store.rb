@@ -116,14 +116,6 @@ module PolishOpenSourceRank
               snapshot_repository.organization_stats_for_period(period, platform)
             end
 
-            def previous_repository_stars(period, platform, repository_source_id)
-              snapshot_repository.previous_repository_stars(period, platform, repository_source_id)
-            end
-
-            def previous_organization_repository_stars(period, platform, repository_source_id)
-              snapshot_repository.previous_organization_repository_stars(period, platform, repository_source_id)
-            end
-
             def prune_rankings(period)
               ranking_retention.prune(period)
             end

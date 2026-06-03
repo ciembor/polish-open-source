@@ -3,19 +3,9 @@
 class RepositoryCollectorStore
   attr_reader :organization_snapshots, :snapshots
 
-  def initialize(previous_contributor_stars: {}, previous_organization_stars: {})
-    @previous_contributor_stars = previous_contributor_stars
-    @previous_organization_stars = previous_organization_stars
+  def initialize
     @snapshots = []
     @organization_snapshots = []
-  end
-
-  def previous_repository_stars(_period, _platform, source_id)
-    @previous_contributor_stars[source_id]
-  end
-
-  def previous_organization_repository_stars(_period, _platform, source_id)
-    @previous_organization_stars[source_id]
   end
 
   def record_repository_snapshot(snapshot)
@@ -56,34 +46,13 @@ class RepositoryCollectorSnapshotFactory
   end
 end
 
-class RepositoryCollectorPreviousStars
-  def initialize(store, mutex)
-    @store = store
-    @mutex = mutex
-  end
-
-  def contributor(period, platform, repository)
-    mutex.synchronize { store.previous_repository_stars(period, platform, repository.source_id) }
-  end
-
-  def organization(period, platform, repository)
-    mutex.synchronize { store.previous_organization_repository_stars(period, platform, repository.source_id) }
-  end
-
-  private
-
-  attr_reader :mutex, :store
-end
-
 class RepositoryCollectorAcceptedProfile
-  attr_reader :period, :previous_stars, :profile, :source
+  attr_reader :period, :profile, :source
 
-  def initialize(period:, source:, profile:, previous_stars:, use_snapshot_star_diff:)
+  def initialize(period:, source:, profile:)
     @period = period
     @source = source
     @profile = profile
-    @previous_stars = previous_stars
-    @use_snapshot_star_diff = use_snapshot_star_diff
   end
 
   def snapshot_args
@@ -92,10 +61,6 @@ class RepositoryCollectorAcceptedProfile
 
   def source_platform
     source.platform
-  end
-
-  def use_snapshot_star_diff?
-    @use_snapshot_star_diff
   end
 end
 
@@ -181,31 +146,13 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::MonthlyRepo
     expect(source.delta_calls).to be_empty
   end
 
-  it 'uses stored snapshot diffs when requested and previous stars exist' do
-    previous_store = RepositoryCollectorStore.new(previous_contributor_stars: { 10 => 8 })
-    source = RepositoryCollectorSource.new(
-      repositories: { 'alice' => [repository(10, 'alice/app', 13)] },
-      deltas: { 'alice/app' => 99 }
-    )
-
-    metrics = collector(store: previous_store).contributor_metrics(
-      accepted_profile(source: source, profile: profile, store: previous_store, use_snapshot_star_diff: true)
-    )
-
-    expect(metrics).to have_attributes(total_stars: 13, monthly_stars_delta: 5)
-    expect(source.delta_calls).to be_empty
-  end
-
-  it 'uses source-provided deltas when stored snapshot diffs are not requested' do
-    previous_store = RepositoryCollectorStore.new(previous_contributor_stars: { 10 => 8 })
+  it 'uses source-provided deltas for monthly stars' do
     source = RepositoryCollectorSource.new(
       repositories: { 'alice' => [repository(10, 'alice/app', 13)] },
       deltas: { 'alice/app' => 3 }
     )
 
-    metrics = collector(store: previous_store).contributor_metrics(
-      accepted_profile(source: source, profile: profile, store: previous_store)
-    )
+    metrics = collector.contributor_metrics(accepted_profile(source: source, profile: profile))
 
     expect(metrics).to have_attributes(total_stars: 13, monthly_stars_delta: 3)
     expect(source.delta_calls).to eq([['alice/app', period]])
@@ -250,13 +197,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::MonthlyRepo
     )
   end
 
-  def accepted_profile(source:, profile:, store: self.store, use_snapshot_star_diff: false)
+  def accepted_profile(source:, profile:)
     RepositoryCollectorAcceptedProfile.new(
       period: period,
       source: source,
-      profile: profile,
-      previous_stars: RepositoryCollectorPreviousStars.new(store, mutex),
-      use_snapshot_star_diff: use_snapshot_star_diff
+      profile: profile
     )
   end
 

@@ -26,9 +26,10 @@ RSpec.describe File do
       'IOWeight=20',
       '/usr/bin/flock -n /home/ciembor/polish-open-source-rank/tmp/crawl.lock',
       '--name=polish-open-source-rank-monthly',
-      'bundle exec ruby bin/monthly_rankings --use-stars-diff',
+      'bundle exec ruby bin/monthly_rankings',
       '--user=1000:1000 --read-only --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m'
     )
+    expect(unit).not_to include('--use-stars-diff')
     expect(unit).to include(
       '--memory=768m --memory-swap=768m --memory-reservation=512m --cpus=0.5 --cpu-shares=128 --pids-limit=256'
     )
@@ -82,7 +83,8 @@ RSpec.describe File do
 
     expect(unit).to include('EnvironmentFile=-/home/ciembor/polish-open-source-rank/.crawl.env')
     expect(unit).to include('-e CRAWL_ARGS')
-    expect(unit).to include('bundle exec ruby bin/monthly_rankings --use-stars-diff ${CRAWL_ARGS:-}')
+    expect(unit).to include('bundle exec ruby bin/monthly_rankings ${CRAWL_ARGS:-}')
+    expect(unit).not_to include('--use-stars-diff')
     expect(unit).to include('Restart=on-failure')
     expect(unit).to include('TimeoutStartSec=infinity')
     expect(unit).to include('Nice=10')

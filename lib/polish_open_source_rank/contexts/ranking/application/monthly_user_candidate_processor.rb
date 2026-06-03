@@ -5,8 +5,8 @@ module PolishOpenSourceRank
     module Ranking
       module Application
         class MonthlyUserCandidateProcessor < MonthlyCandidateProcessor
-          def process(period, source, candidate, refresh:, use_snapshot_star_diff:)
-            request = UserCandidateRequest.new(period, source, candidate, refresh, use_snapshot_star_diff)
+          def process(period, source, candidate, refresh:)
+            request = UserCandidateRequest.new(period, source, candidate, refresh)
             record_work_event(request) { process_request(request) }
           end
 

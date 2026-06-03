@@ -59,13 +59,9 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     allow(candidate_queue).to receive(:processed_organization?).with(period, 'gitlab', 55).and_return(true)
     allow(snapshot_repository).to receive(:record_contributor_snapshot).with(contributor_snapshot)
     allow(snapshot_repository).to receive(:record_repository_snapshot).with(repository_snapshot)
-    allow(snapshot_repository).to receive(:previous_repository_stars).with(period, 'gitlab', 123).and_return(15)
     allow(snapshot_repository).to receive(:record_organization_snapshot).with(organization_snapshot)
     allow(snapshot_repository).to receive(:record_organization_repository_snapshot)
       .with(organization_repository_snapshot)
-    allow(snapshot_repository).to receive(:previous_organization_repository_stars)
-      .with(period, 'gitlab', 321)
-      .and_return(21)
     allow(ranking_retention).to receive(:prune).with(period)
 
     expect(snapshot_store.create_run(period, refresh_platforms: ['github'])).to eq(7)
@@ -100,8 +96,6 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     snapshot_store.record_repository_snapshot(repository_snapshot)
     snapshot_store.record_organization_snapshot(organization_snapshot)
     snapshot_store.record_organization_repository_snapshot(organization_repository_snapshot)
-    expect(snapshot_store.previous_repository_stars(period, 'gitlab', 123)).to eq(15)
-    expect(snapshot_store.previous_organization_repository_stars(period, 'gitlab', 321)).to eq(21)
     snapshot_store.prune_rankings(period)
   end
 end

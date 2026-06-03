@@ -519,7 +519,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(github.delta_periods).to eq([['alice/app', period]])
   end
 
-  it 'can use previous repository observations and skips repositories below the catalog star threshold' do
+  it 'uses source deltas and skips repositories below the catalog star threshold' do
     previous_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-03')
     seed_previous_repository_observation(previous_period)
     github.candidates = { 'Poland' => [{ source_id: 1, login: 'alice' }] }
@@ -531,15 +531,15 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
         repository(12, 'alice/empty', 0)
       ]
     }
-    github.deltas = { 'alice/new' => 2 }
+    github.deltas = { 'alice/app' => 4, 'alice/new' => 2 }
 
-    job.call(period, use_snapshot_star_diff: true)
+    job.call(period)
 
     expect(fetch_user_stats('alice')).to include(monthly_stars_delta: 6)
     expect(fetch_repository_stats('alice/app')).to include(monthly_stars_delta: 4)
     expect(fetch_repository_stats('alice/new')).to include(monthly_stars_delta: 2)
     expect(fetch_repository_stats('alice/empty')).to be_nil
-    expect(github.delta_periods).to eq([['alice/new', period]])
+    expect(github.delta_periods).to eq([['alice/app', period], ['alice/new', period]])
   end
 
   it 'keeps observed repository stars while using source-provided historical star deltas' do
@@ -802,7 +802,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(organization_source.delta_periods).to eq([['polish-org/toolkit', period]])
   end
 
-  it 'can use previous organization repository observations for monthly deltas' do
+  it 'uses source organization repository deltas when previous observations exist' do
     previous_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-03')
     seed_previous_organization_repository_observation(previous_period)
     organization_source = ranked_organization_source
@@ -813,14 +813,14 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       sources: [organization_source],
       catalog: catalog,
       logger: StringIO.new
-    ).call(period, use_snapshot_star_diff: true)
+    ).call(period)
 
-    expect(fetch_organization_stats('polish-org')).to include(monthly_stars_delta: 6)
+    expect(fetch_organization_stats('polish-org')).to include(monthly_stars_delta: 30)
     expect(organization_repository_rankings.fetch(:trending).first).to include(
       full_name: 'polish-org/toolkit',
-      monthly_stars_delta: 6
+      monthly_stars_delta: 30
     )
-    expect(organization_source.delta_periods).to be_empty
+    expect(organization_source.delta_periods).to eq([['polish-org/toolkit', period]])
   end
 
   def ranked_organization_source

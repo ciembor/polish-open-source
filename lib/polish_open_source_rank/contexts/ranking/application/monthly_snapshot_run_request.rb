@@ -9,7 +9,6 @@ module PolishOpenSourceRank
           :period,
           :refresh,
           :scope,
-          :use_snapshot_star_diff,
           :existing_only,
           :backfill,
           keyword_init: true
@@ -25,7 +24,6 @@ module PolishOpenSourceRank
               period: period,
               refresh: false,
               scope: scope,
-              use_snapshot_star_diff: use_snapshot_star_diff?,
               existing_only: true,
               backfill: {}
             )
@@ -49,10 +47,6 @@ module PolishOpenSourceRank
 
           def source_metric_backfill_only?
             existing_only? && backfill.value?(true)
-          end
-
-          def use_snapshot_star_diff?
-            use_snapshot_star_diff
           end
 
           def existing_only?

@@ -107,7 +107,7 @@ module PolishOpenSourceRank
             end
 
             def star_snapshot(repository)
-              star_snapshot_policy.snapshot(accepted_profile, repository, previous_stars_role: :contributor)
+              star_snapshot_policy.snapshot(accepted_profile, repository)
             end
 
             def record_repository_snapshot(store, snapshot_factory, repository, monthly_stars_delta)
@@ -161,7 +161,7 @@ module PolishOpenSourceRank
             end
 
             def star_snapshot(repository)
-              star_snapshot_policy.snapshot(accepted_profile, repository, previous_stars_role: :organization)
+              star_snapshot_policy.snapshot(accepted_profile, repository)
             end
 
             def record_repository_snapshot(store, snapshot_factory, repository, monthly_stars_delta)
