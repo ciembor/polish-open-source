@@ -1875,6 +1875,10 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'href="/2026-04"',
       'href="/editions/2025"'
     )
+    expect(
+      html_element(response.body, "//a[@class='hero__image-link' and @href='/auth/github']" \
+                                  "/img[@class='hero__image' and @src='/images/polish_open_source_front.webp']")
+    ).not_to be_nil
     expect_active_nav_link(response.body, '/editions')
   end
 
