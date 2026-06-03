@@ -2,7 +2,9 @@
   <a href="https://polish-open-source.pl/">
     <img src="app/public/images/polish_open_source_banner.webp" alt="Polish Open Source" width="800">
   </a>
-  <h1 align="center">Polish Open Source</h1>
+  <h1 align="center">
+    <a href="https://polish-open-source.pl/">Polish Open Source</a>
+  </h1>
 
   <p align="center">
     Public users, repositories, organizations, and packages from Poland ranked by stars, monthly trend, activity, and registry metrics.
