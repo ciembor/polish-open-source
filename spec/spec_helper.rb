@@ -20,6 +20,8 @@ end
 if ENV['KNAPSACK'] == 'true'
   require 'knapsack'
 
+  # Knapsack exposes no OFF level; values above WARN silence its own banners.
+  Knapsack.logger.level = Knapsack::Logger::WARN + 1
   Knapsack.tracker.config(
     enable_time_offset_warning: true,
     time_offset_in_seconds: 10
