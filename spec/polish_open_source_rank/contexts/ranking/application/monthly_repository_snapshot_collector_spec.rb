@@ -143,6 +143,11 @@ class RepositoryCollectorHistoricalSource < RepositoryCollectorSource
     star_snapshot_calls << [repository.full_name, period]
     @star_snapshots.fetch(repository.full_name)
   end
+
+  def repository_stars_delta(repository, period)
+    delta_calls << [repository.full_name, period]
+    repository_star_snapshot(repository, period).fetch(:monthly_stars_delta)
+  end
 end
 
 RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::MonthlyRepositorySnapshotCollector do
@@ -206,7 +211,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::MonthlyRepo
     expect(source.delta_calls).to eq([['alice/app', period]])
   end
 
-  it 'stores source-provided historical star snapshots' do
+  it 'keeps observed repository stars when a source provides historical star snapshots' do
     source = RepositoryCollectorHistoricalSource.new(
       repositories: { 'alice' => [repository(10, 'alice/app', 13)] },
       star_snapshots: { 'alice/app' => { stars: 11, monthly_stars_delta: 4 } }
@@ -214,10 +219,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::MonthlyRepo
 
     metrics = collector.contributor_metrics(accepted_profile(source: source, profile: profile))
 
-    expect(metrics).to have_attributes(total_stars: 11, monthly_stars_delta: 4)
-    expect(store.snapshots).to eq([{ full_name: 'alice/app', stars: 11, monthly_stars_delta: 4 }])
+    expect(metrics).to have_attributes(total_stars: 13, monthly_stars_delta: 4)
+    expect(store.snapshots).to eq([{ full_name: 'alice/app', stars: 13, monthly_stars_delta: 4 }])
     expect(source.star_snapshot_calls).to eq([['alice/app', period]])
-    expect(source.delta_calls).to be_empty
+    expect(source.delta_calls).to eq([['alice/app', period]])
   end
 
   it 'streams organization repositories through the organization entry point' do

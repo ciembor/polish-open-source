@@ -205,6 +205,11 @@ class HistoricalStarGitHub < FakeJobGitHub
     star_snapshot_periods << [repository.full_name, period]
     star_snapshots.fetch(repository.full_name)
   end
+
+  def repository_stars_delta(repository, period)
+    delta_periods << [repository.full_name, period]
+    repository_star_snapshot(repository, period).fetch(:monthly_stars_delta)
+  end
 end
 
 class HistoricalStarOrganizationGitHub < HistoricalStarGitHub
@@ -537,7 +542,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(github.delta_periods).to eq([['alice/new', period]])
   end
 
-  it 'stores source-provided historical repository star snapshots' do
+  it 'keeps observed repository stars while using source-provided historical star deltas' do
     source = HistoricalStarGitHub.new
     source.candidates = { 'Poland' => [{ source_id: 1, login: 'alice' }] }
     source.profiles = { 'alice' => profile(1, 'alice', 'Krakow, Poland') }
@@ -548,10 +553,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
 
     run_job_with(source: source)
 
-    expect(fetch_user_stats('alice')).to include(total_stars: 9, monthly_stars_delta: 3)
-    expect(fetch_repository_stats('alice/app')).to include(stargazers_count: 9, monthly_stars_delta: 3)
+    expect(fetch_user_stats('alice')).to include(total_stars: 12, monthly_stars_delta: 3)
+    expect(fetch_repository_stats('alice/app')).to include(stargazers_count: 12, monthly_stars_delta: 3)
     expect(source.star_snapshot_periods).to eq([['alice/app', period]])
-    expect(source.delta_periods).to be_empty
+    expect(source.delta_periods).to eq([['alice/app', period]])
   end
 
   it 'uses repository star deltas from source history during a refresh' do
@@ -772,7 +777,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(organization_source.organization_calls).to eq([['polish-org', 9]])
   end
 
-  it 'stores source-provided historical organization repository star snapshots' do
+  it 'keeps observed organization repository stars while using source-provided historical star deltas' do
     organization_source = HistoricalStarOrganizationGitHub.new
     organization_source.organization_candidates = { 'Poland' => [{ source_id: 9, login: 'polish-org' }] }
     organization_source.organizations = { 'polish-org' => profile(9, 'polish-org', 'Warsaw, Poland') }
@@ -784,8 +789,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     run_job_with(source: organization_source)
 
     expect(fetch_row('SELECT total_stars, monthly_stars_delta FROM organization_monthly_stats'))
-      .to include(total_stars: 27, monthly_stars_delta: 4)
-    expect(fetch_row(<<~SQL)).to include(stargazers_count: 27, monthly_stars_delta: 4)
+      .to include(total_stars: 33, monthly_stars_delta: 4)
+    expect(fetch_row(<<~SQL)).to include(stargazers_count: 33, monthly_stars_delta: 4)
       SELECT stats.stargazers_count, stats.monthly_stars_delta
       FROM organization_repository_monthly_stats stats
       INNER JOIN organization_repositories repositories
@@ -794,7 +799,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       WHERE repositories.full_name = 'polish-org/toolkit'
     SQL
     expect(organization_source.star_snapshot_periods).to eq([['polish-org/toolkit', period]])
-    expect(organization_source.delta_periods).to be_empty
+    expect(organization_source.delta_periods).to eq([['polish-org/toolkit', period]])
   end
 
   it 'can use previous organization repository observations for monthly deltas' do

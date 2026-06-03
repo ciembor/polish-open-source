@@ -26,6 +26,7 @@ RSpec.describe File do
       'IOWeight=20',
       '/usr/bin/flock -n /home/ciembor/polish-open-source-rank/tmp/crawl.lock',
       '--name=polish-open-source-rank-monthly',
+      'bundle exec ruby bin/monthly_rankings --use-stars-diff',
       '--user=1000:1000 --read-only --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m'
     )
     expect(unit).to include(
@@ -81,6 +82,7 @@ RSpec.describe File do
 
     expect(unit).to include('EnvironmentFile=-/home/ciembor/polish-open-source-rank/.crawl.env')
     expect(unit).to include('-e CRAWL_ARGS')
+    expect(unit).to include('bundle exec ruby bin/monthly_rankings --use-stars-diff ${CRAWL_ARGS:-}')
     expect(unit).to include('Restart=on-failure')
     expect(unit).to include('TimeoutStartSec=infinity')
     expect(unit).to include('Nice=10')

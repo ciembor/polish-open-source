@@ -7,11 +7,6 @@ module PolishOpenSourceRank
         # Selects the repository star source for monthly snapshot metrics.
         class MonthlyRepositoryStarSnapshotPolicy
           def snapshot(accepted_profile, repository, previous_stars_role:)
-            source = accepted_profile.source
-            return source.repository_star_snapshot(repository, accepted_profile.period) if source.respond_to?(
-              :repository_star_snapshot
-            )
-
             {
               stars: repository.stars,
               monthly_stars_delta: monthly_stars_delta(accepted_profile, repository, previous_stars_role)
