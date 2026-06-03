@@ -16,13 +16,11 @@ en:
         - "You can download the badge from your profile page after signing in with GitHub. The profile page includes a badge preview and ready-to-copy Markdown."
       title: "Badge"
     data_sources:
-      best_effort: "Best effort"
       eyebrow: "Data sources"
       paragraphs:
         - "GitHub is the primary data source because it provides the best API for searching profiles by location and for fetching repositories, stars, and pull requests."
         - "GitLab and Codeberg are supported on a best-effort basis. Their APIs do not expose the same access to every metric, and in particular they do not support strict location search, so some data can be less complete than on GitHub."
         - "The ranking is a monthly snapshot, not a live view. If data on GitHub changed today, it may appear in the ranking only after the next edition."
-      platforms_title: "Platforms"
       title: "Data sources"
     discord:
       eyebrow: "Discord"
@@ -115,6 +113,11 @@ en:
           - "Technical directories and dependency directories are skipped, including .git, build, dist, node_modules, target, and vendor/bundle."
         title: "Detection scope"
       title: "Packages"
+    platforms:
+      best_effort: "Best effort"
+      eyebrow: "Platforms"
+      grid_title: "Supported platforms"
+      title: "Supported platforms"
     rankings:
       data_scope:
         paragraphs:
@@ -144,6 +147,7 @@ en:
       mission: "Mission"
       open_source: "Open source"
       packages: "Packages"
+      platforms: "Platforms"
       rankings: "Rankings"
     seo:
       title: "About Polish Open Source"

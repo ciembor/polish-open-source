@@ -16,13 +16,11 @@ pl:
         - "Badge możesz pobrać ze strony profilu po zalogowaniu kontem GitHub. Na stronie profilu znajdziesz podgląd badge i gotowy Markdown do skopiowania."
       title: "Badge"
     data_sources:
-      best_effort: "Best effort"
       eyebrow: "Źródła danych"
       paragraphs:
         - "GitHub jest głównym źródłem danych, bo daje najlepsze API do wyszukiwania profili po lokalizacji, pobierania repozytoriów, gwiazdek i pull requestów."
         - "GitLab i Codeberg są obsługiwane w trybie best effort. Ich API nie daje takiego samego dostępu do wszystkich metryk, a w szczególności nie udostępnia wyszukiwania stricte po lokalizacji, dlatego część danych może być mniej kompletna niż dla GitHuba."
         - "Ranking jest miesięcznym snapshotem, a nie widokiem live. Jeśli dane na GitHubie zmieniły się dzisiaj, mogą pojawić się w rankingu dopiero po kolejnej edycji."
-      platforms_title: "Platformy"
       title: "Źródła danych"
     discord:
       eyebrow: "Discord"
@@ -115,6 +113,11 @@ pl:
           - "Pomijane są katalogi techniczne i katalogi zależności, między innymi .git, build, dist, node_modules, target i vendor/bundle."
         title: "Zakres wykrywania"
       title: "Pakiety"
+    platforms:
+      best_effort: "Best effort"
+      eyebrow: "Platformy"
+      grid_title: "Wspierane platformy"
+      title: "Wspierane platformy"
     rankings:
       data_scope:
         paragraphs:
@@ -144,6 +147,7 @@ pl:
       mission: "Misja"
       open_source: "Open source"
       packages: "Pakiety"
+      platforms: "Platformy"
       rankings: "Rankingi"
     seo:
       title: "O Polish Open Source"
