@@ -14,14 +14,14 @@ pl:
         - "Badge to publiczna odznaka SVG, którą możesz wkleić do profilu GitHuba albo README repozytorium. Jest generowana z ostatniego publicznego snapshotu i aktualizuje się po kolejnym przeliczeniu rankingu."
         - "Badge repozytorium pokazuje pozycję projektu. Jeśli repozytorium ma rozpoznany język, etykieta może używać krótszej formy językowej, na przykład Polish .rb Repo albo Polish .js Repo."
         - "Badge możesz pobrać ze strony profilu po zalogowaniu kontem GitHub. Na stronie profilu znajdziesz podgląd badge i gotowy Markdown do skopiowania."
-      title: "Badge"
+      title: "Generowanie odznak"
     data_sources:
       eyebrow: "Źródła danych"
       paragraphs:
         - "GitHub jest głównym źródłem danych, bo daje najlepsze API do wyszukiwania profili po lokalizacji, pobierania repozytoriów, gwiazdek i pull requestów."
         - "GitLab i Codeberg są obsługiwane w trybie best effort. Ich API nie daje takiego samego dostępu do wszystkich metryk, a w szczególności nie udostępnia wyszukiwania stricte po lokalizacji, dlatego część danych może być mniej kompletna niż dla GitHuba."
         - "Ranking jest miesięcznym snapshotem, a nie widokiem live. Jeśli dane na GitHubie zmieniły się dzisiaj, mogą pojawić się w rankingu dopiero po kolejnej edycji."
-      title: "Źródła danych"
+      title: "Wspierane platformy"
     discord:
       eyebrow: "Discord"
       paragraphs:
@@ -29,7 +29,7 @@ pl:
         - "Po zalogowaniu GitHubem zaproszenie do Discorda jest widoczne na stronie profilu. Możesz tam połączyć konto Discord, a aplikacja sprawdzi Twój profil rankingowy. Bot synchronizuje dostęp i role na serwerze."
         - "Role i dostępne kanały wynikają z ostatniego publicznego snapshotu. Mogą zależeć od pozycji w Polsce, pozycji w mieście, języków repozytoriów oraz najwyższych miejsc w rankingu."
         - "Jeśli nie masz dostępu, sprawdź publiczną lokalizację, zmień ją w profilu platformy z repozytoriami i poczekaj na kolejny snapshot."
-      title: "Discord"
+      title: "Integracja z Discord"
     hero:
       eyebrow: "O projekcie"
       lede: "Ranking pokazuje publiczną pracę osób związanych z Polską na platformach open source."
@@ -112,7 +112,7 @@ pl:
           - "Polish Open Source wykrywa także pakiety powiązane z polskimi repozytoriami open source. Analizowane są pliki w domyślnej gałęzi repozytorium i manifesty charakterystyczne dla konkretnych ekosystemów."
           - "Pomijane są katalogi techniczne i katalogi zależności, między innymi .git, build, dist, node_modules, target i vendor/bundle."
         title: "Zakres wykrywania"
-      title: "Pakiety"
+      title: "Rankingi pakietów"
     platforms:
       best_effort: "Best effort"
       eyebrow: "Platformy"
@@ -147,7 +147,6 @@ pl:
       mission: "Misja"
       open_source: "Open source"
       packages: "Pakiety"
-      platforms: "Platformy"
       rankings: "Rankingi"
     seo:
       title: "O Polish Open Source"

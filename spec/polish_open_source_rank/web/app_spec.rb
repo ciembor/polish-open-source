@@ -1875,7 +1875,6 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'Wróć na górę',
       'href="#mission"',
       'href="#rankings"',
-      'href="#platforms"',
       'GitHub',
       'GitLab',
       'Codeberg',

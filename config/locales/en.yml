@@ -14,14 +14,14 @@ en:
         - "A badge is a public SVG badge that you can embed in your GitHub profile or a repository README. It is generated from the latest public snapshot and updates after the next ranking run."
         - "A repository badge shows the project position. If the repository language is recognized, the label can use a shorter language form, for example Polish .rb Repo or Polish .js Repo."
         - "You can download the badge from your profile page after signing in with GitHub. The profile page includes a badge preview and ready-to-copy Markdown."
-      title: "Badge"
+      title: "Badge generation"
     data_sources:
       eyebrow: "Data sources"
       paragraphs:
         - "GitHub is the primary data source because it provides the best API for searching profiles by location and for fetching repositories, stars, and pull requests."
         - "GitLab and Codeberg are supported on a best-effort basis. Their APIs do not expose the same access to every metric, and in particular they do not support strict location search, so some data can be less complete than on GitHub."
         - "The ranking is a monthly snapshot, not a live view. If data on GitHub changed today, it may appear in the ranking only after the next edition."
-      title: "Data sources"
+      title: "Supported platforms"
     discord:
       eyebrow: "Discord"
       paragraphs:
@@ -29,7 +29,7 @@ en:
         - "After signing in with GitHub, the Discord invite is visible on the profile page. You can connect your Discord account there, and the application checks your ranking profile. The bot synchronizes access and server roles."
         - "Roles and available channels come from the latest public snapshot. They can depend on Poland rank, city rank, repository languages, and the highest ranking positions."
         - "If you do not have access, check your public location, update it on the platform with your repositories, and wait for the next snapshot."
-      title: "Discord"
+      title: "Discord integration"
     hero:
       eyebrow: "About"
       lede: "The ranking shows public work by people connected with Poland across open source platforms."
@@ -112,7 +112,7 @@ en:
           - "Polish Open Source also detects packages connected to Polish open-source repositories. Files in the default branch and manifests characteristic for specific ecosystems are analyzed."
           - "Technical directories and dependency directories are skipped, including .git, build, dist, node_modules, target, and vendor/bundle."
         title: "Detection scope"
-      title: "Packages"
+      title: "Package rankings"
     platforms:
       best_effort: "Best effort"
       eyebrow: "Platforms"
@@ -147,7 +147,6 @@ en:
       mission: "Mission"
       open_source: "Open source"
       packages: "Packages"
-      platforms: "Platforms"
       rankings: "Rankings"
     seo:
       title: "About Polish Open Source"

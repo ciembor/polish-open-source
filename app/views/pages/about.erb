@@ -6,8 +6,7 @@
     ['discord', t('about.section_nav.discord')],
     ['badge', t('about.section_nav.badge')],
     ['data-sources', t('about.section_nav.data_sources')],
-    ['open-source', t('about.section_nav.open_source')],
-    ['platforms', t('about.section_nav.platforms')]
+    ['open-source', t('about.section_nav.open_source')]
   ]
 %>
 
@@ -236,47 +235,36 @@
   </div>
 </section>
 
-<section class="about-section about-section--alt" id="platforms" aria-labelledby="platforms-heading">
+<section class="about-section about-section--alt" id="platforms" aria-label="<%= h t('about.platforms.eyebrow') %>">
   <div class="content">
-    <div class="about-section__header">
-      <div>
-        <p class="eyebrow"><%= h t('about.platforms.eyebrow') %></p>
-        <div class="about-section__title-row">
-          <h2 id="platforms-heading"><%= h t('about.platforms.title') %></h2>
-          <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
-        </div>
-      </div>
+    <p class="eyebrow"><%= h t('about.platforms.eyebrow') %></p>
+    <div class="platform-grid">
+      <article class="platform-card platform-card--github">
+        <a class="platform-card__link" href="https://github.com/">
+          <span class="platform-logo" aria-hidden="true">
+            <img class="platform-logo__image" src="<%= h app_path(platform_icon_path("github")) %>" alt="" width="64" height="64">
+          </span>
+          <span class="platform-card__name">GitHub</span>
+        </a>
+      </article>
+      <article class="platform-card platform-card--gitlab">
+        <a class="platform-card__link" href="https://gitlab.com/">
+          <span class="platform-logo" aria-hidden="true">
+            <img class="platform-logo__image" src="<%= h app_path(platform_icon_path("gitlab")) %>" alt="" width="64" height="64">
+          </span>
+          <span class="platform-card__name">GitLab</span>
+        </a>
+        <span class="platform-card__best-effort"><%= h t('about.platforms.best_effort') %></span>
+      </article>
+      <article class="platform-card platform-card--codeberg">
+        <a class="platform-card__link" href="https://codeberg.org/">
+          <span class="platform-logo" aria-hidden="true">
+            <img class="platform-logo__image" src="<%= h app_path(platform_icon_path("codeberg")) %>" alt="" width="64" height="64">
+          </span>
+          <span class="platform-card__name">Codeberg</span>
+        </a>
+        <span class="platform-card__best-effort"><%= h t('about.platforms.best_effort') %></span>
+      </article>
     </div>
-    <section class="about-platforms" aria-labelledby="platforms-grid-heading">
-      <h3 id="platforms-grid-heading"><%= h t('about.platforms.grid_title') %></h3>
-      <div class="platform-grid">
-        <article class="platform-card platform-card--github">
-          <a class="platform-card__link" href="https://github.com/">
-            <span class="platform-logo" aria-hidden="true">
-              <img class="platform-logo__image" src="<%= h app_path(platform_icon_path("github")) %>" alt="" width="64" height="64">
-            </span>
-            <span class="platform-card__name">GitHub</span>
-          </a>
-        </article>
-        <article class="platform-card platform-card--gitlab">
-          <a class="platform-card__link" href="https://gitlab.com/">
-            <span class="platform-logo" aria-hidden="true">
-              <img class="platform-logo__image" src="<%= h app_path(platform_icon_path("gitlab")) %>" alt="" width="64" height="64">
-            </span>
-            <span class="platform-card__name">GitLab</span>
-          </a>
-          <span class="platform-card__best-effort"><%= h t('about.platforms.best_effort') %></span>
-        </article>
-        <article class="platform-card platform-card--codeberg">
-          <a class="platform-card__link" href="https://codeberg.org/">
-            <span class="platform-logo" aria-hidden="true">
-              <img class="platform-logo__image" src="<%= h app_path(platform_icon_path("codeberg")) %>" alt="" width="64" height="64">
-            </span>
-            <span class="platform-card__name">Codeberg</span>
-          </a>
-          <span class="platform-card__best-effort"><%= h t('about.platforms.best_effort') %></span>
-        </article>
-      </div>
-    </section>
   </div>
 </section>
