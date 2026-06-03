@@ -113,21 +113,15 @@
       <section class="about-subsection" aria-labelledby="packages-ecosystems-heading">
         <article class="about-note-card">
           <h3 id="packages-ecosystems-heading"><%= h t('about.packages.ecosystems.title') %></h3>
-          <p>
-            <%= h t('about.packages.ecosystems.intro') %>
-            <%= h Array(t('about.packages.ecosystems.items')).join(', ') %>.
-          </p>
+          <p><%= h Array(t('about.packages.ecosystems.items')).join(', ') %>.</p>
         </article>
       </section>
       <section class="about-subsection" aria-labelledby="packages-manifests-heading">
         <article class="about-note-card">
           <h3 id="packages-manifests-heading"><%= h t('about.packages.manifests.title') %></h3>
-          <p>
-            <%= h t('about.packages.manifests.intro') %>
-            <%= h Array(t('about.packages.manifests.items')).join(', ') %>.
-          </p>
-          <p><%= h t('about.packages.manifests.note') %></p>
+          <p><%= h Array(t('about.packages.manifests.items')).join(', ') %>.</p>
         </article>
+        <p><%= h t('about.packages.manifests.note') %></p>
       </section>
       <section class="about-subsection" aria-labelledby="packages-metrics-heading">
         <h3 id="packages-metrics-heading"><%= h t('about.packages.metrics.title') %></h3>
