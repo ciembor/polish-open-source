@@ -1,4 +1,16 @@
-<section class="hero about-hero">
+<%
+  section_links = [
+    ['mission', t('about.section_nav.mission')],
+    ['rankings', t('about.section_nav.rankings')],
+    ['packages', t('about.section_nav.packages')],
+    ['discord', t('about.section_nav.discord')],
+    ['badge', t('about.section_nav.badge')],
+    ['data-sources', t('about.section_nav.data_sources')],
+    ['open-source', t('about.section_nav.open_source')]
+  ]
+%>
+
+<section class="hero about-hero" id="about-top">
   <div class="hero__inner">
     <div>
       <p class="eyebrow"><%= h t('about.hero.eyebrow') %></p>
@@ -10,89 +22,238 @@
 
 <%= erb :"shared/location_notice" %>
 
-<section class="about-section" aria-labelledby="mission-heading">
-  <div class="content about-grid about-grid--mission">
-    <div>
-      <p class="eyebrow"><%= h t('about.mission.eyebrow') %></p>
-      <h2 id="mission-heading"><%= h t('about.mission.title') %></h2>
-    </div>
-    <p class="about-lead">
-      <%= h t('about.mission.body') %>
-    </p>
-  </div>
-</section>
-
-<section class="about-section about-section--alt" aria-labelledby="rules-heading">
+<nav class="about-section-nav" aria-label="<%= h t('about.section_nav.label') %>">
   <div class="content">
-    <p class="eyebrow"><%= h t('about.rules.eyebrow') %></p>
-    <h2 id="rules-heading"><%= h t('about.rules.title') %></h2>
-    <div class="rules-grid">
-      <article class="rule-card">
-        <span class="rule-card__number">01</span>
-        <h3><%= h t('about.rules.data_scope.title') %></h3>
-        <p><%= h t('about.rules.data_scope.body') %></p>
-      </article>
-      <article class="rule-card">
-        <span class="rule-card__number">02</span>
-        <h3><%= h t('about.rules.users.title') %></h3>
-        <p><%= h t('about.rules.users.body') %></p>
-      </article>
-      <article class="rule-card">
-        <span class="rule-card__number">03</span>
-        <h3><%= h t('about.rules.stars.title') %></h3>
-        <p><%= h t('about.rules.stars.body') %></p>
-      </article>
-      <article class="rule-card">
-        <span class="rule-card__number">04</span>
-        <h3><%= h t('about.rules.trending.title') %></h3>
-        <p><%= h t('about.rules.trending.body') %></p>
-      </article>
-      <article class="rule-card">
-        <span class="rule-card__number">05</span>
-        <h3><%= h t('about.rules.activity.title') %></h3>
-        <p><%= h t('about.rules.activity.body') %></p>
-      </article>
-      <article class="rule-card">
-        <span class="rule-card__number">06</span>
-        <h3><%= h t('about.rules.snapshots.title') %></h3>
-        <p><%= h t('about.rules.snapshots.body') %></p>
-      </article>
+    <ul class="about-section-nav__list">
+      <% section_links.each do |target, label| %>
+        <li>
+          <a class="about-section-nav__link" href="#<%= h target %>"><%= h label %></a>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+</nav>
+
+<section class="about-section" id="mission" aria-labelledby="mission-heading">
+  <div class="content">
+    <div class="about-section__header">
+      <div>
+        <p class="eyebrow"><%= h t('about.mission.eyebrow') %></p>
+        <h2 id="mission-heading"><%= h t('about.mission.title') %></h2>
+      </div>
+      <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
+    </div>
+    <div class="about-copy">
+      <p class="about-lead"><%= h t('about.mission.body') %></p>
     </div>
   </div>
 </section>
 
-<section class="about-section" aria-labelledby="platforms-heading">
+<section class="about-section about-section--alt" id="rankings" aria-labelledby="rankings-heading">
   <div class="content">
-    <p class="eyebrow"><%= h t('about.platforms.eyebrow') %></p>
-    <h2 id="platforms-heading"><%= h t('about.platforms.title') %></h2>
-    <div class="platform-grid">
-      <article class="platform-card platform-card--github">
-        <a class="platform-card__link" href="https://github.com/">
-          <span class="platform-logo" aria-hidden="true">
-            <img class="platform-logo__image" src="<%= h app_path(platform_icon_path("github")) %>" alt="" width="64" height="64">
-          </span>
-          <span class="platform-card__name">GitHub</span>
-        </a>
-      </article>
-      <article class="platform-card platform-card--gitlab">
-        <a class="platform-card__link" href="https://gitlab.com/">
-          <span class="platform-logo" aria-hidden="true">
-            <img class="platform-logo__image" src="<%= h app_path(platform_icon_path("gitlab")) %>" alt="" width="64" height="64">
-          </span>
-          <span class="platform-card__name">GitLab</span>
-        </a>
-        <span class="platform-card__best-effort">Best Effort*</span>
-      </article>
-      <article class="platform-card platform-card--codeberg">
-        <a class="platform-card__link" href="https://codeberg.org/">
-          <span class="platform-logo" aria-hidden="true">
-            <img class="platform-logo__image" src="<%= h app_path(platform_icon_path("codeberg")) %>" alt="" width="64" height="64">
-          </span>
-          <span class="platform-card__name">Codeberg</span>
-        </a>
-        <span class="platform-card__best-effort">Best Effort*</span>
-      </article>
+    <div class="about-section__header">
+      <div>
+        <p class="eyebrow"><%= h t('about.rankings.eyebrow') %></p>
+        <h2 id="rankings-heading"><%= h t('about.rankings.title') %></h2>
+      </div>
+      <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
     </div>
-    <p class="platforms-notice">* API GitLab i Codeberg nie umożliwiają wyszukiwania użytkowników bezpośrednio po lokalizacji.</p>
+    <div class="about-copy">
+      <section class="about-subsection" aria-labelledby="rankings-data-scope-heading">
+        <h3 id="rankings-data-scope-heading"><%= h t('about.rankings.data_scope.title') %></h3>
+        <% Array(t('about.rankings.data_scope.paragraphs')).each do |paragraph| %>
+          <p><%= h paragraph %></p>
+        <% end %>
+      </section>
+      <section class="about-subsection" aria-labelledby="rankings-eligibility-heading">
+        <h3 id="rankings-eligibility-heading"><%= h t('about.rankings.eligibility.title') %></h3>
+        <% Array(t('about.rankings.eligibility.paragraphs')).each do |paragraph| %>
+          <p><%= h paragraph %></p>
+        <% end %>
+      </section>
+      <section class="about-subsection" aria-labelledby="rankings-metrics-heading">
+        <h3 id="rankings-metrics-heading"><%= h t('about.rankings.metrics.title') %></h3>
+        <% Array(t('about.rankings.metrics.paragraphs')).each do |paragraph| %>
+          <p><%= h paragraph %></p>
+        <% end %>
+      </section>
+      <section class="about-subsection" aria-labelledby="rankings-ordering-heading">
+        <h3 id="rankings-ordering-heading"><%= h t('about.rankings.ordering.title') %></h3>
+        <% Array(t('about.rankings.ordering.paragraphs')).each do |paragraph| %>
+          <p><%= h paragraph %></p>
+        <% end %>
+      </section>
+    </div>
+  </div>
+</section>
+
+<section class="about-section" id="packages" aria-labelledby="packages-heading">
+  <div class="content">
+    <div class="about-section__header">
+      <div>
+        <p class="eyebrow"><%= h t('about.packages.eyebrow') %></p>
+        <h2 id="packages-heading"><%= h t('about.packages.title') %></h2>
+      </div>
+      <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
+    </div>
+    <div class="about-copy">
+      <section class="about-subsection" aria-labelledby="packages-overview-heading">
+        <h3 id="packages-overview-heading"><%= h t('about.packages.overview.title') %></h3>
+        <% Array(t('about.packages.overview.paragraphs')).each do |paragraph| %>
+          <p><%= h paragraph %></p>
+        <% end %>
+      </section>
+      <section class="about-subsection" aria-labelledby="packages-ecosystems-heading">
+        <h3 id="packages-ecosystems-heading"><%= h t('about.packages.ecosystems.title') %></h3>
+        <p><%= h t('about.packages.ecosystems.intro') %></p>
+        <ul class="about-list">
+          <% Array(t('about.packages.ecosystems.items')).each do |item| %>
+            <li><%= h item %></li>
+          <% end %>
+        </ul>
+      </section>
+      <section class="about-subsection" aria-labelledby="packages-manifests-heading">
+        <h3 id="packages-manifests-heading"><%= h t('about.packages.manifests.title') %></h3>
+        <p><%= h t('about.packages.manifests.intro') %></p>
+        <ul class="about-list">
+          <% Array(t('about.packages.manifests.items')).each do |item| %>
+            <li><%= h item %></li>
+          <% end %>
+        </ul>
+        <p><%= h t('about.packages.manifests.note') %></p>
+      </section>
+      <section class="about-subsection" aria-labelledby="packages-metrics-heading">
+        <h3 id="packages-metrics-heading"><%= h t('about.packages.metrics.title') %></h3>
+        <% Array(t('about.packages.metrics.paragraphs')).each do |paragraph| %>
+          <p><%= h paragraph %></p>
+        <% end %>
+        <dl class="about-definition-list">
+          <div>
+            <dt><%= h t('about.packages.metrics.breakdown.recent_downloads.label') %></dt>
+            <dd><%= h t('about.packages.metrics.breakdown.recent_downloads.value') %></dd>
+          </div>
+          <div>
+            <dt><%= h t('about.packages.metrics.breakdown.total_downloads.label') %></dt>
+            <dd><%= h t('about.packages.metrics.breakdown.total_downloads.value') %></dd>
+          </div>
+          <div>
+            <dt><%= h t('about.packages.metrics.breakdown.dependents.label') %></dt>
+            <dd><%= h t('about.packages.metrics.breakdown.dependents.value') %></dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+  </div>
+</section>
+
+<section class="about-section about-section--alt" id="discord" aria-labelledby="discord-heading">
+  <div class="content">
+    <div class="about-section__header">
+      <div>
+        <p class="eyebrow"><%= h t('about.discord.eyebrow') %></p>
+        <h2 id="discord-heading"><%= h t('about.discord.title') %></h2>
+      </div>
+      <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
+    </div>
+    <div class="about-copy">
+      <% Array(t('about.discord.paragraphs')).each do |paragraph| %>
+        <p><%= h paragraph %></p>
+      <% end %>
+    </div>
+  </div>
+</section>
+
+<section class="about-section" id="badge" aria-labelledby="badge-heading">
+  <div class="content">
+    <div class="about-section__header">
+      <div>
+        <p class="eyebrow"><%= h t('about.badge.eyebrow') %></p>
+        <h2 id="badge-heading"><%= h t('about.badge.title') %></h2>
+      </div>
+      <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
+    </div>
+    <div class="about-copy">
+      <% Array(t('about.badge.paragraphs')).each do |paragraph| %>
+        <p><%= h paragraph %></p>
+      <% end %>
+      <section class="about-subsection" aria-labelledby="badge-hierarchy-heading">
+        <h3 id="badge-hierarchy-heading"><%= h t('about.badge.hierarchy.title') %></h3>
+        <ol class="about-list about-list--ordered">
+          <% Array(t('about.badge.hierarchy.items')).each do |item| %>
+            <li><%= h item %></li>
+          <% end %>
+        </ol>
+      </section>
+    </div>
+  </div>
+</section>
+
+<section class="about-section about-section--alt" id="data-sources" aria-labelledby="data-sources-heading">
+  <div class="content">
+    <div class="about-section__header">
+      <div>
+        <p class="eyebrow"><%= h t('about.data_sources.eyebrow') %></p>
+        <h2 id="data-sources-heading"><%= h t('about.data_sources.title') %></h2>
+      </div>
+      <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
+    </div>
+    <div class="about-copy">
+      <% Array(t('about.data_sources.paragraphs')).each do |paragraph| %>
+        <p><%= h paragraph %></p>
+      <% end %>
+    </div>
+    <section class="about-platforms" aria-labelledby="platforms-heading">
+      <h3 id="platforms-heading"><%= h t('about.data_sources.platforms_title') %></h3>
+      <div class="platform-grid">
+        <article class="platform-card platform-card--github">
+          <a class="platform-card__link" href="https://github.com/">
+            <span class="platform-logo" aria-hidden="true">
+              <img class="platform-logo__image" src="<%= h app_path(platform_icon_path("github")) %>" alt="" width="64" height="64">
+            </span>
+            <span class="platform-card__name">GitHub</span>
+          </a>
+        </article>
+        <article class="platform-card platform-card--gitlab">
+          <a class="platform-card__link" href="https://gitlab.com/">
+            <span class="platform-logo" aria-hidden="true">
+              <img class="platform-logo__image" src="<%= h app_path(platform_icon_path("gitlab")) %>" alt="" width="64" height="64">
+            </span>
+            <span class="platform-card__name">GitLab</span>
+          </a>
+          <span class="platform-card__best-effort"><%= h t('about.data_sources.best_effort') %></span>
+        </article>
+        <article class="platform-card platform-card--codeberg">
+          <a class="platform-card__link" href="https://codeberg.org/">
+            <span class="platform-logo" aria-hidden="true">
+              <img class="platform-logo__image" src="<%= h app_path(platform_icon_path("codeberg")) %>" alt="" width="64" height="64">
+            </span>
+            <span class="platform-card__name">Codeberg</span>
+          </a>
+          <span class="platform-card__best-effort"><%= h t('about.data_sources.best_effort') %></span>
+        </article>
+      </div>
+    </section>
+  </div>
+</section>
+
+<section class="about-section" id="open-source" aria-labelledby="open-source-heading">
+  <div class="content">
+    <div class="about-section__header">
+      <div>
+        <p class="eyebrow"><%= h t('about.open_source.eyebrow') %></p>
+        <h2 id="open-source-heading"><%= h t('about.open_source.title') %></h2>
+      </div>
+      <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
+    </div>
+    <div class="about-copy">
+      <% Array(t('about.open_source.paragraphs')).each do |paragraph| %>
+        <p><%= h paragraph %></p>
+      <% end %>
+      <p>
+        <a class="about-inline-link" href="https://github.com/ciembor/polish-open-source" target="_blank" rel="noopener noreferrer">
+          <%= h t('about.open_source.link_label') %>
+        </a>
+      </p>
+    </div>
   </div>
 </section>

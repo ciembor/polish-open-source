@@ -1,5 +1,37 @@
 en:
   about:
+    back_to_top: "Back to top"
+    badge:
+      eyebrow: "Badge"
+      hierarchy:
+        items:
+          - "If you are in the Poland top 100, the badge shows Polish Open Source and your country ranking position."
+          - "If you are not in the Poland top 100 but you are in your city top 10, the badge shows the city name and Elite, for example Krakow Elite."
+          - "If you are not in the city top 10 but you are in the city top 100, the badge shows the city name and Top 100, for example Krakow Top 100."
+          - "If you are outside the Poland top 100 and outside the city top 100, the badge can still be displayed as Polish Open Source."
+        title: "Profile badge hierarchy"
+      paragraphs:
+        - "A badge is a public SVG badge that you can embed in your GitHub profile or a repository README. It is generated from the latest public snapshot and updates after the next ranking run."
+        - "A repository badge shows the project position. If the repository language is recognized, the label can use a shorter language form, for example Polish .rb Repo or Polish .js Repo."
+        - "You can download the badge from your profile page after signing in with GitHub. The profile page includes a badge preview and ready-to-copy Markdown."
+      title: "Badge"
+    data_sources:
+      best_effort: "Best effort"
+      eyebrow: "Data sources"
+      paragraphs:
+        - "GitHub is the primary data source because it provides the best API for searching profiles by location and for fetching repositories, stars, and pull requests."
+        - "GitLab and Codeberg are supported on a best-effort basis. Their APIs do not expose the same access to every metric, and in particular they do not support strict location search, so some data can be less complete than on GitHub."
+        - "The ranking is a monthly snapshot, not a live view. If data on GitHub changed today, it may appear in the ranking only after the next edition."
+      platforms_title: "Platforms"
+      title: "Data sources"
+    discord:
+      eyebrow: "Discord"
+      paragraphs:
+        - "Discord is intended for people who are present in the Polish Open Source Rank data."
+        - "After signing in with GitHub, the Discord invite is visible on the profile page. You can connect your Discord account there, and the application checks your ranking profile. The bot synchronizes access and server roles."
+        - "Roles and available channels come from the latest public snapshot. They can depend on Poland rank, city rank, repository languages, and the highest ranking positions."
+        - "If you do not have access, check your public location, update it on the platform with your repositories, and wait for the next snapshot."
+      title: "Discord"
     hero:
       eyebrow: "About"
       lede: "The ranking shows public work by people connected with Poland across open source platforms."
@@ -7,33 +39,115 @@ en:
       body: "The project recognizes developers and organizations who contribute to open source and encourages creating free software. The ranking helps discover active people, repositories and local technical communities."
       eyebrow: "Mission"
       title: "Promote people who build open source"
-    platforms:
-      eyebrow: "Supported platforms"
-      title: "Public ranking sources"
-    rules:
-      activity:
-        body: "The activity ranking counts public events from the given month. Private activity, private commits and non-public projects are not included."
-        title: "Activity"
+    open_source:
+      eyebrow: "Open source"
+      link_label: "Open the source code on GitHub"
+      paragraphs:
+        - "The project source code is public. You can inspect how rankings are built, how package detection works, how Discord access is synchronized, and how badges are generated."
+      title: "Open source"
+    packages:
+      ecosystems:
+        intro: "Currently supported:"
+        items:
+          - "npm"
+          - "RubyGems"
+          - "crates.io"
+          - "PyPI"
+          - "Hex"
+          - "Packagist"
+          - "Go"
+          - "Homebrew"
+          - "NuGet"
+          - "Maven"
+          - "Terraform"
+          - "Conan"
+          - "vcpkg"
+          - "Swift Package Manager"
+          - "Pub"
+          - "APT"
+          - "RPM"
+          - "Nix"
+          - "CRAN"
+          - "CPAN"
+          - "Hackage"
+          - "Clojars"
+          - "Julia"
+          - "Conda"
+        title: "Supported ecosystems"
+      eyebrow: "Packages"
+      manifests:
+        intro: "Detection is based on manifests such as:"
+        items:
+          - "package.json"
+          - ".gemspec"
+          - "Cargo.toml"
+          - "pyproject.toml"
+          - "composer.json"
+          - "go.mod"
+          - "pom.xml"
+          - "Package.swift"
+          - "pubspec.yaml"
+          - "flake.nix"
+          - "DESCRIPTION"
+          - ".cabal"
+          - "Project.toml"
+          - "environment.yml"
+        note: "If a repository contains many manifests, it can be linked to more than one ecosystem."
+        title: "Manifests and detection"
+      metrics:
+        breakdown:
+          dependents:
+            label: "Dependent package count"
+            value: "RubyGems."
+          recent_downloads:
+            label: "Downloads in the last 30 days"
+            value: "npm, crates.io, Packagist, and Homebrew."
+          total_downloads:
+            label: "Total downloads"
+            value: "crates.io, RubyGems, Hex, Packagist, and NuGet."
+        paragraphs:
+          - "Each ecosystem has rankings by repository stars and by monthly repository star growth."
+          - "Additionally, when the package registry exposes the data, package-specific rankings are available as well, and they often say much more about project value than repository stars."
+        title: "Package metrics"
+      overview:
+        paragraphs:
+          - "Polish Open Source Rank also detects packages connected to Polish open-source repositories. Files in the default branch and manifests characteristic for specific ecosystems are analyzed."
+          - "Technical directories and dependency directories are skipped, including .git, build, dist, node_modules, target, and vendor/bundle."
+        title: "Detection scope"
+      title: "Packages"
+    rankings:
       data_scope:
-        body: "Only public data exposed by the GitHub, GitLab and Codeberg APIs is used. The project does not read private repositories, private activity or data that is not publicly visible."
+        paragraphs:
+          - "Rankings are built from public data available through the GitHub, GitLab, and Codeberg APIs. The project does not include private repositories, private commits, or activity that is not publicly visible."
         title: "Data scope"
+      eligibility:
+        paragraphs:
+          - "People enter the ranking when their public location points to Poland - it contains Polska or Poland, case-insensitive - or to a Polish city above 100,000 residents."
+          - "Organizations are filtered more strictly: if the location points to both Poland and another country, the organization does not enter the Polish ranking."
+        title: "Who enters the ranking"
       eyebrow: "Rules"
-      snapshots:
-        body: "Data is refreshed monthly. Public pages switch to a new month only after the full monthly crawl completes."
-        title: "Snapshots"
-      stars:
-        body: "The top ranking sorts users by the total number of stars in public repositories, and repositories by their current star count."
-        title: "Top by stars"
-      title: "How rankings are built"
-      trending:
-        body: "The popularity ranking shows the star increase in a given month. For platforms that do not expose public star history in the needed form, the monthly increase is treated as unavailable."
-        title: "Popularity"
-      users:
-        body: "People are found through public locations connected with Poland and Polish cities. Profiles enter the ranking when their public location matches a supported country or city."
-        title: "People"
+      metrics:
+        paragraphs:
+          - "The main ranking shows the total number of stars received. The popularity ranking shows the star increase in a given month. User activity means merged public pull requests from that month into repositories they do not own."
+          - "Repository metrics include only repositories that reached at least 5 stars."
+        title: "Metrics"
+      ordering:
+        paragraphs:
+          - "Public rankings show the top 100. Ties are deterministic: first by platform, then alphabetically by user login, organization login, or full repository name."
+        title: "Ordering and snapshots"
+      title: "Rankings"
+    section_nav:
+      badge: "Badge"
+      data_sources: "Data sources"
+      discord: "Discord"
+      label: "Page sections"
+      mission: "Mission"
+      open_source: "Open source"
+      packages: "Packages"
+      rankings: "Rankings"
     seo:
       title: "About Polish Open Source Rank"
-      description: "Mission, ranking rules for open-source work in Poland, and the supported GitHub, GitLab, and Codeberg platforms."
+      description: "Mission, ranking rules for open-source work in Poland, packages, Discord, badges, and the public data sources behind the project."
     title: "About Polish Open Source Rank"
   auth:
     login:

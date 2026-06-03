@@ -9,7 +9,6 @@
   .monitor-grid,
   .monitor-chart-grid,
   .monitor-log-grid,
-  .rules-grid,
   .platform-grid,
   .profile-grid,
   .profile-access-grid,
@@ -17,9 +16,9 @@
     grid-template-columns: 1fr;
   }
 
-  .about-grid {
-    gap: 10px;
-    grid-template-columns: 1fr;
+  .about-section__header {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .about-lead {
@@ -81,6 +80,17 @@
   .hero__inner {
     grid-template-columns: 1fr;
     padding: 42px 0 34px;
+  }
+
+  .about-section-nav__list {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 14px;
+    scrollbar-width: thin;
+  }
+
+  .about-section-nav__list li {
+    flex: 0 0 auto;
   }
 
   .hero__image,

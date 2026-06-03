@@ -978,6 +978,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(english_about.body).to include('<html lang="en">')
     expect(english_about.body).to include('rel="canonical" href="https://rank.example/en/about"')
     expect(english_about.body).to include('property="og:locale" content="en_US"')
+    expect(english_about.body).to include('Back to top')
+    expect(english_about.body).to include('Data sources')
   end
 
   it 'serves internal job progress as a noindex monitor page', :aggregate_failures do
@@ -1867,7 +1869,12 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       '"@type": "WebSite"',
       'property="og:image" content="https://rank.example/images/polish_open_source_front.webp"',
       'Misja',
-      'Zakres danych',
+      'Rankingi',
+      'Pakiety',
+      'Źródła danych',
+      'Wróć na górę',
+      'href="#mission"',
+      'href="#rankings"',
       'GitHub',
       'GitLab',
       'Codeberg',

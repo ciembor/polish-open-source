@@ -1,5 +1,37 @@
 pl:
   about:
+    back_to_top: "Wróć na górę"
+    badge:
+      eyebrow: "Badge"
+      hierarchy:
+        items:
+          - "Jeśli jesteś w top 100 w Polsce, badge pokazuje Polish Open Source i Twoją pozycję w rankingu kraju."
+          - "Jeśli nie jesteś w top 100 w Polsce, ale jesteś w top 10 swojego miasta, badge pokazuje nazwę miasta i Elite, na przykład Kraków Elite."
+          - "Jeśli nie jesteś w top 10 miasta, ale jesteś w top 100 miasta, badge pokazuje nazwę miasta i Top 100, na przykład Kraków Top 100."
+          - "Jeśli jesteś poza top 100 Polski i poza top 100 miasta, badge nadal może być wyświetlony jako Polish Open Source."
+        title: "Hierarchia badge profilu"
+      paragraphs:
+        - "Badge to publiczna odznaka SVG, którą możesz wkleić do profilu GitHuba albo README repozytorium. Jest generowana z ostatniego publicznego snapshotu i aktualizuje się po kolejnym przeliczeniu rankingu."
+        - "Badge repozytorium pokazuje pozycję projektu. Jeśli repozytorium ma rozpoznany język, etykieta może używać krótszej formy językowej, na przykład Polish .rb Repo albo Polish .js Repo."
+        - "Badge możesz pobrać ze strony profilu po zalogowaniu kontem GitHub. Na stronie profilu znajdziesz podgląd badge i gotowy Markdown do skopiowania."
+      title: "Badge"
+    data_sources:
+      best_effort: "Best effort"
+      eyebrow: "Źródła danych"
+      paragraphs:
+        - "GitHub jest głównym źródłem danych, bo daje najlepsze API do wyszukiwania profili po lokalizacji, pobierania repozytoriów, gwiazdek i pull requestów."
+        - "GitLab i Codeberg są obsługiwane w trybie best effort. Ich API nie daje takiego samego dostępu do wszystkich metryk, a w szczególności nie udostępnia wyszukiwania stricte po lokalizacji, dlatego część danych może być mniej kompletna niż dla GitHuba."
+        - "Ranking jest miesięcznym snapshotem, a nie widokiem live. Jeśli dane na GitHubie zmieniły się dzisiaj, mogą pojawić się w rankingu dopiero po kolejnej edycji."
+      platforms_title: "Platformy"
+      title: "Źródła danych"
+    discord:
+      eyebrow: "Discord"
+      paragraphs:
+        - "Discord jest przeznaczony dla osób obecnych w danych Polish Open Source Rank."
+        - "Po zalogowaniu GitHubem zaproszenie do Discorda jest widoczne na stronie profilu. Możesz tam połączyć konto Discord, a aplikacja sprawdzi Twój profil rankingowy. Bot synchronizuje dostęp i role na serwerze."
+        - "Role i dostępne kanały wynikają z ostatniego publicznego snapshotu. Mogą zależeć od pozycji w Polsce, pozycji w mieście, języków repozytoriów oraz najwyższych miejsc w rankingu."
+        - "Jeśli nie masz dostępu, sprawdź publiczną lokalizację, zmień ją w profilu platformy z repozytoriami i poczekaj na kolejny snapshot."
+      title: "Discord"
     hero:
       eyebrow: "O projekcie"
       lede: "Ranking pokazuje publiczną pracę osób związanych z Polską na platformach open source."
@@ -7,33 +39,115 @@ pl:
       body: "Celem projektu jest docenianie programistek, programistów i organizacji zasłużonych dla open source oraz zachęcanie do tworzenia wolnego oprogramowania. Ranking ma ułatwiać odkrywanie aktywnych osób, repozytoriów i lokalnych społeczności technicznych."
       eyebrow: "Misja"
       title: "Promować ludzi, którzy tworzą open source"
-    platforms:
-      eyebrow: "Wspierane platformy"
-      title: "Publiczne źródła rankingu"
-    rules:
-      activity:
-        body: "Ranking aktywności użytkowników liczy publiczne zdarzenia z danego miesiąca. Prywatna aktywność, prywatne commity i niepubliczne projekty nie są uwzględniane."
-        title: "Aktywność"
+    open_source:
+      eyebrow: "Open source"
+      link_label: "Otwórz kod źródłowy na GitHubie"
+      paragraphs:
+        - "Kod projektu jest publiczny. Możesz sprawdzić, jak powstają rankingi, jak działa wykrywanie pakietów, jak synchronizowany jest dostęp do Discorda i jak generowane są badge."
+      title: "Open source"
+    packages:
+      ecosystems:
+        intro: "Aktualnie obsługiwane są:"
+        items:
+          - "npm"
+          - "RubyGems"
+          - "crates.io"
+          - "PyPI"
+          - "Hex"
+          - "Packagist"
+          - "Go"
+          - "Homebrew"
+          - "NuGet"
+          - "Maven"
+          - "Terraform"
+          - "Conan"
+          - "vcpkg"
+          - "Swift Package Manager"
+          - "Pub"
+          - "APT"
+          - "RPM"
+          - "Nix"
+          - "CRAN"
+          - "CPAN"
+          - "Hackage"
+          - "Clojars"
+          - "Julia"
+          - "Conda"
+        title: "Obsługiwane ekosystemy"
+      eyebrow: "Pakiety"
+      manifests:
+        intro: "Wykrywanie opiera się na manifestach, na przykład:"
+        items:
+          - "package.json"
+          - ".gemspec"
+          - "Cargo.toml"
+          - "pyproject.toml"
+          - "composer.json"
+          - "go.mod"
+          - "pom.xml"
+          - "Package.swift"
+          - "pubspec.yaml"
+          - "flake.nix"
+          - "DESCRIPTION"
+          - ".cabal"
+          - "Project.toml"
+          - "environment.yml"
+        note: "Jeśli repozytorium zawiera wiele manifestów, może zostać powiązane z więcej niż jednym ekosystemem."
+        title: "Manifesty i wykrywanie"
+      metrics:
+        breakdown:
+          dependents:
+            label: "Liczba zależnych pakietów"
+            value: "RubyGems."
+          recent_downloads:
+            label: "Liczba pobrań w ostatnich 30 dniach"
+            value: "npm, crates.io, Packagist i Homebrew."
+          total_downloads:
+            label: "Całkowita liczba pobrań"
+            value: "crates.io, RubyGems, Hex, Packagist i NuGet."
+        paragraphs:
+          - "Dla każdego ekosystemu dostępne są rankingi według gwiazdek repozytorium oraz miesięcznego przyrostu gwiazdek repozytorium."
+          - "Dodatkowo, jeśli rejestr pakietów pozwala pozyskać takie dane, dostępne są rankingi według metryk samego pakietu, co często mówi dużo więcej o wartości projektu niż gwiazdki repozytorium."
+        title: "Metryki pakietów"
+      overview:
+        paragraphs:
+          - "Polish Open Source Rank wykrywa także pakiety powiązane z polskimi repozytoriami open source. Analizowane są pliki w domyślnej gałęzi repozytorium i manifesty charakterystyczne dla konkretnych ekosystemów."
+          - "Pomijane są katalogi techniczne i katalogi zależności, między innymi .git, build, dist, node_modules, target i vendor/bundle."
+        title: "Zakres wykrywania"
+      title: "Pakiety"
+    rankings:
       data_scope:
-        body: "Używane są wyłącznie dane publiczne udostępniane przez API GitHuba, GitLaba i Codeberga. Projekt nie czyta prywatnych repozytoriów, prywatnej aktywności ani danych niewidocznych publicznie."
+        paragraphs:
+          - "Rankingi powstają z publicznych danych dostępnych przez API GitHuba, GitLaba i Codeberga. Projekt nie uwzględnia prywatnych repozytoriów, prywatnych commitów ani aktywności niewidocznej publicznie."
         title: "Zakres danych"
+      eligibility:
+        paragraphs:
+          - "Do rankingu trafiają osoby, których publiczna lokalizacja wskazuje Polskę - zawiera Polska albo Poland, wielkość liter nie ma znaczenia - lub polskie miasto powyżej 100 tysięcy mieszkańców."
+          - "Organizacje są filtrowane ostrożniej: jeśli lokalizacja wskazuje jednocześnie Polskę i inne państwa, organizacja nie trafia do polskiego rankingu."
+        title: "Kto trafia do rankingu"
       eyebrow: "Zasady"
-      snapshots:
-        body: "Dane są odświeżane miesięcznie. Strony publiczne przełączają się na nowy miesiąc dopiero po zakończeniu pełnego miesięcznego crawlowania."
-        title: "Snapshoty"
-      stars:
-        body: "Ranking top sortuje użytkowników według łącznej liczby gwiazdek w publicznych repozytoriach, a repozytoria według aktualnej liczby gwiazdek."
-        title: "Top według gwiazdek"
-      title: "Jak powstają rankingi"
-      trending:
-        body: "Ranking popularności pokazuje przyrost gwiazdek w danym miesiącu. Dla platform, które nie udostępniają publicznej historii gwiazdek w potrzebnej postaci, miesięczny przyrost jest traktowany jako niedostępny."
-        title: "Popularność"
-      users:
-        body: "Osoby są wyszukiwane po publicznych lokalizacjach związanych z Polską i polskimi miastami. Do rankingu trafiają profile, których publiczna lokalizacja pasuje do obsługiwanego kraju albo miasta."
-        title: "Ludzie"
+      metrics:
+        paragraphs:
+          - "Główny ranking pokazuje całkowitą liczbę uzyskanych gwiazdek. Ranking popularności pokazuje przyrost gwiazdek w danym miesiącu. Aktywność użytkownika oznacza zmergowane publiczne pull requesty z danego miesiąca do repozytoriów, które do niego nie należą."
+          - "Do metryk repozytoriów trafiają tylko te, które uzyskały minimum 5 gwiazdek."
+        title: "Metryki"
+      ordering:
+        paragraphs:
+          - "Publiczne rankingi pokazują top 100. Przy remisach kolejność jest deterministyczna: najpierw według platformy, potem alfabetycznie po loginie użytkownika, loginie organizacji albo pełnej nazwie repozytorium."
+        title: "Kolejność i snapshoty"
+      title: "Rankingi"
+    section_nav:
+      badge: "Badge"
+      data_sources: "Źródła danych"
+      discord: "Discord"
+      label: "Sekcje strony"
+      mission: "Misja"
+      open_source: "Open source"
+      packages: "Pakiety"
+      rankings: "Rankingi"
     seo:
       title: "O Polish Open Source Rank"
-      description: "Misja, zasady rankingu open source dla Polski oraz wspierane platformy GitHub, GitLab i Codeberg."
+      description: "Misja, zasady rankingu open source dla Polski, pakiety, Discord, badge oraz publiczne źródła danych projektu."
     title: "O Polish Open Source Rank"
   auth:
     login:
