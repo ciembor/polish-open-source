@@ -7,4 +7,4 @@ if ! git diff --quiet; then
   git add -u
 fi
 
-KNAPSACK_NODES="${KNAPSACK_NODES:-2}" bin/quality
+KNAPSACK_NODES="${KNAPSACK_NODES:-4}" bin/quality
