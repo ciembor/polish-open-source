@@ -39,7 +39,9 @@ RSpec.describe 'SQLitePublicSnapshotPublicationRepository' do
     expect(published_badge('user', 1)).to include(label: 'Polish Open Source', rank: 1)
     expect(published_badge('organization', 2)).to include(label: 'Polish Open Source Org', rank: 1)
     expect(published_badge('repository', 10)).to include(label: 'Polish .rb Repo', rank: 2)
+    expect(published_badge('repository', 11)).to include(label: 'Polish Repo', rank: 2)
     expect(published_badge('organization_repository', 20)).to include(label: 'Polish .rb Repo', rank: 1)
+    expect(published_badge('organization_repository', 21)).to include(label: 'Polish Repo', rank: 2)
   end
 
   it 'keeps the current public period when badge materialization fails' do
@@ -164,10 +166,25 @@ RSpec.describe 'SQLitePublicSnapshotPublicationRepository' do
   end
 
   def seed_repository_stats(period_start)
-    repository_values = [
-      'github', 10, 1, 'alice', 'app', 'alice/app',
-      'https://github.com/alice/app', 'Ruby', 0, 0, '2026-06-01T00:00:00Z'
-    ]
+    seed_repository_record(id: 10, name: 'app', full_name: 'alice/app', language: 'Ruby')
+    seed_repository_record(id: 11, name: 'docs', full_name: 'alice/docs', language: nil)
+    database.execute(<<~SQL, [period_start, 10, 10])
+      INSERT INTO repository_monthly_stats(
+        period_start, platform, repository_github_id, owner_github_id, owner_login, owner_city, owner_country,
+        stargazers_count, monthly_stars_delta, updated_at
+      )
+      VALUES (?, 'github', ?, 1, 'alice', 'Kraków', 'Poland', ?, 1, '2026-06-01T00:00:00Z')
+    SQL
+    database.execute(<<~SQL, [period_start, 11, 5])
+      INSERT INTO repository_monthly_stats(
+        period_start, platform, repository_github_id, owner_github_id, owner_login, owner_city, owner_country,
+        stargazers_count, monthly_stars_delta, updated_at
+      )
+      VALUES (?, 'github', ?, 1, 'alice', 'Kraków', 'Poland', ?, 1, '2026-06-01T00:00:00Z')
+    SQL
+  end
+
+  def seed_repository_record(id:, name:, full_name:, language:)
     database.execute(
       <<~SQL,
         INSERT OR IGNORE INTO repositories(
@@ -176,15 +193,11 @@ RSpec.describe 'SQLitePublicSnapshotPublicationRepository' do
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       SQL
-      repository_values
+      [
+        'github', id, 1, 'alice', name, full_name,
+        "https://github.com/#{full_name}", language, 0, 0, '2026-06-01T00:00:00Z'
+      ]
     )
-    database.execute(<<~SQL, [period_start])
-      INSERT INTO repository_monthly_stats(
-        period_start, platform, repository_github_id, owner_github_id, owner_login, owner_city, owner_country,
-        stargazers_count, monthly_stars_delta, updated_at
-      )
-      VALUES (?, 'github', 10, 1, 'alice', 'Kraków', 'Poland', 10, 1, '2026-06-01T00:00:00Z')
-    SQL
   end
 
   def seed_organization_stats(period_start)
@@ -198,10 +211,25 @@ RSpec.describe 'SQLitePublicSnapshotPublicationRepository' do
   end
 
   def seed_organization_repository_stats(period_start)
-    repository_values = [
-      'github', 20, 2, 'org', 'tool', 'org/tool',
-      'https://github.com/org/tool', 'Ruby', 0, 0, '2026-06-01T00:00:00Z'
-    ]
+    seed_organization_repository_record(id: 20, name: 'tool', full_name: 'org/tool', language: 'Ruby')
+    seed_organization_repository_record(id: 21, name: 'docs', full_name: 'org/docs', language: nil)
+    database.execute(<<~SQL, [period_start, 20, 20])
+      INSERT INTO organization_repository_monthly_stats(
+        period_start, platform, repository_github_id, organization_github_id, organization_login,
+        organization_city, organization_country, stargazers_count, monthly_stars_delta, updated_at
+      )
+      VALUES (?, 'github', ?, 2, 'org', 'Warszawa', 'Poland', ?, 2, '2026-06-01T00:00:00Z')
+    SQL
+    database.execute(<<~SQL, [period_start, 21, 10])
+      INSERT INTO organization_repository_monthly_stats(
+        period_start, platform, repository_github_id, organization_github_id, organization_login,
+        organization_city, organization_country, stargazers_count, monthly_stars_delta, updated_at
+      )
+      VALUES (?, 'github', ?, 2, 'org', 'Warszawa', 'Poland', ?, 2, '2026-06-01T00:00:00Z')
+    SQL
+  end
+
+  def seed_organization_repository_record(id:, name:, full_name:, language:)
     database.execute(
       <<~SQL,
         INSERT OR IGNORE INTO organization_repositories(
@@ -210,15 +238,11 @@ RSpec.describe 'SQLitePublicSnapshotPublicationRepository' do
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       SQL
-      repository_values
+      [
+        'github', id, 2, 'org', name, full_name,
+        "https://github.com/#{full_name}", language, 0, 0, '2026-06-01T00:00:00Z'
+      ]
     )
-    database.execute(<<~SQL, [period_start])
-      INSERT INTO organization_repository_monthly_stats(
-        period_start, platform, repository_github_id, organization_github_id, organization_login,
-        organization_city, organization_country, stargazers_count, monthly_stars_delta, updated_at
-      )
-      VALUES (?, 'github', 20, 2, 'org', 'Warszawa', 'Poland', 20, 2, '2026-06-01T00:00:00Z')
-    SQL
   end
 
   def seed_package_run(period_start, ecosystem: 'npm', status: 'finished')

@@ -201,12 +201,15 @@ module PolishOpenSourceRank
                   WHERE language IS NOT NULL AND trim(language) != ''
                 ),
                 ranked_generic_repositories AS (
-                  SELECT badge_kind, period_start, platform, subject_github_id, language,
-                         RANK() OVER (
-                           PARTITION BY badge_kind
-                           ORDER BY stargazers_count DESC, platform ASC, full_name COLLATE NOCASE ASC
-                         ) AS rank
-                  FROM repositories_for_badges
+                  SELECT badge_kind, period_start, platform, subject_github_id, language, rank
+                  FROM (
+                    SELECT badge_kind, period_start, platform, subject_github_id, language,
+                           RANK() OVER (
+                             PARTITION BY badge_kind
+                             ORDER BY stargazers_count DESC, platform ASC, full_name COLLATE NOCASE ASC
+                           ) AS rank
+                    FROM repositories_for_badges
+                  )
                   WHERE language IS NULL OR trim(language) = ''
                 )
                 SELECT *
