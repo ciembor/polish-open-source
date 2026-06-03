@@ -5,6 +5,8 @@ require 'English'
 require 'fileutils'
 require 'shellwords'
 
+BIN_DIR = __dir__
+
 def run_command(env, command)
   env_label = env.map { |key, value| "#{key}=#{value}" }.join(' ')
   prefix = env_label.empty? ? '$' : "$ #{env_label}"
@@ -13,16 +15,16 @@ def run_command(env, command)
 end
 
 commands = [
-  %w[bundle exec rubocop --cache-root tmp/rubocop_cache],
-  %w[bundle exec reek],
-  %w[bundle exec bundle-audit check]
+  [File.join(BIN_DIR, 'bundle'), 'exec', 'rubocop', '--cache-root', 'tmp/rubocop_cache'],
+  [File.join(BIN_DIR, 'bundle'), 'exec', 'reek'],
+  [File.join(BIN_DIR, 'bundle'), 'exec', 'bundle-audit', 'check']
 ]
 
 commands.each { |command| run_command({}, command) }
 
 node_total = ENV.fetch('KNAPSACK_NODES', '1').to_i
 rspec_args = ENV.fetch('RSPEC_ARGS', '')
-rspec_command = %w[bundle exec knapsack rspec]
+rspec_command = [File.join(BIN_DIR, 'bundle'), 'exec', 'knapsack', 'rspec']
 rspec_command.concat(Shellwords.split(rspec_args)) unless rspec_args.empty?
 
 if node_total <= 1
@@ -46,5 +48,5 @@ else
 
   exit 1 unless statuses.all?(&:success?)
 
-  run_command({}, %w[bundle exec ruby bin/simplecov_collate])
+  run_command({}, [File.join(BIN_DIR, 'bundle'), 'exec', 'ruby', 'bin/simplecov_collate'])
 end

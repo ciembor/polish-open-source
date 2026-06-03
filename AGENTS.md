@@ -2,6 +2,8 @@ DO NOT leave finished tasks uncommited unless changes are only in ignored files
 DO NOT skip pre-commit hooks
 DO NOT introduce Reek code smells in the code
 AVOID generating code with code smells
+In sandboxed or non-interactive shells, use repo entrypoints like `bin/bundle`,
+`bin/rspec`, `bin/rake`, and `bin/quality` instead of plain `bundle exec ...`.
 
 # OBEY A Philosophy of Software Design by John Ousterhout
 

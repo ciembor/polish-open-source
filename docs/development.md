@@ -3,7 +3,7 @@
 ## Local Setup
 
 ```sh
-bundle install
+bin/bundle install
 cp .env.local.example .env.local
 ```
 
@@ -42,6 +42,11 @@ This runs RuboCop, Reek, Bundler Audit, and RSpec. SimpleCov enforces 100% line
 coverage for `lib/**/*.rb`. CI also runs `bundle exec bundle-audit check
 --update` and CodeQL before deploy.
 
+In sandboxed or non-interactive shells, prefer repo entrypoints such as
+`bin/bundle`, `bin/rspec`, and `bin/rake` instead of plain `bundle exec ...`.
+That keeps commands on the project's pinned Ruby even when the shell PATH falls
+back to `/usr/bin/bundle`.
+
 Mutation checks are available on demand through [Mutant](https://github.com/mbj/mutant):
 
 ```sh
@@ -64,10 +69,10 @@ git config core.hooksPath .githooks
 Equivalent rake tasks are available for local job operations:
 
 ```sh
-bundle exec rake crawl:monthly[2026-04,github,organizations,false]
-bundle exec rake crawl:packages[2026-04,npm,100,false]
-bundle exec rake crawl:packages[2026-04,npm,,false,5000,5000,10000,10000]
-bundle exec rake crawl:repair_packages[2026-04]
-bundle exec rake crawl:resume
-bundle exec rake crawl:list
+bin/rake crawl:monthly[2026-04,github,organizations,false]
+bin/rake crawl:packages[2026-04,npm,100,false]
+bin/rake crawl:packages[2026-04,npm,,false,5000,5000,10000,10000]
+bin/rake crawl:repair_packages[2026-04]
+bin/rake crawl:resume
+bin/rake crawl:list
 ```
