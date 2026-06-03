@@ -18,7 +18,7 @@ if ARGV.include?('--rollback')
   period = repository.rollback
   puts(period ? "Rolled back public snapshot to #{period}" : 'No published snapshot with a rollback target')
 else
-  period = ARGV.fetch(0)
+  period = ARGV.first || PolishOpenSourceRank::Shared::Domain::Period.previous_month.key
   repository.publish(PolishOpenSourceRank::Shared::Domain::Period.parse(period).start_date.to_s)
   puts "Published public snapshot #{period}"
 end

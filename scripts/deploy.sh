@@ -168,6 +168,7 @@ install_units() {
     "${SERVICE_NAME}-monitor.timer" \
     "${SERVICE_NAME}-monthly.service" \
     "${SERVICE_NAME}-monthly.timer" \
+    "${SERVICE_NAME}-publish.service" \
     "${SERVICE_NAME}-packages.service" \
     "${SERVICE_NAME}-packages.timer"; do
     sudo install -m 0644 "deploy/${unit}" "/etc/systemd/system/${unit}"

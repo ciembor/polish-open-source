@@ -41,6 +41,7 @@ RSpec.describe File do
 
     expect(service).to include(
       'After=network-online.target polish-open-source-rank-monthly.service',
+      'OnSuccess=polish-open-source-rank-publish.service',
       'Nice=10',
       'CPUWeight=20',
       'IOWeight=20',
@@ -57,6 +58,22 @@ RSpec.describe File do
     )
     expect(timer).to include('OnCalendar=*-*-01 00:00:00')
     expect(timer).to include('Persistent=true')
+  end
+
+  it 'publishes the public snapshot after successful package crawls' do
+    service = described_class.read(described_class.join(root, 'deploy/polish-open-source-rank-publish.service'))
+    deploy = described_class.read(described_class.join(root, 'scripts/deploy.sh'))
+
+    expect(service).to include(
+      'After=network-online.target polish-open-source-rank-packages.service',
+      'Restart=on-failure',
+      'RestartSec=300',
+      '--name=polish-open-source-rank-publish',
+      '--user=1000:1000 --read-only --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m',
+      '-v /home/ciembor/polish-open-source-rank/db:/app/db:rw',
+      'bundle exec ruby bin/publish_snapshot'
+    )
+    expect(deploy).to include('"${SERVICE_NAME}-publish.service"')
   end
 
   it 'runs manual crawls with persisted arguments and restart policy' do

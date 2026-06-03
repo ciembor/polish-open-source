@@ -1,0 +1,24 @@
+[Unit]
+Description=Publish Polish Open Source Rank snapshot
+Wants=network-online.target
+After=network-online.target polish-open-source-rank-packages.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/ciembor/polish-open-source-rank
+EnvironmentFile=/home/ciembor/polish-open-source-rank/.env.local
+Restart=on-failure
+RestartSec=300
+TimeoutStartSec=30min
+TimeoutStopSec=45
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+CPUWeight=20
+IOWeight=20
+ExecStartPre=/usr/bin/mkdir -p /home/ciembor/polish-open-source-rank/tmp
+ExecStartPre=-/usr/bin/podman rm -f polish-open-source-rank-publish
+ExecStart=/usr/bin/podman run --rm --name=polish-open-source-rank-publish --user=1000:1000 --read-only --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m --memory=512m --memory-swap=512m --memory-reservation=256m --cpus=0.5 --cpu-shares=128 --pids-limit=256 --env-file /home/ciembor/polish-open-source-rank/.env.local -e RACK_ENV=production -e APP_BASE_PATH=/ -e BASE_URL=https://polish-open-source.pl -v /home/ciembor/polish-open-source-rank/db:/app/db:rw -v /home/ciembor/polish-open-source-rank/log:/app/log:rw localhost/polish-open-source-rank:latest bundle exec ruby bin/publish_snapshot
+ExecStop=-/usr/bin/podman stop --time 30 polish-open-source-rank-publish
+ExecStopPost=-/usr/bin/podman rm -f polish-open-source-rank-publish
