@@ -35,7 +35,7 @@ module PolishOpenSourceRank
                 metadata: pom_metadata(root, path, group_id, artifact_id)
               )
             rescue REXML::ParseException => e
-              StaticManifestParserHelpers.failed('maven', e.message)
+              unparseable_pom(path, e.message)
             end
 
             def parse_gradle(path, content)
@@ -82,6 +82,18 @@ module PolishOpenSourceRank
               return if group_id.nil? || artifact_id.nil?
 
               "#{group_id}:#{artifact_id}"
+            end
+
+            def unparseable_pom(path, error)
+              PackageManifest.new(
+                ecosystem: 'maven',
+                confidence: 'low',
+                parse_status: 'partial',
+                metadata: {
+                  path: path,
+                  error: error
+                }
+              )
             end
 
             def gradle_assignment(content, name)

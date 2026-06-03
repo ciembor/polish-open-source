@@ -176,7 +176,7 @@ module PolishOpenSourceRank
           eta_p95_seconds: eta_seconds(pending, p95_ms),
           last_finished_at: event_stats.fetch(:last_finished_at),
           state: section_state(attributes, event_stats),
-          stale: stale?(event_stats.fetch(:last_finished_at), attributes.fetch(:now))
+          stale: section_stale?(attributes, event_stats)
         }
       end
 
@@ -255,6 +255,12 @@ module PolishOpenSourceRank
         return false unless last_finished_at
 
         (now - Time.parse(last_finished_at)) > stale_seconds
+      end
+
+      def section_stale?(attributes, event_stats)
+        return false unless attributes.fetch(:pending).positive?
+
+        stale?(event_stats.fetch(:last_finished_at), attributes.fetch(:now))
       end
 
       def section_state(attributes, event_stats)

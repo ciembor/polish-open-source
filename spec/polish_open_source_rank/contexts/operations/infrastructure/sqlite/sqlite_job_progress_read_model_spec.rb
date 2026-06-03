@@ -146,6 +146,32 @@ RSpec.describe PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLit
     )
   end
 
+  it 'does not mark complete package sections stale after old work events' do
+    database = open_database
+    seed_package_run(database, status: 'running', started_at: '2026-05-01T00:00:00Z')
+    database.execute(package_scan_sql, ['2026-04-01', 'user', 'github', 11, 'alice/lib', 'scanned'])
+    database.execute(package_manifest_sql, [1, 'maven', 'pom.xml', nil, nil, 'partial'])
+    event = PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteJobWorkEventRepository.new(database)
+    event.record(
+      **base_event,
+      job_kind: 'packages',
+      stage: 'manifest_parse',
+      unit_kind: 'package_manifest',
+      platform: nil,
+      ecosystem: 'maven',
+      subject_label: 'alice/lib:pom.xml',
+      status: 'partial',
+      duration_ms: 1000
+    )
+
+    progress = described_class.new(database).job_progress(now: Time.parse('2026-05-01T00:20:00Z'))
+
+    expect(section(progress, 'package manifests / maven')).to include(
+      state: 'complete',
+      stale: false
+    )
+  end
+
   def expect_section_labels(progress)
     expect(progress.fetch(:sections).map { |section| section.fetch(:label) }).to include(
       'monthly users / github',

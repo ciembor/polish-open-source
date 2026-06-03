@@ -254,7 +254,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Domain::Parsers do
     )
     expect(parse('MavenManifestParser', 'pom.xml', malformed_comment_pom))
       .to have_attributes(package_name: 'pl.example:polish-tool', parse_status: 'parsed')
-    expect(parse('MavenManifestParser', 'pom.xml', '<project>')).to have_attributes(parse_status: 'failed')
+    expect(parse('MavenManifestParser', 'pom.xml', '<project>')).to have_attributes(parse_status: 'partial')
   end
 
   it 'parses Terraform and Conan manifests statically' do
