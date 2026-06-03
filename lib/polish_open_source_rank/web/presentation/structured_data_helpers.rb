@@ -68,7 +68,7 @@ module PolishOpenSourceRank
         end
 
         def page_schema_details
-          return { 'about' => { '@type' => 'Organization', 'name' => 'Polish Open Source Rank' } } if about_page?
+          return { 'about' => { '@type' => 'Organization', 'name' => 'Polish Open Source' } } if about_page?
           return { 'mainEntity' => collection_schema } if collection_page?
           return { 'mainEntity' => profile_schema } if profile_page?
           return repository_schema if repository_page?

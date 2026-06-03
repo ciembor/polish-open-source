@@ -962,7 +962,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(about.body).to include('<html lang="pl">')
     expect(about.body).to include('rel="canonical" href="https://rank.example/about"')
     expect(about.body).to include('rel="alternate" hreflang="en" href="https://rank.example/en/about"')
-    expect(about.body).to include('property="og:title" content="O Polish Open Source Rank"')
+    expect(about.body).to include('property="og:title" content="O Polish Open Source"')
     expect(about.body).to include('name="twitter:card" content="summary_large_image"')
 
     expect(editions.body).to include('rel="canonical" href="https://rank.example/editions"')
@@ -1864,7 +1864,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.status).to eq(200)
     expect_body_to_include(
       response,
-      '<title>O Polish Open Source Rank</title>',
+      '<title>O Polish Open Source</title>',
       '"@type": "AboutPage"',
       '"@type": "WebSite"',
       'property="og:image" content="https://rank.example/images/polish_open_source_front.webp"',

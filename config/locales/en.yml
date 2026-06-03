@@ -27,7 +27,7 @@ en:
     discord:
       eyebrow: "Discord"
       paragraphs:
-        - "Discord is intended for people who are present in the Polish Open Source Rank data."
+        - "Discord is intended for people who are present in the Polish Open Source data."
         - "After signing in with GitHub, the Discord invite is visible on the profile page. You can connect your Discord account there, and the application checks your ranking profile. The bot synchronizes access and server roles."
         - "Roles and available channels come from the latest public snapshot. They can depend on Poland rank, city rank, repository languages, and the highest ranking positions."
         - "If you do not have access, check your public location, update it on the platform with your repositories, and wait for the next snapshot."
@@ -111,7 +111,7 @@ en:
         title: "Package metrics"
       overview:
         paragraphs:
-          - "Polish Open Source Rank also detects packages connected to Polish open-source repositories. Files in the default branch and manifests characteristic for specific ecosystems are analyzed."
+          - "Polish Open Source also detects packages connected to Polish open-source repositories. Files in the default branch and manifests characteristic for specific ecosystems are analyzed."
           - "Technical directories and dependency directories are skipped, including .git, build, dist, node_modules, target, and vendor/bundle."
         title: "Detection scope"
       title: "Packages"
@@ -146,9 +146,9 @@ en:
       packages: "Packages"
       rankings: "Rankings"
     seo:
-      title: "About Polish Open Source Rank"
+      title: "About Polish Open Source"
       description: "Mission, ranking rules for open-source work in Poland, packages, Discord, badges, and the public data sources behind the project."
-    title: "About Polish Open Source Rank"
+    title: "About Polish Open Source"
   auth:
     login:
       github: "Log in"
