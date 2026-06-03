@@ -1,22 +1,21 @@
 <section class="hero">
   <div class="hero__inner">
-  <div>
-    <p class="eyebrow"><%= h ranking_overview_title(@ranking_section) %></p>
-    <h1><%= h scope_name(@scope) %></h1>
-    <p class="lede"><%= h t(@ranking_section == 'organizations' ? 'rankings.hero.organizations_lede' : 'rankings.hero.lede') %></p>
-    <% if @period %>
-      <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @period %>"><%= h period_label(@period) %></time></p>
-    <% end %>
-  </div>
+    <div>
+      <p class="eyebrow"><%= h ranking_overview_title(@ranking_section) %></p>
+      <h1><%= h scope_name(@scope) %></h1>
+      <p class="lede"><%= h t(@ranking_section == 'organizations' ? 'rankings.hero.organizations_lede' : 'rankings.hero.lede') %></p>
+      <% if @period %>
+        <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @period %>"><%= h period_label(@period) %></time></p>
+      <% end %>
+    </div>
 
-  <% if current_user %>
-    <img class="hero__image" src="/images/polish_open_source_front.webp" alt="" aria-hidden="true">
-  <% else %>
-    <a class="hero__image-link" href="<%= h app_path('/auth/github') %>" aria-label="<%= h t('auth.login.github') %>">
+    <% if current_user %>
       <img class="hero__image" src="/images/polish_open_source_front.webp" alt="" aria-hidden="true">
-    </a>
-  <% end %>
-
+    <% else %>
+      <a class="hero__image-link" href="<%= h app_path('/auth/github') %>" aria-label="<%= h t('auth.login.github') %>">
+        <img class="hero__image" src="/images/polish_open_source_front.webp" alt="" aria-hidden="true">
+      </a>
+    <% end %>
   </div>
 </section>
 

@@ -9,7 +9,14 @@
         <p class="period"><%= h t('rankings.snapshot') %> <time datetime="<%= h @period %>"><%= h period_label(@period) %></time></p>
       <% end %>
     </div>
-    <img class="hero__image" src="/images/polish_open_source_front.webp" alt="" aria-hidden="true">
+
+    <% if current_user %>
+      <img class="hero__image" src="/images/polish_open_source_front.webp" alt="" aria-hidden="true">
+    <% else %>
+      <a class="hero__image-link" href="<%= h app_path('/auth/github') %>" aria-label="<%= h t('auth.login.github') %>">
+        <img class="hero__image" src="/images/polish_open_source_front.webp" alt="" aria-hidden="true">
+      </a>
+    <% end %>
   </div>
 </section>
 

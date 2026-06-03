@@ -17,6 +17,14 @@
       <h1>Polish Open Source</h1>
       <p class="lede"><%= h t('about.hero.lede') %></p>
     </div>
+
+    <% if current_user %>
+      <img class="hero__image" src="/images/polish_open_source_front.webp" alt="" aria-hidden="true">
+    <% else %>
+      <a class="hero__image-link" href="<%= h app_path('/auth/github') %>" aria-label="<%= h t('auth.login.github') %>">
+        <img class="hero__image" src="/images/polish_open_source_front.webp" alt="" aria-hidden="true">
+      </a>
+    <% end %>
   </div>
 </section>
 
