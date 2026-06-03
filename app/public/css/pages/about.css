@@ -101,6 +101,26 @@
   margin-top: 8px;
 }
 
+.about-card-list {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 0;
+}
+
+.about-card-list li {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  font-weight: 700;
+  margin: 0;
+  min-width: 0;
+  padding: 14px 16px;
+}
+
 .about-definition-list {
   display: grid;
   gap: 16px;
