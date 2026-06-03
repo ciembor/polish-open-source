@@ -484,6 +484,8 @@ CREATE INDEX IF NOT EXISTS idx_package_repository_scans_status_period
   ON package_repository_scans(period_start, status, repository_kind, platform);
 CREATE INDEX IF NOT EXISTS idx_package_manifests_ecosystem_name
   ON package_manifests(ecosystem, normalized_package_name);
+CREATE INDEX IF NOT EXISTS idx_registry_package_links_lookup
+  ON registry_package_links(ecosystem, normalized_package_name, matched, manifest_id);
 CREATE INDEX IF NOT EXISTS idx_registry_package_snapshots_ecosystem_downloads
   ON registry_package_snapshots(period_start, ecosystem, downloads_30d, downloads_total);
 CREATE INDEX IF NOT EXISTS idx_registry_package_snapshots_ecosystem_dependents

@@ -98,6 +98,33 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     expect(nuget_rankings.fetch(:downloads_total).first).to include(package_name: 'Polish.Tool')
   end
 
+  it 'applies the per-metric limit when rankings share one candidate set' do
+    seed_package(ecosystem: 'npm', name: 'downloads-leader', downloads_30d: 500)
+    seed_package(ecosystem: 'npm', name: 'stars-leader', downloads_30d: 100)
+    seed_package(ecosystem: 'npm', name: 'delta-leader', downloads_30d: 50)
+    link_repository(
+      name: 'downloads-leader',
+      repository: repository_ref(scan_id: 10, full_name: 'alice/downloads', repository_kind: 'user'),
+      stats: { stars: 10, delta: 1 }
+    )
+    link_repository(
+      name: 'stars-leader',
+      repository: repository_ref(scan_id: 20, full_name: 'bob/stars', repository_kind: 'user'),
+      stats: { stars: 500, delta: 2 }
+    )
+    link_repository(
+      name: 'delta-leader',
+      repository: repository_ref(scan_id: 30, full_name: 'carol/delta', repository_kind: 'user'),
+      stats: { stars: 20, delta: 30 }
+    )
+
+    rankings = read_model.rankings(ecosystem: 'npm', period_start: period, limit: 1)
+
+    expect(rankings.fetch(:downloads_30d).map { |row| row.fetch(:package_name) }).to eq(['downloads-leader'])
+    expect(rankings.fetch(:repository_stars_count).map { |row| row.fetch(:package_name) }).to eq(['stars-leader'])
+    expect(rankings.fetch(:repository_stars_delta).map { |row| row.fetch(:package_name) }).to eq(['delta-leader'])
+  end
+
   it 'includes repository ownership from user and organization repositories' do
     seed_package(ecosystem: 'npm', name: 'shared', downloads_30d: 100)
     link_repository(name: 'shared',

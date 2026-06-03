@@ -38,6 +38,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration do
     expect(package_indexes(database)).to include(
       'idx_package_repository_scans_status_period',
       'idx_package_manifests_ecosystem_name',
+      'idx_registry_package_links_lookup',
       'idx_registry_package_snapshots_ecosystem_downloads',
       'idx_registry_package_snapshots_ecosystem_dependents'
     )
