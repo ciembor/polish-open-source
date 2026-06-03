@@ -90,7 +90,7 @@ module PolishOpenSourceRank
 
         def latest_or_period_organization_path?(path)
           path.match?(
-            %r{\A/(?:latest|\d{4}-\d{2})/organizations(?:/locations/[^/]+)?(?:/(?:top|trending|members))?\z}
+            %r{\A/(?:latest|\d{4}-\d{2})/organizations(?:/locations/[^/]+)?(?:/(?:top|trending|active))?\z}
           )
         end
 
@@ -100,7 +100,7 @@ module PolishOpenSourceRank
 
         def city_organization_detail_path?(path)
           path.match?(%r{\A/(?:latest|\d{4}-\d{2})/locations/[^/]+/
-                         (?:organizations/(?:top|trending|members)|organization-repositories/(?:top|trending))\z}x)
+                         (?:organizations/(?:top|trending|active)|organization-repositories/(?:top|trending))\z}x)
         end
       end
     end

@@ -138,7 +138,7 @@ pl:
       title: "Brak danych rankingowych"
     hero:
       lede: "Publiczni użytkownicy i repozytoria uporządkowane według gwiazdek, miesięcznej popularności i zmergowanych PR."
-      organizations_lede: "Organizacje i ich repozytoria uporządkowane według gwiazdek, liczby członków oraz miesięcznej popularności."
+      organizations_lede: "Organizacje i ich repozytoria uporządkowane według gwiazdek, miesięcznej popularności oraz zmergowanych PR."
       organizations_title: "Ranking open source: organizacje"
       people_title: "Ranking open source: ludzie"
     metric:
@@ -146,7 +146,7 @@ pl:
       merged_pull_requests: "Zmergowane PR"
       new_stars: "Nowe gwiazdki"
       stars: "Gwiazdek"
-    members_10: "Top 10 według członków"
+    organizations_merged_prs_month: "Top 10 według zmergowanych PR"
     organization_repositories_month: "Repozytoria organizacji"
     organizations: "Organizacje"
     repositories: "Repozytoria"
@@ -159,8 +159,8 @@ pl:
       description_period: "Rankingi top i popularności publicznych użytkowników oraz repozytoriów open source dla lokalizacji %{scope} w edycji %{period}."
       detail_description: "%{ranking} dla lokalizacji %{scope}, według metryki %{metric}, w edycji %{period}."
       detail_title: "%{ranking} - %{scope} - %{period}"
-      organizations_description_latest: "Rankingi top, liczby członków i popularności organizacji oraz repozytoriów organizacji open source dla lokalizacji %{scope} w najnowszym snapshotcie."
-      organizations_description_period: "Rankingi top, liczby członków i popularności organizacji oraz repozytoriów organizacji open source dla lokalizacji %{scope} w edycji %{period}."
+      organizations_description_latest: "Rankingi top, zmergowanych PR i popularności organizacji oraz repozytoriów organizacji open source dla lokalizacji %{scope} w najnowszym snapshotcie."
+      organizations_description_period: "Rankingi top, zmergowanych PR i popularności organizacji oraz repozytoriów organizacji open source dla lokalizacji %{scope} w edycji %{period}."
       organizations_title_latest: "Organizacje open source - %{scope}"
       organizations_title_period: "Organizacje open source - %{scope} - %{period}"
       title_latest: "%{scope} open-source ranking"
@@ -174,7 +174,7 @@ pl:
         top: "Top 100 repozytoriów organizacji według gwiazdek"
         trending: "Top 100 popularnych repozytoriów organizacji"
       organizations:
-        members: "Top 100 według liczby członków"
+        active: "Top 100 według zmergowanych PR"
         top: "Top 100 według gwiazdek"
         trending: "Top 100 popularnych w miesiącu"
       repositories:

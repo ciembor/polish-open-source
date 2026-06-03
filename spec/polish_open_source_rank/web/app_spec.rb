@@ -935,7 +935,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     sitemap_locations = REXML::XPath.match(xml_document(sitemap.body), '//url/loc').map(&:text)
     expect(sitemap_locations).to include('https://rank.example/latest')
     expect(sitemap_locations).to include('https://rank.example/latest/organizations')
-    expect(sitemap_locations).to include('https://rank.example/latest/organizations/members')
+    expect(sitemap_locations).to include('https://rank.example/latest/organizations/active')
     expect(sitemap_locations).to include('https://rank.example/latest/organizations/locations/krakow')
     expect(sitemap_locations).to include('https://rank.example/en/latest')
     expect(sitemap_locations).to include('https://rank.example/about')
@@ -1070,7 +1070,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       user: request.get('/2026-04/locations/krakow/users/active'),
       repository: request.get('/2026-04/repositories/trending'),
       organization: request.get('/2026-04/organizations/top'),
-      organization_members: request.get('/2026-04/organizations/members'),
+      organization_active: request.get('/2026-04/organizations/active'),
       organization_repository: request.get('/2026-04/organization-repositories/trending'),
       latest_user: request.get('/latest/users/top'),
       latest_city_repository: request.get('/latest/locations/krakow/repositories/top'),
@@ -1300,15 +1300,15 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     )
     expect(responses.fetch(:organization).body).to include('Top 100 według gwiazdek')
     expect(responses.fetch(:organization).body).not_to include('Top 100 organizacji według gwiazdek')
-    expect(responses.fetch(:organization_members).status).to eq(200)
+    expect(responses.fetch(:organization_active).status).to eq(200)
     expect_ranking_page_hero(
-      responses.fetch(:organization_members),
+      responses.fetch(:organization_active),
       eyebrow: 'Ranking open source: organizacje',
-      title: 'Top 100 według liczby członków'
+      title: 'Top 100 według zmergowanych PR'
     )
-    expect(responses.fetch(:organization_members).body).to include('Top 100 według liczby członków')
-    expect(responses.fetch(:organization_members).body).not_to include('Top 100 organizacji według liczby członków')
-    expect(responses.fetch(:organization_members).body).to include('👥 42')
+    expect(responses.fetch(:organization_active).body).to include('Top 100 według zmergowanych PR')
+    expect(responses.fetch(:organization_active).body).not_to include('Top 100 organizacji według zmergowanych PR')
+    expect(responses.fetch(:organization_active).body).to include('🚀 3')
     expect(responses.fetch(:organization_repository).status).to eq(200)
     expect_ranking_page_hero(
       responses.fetch(:organization_repository),
@@ -1726,14 +1726,14 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'property="og:title" content="Organizacje open source - Polska"',
       '<p class="eyebrow">Ranking open source: organizacje</p>',
       '<h1>Polska</h1>',
-      'Organizacje i ich repozytoria uporządkowane według gwiazdek, liczby członków oraz miesięcznej popularności.',
-      'Top 10 według członków',
-      '👥 42',
+      'Organizacje i ich repozytoria uporządkowane według gwiazdek, miesięcznej popularności oraz zmergowanych PR.',
+      'Top 10 według zmergowanych PR',
+      '🚀 3',
       'polish-org/toolkit',
       'href="/latest/organizations/locations/krakow"',
       'href="/languages"',
       'href="/latest/organizations/top"',
-      'href="/latest/organizations/members"',
+      'href="/latest/organizations/active"',
       'href="/latest/organization-repositories/top"',
       'href="/latest/organization-repositories/trending"',
       'Więcej miast'

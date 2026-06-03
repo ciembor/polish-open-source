@@ -64,7 +64,7 @@
         <div class="ranking-grid">
           <%= erb :"rankings/table", locals: { kind: "organizations", heading_id: 'ranking-organizations-top', title: t('rankings.top_10_stars'), rows: @organization_rankings.fetch(:top).first(10), metric: :total_stars, metric_label: t('rankings.metric.stars'), top_path: ranking_path("organizations", "top") } %>
           <%= erb :"rankings/table", locals: { kind: "organizations", heading_id: 'ranking-organizations-trending', title: t('rankings.trending_10_month'), rows: @organization_rankings.fetch(:trending).first(10), metric: :monthly_stars_delta, metric_label: t('rankings.metric.new_stars'), top_path: ranking_path("organizations", "trending") } %>
-          <%= erb :"rankings/table", locals: { kind: "organizations", heading_id: 'ranking-organizations-members', title: t('rankings.members_10'), rows: @organization_rankings.fetch(:members).first(10), metric: :members_count, metric_label: t('rankings.metric.members'), top_path: ranking_path("organizations", "members") } %>
+          <%= erb :"rankings/table", locals: { kind: "organizations", heading_id: 'ranking-organizations-active', title: t('rankings.organizations_merged_prs_month'), rows: @organization_rankings.fetch(:active).first(10), metric: :merged_pull_requests_count, metric_label: t('rankings.metric.merged_pull_requests'), top_path: ranking_path("organizations", "active") } %>
         </div>
       </div>
     </section>

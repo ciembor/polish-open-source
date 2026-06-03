@@ -105,7 +105,7 @@ module PolishOpenSourceRank
                 SELECT organizations.platform, organizations.login, organizations.name, organizations.email,
                        organizations.homepage, organizations.html_url, organizations.avatar_url,
                        stats.city, stats.country, stats.public_repo_count, stats.total_stars,
-                       stats.monthly_stars_delta, stats.members_count
+                       stats.monthly_stars_delta, stats.merged_pull_requests_count, stats.members_count
                 FROM organization_monthly_stats stats
                 INNER JOIN organizations
                   ON organizations.platform = stats.platform

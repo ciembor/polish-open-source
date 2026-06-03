@@ -86,8 +86,15 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
   end
 
   it 'returns scoped organization rankings' do
-    seed_organization(id: 100, login: 'polish-org', stars: 80, delta: 10, members: 12)
-    seed_organization(id: 200, login: 'second-org', city: 'Kraków', stars: 70, delta: 4, members: 30)
+    seed_organization(id: 100, login: 'polish-org', stars: 80, delta: 10, metrics: { members: 12, merged_prs: 8 })
+    seed_organization(
+      id: 200,
+      login: 'second-org',
+      city: 'Kraków',
+      stars: 70,
+      delta: 4,
+      metrics: { members: 30, merged_prs: 14 }
+    )
     seed_organization(id: 300, login: 'zero-members-org', stars: 60, delta: 2)
 
     expect(read_model.organization_rankings(period_start: period).fetch(:top).map { it.fetch(:login) }).to eq(
@@ -96,14 +103,16 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     expect(read_model.organization_rankings('krakow', period_start: period).fetch(:top).map { it.fetch(:login) }).to eq(
       ['second-org']
     )
-    expect(read_model.organization_rankings(period_start: period).fetch(:members).map { it.fetch(:login) }).to eq(
-      %w[second-org polish-org]
+    expect(read_model.organization_rankings(period_start: period).fetch(:active).map { it.fetch(:login) }).to eq(
+      %w[second-org polish-org zero-members-org]
     )
-    expect(read_model.organization_rankings(period_start: period).fetch(:members).first).to include(members_count: 30)
+    expect(read_model.organization_rankings(period_start: period).fetch(:active).first).to include(
+      merged_pull_requests_count: 14
+    )
     expect(read_model.ranked_organization_metric('poland', period, :organization_top).first).to include(
       login: 'polish-org'
     )
-    expect(read_model.ranked_organization_metric('poland', period, :organization_members).first).to include(
+    expect(read_model.ranked_organization_metric('poland', period, :organization_active).first).to include(
       login: 'second-org'
     )
   end
@@ -209,7 +218,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     end.new([])
   end
 
-  def seed_organization(id:, login:, stars:, delta:, city: 'Warszawa', members: 0)
+  def seed_organization(id:, login:, stars:, delta:, city: 'Warszawa', metrics: {})
+    members = metrics.fetch(:members, 0)
+    merged_prs = metrics.fetch(:merged_prs, 0)
+
     database.execute(
       'INSERT INTO organizations(platform, github_id, login, html_url, updated_at) VALUES (?, ?, ?, ?, ?)',
       ['github', id, login, "https://github.com/#{login}", '2026-05-01T00:00:00Z']
@@ -218,11 +230,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
       <<~SQL,
         INSERT INTO organization_monthly_stats(
           period_start, platform, organization_github_id, login, city, country, public_repo_count,
-          total_stars, monthly_stars_delta, members_count, updated_at
+          total_stars, monthly_stars_delta, merged_pull_requests_count, members_count, updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       SQL
-      [period, 'github', id, login, city, 'Poland', 1, stars, delta, members, '2026-05-01T00:00:00Z']
+      [period, 'github', id, login, city, 'Poland', 1, stars, delta, merged_prs, members, '2026-05-01T00:00:00Z']
     )
   end
 
