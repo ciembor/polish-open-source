@@ -9,59 +9,64 @@ module PolishOpenSourceRank
 
       def public_html_cache!(*parts)
         cache_response!(
-          public_cache_allowed? ? public_html_cache_control : 'private, no-cache',
           'html',
           current_locale,
           html_revision,
-          *parts
+          *parts,
+          cache_control: public_cache_allowed? ? public_html_cache_control : 'private, no-cache',
+          vary_cookie: true
         )
       end
 
       def profile_cache!(profile)
         cache_control = own_profile?(profile) ? 'private, no-cache' : public_html_cache_control
         cache_response!(
-          cache_control,
           'profile',
           current_locale,
           html_revision,
           profile.fetch(:platform),
           profile.fetch(:github_id),
           @period,
-          public_cache_revision(@period)
+          public_cache_revision(@period),
+          cache_control: cache_control,
+          vary_cookie: true
         )
       end
 
       def repository_profile_cache!(repository)
         cache_control = own_repository?(repository) ? 'private, no-cache' : public_html_cache_control
         cache_response!(
-          cache_control,
           'repository-profile',
           current_locale,
           html_revision,
           repository.fetch(:platform),
           repository.fetch(:github_id),
           @period,
-          public_cache_revision(@period)
+          public_cache_revision(@period),
+          cache_control: cache_control,
+          vary_cookie: true
         )
       end
 
       def public_badge_cache!(*parts)
         period = parts.last
         cache_response!(
-          'public, max-age=3600, stale-while-revalidate=86400, stale-if-error=86400',
           'badge',
           *parts,
-          public_cache_revision(period)
+          public_cache_revision(period),
+          cache_control: 'public, max-age=3600, stale-while-revalidate=86400, stale-if-error=86400',
+          vary_cookie: false
         )
       end
 
       def negative_public_cache!(*parts)
         cache_response!(
-          public_cache_allowed? ? negative_public_cache_control : 'private, no-cache',
           'not-found',
           current_locale,
           html_revision,
-          *parts
+          *parts,
+          cache_control: public_cache_allowed? ? negative_public_cache_control : 'private, no-cache',
+          vary_cookie: true
         )
       end
 
@@ -70,10 +75,9 @@ module PolishOpenSourceRank
         halt 404
       end
 
-      def cache_response!(cache_control, *etag_parts)
+      def cache_response!(*etag_parts, cache_control:, vary_cookie:)
         response_headers = { 'Cache-Control' => cache_control, 'ETag' => cache_etag(*etag_parts) }
-        vary = cache_vary_header(cache_control)
-        response_headers['Vary'] = vary if vary
+        response_headers['Vary'] = 'Cookie' if vary_cookie
         headers response_headers
         halt 304 if request.get? && etag_matches?(response.headers.fetch('ETag'))
       end
@@ -96,12 +100,6 @@ module PolishOpenSourceRank
 
       def negative_public_cache_control
         'public, max-age=30, stale-while-revalidate=120, stale-if-error=300'
-      end
-
-      def cache_vary_header(cache_control)
-        return 'Cookie' unless cache_control.start_with?('public')
-
-        nil
       end
     end
   end

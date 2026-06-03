@@ -739,13 +739,14 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'public, max-age=60, stale-while-revalidate=300, stale-if-error=86400'
     )
     expect(response['ETag']).to match(/\A".+"\z/)
-    expect(response['Vary']).not_to include('Cookie')
+    expect(response['Vary']).to include('Cookie')
     expect(head_response['Set-Cookie']).to be_nil
     expect(not_modified.status).to eq(304)
     expect(badge_response['Cache-Control']).to eq(
       'public, max-age=3600, stale-while-revalidate=86400, stale-if-error=86400'
     )
     expect(badge_response['ETag']).to match(/\A".+"\z/)
+    expect(badge_response['Vary'].to_s).not_to include('Cookie')
     expect(badge_not_modified.status).to eq(304)
     expect(missing_badge['Cache-Control']).to be_nil
   end
@@ -763,10 +764,12 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'public, max-age=30, stale-while-revalidate=120, stale-if-error=300'
     )
     expect(invalid_ranking['ETag']).to match(/\A".+"\z/)
+    expect(invalid_ranking['Vary']).to include('Cookie')
     expect(unsupported_package_metric.status).to eq(404)
     expect(unsupported_package_metric['Cache-Control']).to eq(
       'public, max-age=30, stale-while-revalidate=120, stale-if-error=300'
     )
+    expect(unsupported_package_metric['Vary']).to include('Cookie')
     expect(missing_profile.status).to eq(404)
     expect(missing_profile['Cache-Control']).to be_nil
   end
