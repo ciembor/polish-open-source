@@ -1196,6 +1196,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('@scope/tool')
     expect(response.body).not_to include("href=\"/packages/npm/names/#{encoded_name}\"")
     expect(response.body).to include('href="https://github.com/scope/tool"')
+    expect_package_repository_fallback_link(response)
     expect(response.body).to include('Ludzie')
     expect(response.body).to include('Organizacje')
     expect(response.body).to include('Top 10 według pobrań z 30 dni')
@@ -1204,6 +1205,17 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('📥 1 000')
     expect(response.body).to include('⭐ 12 345')
     expect(response.body).to include('href="/latest/packages/npm/users/top"')
+  end
+
+  def expect_package_repository_fallback_link(response)
+    expect(
+      html_element(response.body, "//a[@class='primary-link' and @href='/repositories/github/alice/app' " \
+                                  "and text()='fallback-tool']")
+    ).not_to be_nil
+    expect(
+      html_element(response.body, "//li[.//a[text()='fallback-tool']]//a[@href='/repositories/github/alice/app' " \
+                                  "and text()='Repozytorium']")
+    ).not_to be_nil
   end
 
   def expect_package_detail_pages(responses)
@@ -1510,17 +1522,20 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   def seed_package_records(database, period)
     seed_package(database, period, '@scope/tool', downloads_30d: 1_000)
+    seed_package(database, period, 'fallback-tool', downloads_30d: 900, repository_url: nil)
     seed_package(database, period, 'rack', ecosystem: 'rubygems', downloads_total: 50_000, dependents_count: 23)
     seed_package(database, period, 'polish-tool', ecosystem: 'homebrew', downloads_30d: 250)
     seed_package(database, period, 'Polish.Tool', ecosystem: 'nuget', downloads_total: 12_000)
     seed_package(database, period, 'pl.example:polish-tool', ecosystem: 'maven')
     link_package_repository(database, period, '@scope/tool')
+    link_package_repository(database, period, 'fallback-tool')
   end
 
   def seed_package(database, period, name, attributes = {})
     attributes = { ecosystem: 'npm' }.merge(attributes)
     ecosystem = attributes.fetch(:ecosystem)
     normalized_name = name.downcase
+    repository_url = attributes.fetch(:repository_url) { "https://github.com/#{name.delete_prefix('@')}" }
     database.execute(
       <<~SQL,
         INSERT INTO registry_packages(
@@ -1535,7 +1550,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
         name,
         normalized_name,
         package_registry_url(ecosystem, name),
-        "https://github.com/#{name.delete_prefix('@')}",
+        repository_url,
         "https://example.com/#{normalized_name}"
       ]
     )
@@ -1597,7 +1612,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     database.dataset(:package_manifests).insert(
       repository_scan_id: scan_id,
       ecosystem: 'npm',
-      path: 'package.json',
+      path: package_name == '@scope/tool' ? 'package.json' : "packages/#{package_name}/package.json",
       package_name: package_name,
       normalized_package_name: package_name.downcase,
       confidence: 'high',

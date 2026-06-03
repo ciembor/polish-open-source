@@ -50,6 +50,24 @@ module PolishOpenSourceRank
           "#{package_ecosystem_path(ecosystem, period_slug: period_slug)}/#{repository_kind}s/#{metric_slug}"
         end
 
+        def package_repository_link(row)
+          safe_external_url(row[:repository_url]) || package_repository_profile_link(row)
+        end
+
+        def package_repository_profile_link(row)
+          path = package_repository_profile_path(row)
+          path && app_path(path)
+        end
+
+        def package_repository_profile_path(row)
+          return unless row[:repository_full_name]
+
+          repository = { platform: row.fetch(:repository_platform), full_name: row.fetch(:repository_full_name) }
+          return organization_repository_profile_path(repository) if row[:repository_kind] == 'organization'
+
+          repository_profile_path(repository)
+        end
+
         def package_metric_label(metric, ecosystem: nil)
           return t('packages.metric.installs.30d') if ecosystem == 'homebrew' && metric.to_s == 'downloads_30d'
 
