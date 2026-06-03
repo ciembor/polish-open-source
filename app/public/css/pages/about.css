@@ -65,10 +65,14 @@
 }
 
 .about-section__header {
-  align-items: flex-end;
+  display: block;
+}
+
+.about-section__title-row {
+  align-items: baseline;
+  column-gap: 12px;
   display: flex;
-  gap: 12px;
-  justify-content: flex-start;
+  flex-wrap: wrap;
 }
 
 .about-section__back-link {

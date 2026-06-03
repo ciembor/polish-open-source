@@ -40,9 +40,11 @@
     <div class="about-section__header">
       <div>
         <p class="eyebrow"><%= h t('about.mission.eyebrow') %></p>
-        <h2 id="mission-heading"><%= h t('about.mission.title') %></h2>
+        <div class="about-section__title-row">
+          <h2 id="mission-heading"><%= h t('about.mission.title') %></h2>
+          <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
+        </div>
       </div>
-      <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
     </div>
     <div class="about-copy">
       <p class="about-lead"><%= h t('about.mission.body') %></p>
@@ -55,9 +57,11 @@
     <div class="about-section__header">
       <div>
         <p class="eyebrow"><%= h t('about.rankings.eyebrow') %></p>
-        <h2 id="rankings-heading"><%= h t('about.rankings.title') %></h2>
+        <div class="about-section__title-row">
+          <h2 id="rankings-heading"><%= h t('about.rankings.title') %></h2>
+          <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
+        </div>
       </div>
-      <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
     </div>
     <div class="about-copy">
       <section class="about-subsection" aria-labelledby="rankings-data-scope-heading">
@@ -93,9 +97,11 @@
     <div class="about-section__header">
       <div>
         <p class="eyebrow"><%= h t('about.packages.eyebrow') %></p>
-        <h2 id="packages-heading"><%= h t('about.packages.title') %></h2>
+        <div class="about-section__title-row">
+          <h2 id="packages-heading"><%= h t('about.packages.title') %></h2>
+          <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
+        </div>
       </div>
-      <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
     </div>
     <div class="about-copy">
       <section class="about-subsection" aria-labelledby="packages-overview-heading">
@@ -152,9 +158,11 @@
     <div class="about-section__header">
       <div>
         <p class="eyebrow"><%= h t('about.discord.eyebrow') %></p>
-        <h2 id="discord-heading"><%= h t('about.discord.title') %></h2>
+        <div class="about-section__title-row">
+          <h2 id="discord-heading"><%= h t('about.discord.title') %></h2>
+          <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
+        </div>
       </div>
-      <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
     </div>
     <div class="about-copy">
       <% Array(t('about.discord.paragraphs')).each do |paragraph| %>
@@ -169,9 +177,11 @@
     <div class="about-section__header">
       <div>
         <p class="eyebrow"><%= h t('about.badge.eyebrow') %></p>
-        <h2 id="badge-heading"><%= h t('about.badge.title') %></h2>
+        <div class="about-section__title-row">
+          <h2 id="badge-heading"><%= h t('about.badge.title') %></h2>
+          <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
+        </div>
       </div>
-      <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
     </div>
     <div class="about-copy">
       <% Array(t('about.badge.paragraphs')).each do |paragraph| %>
@@ -194,9 +204,11 @@
     <div class="about-section__header">
       <div>
         <p class="eyebrow"><%= h t('about.data_sources.eyebrow') %></p>
-        <h2 id="data-sources-heading"><%= h t('about.data_sources.title') %></h2>
+        <div class="about-section__title-row">
+          <h2 id="data-sources-heading"><%= h t('about.data_sources.title') %></h2>
+          <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
+        </div>
       </div>
-      <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
     </div>
     <div class="about-copy">
       <% Array(t('about.data_sources.paragraphs')).each do |paragraph| %>
@@ -211,9 +223,11 @@
     <div class="about-section__header">
       <div>
         <p class="eyebrow"><%= h t('about.open_source.eyebrow') %></p>
-        <h2 id="open-source-heading"><%= h t('about.open_source.title') %></h2>
+        <div class="about-section__title-row">
+          <h2 id="open-source-heading"><%= h t('about.open_source.title') %></h2>
+          <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
+        </div>
       </div>
-      <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
     </div>
     <div class="about-copy">
       <% Array(t('about.open_source.paragraphs')).each do |paragraph| %>
@@ -233,9 +247,11 @@
     <div class="about-section__header">
       <div>
         <p class="eyebrow"><%= h t('about.platforms.eyebrow') %></p>
-        <h2 id="platforms-heading"><%= h t('about.platforms.title') %></h2>
+        <div class="about-section__title-row">
+          <h2 id="platforms-heading"><%= h t('about.platforms.title') %></h2>
+          <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
+        </div>
       </div>
-      <a class="about-section__back-link" href="#about-top"><%= h t('about.back_to_top') %></a>
     </div>
     <section class="about-platforms" aria-labelledby="platforms-grid-heading">
       <h3 id="platforms-grid-heading"><%= h t('about.platforms.grid_title') %></h3>
