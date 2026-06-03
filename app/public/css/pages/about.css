@@ -19,7 +19,11 @@
 }
 
 .about-section-nav__link,
-.about-section__back-link,
+.about-section__back-link {
+  color: var(--accent);
+  text-decoration: none;
+}
+
 .about-inline-link {
   color: var(--accent-strong);
   text-decoration: none;
@@ -39,7 +43,13 @@
 
 .about-section-nav__link:hover,
 .about-section__back-link:hover,
+.about-section-nav__link:focus-visible,
+.about-section__back-link:focus-visible {
+  color: var(--accent-strong);
+}
+
 .about-inline-link:hover,
+.about-inline-link:focus-visible,
 .platform-card__link:hover .platform-card__name {
   color: var(--accent);
 }
@@ -57,8 +67,8 @@
 .about-section__header {
   align-items: flex-end;
   display: flex;
-  gap: 24px;
-  justify-content: space-between;
+  gap: 12px;
+  justify-content: flex-start;
 }
 
 .about-section__back-link {
