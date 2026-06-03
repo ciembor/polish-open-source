@@ -114,21 +114,20 @@
       <section class="about-subsection" aria-labelledby="packages-overview-heading">
         <h3 id="packages-overview-heading"><%= h t('about.packages.overview.title') %></h3>
         <% Array(t('about.packages.overview.paragraphs')).each do |paragraph| %>
-          <p><%= h paragraph %></p>
+          <p><%= h paragraph %> <%= h t('about.packages.manifests.note') %></p>
         <% end %>
       </section>
-      <section class="about-subsection" aria-labelledby="packages-ecosystems-heading">
+      <section class="about-subsection about-packages-card" aria-labelledby="packages-ecosystems-heading">
         <article class="about-note-card">
           <h3 id="packages-ecosystems-heading"><%= h t('about.packages.ecosystems.title') %></h3>
           <p><%= h Array(t('about.packages.ecosystems.items')).join(', ') %>.</p>
         </article>
       </section>
-      <section class="about-subsection" aria-labelledby="packages-manifests-heading">
+      <section class="about-subsection about-packages-card" aria-labelledby="packages-manifests-heading">
         <article class="about-note-card">
           <h3 id="packages-manifests-heading"><%= h t('about.packages.manifests.title') %></h3>
           <p><%= h Array(t('about.packages.manifests.items')).join(', ') %>.</p>
         </article>
-        <p><%= h t('about.packages.manifests.note') %></p>
       </section>
       <section class="about-subsection" aria-labelledby="packages-metrics-heading">
         <h3 id="packages-metrics-heading"><%= h t('about.packages.metrics.title') %></h3>

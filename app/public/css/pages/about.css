@@ -216,3 +216,7 @@
   object-fit: contain;
   width: 64px;
 }
+
+.about-packages-card {
+  margin-top: 0;
+}
