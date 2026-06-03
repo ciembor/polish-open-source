@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+
+RBENV_SHIMS="${HOME}/.rbenv/shims"
+if [ -d "$RBENV_SHIMS" ]; then
+  PATH="$RBENV_SHIMS:$PATH"
+  export PATH
+fi
+
+exec "$@"
