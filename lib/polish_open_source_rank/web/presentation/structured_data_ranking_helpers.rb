@@ -24,8 +24,19 @@ module PolishOpenSourceRank
 
         def ranking_overview_sections
           return organization_ranking_overview_sections if @ranking_section == 'organizations'
+          return combined_ranking_overview_sections if combined_ranking_overview?
 
           user_ranking_overview_sections + repository_ranking_overview_sections
+        end
+
+        def combined_ranking_overview?
+          @ranking_section == 'people' && @period_slug != 'latest'
+        end
+
+        def combined_ranking_overview_sections
+          user_ranking_overview_sections +
+            repository_ranking_overview_sections +
+            organization_ranking_overview_sections
         end
 
         def user_ranking_overview_sections

@@ -181,13 +181,13 @@ en:
     pagination_label: "Year selection"
     period_prefix: "Year:"
     seo:
-      description: "Archive of monthly rankings with top projects, users by stars and merged pull requests."
+      description: "Archive of monthly rankings with top projects, users by stars and organizations by stars."
       title: "Open-source ranking editions"
       title_year: "Open-source ranking editions %{year}"
     stars_suffix: "stars"
     title: "Editions"
+    top_organizations_stars: "Top organizations: stars"
     top_projects: "Top projects"
-    top_users_merged_prs: "Top users: merged PRs"
     top_users_stars: "Top users: stars"
   elite:
     medal_alt: "Polish Elite %{rank} place medal"
@@ -269,6 +269,7 @@ en:
     repositories: "Repositories"
     repository: "Repository"
     see_top_100: "See top 100"
+    user_repositories: "People repositories"
     seo:
       current_period: "latest snapshot"
       description: "Top and popularity rankings for public users and repositories on code platforms for %{scope}."

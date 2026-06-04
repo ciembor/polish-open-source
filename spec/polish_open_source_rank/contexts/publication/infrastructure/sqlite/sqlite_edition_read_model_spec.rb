@@ -33,7 +33,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
           period_start: '2026-04-01',
           repositories: [:repository_rows],
           users_by_stars: [:star_rows],
-          users_by_merged_prs: [:activity_rows]
+          organizations_by_stars: [:organization_rows]
         }
       ]
     )
@@ -41,7 +41,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
       [
         [:repositories, 'krakow', '2026-04-01', :repository_top, 3],
         [:users, 'krakow', '2026-04-01', :user_top, 3],
-        [:users, 'krakow', '2026-04-01', :user_active, 3]
+        [:organizations, 'krakow', '2026-04-01', :organization_top, 3]
       ]
     )
   end
@@ -119,6 +119,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
       def ranked_user_metric(scope, period_start, metric_key, limit:)
         calls << [:users, scope, period_start, metric_key, limit]
         metric_key == :user_top ? [:star_rows] : [:activity_rows]
+      end
+
+      def ranked_organization_metric(scope, period_start, metric_key, limit:)
+        calls << [:organizations, scope, period_start, metric_key, limit]
+        [:organization_rows]
       end
     end.new([])
   end

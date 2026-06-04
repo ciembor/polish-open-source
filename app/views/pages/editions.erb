@@ -87,9 +87,9 @@
               </section>
 
               <section>
-                <h4><%= h t('editions.top_users_merged_prs') %></h4>
+                <h4><%= h t('editions.top_organizations_stars') %></h4>
                 <ol class="edition-toplist">
-                  <% edition.fetch(:users_by_merged_prs).each do |row| %>
+                  <% edition.fetch(:organizations_by_stars).each do |row| %>
                     <% source_url = safe_external_url(row[:html_url]) %>
                     <li>
                       <% if source_url %>
@@ -97,7 +97,7 @@
                       <% else %>
                         <span class="primary-link"><%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:login) %></span>
                       <% end %>
-                      <span><%= number(row.fetch(:merged_pull_requests_count)) %> <%= h t('editions.merged_prs_suffix') %></span>
+                      <span>⭐ <%= number(row.fetch(:total_stars)) %> <%= h t('editions.stars_suffix') %></span>
                     </li>
                   <% end %>
                 </ol>

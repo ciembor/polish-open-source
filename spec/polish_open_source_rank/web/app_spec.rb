@@ -185,6 +185,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.status).to eq(200)
     expect(month_response.status).to eq(200)
     expect(response.body).to include('alice/app')
+    expect_historical_month_page(month_response)
     expect(organization_city_response.body).to include('polish-org/toolkit')
     expect(organization_city_response.body).to include(
       'rel="canonical" href="https://rank.example/2026-04/organizations/locations/warszawa"'
@@ -1740,6 +1741,19 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).not_to include('href="/latest/organization-repositories/top"')
   end
 
+  def expect_historical_month_page(response)
+    expect_body_to_include(
+      response,
+      'Ludzie',
+      'Repozytoria ludzi',
+      'Organizacje',
+      'Repozytoria organizacji',
+      'polish-org/toolkit',
+      'href="/2026-04/organizations/top"',
+      'href="/2026-04/organization-repositories/top"'
+    )
+  end
+
   def expect_english_locale_page(response)
     expect_body_to_include(
       response,
@@ -1891,7 +1905,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'kwiecień 2026',
       'Top projekty',
       'Top użytkownicy: gwiazdki',
-      'Top użytkownicy: zmergowane PR',
+      'Top organizacje: gwiazdki',
+      'polish-org',
       'href="/2026-04"',
       'href="/editions/2025"'
     )

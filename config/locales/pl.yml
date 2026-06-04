@@ -181,13 +181,13 @@ pl:
     pagination_label: "Wybór roku"
     period_prefix: "Rok:"
     seo:
-      description: "Archiwum miesięcznych rankingów z top projektami, użytkownikami według gwiazdek i zmergowanych PR."
+      description: "Archiwum miesięcznych rankingów z top projektami, użytkownikami według gwiazdek i organizacjami według gwiazdek."
       title: "Edycje rankingu open source"
       title_year: "Edycje rankingu open source %{year}"
     stars_suffix: "gwiazdek"
     title: "Edycje"
+    top_organizations_stars: "Top organizacje: gwiazdki"
     top_projects: "Top projekty"
-    top_users_merged_prs: "Top użytkownicy: zmergowane PR"
     top_users_stars: "Top użytkownicy: gwiazdki"
   elite:
     medal_alt: "Medal Polish Elite, miejsce %{rank}"
@@ -269,6 +269,7 @@ pl:
     repositories: "Repozytoria"
     repository: "Repozytorium"
     see_top_100: "Zobacz top 100"
+    user_repositories: "Repozytoria ludzi"
     seo:
       current_period: "najnowszy snapshot"
       description: "Rankingi top i popularności publicznych użytkowników oraz repozytoriów platform kodu dla lokalizacji %{scope}."

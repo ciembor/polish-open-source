@@ -42,7 +42,9 @@ module PolishOpenSourceRank
                   scope, period_start, :repository_top, limit: 3
                 ),
                 users_by_stars: ranking_read_model.ranked_user_metric(scope, period_start, :user_top, limit: 3),
-                users_by_merged_prs: ranking_read_model.ranked_user_metric(scope, period_start, :user_active, limit: 3)
+                organizations_by_stars: ranking_read_model.ranked_organization_metric(
+                  scope, period_start, :organization_top, limit: 3
+                )
               }
             end
 
@@ -58,6 +60,11 @@ module PolishOpenSourceRank
                     SELECT 1
                     FROM repository_monthly_stats repository_stats
                     WHERE repository_stats.period_start = sync_runs.period_start
+                  )
+                  OR EXISTS (
+                    SELECT 1
+                    FROM organization_monthly_stats organization_stats
+                    WHERE organization_stats.period_start = sync_runs.period_start
                   )
                 )
               SQL

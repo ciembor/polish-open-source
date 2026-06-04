@@ -33,7 +33,11 @@
     <p><%= h t('rankings.empty.body') %></p>
   </section>
 <% else %>
-  <% if @ranking_section == 'people' %>
+  <% show_people_rankings = @ranking_section == 'people' %>
+  <% show_organization_rankings = @ranking_section == 'organizations' || (@ranking_section == 'people' && @period_slug != 'latest') %>
+  <% repositories_heading_key = @period_slug == 'latest' ? 'rankings.repositories' : 'rankings.user_repositories' %>
+
+  <% if show_people_rankings %>
     <section class="ranking-band" aria-labelledby="users-heading">
       <div class="content">
         <h2 id="users-heading"><%= h t('rankings.users') %></h2>
@@ -47,7 +51,7 @@
 
     <section class="ranking-band ranking-band--alt" aria-labelledby="repositories-heading">
       <div class="content">
-        <h2 id="repositories-heading"><%= h t('rankings.repositories') %></h2>
+        <h2 id="repositories-heading"><%= h t(repositories_heading_key) %></h2>
         <div class="ranking-grid ranking-grid--two">
           <%= erb :"rankings/table", locals: { kind: "repositories", heading_id: 'ranking-repositories-top', title: t('rankings.top_10_stars'), rows: @repository_rankings.fetch(:top).first(10), metric: :stargazers_count, metric_label: t('rankings.metric.stars'), top_path: ranking_path("repositories", "top") } %>
           <%= erb :"rankings/table", locals: { kind: "repositories", heading_id: 'ranking-repositories-trending', title: t('rankings.trending_10_month'), rows: @repository_rankings.fetch(:trending).first(10), metric: :monthly_stars_delta, metric_label: t('rankings.metric.new_stars'), top_path: ranking_path("repositories", "trending") } %>
@@ -56,7 +60,7 @@
     </section>
   <% end %>
 
-  <% if @ranking_section == 'organizations' %>
+  <% if show_organization_rankings %>
     <section class="ranking-band" aria-labelledby="organizations-heading">
       <div class="content">
         <h2 id="organizations-heading"><%= h t('rankings.organizations') %></h2>
