@@ -1204,8 +1204,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.status).to eq(200)
     expect(response.body).to include('@scope/tool')
     expect(response.body).not_to include("href=\"/packages/npm/names/#{encoded_name}\"")
-    expect(response.body).to include('href="https://github.com/scope/tool"')
-    expect_package_repository_fallback_link(response)
+    expect(response.body).to include('href="https://www.npmjs.com/package/@scope/tool"')
+    expect_package_registry_and_repository_links(response)
     expect(response.body).to include('Wszystkie repozytoria')
     expect(response.body).to include('Repozytoria ludzi')
     expect(response.body).to include('Repozytoria organizacji')
@@ -1218,14 +1218,19 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('href="/latest/packages/npm/users/top"')
   end
 
-  def expect_package_repository_fallback_link(response)
+  def expect_package_registry_and_repository_links(response)
     expect(
-      html_element(response.body, "//a[@class='primary-link' and @href='/repositories/github/alice/app' " \
+      html_element(response.body, "//a[@class='primary-link' " \
+                                  "and @href='https://www.npmjs.com/package/fallback-tool' " \
                                   "and text()='fallback-tool']")
     ).not_to be_nil
     expect(
       html_element(response.body, "//li[.//a[text()='fallback-tool']]//a[@href='/repositories/github/alice/app' " \
                                   "and text()='Repozytorium']")
+    ).not_to be_nil
+    expect(
+      html_element(response.body, "//li[.//a[text()='fallback-tool']]//a[" \
+                                  "@href='https://www.npmjs.com/package/fallback-tool' and text()='Rejestr']")
     ).not_to be_nil
   end
 

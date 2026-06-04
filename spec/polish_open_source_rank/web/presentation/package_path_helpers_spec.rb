@@ -45,19 +45,19 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PackagePathHelpers do
   end
 
   describe '#package_repository_link' do
-    it 'keeps a safe registry repository URL before falling back to the local repository profile' do
-      row = repository_row(repository_url: 'https://github.com/alice/app')
-
-      expect(helper.package_repository_link(row)).to eq('https://github.com/alice/app')
-    end
-
-    it 'links user repositories to their local repository profile when registry metadata has no repository URL' do
-      row = repository_row(repository_url: nil)
+    it 'links to the local repository profile for linked package repositories' do
+      row = repository_row(repository_url: 'https://github.com/registry/metadata')
 
       expect(helper.package_repository_link(row)).to eq('/rank/repositories/github/alice/app')
     end
 
-    it 'links organization repositories to their local profile when registry metadata has no repository URL' do
+    it 'does not fall back to registry repository metadata without a linked local repository' do
+      row = repository_row(repository_url: 'https://github.com/registry/metadata', repository_full_name: nil)
+
+      expect(helper.package_repository_link(row)).to be_nil
+    end
+
+    it 'links organization repositories to their local profile' do
       row = repository_row(repository_url: nil, repository_full_name: 'polish-org/toolkit',
                            repository_kind: 'organization')
 
@@ -73,6 +73,7 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PackagePathHelpers do
 
   def repository_row(attributes)
     {
+      registry_url: nil,
       repository_url: nil,
       repository_platform: 'github',
       repository_full_name: 'alice/app',
