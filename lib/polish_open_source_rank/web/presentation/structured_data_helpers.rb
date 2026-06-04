@@ -46,8 +46,15 @@ module PolishOpenSourceRank
             '@type' => 'Organization',
             '@id' => full_url('/#organization'),
             'name' => 'Polish Open Source',
+            'alternateName' => 'Open Source Polska',
             'url' => full_url('/'),
-            'logo' => full_url(app_path('/icons/polish-open-source.png')),
+            'logo' => {
+              '@type' => 'ImageObject',
+              'url' => full_url(app_path('/icons/polish-open-source.png')),
+              'contentUrl' => full_url(app_path('/icons/polish-open-source.png')),
+              'width' => 1208,
+              'height' => 1208
+            },
             'sameAs' => [
               'https://github.com/ciembor/polish-open-source'
             ]
