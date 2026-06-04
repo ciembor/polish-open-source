@@ -40,6 +40,31 @@ RSpec.describe ArchitectureDependencyRules do
     expect(files_under('lib/polish_open_source_rank/application')).to be_empty
   end
 
+  it 'keeps application configuration outside core policy', :aggregate_failures do
+    forbidden = /
+      \bPolishOpenSourceRank::Configuration\b|
+      \bConfigurationDefinitions\b|
+      \bConfigurationGroups\b|
+      \bConfigurationSecrets\b
+    /x
+    core_policy_files = files_under('lib/polish_open_source_rank/shared/domain') +
+                        files_under('lib/polish_open_source_rank/contexts/*/domain') +
+                        files_under('lib/polish_open_source_rank/contexts/*/application')
+
+    core_policy_files.each do |path|
+      expect(file_body(path)).not_to match(forbidden), "#{path} depends on application configuration"
+    end
+  end
+
+  it 'keeps application configuration implementation grouped in one boundary' do
+    root_configuration_files = Dir[
+      PolishOpenSourceRank.root.join('lib/polish_open_source_rank/*configuration*.rb')
+    ]
+
+    expect(root_configuration_files).to be_empty
+    expect(files_under('lib/polish_open_source_rank/configuration')).not_to be_empty
+  end
+
   it 'keeps ranking use cases from speaking SQLite column names', :aggregate_failures do
     forbidden = /\b(github_id|user_github_id|repository_github_id|stargazers_count)\b/
     application_files = files_under('lib/polish_open_source_rank/contexts/ranking/application')
