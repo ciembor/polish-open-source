@@ -227,7 +227,7 @@ module PolishOpenSourceRank
           login = profile.fetch(:login)
           return login if name.empty? || name.casecmp?(login)
 
-          "#{name} (@#{login})"
+          "#{name} (#{login})"
         end
 
         def seo_period_label(period_slug)

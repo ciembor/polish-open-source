@@ -545,7 +545,7 @@ en:
       language: "Language"
       title: "Best projects"
     seo:
-      title: "%{user} - %{platform} profile"
+      title: "%{user} - Polish Open Source"
       description: "%{user} public open-source profile on %{platform}, with ranking metrics and top projects."
     summary:
       city: "City"

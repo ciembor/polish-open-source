@@ -1825,7 +1825,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile_response.status).to eq(200)
     expect_body_to_include(
       profile_response,
-      '<title>alice - profil GitHub</title>',
+      '<title>alice - Open Source Polska</title>',
       'rel="canonical" href="https://rank.example/users/github/alice"',
       'src="https://avatars.example/alice.png"',
       '"@type": "ProfilePage"',
