@@ -14,12 +14,15 @@
 
 <%= erb :"shared/location_notice" %>
 
+<% package_metrics = PolishOpenSourceRank::Contexts::Packages::Domain::PackageRankingMetric.all(ecosystem: @package_ecosystem) %>
+<% package_grid_class = package_ranking_grid_class(package_metrics.count) %>
+
 <section class="ranking-band" aria-labelledby="package-ranking-all-heading">
   <div class="content">
     <p><a class="muted-link muted-link--standalone" href="<%= h app_path(package_index_path) %>"><%= h t('packages.back') %></a></p>
     <h2 id="package-ranking-all-heading"><%= h t('packages.repository_kind.all') %></h2>
-    <div class="ranking-grid ranking-grid--package-metrics">
-      <% PolishOpenSourceRank::Contexts::Packages::Domain::PackageRankingMetric.all(ecosystem: @package_ecosystem).each do |package_metric| %>
+    <div class="ranking-grid <%= h package_grid_class %>">
+      <% package_metrics.each do |package_metric| %>
         <% slug = package_metric.slug %>
         <% metric = package_metric.key.to_sym %>
         <%= erb :"packages/ranking_table", locals: { heading_id: "package-ranking-all-#{slug}", title: package_ranking_preview_title(slug, ecosystem: @package_ecosystem), rows: @package_rankings.fetch(metric, []), metric: metric, metric_label: package_metric_label(metric, ecosystem: @package_ecosystem), top_path: package_ranking_path(@package_ecosystem, slug) } %>
@@ -32,8 +35,8 @@
   <section class="ranking-band<%= index.even? ? ' ranking-band--alt' : '' %>" aria-labelledby="package-ranking-<%= h repository_kind %>-heading">
     <div class="content">
       <h2 id="package-ranking-<%= h repository_kind %>-heading"><%= h package_repository_kind_label(repository_kind) %></h2>
-      <div class="ranking-grid ranking-grid--package-metrics">
-        <% PolishOpenSourceRank::Contexts::Packages::Domain::PackageRankingMetric.all(ecosystem: @package_ecosystem).each do |package_metric| %>
+      <div class="ranking-grid <%= h package_grid_class %>">
+        <% package_metrics.each do |package_metric| %>
           <% slug = package_metric.slug %>
           <% metric = package_metric.key.to_sym %>
           <%= erb :"packages/ranking_table", locals: { heading_id: "package-ranking-#{repository_kind}-#{slug}", title: package_repository_ranking_preview_title(slug, ecosystem: @package_ecosystem), rows: rankings.fetch(metric, []), metric: metric, metric_label: package_metric_label(metric, ecosystem: @package_ecosystem), top_path: package_repository_ranking_path(@package_ecosystem, repository_kind, slug) } %>

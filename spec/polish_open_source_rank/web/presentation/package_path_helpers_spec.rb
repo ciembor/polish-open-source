@@ -34,6 +34,16 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PackagePathHelpers do
     end
   end
 
+  describe '#package_ranking_grid_class' do
+    it 'uses two columns for an even metric count' do
+      expect(helper.package_ranking_grid_class(4)).to eq('ranking-grid--compact')
+    end
+
+    it 'uses three columns for an odd metric count' do
+      expect(helper.package_ranking_grid_class(3)).to eq('ranking-grid--odd-package-metrics')
+    end
+  end
+
   describe '#package_repository_link' do
     it 'keeps a safe registry repository URL before falling back to the local repository profile' do
       row = repository_row(repository_url: 'https://github.com/alice/app')

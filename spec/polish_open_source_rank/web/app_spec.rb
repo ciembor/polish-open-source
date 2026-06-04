@@ -1096,6 +1096,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       period_user_top: request.get('/2026-04/packages/npm/users/top'),
       downloads: request.get('/2026-04/packages/npm/downloads'),
       dependents: request.get('/latest/packages/npm/dependents'),
+      rubygems: request.get('/latest/packages/rubygems'),
       rubygems_dependents: request.get('/latest/packages/rubygems/dependents'),
       homebrew: request.get('/latest/packages/homebrew'),
       homebrew_top: request.get('/latest/packages/homebrew/top'),
@@ -1213,6 +1214,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('Top 10 popularnych w miesiącu')
     expect(response.body).to include('📥 1 000')
     expect(response.body).to include('⭐ 12 345')
+    expect(response.body).to include('ranking-grid ranking-grid--odd-package-metrics')
     expect(response.body).to include('href="/latest/packages/npm/users/top"')
   end
 
@@ -1262,11 +1264,14 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   def expect_homebrew_package_pages(responses)
     expect(responses.fetch(:homebrew).body).to include('polish-tool')
+    expect(responses.fetch(:homebrew).body).to include('ranking-grid ranking-grid--odd-package-metrics')
     expect(responses.fetch(:homebrew_top).body).to include('Top 100 według instalacji z 30 dni')
     expect(responses.fetch(:homebrew_top).body).to include('Instalacje 30 dni')
   end
 
   def expect_rubygems_package_pages(responses)
+    expect(responses.fetch(:rubygems).body).to include('ranking-grid ranking-grid--compact')
+    expect(responses.fetch(:rubygems).body).not_to include('ranking-grid--odd-package-metrics')
     expect(responses.fetch(:rubygems_dependents).body).to include('Top 100 według zależnych pakietów')
     expect(responses.fetch(:rubygems_dependents).body).to include('🔗 23')
   end

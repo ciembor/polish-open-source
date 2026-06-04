@@ -92,6 +92,12 @@ module PolishOpenSourceRank
           logo_icon_initial(package_ecosystem_name(ecosystem))
         end
 
+        def package_ranking_grid_class(metric_count)
+          return 'ranking-grid--odd-package-metrics' if metric_count.odd?
+
+          'ranking-grid--compact'
+        end
+
         def package_ranking_title(metric_slug, ecosystem:)
           return t('packages.ranking_title.installs') if ecosystem == 'homebrew' && metric_slug.to_s == 'top'
 
