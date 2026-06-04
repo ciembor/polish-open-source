@@ -64,6 +64,10 @@
   border-top: 1px solid var(--line);
 }
 
+.about-section--alt:last-child {
+  border-bottom: none;
+}
+
 .about-section__header {
   display: block;
 }
