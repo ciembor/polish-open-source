@@ -1708,13 +1708,18 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   end
 
   def expect_poland_ranking_page(response)
+    polish_home_description = 'Ranking polskich programistów, organizacji i projektów open source. ' \
+                              'Jesteś w rankingu? Pobierz badge i dołącz do Discord.'
+
     expect(response.status).to eq(200)
     expect_body_to_include(
       response,
-      '<title>Polska open-source ranking</title>',
+      '<title>Open Source Polska</title>',
+      "name=\"description\" content=\"#{polish_home_description}\"",
       'rel="canonical" href="https://rank.example/latest"',
       'rel="alternate" hreflang="en" href="https://rank.example/en/latest"',
-      'property="og:title" content="Polska open-source ranking"',
+      'property="og:title" content="Open Source Polska"',
+      "property=\"og:description\" content=\"#{polish_home_description}\"",
       'property="og:image" content="https://rank.example/images/polish_open_source_banner.webp"',
       '<p class="eyebrow">Ranking open source: ludzie</p>',
       '<h1>Polska</h1>',
@@ -1767,6 +1772,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   end
 
   def expect_english_locale_page(response)
+    english_home_description = 'Ranking of Polish programmers, organizations, and open-source projects. ' \
+                               'Are you in the ranking? Get your badge and join Discord.'
+
     expect_body_to_include(
       response,
       '<html lang="en">',
@@ -1777,6 +1785,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'rel="canonical" href="https://rank.example/en/latest"',
       'rel="alternate" hreflang="pl" href="https://rank.example/latest"',
       'rel="alternate" hreflang="x-default" href="https://rank.example/latest"',
+      '<title>Polish Open Source</title>',
+      "name=\"description\" content=\"#{english_home_description}\"",
+      'property="og:title" content="Polish Open Source"',
       '<meta name="robots" content="index,follow">',
       'href="/latest?lang=pl"'
     )

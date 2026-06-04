@@ -277,6 +277,8 @@ en:
       description_period: "Top and popularity rankings for public open-source users and repositories for %{scope} in the %{period} edition."
       detail_description: "%{ranking} for %{scope}, using the %{metric} metric, in the %{period} edition."
       detail_title: "%{ranking} - %{scope} - %{period}"
+      home_description: "Ranking of Polish programmers, organizations, and open-source projects. Are you in the ranking? Get your badge and join Discord."
+      home_title: "Polish Open Source"
       organizations_description_latest: "Top, merged PR, and popularity rankings for open-source organizations and organization repositories for %{scope} in the latest snapshot."
       organizations_description_period: "Top, merged PR, and popularity rankings for open-source organizations and organization repositories for %{scope} in the %{period} edition."
       organizations_title_latest: "Open-source organizations - %{scope}"

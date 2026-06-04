@@ -229,13 +229,21 @@ module PolishOpenSourceRank
         end
 
         def translate_rankings_title(scope, period_slug, section)
+          return t('rankings.seo.home_title') if home_rankings?(scope, period_slug, section)
+
           key = rankings_translation_key(section, period_slug, 'title')
           t(key, scope: call_view(:scope_name, scope), period: seo_period_label(period_slug))
         end
 
         def translate_rankings_description(scope, period_slug, section)
+          return t('rankings.seo.home_description') if home_rankings?(scope, period_slug, section)
+
           key = rankings_translation_key(section, period_slug, 'description')
           t(key, scope: call_view(:scope_name, scope), period: seo_period_label(period_slug))
+        end
+
+        def home_rankings?(scope, period_slug, section)
+          period_slug == 'latest' && section == 'people' && scope.fetch(:slug) == 'poland'
         end
 
         def rankings_translation_key(section, period_slug, field)

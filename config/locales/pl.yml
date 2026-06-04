@@ -277,6 +277,8 @@ pl:
       description_period: "Rankingi top i popularności publicznych użytkowników oraz repozytoriów open source dla lokalizacji %{scope} w edycji %{period}."
       detail_description: "%{ranking} dla lokalizacji %{scope}, według metryki %{metric}, w edycji %{period}."
       detail_title: "%{ranking} - %{scope} - %{period}"
+      home_description: "Ranking polskich programistów, organizacji i projektów open source. Jesteś w rankingu? Pobierz badge i dołącz do Discord."
+      home_title: "Open Source Polska"
       organizations_description_latest: "Rankingi top, zmergowanych PR i popularności organizacji oraz repozytoriów organizacji open source dla lokalizacji %{scope} w najnowszym snapshotcie."
       organizations_description_period: "Rankingi top, zmergowanych PR i popularności organizacji oraz repozytoriów organizacji open source dla lokalizacji %{scope} w edycji %{period}."
       organizations_title_latest: "Organizacje open source - %{scope}"

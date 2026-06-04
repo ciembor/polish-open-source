@@ -138,9 +138,23 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
         repository_rankings: { top: [] },
         organization_rankings: { top: [] },
         organization_repository_rankings: { top: [] },
-        title: 'rankings.seo.title_latest|period=rankings.seo.current_period|scope=Poland',
-        description: 'rankings.seo.description_latest|period=rankings.seo.current_period|scope=Poland',
+        title: 'rankings.seo.home_title',
+        description: 'rankings.seo.home_description',
         canonical_path: '/latest'
+      )
+    end
+
+    it 'keeps latest city ranking metadata scoped to the city' do
+      state = page_state.rankings(
+        scope: { slug: 'krakow', name: 'Krakow' },
+        period_slug: 'latest',
+        page: page
+      )
+
+      expect(state).to include(
+        title: 'rankings.seo.title_latest|period=rankings.seo.current_period|scope=Krakow',
+        description: 'rankings.seo.description_latest|period=rankings.seo.current_period|scope=Krakow',
+        canonical_path: '/latest/locations/krakow'
       )
     end
 
