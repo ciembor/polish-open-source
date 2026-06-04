@@ -20,6 +20,20 @@ RSpec.describe File do
     )
   end
 
+  it 'prunes only this project podman artifacts after successful deploys' do
+    script = described_class.read(described_class.join(root, 'scripts/deploy.sh'))
+
+    expect(script).to include(
+      'cleanup_project_podman_artifacts "${RELEASE_IMAGE_NAME}"',
+      'cleanup_project_podman_artifacts',
+      'sudo podman ps -a --format \'{{.Names}}\'',
+      'sudo podman images --format \'{{.Repository}}:{{.Tag}}\'',
+      'local image_repository="${IMAGE_NAME%:*}"',
+      '"${image_repository}:"*',
+      '"${SERVICE_NAME}-"*'
+    )
+  end
+
   it 'lets GitHub Actions dispatch either a deploy or a one-step rollback' do
     workflow = described_class.read(described_class.join(root, '.github/workflows/deploy.yml'))
 

@@ -103,6 +103,48 @@ report_running_jobs() {
   fi
 }
 
+cleanup_project_containers() {
+  local container_name
+  local running
+
+  sudo podman ps -a --format '{{.Names}}' | while IFS= read -r container_name; do
+    case "${container_name}" in
+      "${SERVICE_NAME}"|"${SERVICE_NAME}-discord-bot")
+        ;;
+      "${SERVICE_NAME}-"*)
+        running="$(sudo podman inspect --format '{{.State.Running}}' "${container_name}" 2>/dev/null || true)"
+        if [ "${running}" != "true" ]; then
+          sudo podman rm "${container_name}" >/dev/null 2>&1 || true
+        fi
+        ;;
+    esac
+  done
+}
+
+cleanup_project_images() {
+  local image
+  local keep_image
+  local image_repository="${IMAGE_NAME%:*}"
+
+  sudo podman images --format '{{.Repository}}:{{.Tag}}' | while IFS= read -r image; do
+    case "${image}" in
+      "${image_repository}:"*)
+        for keep_image in "${IMAGE_NAME}" "${PREVIOUS_IMAGE_NAME}" "$@"; do
+          if [ "${image}" = "${keep_image}" ]; then
+            continue 2
+          fi
+        done
+        sudo podman image rm "${image}" >/dev/null 2>&1 || true
+        ;;
+    esac
+  done
+}
+
+cleanup_project_podman_artifacts() {
+  cleanup_project_containers
+  cleanup_project_images "$@"
+}
+
 assert_production_session_secret() {
   local env_file="${REMOTE_DIR}/.env.local"
   local session_secret_line=""
@@ -221,6 +263,7 @@ deploy_release() {
   else
     rm -f "${previous_release_file}"
   fi
+  cleanup_project_podman_artifacts "${RELEASE_IMAGE_NAME}"
 }
 
 rollback_release() {
@@ -260,6 +303,7 @@ rollback_release() {
   printf '%s\n' "${previous_release}" > "${current_release_file}"
   printf '%s\n' "${current_release}" > "${previous_release_file}"
   sudo podman image rm "${ROLLBACK_CANDIDATE_IMAGE_NAME}" >/dev/null 2>&1 || true
+  cleanup_project_podman_artifacts
 }
 
 case "${action}" in
