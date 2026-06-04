@@ -88,7 +88,22 @@
   min-width: 0;
 }
 
-.edition-toplist span:not(.platform-mark) {
+.edition-toplist__primary-link {
+  align-items: center;
+  display: inline-flex;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.edition-toplist__primary-text {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edition-toplist li > span:not(.platform-mark):not(.primary-link) {
   color: var(--muted);
   display: block;
   font-size: 0.86rem;

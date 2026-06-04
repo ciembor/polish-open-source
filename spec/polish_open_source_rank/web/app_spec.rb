@@ -1920,6 +1920,11 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       html_element(response.body, "//a[@class='hero__image-link' and @href='/auth/github']" \
                                   "/img[@class='hero__image' and @src='/images/polish_open_source_front.webp']")
     ).not_to be_nil
+    expect(
+      html_element(response.body, "//ol[@class='edition-toplist']" \
+                                  "//a[contains(@class, 'edition-toplist__primary-link')]" \
+                                  "/span[@class='edition-toplist__primary-text']")
+    ).not_to be_nil
     expect_active_nav_link(response.body, '/editions')
   end
 
@@ -1945,6 +1950,15 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'src="/images/maciej-ciemborowicz.jpg"',
       'href="/latest"'
     )
+    expect(
+      html_element(response.body, "//section[@id='mission']//div[contains(@class, 'about-section__eyebrow-row')]" \
+                                  "/p[contains(@class, 'eyebrow')]/following-sibling::a" \
+                                  "[contains(@class, 'about-section__back-link') and @href='#about-top']")
+    ).not_to be_nil
+    expect(
+      html_element(response.body, "//section[@id='mission']//h2/following-sibling::a" \
+                                  "[contains(@class, 'about-section__back-link')]")
+    ).to be_nil
     expect_active_nav_link(response.body, '/about')
     expect(response.body).not_to include('Programista i autor projektu')
     expect(response.body).not_to include('//locations')

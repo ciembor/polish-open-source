@@ -59,9 +59,13 @@
                     <% source_url = safe_external_url(row[:html_url]) %>
                     <li>
                       <% if source_url %>
-                        <a class="primary-link" href="<%= h source_url %>"><%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:full_name) %></a>
+                        <a class="primary-link edition-toplist__primary-link" href="<%= h source_url %>">
+                          <%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %><span class="edition-toplist__primary-text"><%= h row.fetch(:full_name) %></span>
+                        </a>
                       <% else %>
-                        <span class="primary-link"><%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:full_name) %></span>
+                        <span class="primary-link edition-toplist__primary-link">
+                          <%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %><span class="edition-toplist__primary-text"><%= h row.fetch(:full_name) %></span>
+                        </span>
                       <% end %>
                       <span>⭐ <%= number(row.fetch(:stargazers_count)) %> <%= h t('editions.stars_suffix') %></span>
                     </li>
@@ -76,9 +80,13 @@
                     <% source_url = safe_external_url(row[:html_url]) %>
                     <li>
                       <% if source_url %>
-                        <a class="primary-link" href="<%= h source_url %>"><%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:login) %></a>
+                        <a class="primary-link edition-toplist__primary-link" href="<%= h source_url %>">
+                          <%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %><span class="edition-toplist__primary-text"><%= h row.fetch(:login) %></span>
+                        </a>
                       <% else %>
-                        <span class="primary-link"><%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:login) %></span>
+                        <span class="primary-link edition-toplist__primary-link">
+                          <%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %><span class="edition-toplist__primary-text"><%= h row.fetch(:login) %></span>
+                        </span>
                       <% end %>
                       <span>⭐ <%= number(row.fetch(:total_stars)) %> <%= h t('editions.stars_suffix') %></span>
                     </li>
@@ -93,9 +101,13 @@
                     <% source_url = safe_external_url(row[:html_url]) %>
                     <li>
                       <% if source_url %>
-                        <a class="primary-link" href="<%= h source_url %>"><%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:login) %></a>
+                        <a class="primary-link edition-toplist__primary-link" href="<%= h source_url %>">
+                          <%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %><span class="edition-toplist__primary-text"><%= h row.fetch(:login) %></span>
+                        </a>
                       <% else %>
-                        <span class="primary-link"><%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %><%= h row.fetch(:login) %></span>
+                        <span class="primary-link edition-toplist__primary-link">
+                          <%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %><span class="edition-toplist__primary-text"><%= h row.fetch(:login) %></span>
+                        </span>
                       <% end %>
                       <span>⭐ <%= number(row.fetch(:total_stars)) %> <%= h t('editions.stars_suffix') %></span>
                     </li>

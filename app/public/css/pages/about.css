@@ -68,11 +68,16 @@
   display: block;
 }
 
-.about-section__title-row {
+.about-section__eyebrow-row {
   align-items: baseline;
-  column-gap: 12px;
+  column-gap: 16px;
   display: flex;
   flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.about-section__eyebrow-row .eyebrow {
+  min-width: 0;
 }
 
 .about-section__back-link {
