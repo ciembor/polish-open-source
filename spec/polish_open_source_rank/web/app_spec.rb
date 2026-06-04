@@ -1811,7 +1811,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       '<title>Polish Open Source</title>',
       "name=\"description\" content=\"#{english_home_description}\"",
       'property="og:title" content="Polish Open Source"',
-      '<meta name="robots" content="index,follow">',
+      '<meta name="robots" content="index,follow,max-image-preview:large">',
       'href="/latest?lang=pl"'
     )
   end
