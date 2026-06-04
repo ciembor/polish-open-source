@@ -24,7 +24,6 @@ module PolishOpenSourceRank
           [1_000_000, { pl: 'mln', en: 'M' }],
           [1_000, { pl: 'tys.', en: 'K' }]
         ].freeze
-
         def h(value)
           Rack::Utils.escape_html(value.to_s)
         end
@@ -72,6 +71,22 @@ module PolishOpenSourceRank
           "#{value.tr('.', ',')} #{unit}"
         end
 
+        def star_history_chart_url(record)
+          repository = star_history_repository_name(record)
+          return nil unless repository
+
+          query = { repos: repository, type: 'date', legend: 'top-left' }
+          "https://api.star-history.com/chart?#{Rack::Utils.build_query(query)}"
+        end
+
+        def star_history_page_url(record)
+          repository = star_history_repository_name(record)
+          return nil unless repository
+
+          owner, name = repository.split('/', 2)
+          "https://www.star-history.com/#{Rack::Utils.escape_path(owner)}/#{Rack::Utils.escape_path(name)}"
+        end
+
         def t(key, values = {})
           settings.localized_text.translate(current_locale, key, values)
         end
@@ -105,6 +120,15 @@ module PolishOpenSourceRank
           return t('scope.poland') if scope.fetch(:slug) == 'poland'
 
           scope.fetch(:name)
+        end
+
+        def star_history_repository_name(record)
+          return nil unless record.fetch(:platform, nil) == 'github'
+
+          repository = record.fetch(:full_name, nil).to_s
+          return nil unless repository.match?(%r{\A[\w.-]+/[\w.-]+\z})
+
+          repository
         end
       end
     end

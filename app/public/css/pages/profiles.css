@@ -186,6 +186,39 @@
   border-top: 1px solid var(--line);
 }
 
+.profile-section__heading-row {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.profile-section__heading-row h2 {
+  margin-bottom: 0;
+}
+
+.profile-action--inline {
+  margin-top: 0;
+}
+
+.profile-star-history__panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 16px;
+}
+
+.profile-star-history__chart {
+  display: block;
+  height: auto;
+  max-width: 100%;
+  width: 100%;
+}
+
 .profile-grid {
   display: grid;
   gap: 20px;

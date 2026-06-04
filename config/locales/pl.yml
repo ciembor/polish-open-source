@@ -462,6 +462,9 @@ pl:
       title: "Odznaka"
     links:
       source_project: "Projekt na %{platform}"
+    star_history:
+      alt: "Historia gwiazdek repozytorium %{repository}"
+      title: "Historia gwiazdek"
     seo:
       title: "%{repository} - projekt %{platform}"
       description: "Publiczny projekt open source %{repository} na %{platform}, z metrykami rankingu i informacjami o właścicielu."

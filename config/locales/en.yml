@@ -460,6 +460,9 @@ en:
       title: "Badge"
     links:
       source_project: "%{platform} project"
+    star_history:
+      alt: "%{repository} star history"
+      title: "Star history"
     seo:
       title: "%{repository} - %{platform} project"
       description: "%{repository} public open-source project on %{platform}, with ranking metrics and owner details."

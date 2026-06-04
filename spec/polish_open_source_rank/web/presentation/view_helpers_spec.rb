@@ -47,4 +47,25 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::ViewHelpers do
       expect(helper.metric_value(:downloads_total, 2_000_000_000)).to eq('📥 2B')
     end
   end
+
+  describe '#star_history_chart_url' do
+    it 'builds Star History chart URLs for GitHub repositories' do
+      repository = { platform: 'github', full_name: 'alice/app' }
+
+      expect(helper.star_history_chart_url(repository)).to eq(
+        'https://api.star-history.com/chart?repos=alice%2Fapp&type=date&legend=top-left'
+      )
+    end
+
+    it 'links to Star History pages for GitHub repositories' do
+      expect(helper.star_history_page_url({ platform: 'github', full_name: 'alice/app' })).to eq(
+        'https://www.star-history.com/alice/app'
+      )
+    end
+
+    it 'rejects unsupported platforms and malformed repository names' do
+      expect(helper.star_history_chart_url({ platform: 'gitlab', full_name: 'alice/app' })).to be_nil
+      expect(helper.star_history_chart_url({ platform: 'github', full_name: 'alice/app?x=1' })).to be_nil
+    end
+  end
 end

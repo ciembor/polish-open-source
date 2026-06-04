@@ -34,6 +34,8 @@
   </div>
 </section>
 
+<%= erb :"profiles/star_history", locals: { record: @repository, heading_id: 'repository-star-history-heading' } %>
+
 <% if @show_repository_badge && @repository[:polish_repo_badge] && @repository[:polish_repo_badge][:value] %>
   <section class="profile-section profile-section--alt" aria-labelledby="repository-badge-heading">
     <div class="content">

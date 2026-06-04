@@ -33,3 +33,8 @@
     } %>
   </div>
 </section>
+
+<%= erb :"profiles/star_history", locals: {
+  record: @organization_repository,
+  heading_id: 'organization-repository-star-history-heading'
+} %>

@@ -265,6 +265,12 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     )
     expect(organization_repository.body).to include('href="/organizations/github/polish-org"')
     expect(organization_repository.body).to include('"@type": "SoftwareSourceCode"')
+    expect(organization_repository.body).to include('id="organization-repository-star-history-heading"')
+    expect(organization_repository.body).to include('>Historia gwiazdek</h2>')
+    expect(organization_repository.body).to include('href="https://www.star-history.com/polish-org/toolkit"')
+    expect(organization_repository.body).to include(
+      'src="https://api.star-history.com/chart?repos=polish-org%2Ftoolkit&amp;type=date&amp;legend=top-left"'
+    )
     expect(missing_organization.status).to eq(404)
   end
 
@@ -1884,6 +1890,11 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile_response.body).to include('class="profile-action"')
     expect(profile_response.body).not_to include('class="ranking-action"')
     expect(profile_response.body).to include('/icons/medal-gold.svg')
+    expect(profile_response.body).to include('<h2 id="repository-star-history-heading">Historia gwiazdek</h2>')
+    expect(profile_response.body).to include('href="https://www.star-history.com/alice/app"')
+    expect(profile_response.body).to include(
+      'src="https://api.star-history.com/chart?repos=alice%2Fapp&amp;type=date&amp;legend=top-left"'
+    )
     expect(profile_response.body).not_to include('Odznaka na GitHub')
     expect(profile_response.body).not_to include('/badges/repositories/github/alice/app.svg')
     expect(owner_profile_response.body).to include('<h2 id="repository-badge-heading">Odznaka</h2>')
