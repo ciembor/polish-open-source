@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require_relative 'auth_configuration_definitions'
-require_relative 'package_registry_configuration_definitions'
-require_relative 'request_configuration_definitions'
+require_relative 'auth_definitions'
+require_relative 'package_registry_definitions'
+require_relative 'request_definitions'
 
 module PolishOpenSourceRank
   # Owns raw environment variable names, defaults, and parser choices for Configuration.

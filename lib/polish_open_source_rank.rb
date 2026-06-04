@@ -27,6 +27,13 @@ module PolishOpenSourceRank
     }.freeze
 
     PATH_OVERRIDES = {
+      'configuration/auth_definitions.rb' => 'AuthConfigurationDefinitions',
+      'configuration/configuration.rb' => 'Configuration',
+      'configuration/definitions.rb' => 'ConfigurationDefinitions',
+      'configuration/groups.rb' => 'ConfigurationGroups',
+      'configuration/package_registry_definitions.rb' => 'PackageRegistryConfigurationDefinitions',
+      'configuration/request_definitions.rb' => 'RequestConfigurationDefinitions',
+      'configuration/secrets_policy.rb' => 'ConfigurationSecrets',
       'infrastructure/codeberg/client.rb' => 'CodebergClient',
       'infrastructure/codeberg/gateway.rb' => 'CodebergGateway',
       'infrastructure/github/client.rb' => 'GitHubClient',
@@ -56,6 +63,7 @@ module PolishOpenSourceRank
       loader = Zeitwerk::Loader.new
       loader.inflector = LoaderInflector.new
       loader.push_dir(root.join('lib/polish_open_source_rank').to_s, namespace: self)
+      loader.collapse(root.join('lib/polish_open_source_rank/configuration').to_s)
       loader.collapse(root.join('lib/polish_open_source_rank/infrastructure/github').to_s)
       loader.collapse(root.join('lib/polish_open_source_rank/infrastructure/gitlab').to_s)
       loader.collapse(root.join('lib/polish_open_source_rank/infrastructure/codeberg').to_s)

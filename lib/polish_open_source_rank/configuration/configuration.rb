@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 require 'dry/configurable'
-require_relative 'configuration_definitions'
-require_relative 'configuration_groups'
-require_relative 'configuration_secrets'
-require_relative 'env_file'
+require_relative 'definitions'
+require_relative 'groups'
+require_relative 'secrets_policy'
+require_relative '../env_file'
 
 module PolishOpenSourceRank
   # Loads application configuration from local env files and process ENV while preserving typed public getters.
