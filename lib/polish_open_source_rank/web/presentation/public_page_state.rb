@@ -207,6 +207,8 @@ module PolishOpenSourceRank
         end
 
         def canonical_rankings_path(scope, period_slug, section)
+          return home_rankings_canonical_path if home_rankings?(scope, period_slug, section)
+
           if section == 'organizations'
             return call_view(:organization_rankings_path, period_slug: period_slug) if scope.fetch(:slug) == 'poland'
 
@@ -216,6 +218,10 @@ module PolishOpenSourceRank
           return call_view(:period_base_path, period_slug) if scope.fetch(:slug) == 'poland'
 
           call_view(:city_path, scope.fetch(:slug), period_slug: period_slug)
+        end
+
+        def home_rankings_canonical_path
+          call_view(:localized_public_path, '/', locale: call_view(:current_locale))
         end
 
         def display_name(resource)

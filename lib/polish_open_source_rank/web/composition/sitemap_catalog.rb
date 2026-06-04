@@ -17,7 +17,7 @@ module PolishOpenSourceRank
           %w[organization-repositories top],
           %w[organization-repositories trending]
         ].freeze
-        STATIC_PATHS = ['/', '/latest', '/organizations', '/about', '/editions', '/languages', '/packages'].freeze
+        STATIC_PATHS = ['/', '/organizations', '/about', '/editions', '/languages', '/packages'].freeze
 
         def initialize(publication_read_models:, package_ranking_read_model:, show_rankings:, list_editions:)
           @publication_read_models = publication_read_models

@@ -26,10 +26,8 @@ module PolishOpenSourceRank
               render_robots_txt
             end
 
-            app.get '/sitemap.xml' do
-              content_type 'application/xml'
-              render_sitemap
-            end
+            app.get('/sitemap.xml') { render_sitemap }
+            app.get(%r{/sitemaps/(\d+)\.xml}) { |page| render_sitemap_page(Integer(page, 10)) }
           end
 
           def register_ranking_shortcuts(app)

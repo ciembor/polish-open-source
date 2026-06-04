@@ -719,7 +719,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     response = Rack::MockRequest.new(described_class).get('/')
 
-    expect(response.body).to include('rel="canonical" href="https://rank.example/latest"')
+    expect(response.body).to include('rel="canonical" href="https://rank.example/"')
     expect(response.body).to match(%r{href="/css/application\.css\?v=\d+"})
     expect(response.body).to match(%r{href="/css/components/navigation\.css\?v=\d+"})
     expect(response.body).to match(%r{href="/css/responsive\.css\?v=\d+"})
@@ -943,11 +943,13 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(sitemap.status).to eq(200)
     expect(sitemap.content_type).to include('application/xml')
     sitemap_locations = REXML::XPath.match(xml_document(sitemap.body), '//url/loc').map(&:text)
-    expect(sitemap_locations).to include('https://rank.example/latest')
+    expect(sitemap_locations).to include('https://rank.example/')
     expect(sitemap_locations).to include('https://rank.example/latest/organizations')
     expect(sitemap_locations).to include('https://rank.example/latest/organizations/active')
     expect(sitemap_locations).to include('https://rank.example/latest/organizations/locations/krakow')
-    expect(sitemap_locations).to include('https://rank.example/en/latest')
+    expect(sitemap_locations).to include('https://rank.example/en')
+    expect(sitemap_locations).not_to include('https://rank.example/latest')
+    expect(sitemap_locations).not_to include('https://rank.example/en/latest')
     expect(sitemap_locations).to include('https://rank.example/about')
     expect(sitemap_locations).to include('https://rank.example/en/users/github/alice')
     expect(sitemap_locations).to include('https://rank.example/en/organizations/github/polish-org')
@@ -957,6 +959,26 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(sitemap_locations).to include('https://rank.example/en/latest/packages/npm/top')
     expect(sitemap_locations).not_to include('https://rank.example/internal/jobs')
     expect(REXML::XPath.match(xml_document(sitemap.body), '//url/lastmod')).not_to be_empty
+  end
+
+  it 'splits oversized sitemaps into a sitemap index', :aggregate_failures do
+    stub_const('PolishOpenSourceRank::Web::Controllers::SitemapSupport::SITEMAP_URL_LIMIT', 5)
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    request = Rack::MockRequest.new(described_class)
+
+    sitemap_index = request.get('/sitemap.xml')
+    first_sitemap = request.get('/sitemaps/1.xml')
+    missing_sitemap = request.get('/sitemaps/999.xml')
+
+    index_locations = REXML::XPath.match(xml_document(sitemap_index.body), '//sitemap/loc').map(&:text)
+    page_locations = REXML::XPath.match(xml_document(first_sitemap.body), '//url/loc').map(&:text)
+
+    expect(sitemap_index.status).to eq(200)
+    expect(index_locations).to include('https://rank.example/sitemaps/1.xml')
+    expect(first_sitemap.status).to eq(200)
+    expect(page_locations.size).to eq(5)
+    expect(page_locations).to include('https://rank.example/')
+    expect(missing_sitemap.status).to eq(404)
   end
 
   it 'keeps localized metadata consistent across key public pages', :aggregate_failures do
@@ -1717,8 +1739,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       response,
       '<title>Open Source Polska</title>',
       "name=\"description\" content=\"#{polish_home_description}\"",
-      'rel="canonical" href="https://rank.example/latest"',
-      'rel="alternate" hreflang="en" href="https://rank.example/en/latest"',
+      'rel="canonical" href="https://rank.example/"',
+      'rel="alternate" hreflang="en" href="https://rank.example/en"',
       'property="og:title" content="Open Source Polska"',
       "property=\"og:description\" content=\"#{polish_home_description}\"",
       'property="og:image" content="https://rank.example/images/polish_open_source_banner.webp"',
@@ -1783,9 +1805,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       '>More cities</summary>',
       'Top 10 by stars',
       'Repositories',
-      'rel="canonical" href="https://rank.example/en/latest"',
-      'rel="alternate" hreflang="pl" href="https://rank.example/latest"',
-      'rel="alternate" hreflang="x-default" href="https://rank.example/latest"',
+      'rel="canonical" href="https://rank.example/en"',
+      'rel="alternate" hreflang="pl" href="https://rank.example/"',
+      'rel="alternate" hreflang="x-default" href="https://rank.example/"',
       '<title>Polish Open Source</title>',
       "name=\"description\" content=\"#{english_home_description}\"",
       'property="og:title" content="Polish Open Source"',

@@ -64,9 +64,10 @@ module PolishOpenSourceRank
         end
 
         def generic_page_breadcrumbs
-          return [{ name: @title, path: canonical_path }] if canonical_path != period_base_path('latest')
+          return [] if canonical_path == localized_public_path('/', locale: current_locale)
+          return [] if canonical_path == period_base_path('latest')
 
-          []
+          [{ name: @title, path: canonical_path }]
         end
 
         def edition_breadcrumbs

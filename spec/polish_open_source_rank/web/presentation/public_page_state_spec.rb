@@ -93,6 +93,17 @@ class PublicPageStateFakeViewContext
     "/#{period_slug}"
   end
 
+  def current_locale
+    'pl'
+  end
+
+  def localized_public_path(path, locale:)
+    return path if locale == 'pl'
+    return "/#{locale}" if path == '/'
+
+    "/#{locale}#{path}"
+  end
+
   def city_path(slug, period_slug:)
     "/#{period_slug}/locations/#{slug}"
   end
@@ -140,7 +151,7 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
         organization_repository_rankings: { top: [] },
         title: 'rankings.seo.home_title',
         description: 'rankings.seo.home_description',
-        canonical_path: '/latest'
+        canonical_path: '/'
       )
     end
 
