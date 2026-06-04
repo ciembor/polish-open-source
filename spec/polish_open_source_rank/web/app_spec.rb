@@ -1225,7 +1225,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
                                   "and text()='fallback-tool']")
     ).not_to be_nil
     expect(
-      html_element(response.body, "//li[.//a[text()='fallback-tool']]//a[@href='/repositories/github/alice/app' " \
+      html_element(response.body, "//li[.//a[text()='fallback-tool']]//a[@href='https://github.com/alice/app' " \
                                   "and text()='Repozytorium']")
     ).not_to be_nil
     expect(

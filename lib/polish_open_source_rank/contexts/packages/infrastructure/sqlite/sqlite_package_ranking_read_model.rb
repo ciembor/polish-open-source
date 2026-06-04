@@ -43,9 +43,7 @@ module PolishOpenSourceRank
                 repository_kind: repository_kind
               )
 
-              metrics.to_h do |metric|
-                [metric.to_sym, sort_rankings(rows, metric, limit)]
-              end
+              metrics.to_h { |metric| [metric.to_sym, sort_rankings(rows, metric, limit)] }
             end
 
             def ranked_packages(ecosystem:, period_start:, metric:, scope: 'poland', limit: DEFAULT_LIMIT,
@@ -114,6 +112,7 @@ module PolishOpenSourceRank
                        MIN(scans.full_name) AS repository_full_name,
                        MIN(scans.repository_kind) AS repository_kind,
                        MIN(scans.platform) AS repository_platform,
+                       #{PackageRepositoryLinkSql.representative_url},
                        #{owner_login_sql('MIN(scans.full_name)')} AS repository_owner_login
                 FROM registry_package_snapshots snapshots
                 INNER JOIN registry_packages packages
@@ -135,6 +134,7 @@ module PolishOpenSourceRank
                  AND organization_stats.period_start = snapshots.period_start
                  AND organization_stats.platform = scans.platform
                  AND organization_stats.repository_github_id = scans.repository_source_id
+                #{PackageRepositoryLinkSql.joins}
                 WHERE snapshots.period_start = ?
                   AND snapshots.ecosystem = ?
                   AND packages.status = 'active'
@@ -180,6 +180,7 @@ module PolishOpenSourceRank
                        MIN(scans.full_name) AS repository_full_name,
                        MIN(scans.repository_kind) AS repository_kind,
                        MIN(scans.platform) AS repository_platform,
+                       #{PackageRepositoryLinkSql.representative_url},
                        #{owner_login_sql('MIN(scans.full_name)')} AS repository_owner_login
                 FROM registry_package_snapshots snapshots
                 INNER JOIN registry_packages packages
@@ -201,6 +202,7 @@ module PolishOpenSourceRank
                  AND organization_stats.period_start = snapshots.period_start
                  AND organization_stats.platform = scans.platform
                  AND organization_stats.repository_github_id = scans.repository_source_id
+                #{PackageRepositoryLinkSql.joins}
                 WHERE snapshots.period_start = ?
                   AND snapshots.ecosystem = ?
                   AND packages.status = 'active'
@@ -285,6 +287,7 @@ module PolishOpenSourceRank
                        scans.full_name AS repository_full_name,
                        scans.repository_kind,
                        scans.platform AS repository_platform,
+                       COALESCE(user_repositories.html_url, org_repositories.html_url) AS repository_html_url,
                        #{owner_login_sql('scans.full_name')} AS repository_owner_login
                 FROM registry_package_snapshots snapshots
                 INNER JOIN registry_packages packages
@@ -306,6 +309,7 @@ module PolishOpenSourceRank
                  AND organization_stats.period_start = snapshots.period_start
                  AND organization_stats.platform = scans.platform
                  AND organization_stats.repository_github_id = scans.repository_source_id
+                #{PackageRepositoryLinkSql.joins}
                 WHERE snapshots.period_start = ?
                   AND snapshots.ecosystem = ?
                   AND packages.normalized_package_name = ?
@@ -356,7 +360,8 @@ module PolishOpenSourceRank
               rows.filter_map do |row|
                 next unless row[:repository_full_name]
 
-                row.slice(:repository_full_name, :repository_kind, :repository_platform, :repository_owner_login)
+                row.slice(:repository_full_name, :repository_kind, :repository_platform, :repository_html_url,
+                          :repository_owner_login)
               end
             end
 

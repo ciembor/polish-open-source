@@ -45,38 +45,45 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PackagePathHelpers do
   end
 
   describe '#package_repository_link' do
-    it 'links to the local repository profile for linked package repositories' do
-      row = repository_row(repository_url: 'https://github.com/registry/metadata')
+    it 'links to the source repository detected by package scanning' do
+      row = repository_row(
+        repository_html_url: 'https://github.com/alice/app',
+        repository_url: 'https://github.com/registry/metadata'
+      )
 
-      expect(helper.package_repository_link(row)).to eq('/rank/repositories/github/alice/app')
+      expect(helper.package_repository_link(row)).to eq('https://github.com/alice/app')
     end
 
-    it 'does not fall back to registry repository metadata without a linked local repository' do
-      row = repository_row(repository_url: 'https://github.com/registry/metadata', repository_full_name: nil)
+    it 'does not fall back to registry repository metadata without a linked source repository' do
+      row = repository_row(repository_html_url: nil, repository_url: 'https://github.com/registry/metadata')
 
       expect(helper.package_repository_link(row)).to be_nil
     end
 
-    it 'links organization repositories to their local profile' do
-      row = repository_row(repository_url: nil, repository_full_name: 'polish-org/toolkit',
-                           repository_kind: 'organization')
+    it 'keeps the local repository profile link available separately' do
+      expect(helper.package_repository_profile_link(repository_row)).to eq('/rank/repositories/github/alice/app')
 
-      expect(helper.package_repository_link(row)).to eq('/rank/organization-repositories/github/polish-org/toolkit')
+      row = repository_row(repository_full_name: 'polish-org/toolkit', repository_kind: 'organization')
+
+      expect(helper.package_repository_profile_link(row)).to eq(
+        '/rank/organization-repositories/github/polish-org/toolkit'
+      )
     end
 
-    it 'returns nil when the package has neither registry repository metadata nor a linked repository profile' do
-      row = repository_row(repository_url: nil, repository_full_name: nil)
+    it 'returns nil when the linked source repository URL is not safe' do
+      row = repository_row(repository_html_url: 'javascript:alert(1)')
 
       expect(helper.package_repository_link(row)).to be_nil
     end
   end
 
-  def repository_row(attributes)
+  def repository_row(attributes = {})
     {
       registry_url: nil,
       repository_url: nil,
       repository_platform: 'github',
       repository_full_name: 'alice/app',
+      repository_html_url: 'https://github.com/alice/app',
       repository_kind: 'user'
     }.merge(attributes)
   end

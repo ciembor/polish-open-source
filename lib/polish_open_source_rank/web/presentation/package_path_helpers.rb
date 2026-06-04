@@ -51,7 +51,7 @@ module PolishOpenSourceRank
         end
 
         def package_repository_link(row)
-          package_repository_profile_link(row)
+          safe_external_url(row[:repository_html_url])
         end
 
         def package_repository_profile_link(row)
