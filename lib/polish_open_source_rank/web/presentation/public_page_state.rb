@@ -246,7 +246,7 @@ module PolishOpenSourceRank
         def translate_rankings_description(scope, period_slug, section)
           return t('rankings.seo.home_description') if home_rankings?(scope, period_slug, section)
 
-          key = rankings_translation_key(section, period_slug, 'description')
+          key = rankings_description_translation_key(scope, period_slug, section)
           t(key, scope: call_view(:scope_name, scope), period: seo_period_label(period_slug))
         end
 
@@ -259,6 +259,14 @@ module PolishOpenSourceRank
           return "rankings.seo.organizations_#{field}_#{current}" if section == 'organizations'
 
           "rankings.seo.#{field}_#{current}"
+        end
+
+        def rankings_description_translation_key(scope, period_slug, section)
+          return rankings_translation_key(section, period_slug, 'description') if scope.fetch(:slug) == 'poland'
+          return rankings_translation_key(section, period_slug, 'description') if section == 'organizations'
+
+          current = period_slug == 'latest' ? 'latest' : 'period'
+          "rankings.seo.city_description_#{current}"
         end
 
         def ranking_detail_description(kind, metric, ranking_name, scope_name, period_name)

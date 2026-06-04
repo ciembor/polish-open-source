@@ -153,7 +153,7 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
 
       expect(state).to include(
         title: 'rankings.seo.title_latest|period=rankings.seo.current_period|scope=Krakow',
-        description: 'rankings.seo.description_latest|period=rankings.seo.current_period|scope=Krakow',
+        description: 'rankings.seo.city_description_latest|period=rankings.seo.current_period|scope=Krakow',
         canonical_path: '/latest/locations/krakow'
       )
     end
@@ -167,7 +167,7 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
 
       expect(state).to include(
         title: 'rankings.seo.title_period|period=April 2026|scope=Krakow',
-        description: 'rankings.seo.description_period|period=April 2026|scope=Krakow',
+        description: 'rankings.seo.city_description_period|period=April 2026|scope=Krakow',
         canonical_path: '/2026-04/locations/krakow'
       )
     end

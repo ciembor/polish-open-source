@@ -273,6 +273,8 @@ pl:
     seo:
       current_period: "najnowszy snapshot"
       description: "Rankingi top i popularności publicznych użytkowników oraz repozytoriów platform kodu dla lokalizacji %{scope}."
+      city_description_latest: "Ranking miasta %{scope}. Ranking polskich programistów, organizacji i projektów open source. Jesteś w rankingu? Pobierz badge i dołącz do Discord."
+      city_description_period: "Ranking miasta %{scope} w edycji %{period}. Ranking polskich programistów, organizacji i projektów open source. Jesteś w rankingu? Pobierz badge i dołącz do Discord."
       description_latest: "Rankingi top i popularności publicznych użytkowników oraz repozytoriów open source dla lokalizacji %{scope} w najnowszym snapshotcie."
       description_period: "Rankingi top i popularności publicznych użytkowników oraz repozytoriów open source dla lokalizacji %{scope} w edycji %{period}."
       detail_description: "%{ranking} dla lokalizacji %{scope}, według metryki %{metric}, w edycji %{period}."
