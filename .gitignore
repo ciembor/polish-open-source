@@ -4,6 +4,7 @@
 .env.*.local
 .deploy/
 coverage/
+config/secrets/
 db/*.sqlite3
 db/*.sqlite3.*
 db/*.sqlite3-*
