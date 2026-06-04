@@ -61,7 +61,7 @@ class PublicPageStateFakeViewContext
   end
 
   def package_repository_kind_label(repository_kind)
-    { 'user' => 'People' }.fetch(repository_kind)
+    { 'user' => 'People repositories' }.fetch(repository_kind)
   end
 
   def package_ranking_path(ecosystem, metric_slug, period_slug:)
@@ -77,11 +77,12 @@ class PublicPageStateFakeViewContext
   end
 
   def language_repository_kind_label(repository_kind)
-    { 'organization' => 'Organizations' }.fetch(repository_kind)
+    { nil => 'All repositories', 'organization' => 'Organization repositories' }.fetch(repository_kind)
   end
 
   def language_repository_ranking_path(language, repository_kind, metric_slug, period_slug:)
-    "/#{period_slug}/languages/#{language}/#{repository_kind}s/#{metric_slug}"
+    slug = repository_kind ? "#{repository_kind}s" : 'repositories'
+    "/#{period_slug}/languages/#{language}/#{slug}/#{metric_slug}"
   end
 
   def editions_path(year = nil)
@@ -273,8 +274,9 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
         package_metric: 'downloads_30d',
         package_repository_kind: 'user',
         package_ranking: [{ package_name: '@scope/tool' }],
-        title: 'packages.seo.repository_ranking_title|ecosystem=npm|kind=People|metric=Downloads 30d',
-        description: 'packages.seo.repository_ranking_description|ecosystem=npm|kind=People|metric=Downloads 30d',
+        title: 'packages.seo.repository_ranking_title|ecosystem=npm|kind=People repositories|metric=Downloads 30d',
+        description: 'packages.seo.repository_ranking_description|ecosystem=npm|' \
+                     'kind=People repositories|metric=Downloads 30d',
         canonical_path: '/latest/packages/npm/users/top',
         period_start: '2026-04-01'
       )
@@ -301,10 +303,32 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
         language_repository_metric_slug: 'top',
         language_repository_metric: 'repository_stars_count',
         language_repository_ranking: [{ full_name: 'polish-org/toolkit' }],
-        title: 'languages.seo.repository_ranking_title|kind=Organizations|language=Ruby|metric=Stars',
-        description: 'languages.seo.repository_ranking_description|kind=Organizations|language=Ruby|metric=Stars',
+        title: 'languages.seo.repository_ranking_title|kind=Organization repositories|language=Ruby|metric=Stars',
+        description: 'languages.seo.repository_ranking_description|' \
+                     'kind=Organization repositories|language=Ruby|metric=Stars',
         canonical_path: '/2026-04/languages/Ruby/organizations/top',
         period_start: '2026-04-01'
+      )
+    end
+
+    it 'builds language all-repository ranking state without an ownership filter' do
+      state = page_state.language_repository_ranking_detail(
+        {
+          period_slug: '2026-04',
+          period_start: '2026-04-01',
+          language: 'Ruby',
+          repository_kind: nil,
+          metric_slug: 'top',
+          metric: 'repository_stars_count',
+          ranking: [{ full_name: 'alice/app' }]
+        }
+      )
+
+      expect(state).to include(
+        language_repository_kind: nil,
+        title: 'languages.seo.repository_ranking_title|kind=All repositories|language=Ruby|metric=Stars',
+        description: 'languages.seo.repository_ranking_description|kind=All repositories|language=Ruby|metric=Stars',
+        canonical_path: '/2026-04/languages/Ruby/repositories/top'
       )
     end
   end

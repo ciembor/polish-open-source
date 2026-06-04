@@ -52,6 +52,10 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.ranking-grid--package-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .ranking-table {
   min-width: 0;
 }

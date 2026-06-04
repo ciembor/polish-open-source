@@ -263,7 +263,7 @@ pl:
       merged_pull_requests: "Zmergowane PR"
       new_stars: "Nowe gwiazdki"
       stars: "Gwiazdek"
-    organizations_merged_prs_month: "Top 10 według zmergowanych PR"
+    organizations_merged_prs_month: "Top 10 według zmergowanych PR w miesiącu"
     organization_repositories_month: "Repozytoria organizacji"
     organizations: "Organizacje"
     repositories: "Repozytoria"
@@ -304,7 +304,7 @@ pl:
     top_10_stars: "Top 10 według gwiazdek"
     trending_10_month: "Top 10 popularnych w miesiącu"
     users: "Ludzie"
-    users_merged_prs_month: "Zmergowane PR w miesiącu"
+    users_merged_prs_month: "Top 10 według zmergowanych PR w miesiącu"
   packages:
     back: "Wróć do pakietów"
     ecosystem:
@@ -370,9 +370,9 @@ pl:
       title: "Powiązane repozytoria"
       unlinked: "Brak powiązanego repozytorium"
     repository_kind:
-      all: "Wszystkie"
-      organization: "Organizacje"
-      user: "Ludzie"
+      all: "Wszystkie repozytoria"
+      organization: "Repozytoria organizacji"
+      user: "Repozytoria ludzi"
     repository_ranking_title:
       dependents: "Top 100: %{kind}, %{ecosystem}, według zależnych pakietów"
       downloads: "Top 100: %{kind}, %{ecosystem}, według pobrań łącznie"
@@ -407,7 +407,7 @@ pl:
       dependents: "Top 10 według zależnych pakietów"
       downloads: "Top 10 według pobrań łącznie"
       installs: "Top 10 według instalacji z 30 dni"
-      stars: "Top 10 repozytoriów według gwiazdek"
+      stars: "Top 10 według gwiazdek"
       trending: "Top 10 popularnych w miesiącu"
       top: "Top 10 według pobrań z 30 dni"
   languages:
@@ -426,8 +426,9 @@ pl:
           count: "Gwiazdki repozytoriów"
           delta: "Nowe gwiazdki"
     repository_kind:
-      organization: "Organizacje"
-      user: "Ludzie"
+      all: "Wszystkie repozytoria"
+      organization: "Repozytoria organizacji"
+      user: "Repozytoria ludzi"
     repository_ranking_title:
       top: "Top 100: %{kind}, %{language}, według gwiazdek"
       trending: "Top 100: %{kind}, %{language}, popularne"

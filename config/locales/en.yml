@@ -263,7 +263,7 @@ en:
       merged_pull_requests: "Merged PRs"
       new_stars: "New stars"
       stars: "Stars"
-    organizations_merged_prs_month: "Top 10 by merged PRs"
+    organizations_merged_prs_month: "Top 10 by monthly merged PRs"
     organization_repositories_month: "Organization repositories"
     organizations: "Organizations"
     repositories: "Repositories"
@@ -304,7 +304,7 @@ en:
     top_10_stars: "Top 10 by stars"
     trending_10_month: "Popular 10 this month"
     users: "People"
-    users_merged_prs_month: "Merged PRs this month"
+    users_merged_prs_month: "Top 10 by monthly merged PRs"
   packages:
     back: "Back to packages"
     ecosystem:
@@ -369,9 +369,9 @@ en:
       title: "Linked repositories"
       unlinked: "No linked repository"
     repository_kind:
-      all: "All"
-      organization: "Organizations"
-      user: "People"
+      all: "All repositories"
+      organization: "Organization repositories"
+      user: "People repositories"
     repository_ranking_title:
       dependents: "Top 100: %{kind}, %{ecosystem}, by dependent packages"
       downloads: "Top 100: %{kind}, %{ecosystem}, by total downloads"
@@ -406,7 +406,7 @@ en:
       dependents: "Top 10 by dependent packages"
       downloads: "Top 10 by total downloads"
       installs: "Top 10 by 30-day installs"
-      stars: "Top 10 repositories by stars"
+      stars: "Top 10 by stars"
       trending: "Top 10 popular this month"
       top: "Top 10 by 30-day downloads"
   languages:
@@ -424,8 +424,9 @@ en:
           count: "Repository stars"
           delta: "New stars"
     repository_kind:
-      organization: "Organizations"
-      user: "People"
+      all: "All repositories"
+      organization: "Organization repositories"
+      user: "People repositories"
     repository_ranking_title:
       top: "Top 100: %{kind}, %{language}, by stars"
       trending: "Top 100: %{kind}, %{language}, popular"

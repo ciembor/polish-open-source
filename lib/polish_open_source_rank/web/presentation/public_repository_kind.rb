@@ -5,6 +5,7 @@ module PolishOpenSourceRank
     module Presentation
       module PublicRepositoryKind
         SLUGS = {
+          'repositories' => nil,
           'users' => 'user',
           'organizations' => 'organization'
         }.freeze

@@ -24,6 +24,6 @@
 <section class="ranking-band">
   <div class="content">
     <p><a class="muted-link muted-link--standalone" href="<%= h app_path(language_path(@language)) %>"><%= h t('languages.back_to_language', language: @language) %></a></p>
-    <%= erb :"languages/repository_ranking_table", locals: { heading_id: "language-repository-ranking-detail-#{@language_repository_kind}-#{@language_repository_metric_slug}", title: language_repository_ranking_title(@language, @language_repository_kind, @language_repository_metric_slug), rows: @language_repository_ranking, metric: @language_repository_metric.to_sym, metric_label: language_metric_label(@language_repository_metric) } %>
+    <%= erb :"languages/repository_ranking_table", locals: { heading_id: "language-repository-ranking-detail-#{language_repository_kind_key(@language_repository_kind)}-#{@language_repository_metric_slug}", title: language_repository_ranking_title(@language, @language_repository_kind, @language_repository_metric_slug), rows: @language_repository_ranking, metric: @language_repository_metric.to_sym, metric_label: language_metric_label(@language_repository_metric) } %>
   </div>
 </section>

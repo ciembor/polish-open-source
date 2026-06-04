@@ -57,7 +57,7 @@ module PolishOpenSourceRank
           end
 
           def repository_kind_slugs
-            'users|organizations'
+            'repositories|users|organizations'
           end
         end
       end

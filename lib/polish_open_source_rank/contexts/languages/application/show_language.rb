@@ -5,7 +5,7 @@ module PolishOpenSourceRank
     module Languages
       module Application
         class ShowLanguage
-          REPOSITORY_KINDS = %w[user organization].freeze
+          REPOSITORY_KINDS = [nil, 'user', 'organization'].freeze
 
           def initialize(language_ranking_read_model:)
             @language_ranking_read_model = language_ranking_read_model
@@ -13,7 +13,7 @@ module PolishOpenSourceRank
 
           def call(language:, period_start:, limit: 10)
             REPOSITORY_KINDS.to_h do |repository_kind|
-              [repository_kind.to_sym, language_ranking_read_model.repository_rankings(
+              [repository_kind_key(repository_kind), language_ranking_read_model.repository_rankings(
                 language: language,
                 period_start: period_start,
                 limit: limit,
@@ -25,6 +25,10 @@ module PolishOpenSourceRank
           private
 
           attr_reader :language_ranking_read_model
+
+          def repository_kind_key(repository_kind)
+            repository_kind ? repository_kind.to_sym : :all
+          end
         end
       end
     end

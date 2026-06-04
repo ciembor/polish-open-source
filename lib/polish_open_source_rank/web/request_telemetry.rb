@@ -80,7 +80,7 @@ module PolishOpenSourceRank
         ],
         [%r{\A/(?:en/)?packages/[^/]+(?:/[^/]+)?\z}, '/packages/:ecosystem/:package'],
         [
-          %r{\A/(?:en/)?languages/[^/]+(?:/(users|organizations)/(top|trending))?\z},
+          %r{\A/(?:en/)?languages/[^/]+(?:/(repositories|users|organizations)/(top|trending))?\z},
           '/languages/:language/:kind/:metric'
         ],
         [%r{\A/badges/(users|repositories|organizations)/}, '/badges/:kind'],

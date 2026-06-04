@@ -57,7 +57,11 @@ module PolishOpenSourceRank
         end
 
         def language_repository_ranking_path(language, repository_kind, metric_slug, period_slug: @period_slug)
-          "#{language_path(language, period_slug: period_slug)}/#{repository_kind}s/#{metric_slug}"
+          [
+            language_path(language, period_slug: period_slug),
+            language_repository_kind_slug(repository_kind),
+            metric_slug
+          ].join('/')
         end
 
         def language_metric_label(metric)
@@ -76,7 +80,7 @@ module PolishOpenSourceRank
         end
 
         def language_repository_kind_label(repository_kind)
-          t("languages.repository_kind.#{repository_kind}")
+          t("languages.repository_kind.#{language_repository_kind_key(repository_kind)}")
         end
 
         def language_repository_ranking_title(language, repository_kind, metric_slug)
@@ -93,6 +97,14 @@ module PolishOpenSourceRank
 
         def language_ranking_title(metric_slug)
           t("languages.ranking_title.#{metric_slug}")
+        end
+
+        def language_repository_kind_key(repository_kind)
+          repository_kind.nil? ? 'all' : repository_kind.to_s
+        end
+
+        def language_repository_kind_slug(repository_kind)
+          language_repository_kind_key(repository_kind) == 'all' ? 'repositories' : "#{repository_kind}s"
         end
       end
     end
