@@ -34,7 +34,7 @@ module PolishOpenSourceRank
         end
 
         def user_profile(profile:, own_profile:)
-          display_name = display_name(profile)
+          display_name = user_display_name(profile)
           source_name = call_view(:platform_name, profile.fetch(:platform))
 
           {
@@ -220,6 +220,14 @@ module PolishOpenSourceRank
 
         def display_name(resource)
           resource[:name].to_s.empty? ? resource.fetch(:login) : resource[:name]
+        end
+
+        def user_display_name(profile)
+          name = profile[:name].to_s
+          login = profile.fetch(:login)
+          return login if name.empty? || name.casecmp?(login)
+
+          "#{name} (@#{login})"
         end
 
         def seo_period_label(period_slug)

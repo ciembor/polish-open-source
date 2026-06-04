@@ -217,8 +217,8 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
       state = page_state.user_profile(profile: profile.merge(name: 'Maciej'), own_profile: false)
 
       expect(state).to include(
-        title: 'users.seo.title|platform=GitHub|user=Maciej',
-        description: 'users.seo.description|platform=GitHub|user=Maciej',
+        title: 'users.seo.title|platform=GitHub|user=Maciej (@ciembor)',
+        description: 'users.seo.description|platform=GitHub|user=Maciej (@ciembor)',
         discord_panel: nil,
         discord_error: nil,
         show_profile_badges: false
