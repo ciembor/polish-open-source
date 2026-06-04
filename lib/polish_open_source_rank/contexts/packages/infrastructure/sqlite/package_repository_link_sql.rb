@@ -9,7 +9,13 @@ module PolishOpenSourceRank
             module_function
 
             def representative_url
-              "substr(#{representative_key}, instr(#{representative_key}, char(31)) + 1) AS repository_html_url"
+              representative_value('COALESCE(user_repositories.html_url, org_repositories.html_url)',
+                                   'repository_html_url')
+            end
+
+            def representative_description
+              representative_value('COALESCE(user_repositories.description, org_repositories.description)',
+                                   'repository_description')
             end
 
             def joins
@@ -25,10 +31,12 @@ module PolishOpenSourceRank
               SQL
             end
 
-            def representative_key
-              'MIN(scans.full_name || char(31) || COALESCE(user_repositories.html_url, org_repositories.html_url))'
+            def representative_value(expression, alias_name)
+              key = "MIN(scans.full_name || char(31) || COALESCE(#{expression}, ''))"
+
+              "substr(#{key}, instr(#{key}, char(31)) + 1) AS #{alias_name}"
             end
-            private_class_method :representative_key
+            private_class_method :representative_value
           end
         end
       end

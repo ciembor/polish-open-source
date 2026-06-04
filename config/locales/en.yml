@@ -342,6 +342,7 @@ en:
       eyebrow: "Package rankings"
       lede: "Public packages detected in Polish open-source repositories and enriched with registry metrics."
     links:
+      package: "Package"
       registry: "Registry"
       repository: "Repository"
     metric:

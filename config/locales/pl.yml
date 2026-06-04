@@ -343,6 +343,7 @@ pl:
       eyebrow: "Rankingi pakietów"
       lede: "Publiczne pakiety wykryte w polskich repozytoriach open source i uzupełnione metrykami z rejestrów."
     links:
+      package: "Pakiet"
       registry: "Rejestr"
       repository: "Repozytorium"
     metric:

@@ -1221,16 +1221,17 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   def expect_package_registry_and_repository_links(response)
     expect(
       html_element(response.body, "//a[@class='primary-link' " \
-                                  "and @href='https://www.npmjs.com/package/fallback-tool' " \
+                                  "and @href='/repositories/github/alice/app' " \
                                   "and text()='fallback-tool']")
     ).not_to be_nil
+    expect(response.body).to include('Nice Ruby app')
     expect(
       html_element(response.body, "//li[.//a[text()='fallback-tool']]//a[@href='https://github.com/alice/app' " \
-                                  "and text()='Repozytorium']")
+                                  "and text()='Projekt na GitHub']")
     ).not_to be_nil
     expect(
       html_element(response.body, "//li[.//a[text()='fallback-tool']]//a[" \
-                                  "@href='https://www.npmjs.com/package/fallback-tool' and text()='Rejestr']")
+                                  "@href='https://www.npmjs.com/package/fallback-tool' and text()='Pakiet']")
     ).not_to be_nil
   end
 

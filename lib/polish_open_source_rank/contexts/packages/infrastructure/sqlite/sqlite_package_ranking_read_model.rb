@@ -113,6 +113,7 @@ module PolishOpenSourceRank
                        MIN(scans.repository_kind) AS repository_kind,
                        MIN(scans.platform) AS repository_platform,
                        #{PackageRepositoryLinkSql.representative_url},
+                       #{PackageRepositoryLinkSql.representative_description},
                        #{owner_login_sql('MIN(scans.full_name)')} AS repository_owner_login
                 FROM registry_package_snapshots snapshots
                 INNER JOIN registry_packages packages
@@ -181,6 +182,7 @@ module PolishOpenSourceRank
                        MIN(scans.repository_kind) AS repository_kind,
                        MIN(scans.platform) AS repository_platform,
                        #{PackageRepositoryLinkSql.representative_url},
+                       #{PackageRepositoryLinkSql.representative_description},
                        #{owner_login_sql('MIN(scans.full_name)')} AS repository_owner_login
                 FROM registry_package_snapshots snapshots
                 INNER JOIN registry_packages packages
@@ -288,6 +290,7 @@ module PolishOpenSourceRank
                        scans.repository_kind,
                        scans.platform AS repository_platform,
                        COALESCE(user_repositories.html_url, org_repositories.html_url) AS repository_html_url,
+                       COALESCE(user_repositories.description, org_repositories.description) AS repository_description,
                        #{owner_login_sql('scans.full_name')} AS repository_owner_login
                 FROM registry_package_snapshots snapshots
                 INNER JOIN registry_packages packages
@@ -320,7 +323,8 @@ module PolishOpenSourceRank
 
             def package_profile_from(rows)
               first = rows.first
-              first.except(:repository_full_name, :repository_kind, :repository_platform, :repository_owner_login)
+              first.except(:repository_full_name, :repository_kind, :repository_platform, :repository_html_url,
+                           :repository_description, :repository_owner_login)
                    .merge(
                      repository_stars_count: rows.filter_map { |row| row[:repository_stars_count] }.max,
                      repository_stars_delta: rows.filter_map { |row| row[:repository_stars_delta] }.max,
@@ -343,9 +347,7 @@ module PolishOpenSourceRank
 
             def metric_row?(row, metric)
               value = row.fetch(metric.to_sym)
-              return value.to_i.positive? if metric.to_s == 'repository_stars_delta'
-
-              !value.nil?
+              metric.to_s == 'repository_stars_delta' ? value.to_i.positive? : !value.nil?
             end
 
             def ranking_sort_key(row, metric)
@@ -358,10 +360,9 @@ module PolishOpenSourceRank
 
             def repository_links(rows)
               rows.filter_map do |row|
-                next unless row[:repository_full_name]
-
-                row.slice(:repository_full_name, :repository_kind, :repository_platform, :repository_html_url,
-                          :repository_owner_login)
+                row[:repository_full_name] && row.slice(:repository_full_name, :repository_kind, :repository_platform,
+                                                        :repository_html_url, :repository_description,
+                                                        :repository_owner_login)
               end
             end
 

@@ -149,6 +149,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
       linked_repository_count: 2,
       repository_full_name: 'alice/app',
       repository_html_url: 'https://github.com/alice/app',
+      repository_description: 'Package source for alice/app',
       repository_owner_login: 'alice',
       repository_stars_count: 30,
       repository_stars_delta: 3
@@ -306,6 +307,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
         repository_kind: 'organization',
         repository_platform: 'github',
         repository_html_url: 'https://github.com/org/tool',
+        repository_description: 'Package source for org/tool',
         repository_owner_login: 'org'
       },
       {
@@ -313,6 +315,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
         repository_kind: 'user',
         repository_platform: 'github',
         repository_html_url: 'https://github.com/alice/app',
+        repository_description: 'Package source for alice/app',
         repository_owner_login: 'alice'
       }
     ]
@@ -477,6 +480,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
       github_id: repository_source_id,
       name: full_name.split('/').last,
       full_name: full_name,
+      description: "Package source for #{full_name}",
       html_url: "https://github.com/#{full_name}",
       fork: 0,
       archived: 0,
