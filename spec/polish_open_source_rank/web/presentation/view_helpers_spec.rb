@@ -4,8 +4,12 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::ViewHelpers do
   subject(:helper) do
     Class.new do
       include PolishOpenSourceRank::Web::Presentation::ViewHelpers
+
+      attr_accessor :current_locale
     end.new
   end
+
+  before { helper.current_locale = :pl }
 
   describe '#safe_external_url' do
     it 'keeps browser-safe HTTP URLs and trims surrounding whitespace' do
@@ -19,6 +23,28 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::ViewHelpers do
       expect(helper.safe_external_url('https://user:password@example.test/path')).to be_nil
       expect(helper.safe_external_url('/relative/path')).to be_nil
       expect(helper.safe_external_url("https://example.test/\nnext")).to be_nil
+    end
+  end
+
+  describe '#metric_value' do
+    it 'keeps full numbers for non-download metrics' do
+      expect(helper.metric_value(:stargazers_count, 12_345)).to eq('⭐ 12 345')
+    end
+
+    it 'compacts download metrics using Polish units' do
+      expect(helper.metric_value(:downloads_30d, 1_000)).to eq('📥 1 tys.')
+      expect(helper.metric_value(:downloads_total, 30_000)).to eq('📥 30 tys.')
+      expect(helper.metric_value(:downloads_total, 1_500_000)).to eq('📥 1,5 mln')
+      expect(helper.metric_value(:downloads_total, 2_000_000_000)).to eq('📥 2 mld')
+    end
+
+    it 'compacts download metrics using English units' do
+      helper.current_locale = :en
+
+      expect(helper.metric_value(:downloads_30d, 1_000)).to eq('📥 1K')
+      expect(helper.metric_value(:downloads_total, 30_000)).to eq('📥 30K')
+      expect(helper.metric_value(:downloads_total, 1_500_000)).to eq('📥 1.5M')
+      expect(helper.metric_value(:downloads_total, 2_000_000_000)).to eq('📥 2B')
     end
   end
 end

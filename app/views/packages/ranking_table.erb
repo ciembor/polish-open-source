@@ -20,20 +20,20 @@
             <% if row[:repository_description] && !row[:repository_description].empty? %>
               <span class="ranking-list__description"><%= h row[:repository_description] %></span>
             <% end %>
-            <div class="ranking-list__meta">
-              <% if repository_source_url %>
-                <a class="muted-link muted-link--standalone" href="<%= h repository_source_url %>"><%= h t('repositories.links.source_project', platform: platform_name(row.fetch(:repository_platform))) %></a>
-              <% end %>
-              <% if registry_url %>
-                <a class="muted-link muted-link--standalone" href="<%= h registry_url %>"><%= h t('packages.links.package') %></a>
-              <% end %>
-            </div>
           </div>
           <div class="ranking-list__metrics">
             <span class="metric" title="<%= h metric_label %>" aria-label="<%= h metric_label %>: <%= h number(row.fetch(metric)) %>">
               <%= h metric_value(metric, row.fetch(metric)) %>
             </span>
           </div>
+          <span class="ranking-list__links ranking-list__links--edge">
+            <% if repository_source_url %>
+              <a class="muted-link" href="<%= h repository_source_url %>"><%= h platform_name(row.fetch(:repository_platform)) %></a>
+            <% end %>
+            <% if registry_url %>
+              <a class="muted-link" href="<%= h registry_url %>"><%= h t('packages.links.package') %></a>
+            <% end %>
+          </span>
         </li>
       <% end %>
     </ol>

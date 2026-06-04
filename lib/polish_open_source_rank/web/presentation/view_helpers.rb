@@ -18,6 +18,12 @@ module PolishOpenSourceRank
           members_count: '👥',
           merged_pull_requests_count: '🚀'
         }.freeze
+        DOWNLOAD_METRICS = %i[downloads_30d downloads_7d downloads_total].freeze
+        COMPACT_NUMBER_UNITS = [
+          [1_000_000_000, { pl: 'mld', en: 'B' }],
+          [1_000_000, { pl: 'mln', en: 'M' }],
+          [1_000, { pl: 'tys.', en: 'K' }]
+        ].freeze
 
         def h(value)
           Rack::Utils.escape_html(value.to_s)
@@ -33,8 +39,37 @@ module PolishOpenSourceRank
 
         def metric_value(metric, value)
           icon = METRIC_ICONS[metric.to_sym]
-          formatted = number(value)
+          formatted = metric_number(metric, value)
           icon ? "#{icon} #{formatted}" : formatted
+        end
+
+        def metric_number(metric, value)
+          return compact_number(value) if DOWNLOAD_METRICS.include?(metric.to_sym)
+
+          number(value)
+        end
+
+        def compact_number(value)
+          integer = value.to_i
+          divisor, units = COMPACT_NUMBER_UNITS.find { |threshold, _units| integer >= threshold }
+          return number(integer) unless divisor
+
+          compact_value = compact_number_value(integer, divisor)
+          compact_number_with_unit(compact_value, units)
+        end
+
+        def compact_number_value(value, divisor)
+          scaled = value.to_f / divisor
+          return scaled.floor.to_s if scaled >= 10
+
+          ((scaled * 10).floor / 10.0).to_s.sub(/\.0\z/, '')
+        end
+
+        def compact_number_with_unit(value, units)
+          unit = units.fetch(current_locale.to_sym, units.fetch(:en))
+          return "#{value}#{unit}" if current_locale.to_sym == :en
+
+          "#{value.tr('.', ',')} #{unit}"
         end
 
         def t(key, values = {})

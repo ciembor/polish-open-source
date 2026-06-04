@@ -1162,6 +1162,10 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('Shared tooling')
     expect(response.body).to include('href="/latest/languages/Ruby/repositories/top"')
     expect(response.body).to include('href="/latest/languages/Ruby/users/top"')
+    expect(
+      html_element(response.body, "//li[.//a[text()='alice/app']]//span[contains(@class, 'ranking-list__links')]" \
+                                  "/a[@href='https://github.com/alice/app' and text()='GitHub']")
+    ).not_to be_nil
   end
 
   def expect_period_language_page(response)
@@ -1213,7 +1217,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('Top 10 według pobrań z 30 dni')
     expect(response.body).to include('Top 10 według gwiazdek')
     expect(response.body).to include('Top 10 popularnych w miesiącu')
-    expect(response.body).to include('📥 1 000')
+    expect(response.body).to include('📥 1 tys.')
     expect(response.body).to include('⭐ 12 345')
     expect(response.body).to include('ranking-grid ranking-grid--odd-package-metrics')
     expect(response.body).to include('href="/latest/packages/npm/users/top"')
@@ -1227,11 +1231,13 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     ).not_to be_nil
     expect(response.body).to include('Nice Ruby app')
     expect(
-      html_element(response.body, "//li[.//a[text()='fallback-tool']]//a[@href='https://github.com/alice/app' " \
-                                  "and text()='Projekt na GitHub']")
+      html_element(response.body, "//li[.//a[text()='fallback-tool']]//span[contains(@class, 'ranking-list__links')]" \
+                                  "/a[@href='https://github.com/alice/app' " \
+                                  "and text()='GitHub']")
     ).not_to be_nil
     expect(
-      html_element(response.body, "//li[.//a[text()='fallback-tool']]//a[" \
+      html_element(response.body, "//li[.//a[text()='fallback-tool']]//span[contains(@class, 'ranking-list__links')]" \
+                                  '/a[' \
                                   "@href='https://www.npmjs.com/package/fallback-tool' and text()='Pakiet']")
     ).not_to be_nil
   end
