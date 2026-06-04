@@ -150,6 +150,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
       repository_full_name: 'alice/app',
       repository_html_url: 'https://github.com/alice/app',
       repository_description: 'Package source for alice/app',
+      repository_owner_name: 'Alice Example',
       repository_owner_login: 'alice',
       repository_stars_count: 30,
       repository_stars_delta: 3
@@ -447,6 +448,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
                 platform: 'github',
                 github_id: repository_source_id + 1000,
                 login: owner_login,
+                name: "#{owner_login.capitalize} Example",
                 html_url: "https://github.com/#{owner_login}",
                 updated_at: '2026-05-23T12:00:00Z'
               )
@@ -462,6 +464,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
                 platform: 'github',
                 github_id: repository_source_id + 1000,
                 login: owner_login,
+                name: "#{owner_login.capitalize} Example",
                 html_url: "https://github.com/#{owner_login}",
                 updated_at: '2026-05-23T12:00:00Z'
               )

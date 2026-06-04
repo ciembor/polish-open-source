@@ -18,6 +18,10 @@ module PolishOpenSourceRank
                                    'repository_description')
             end
 
+            def representative_owner_name
+              representative_value('COALESCE(user_owners.name, org_owners.name)', 'repository_owner_name')
+            end
+
             def joins
               <<~SQL
                 LEFT JOIN repositories user_repositories
@@ -28,6 +32,14 @@ module PolishOpenSourceRank
                   ON scans.repository_kind = 'organization'
                  AND org_repositories.platform = scans.platform
                  AND org_repositories.github_id = scans.repository_source_id
+                LEFT JOIN users user_owners
+                  ON scans.repository_kind = 'user'
+                 AND user_owners.platform = scans.platform
+                 AND user_owners.github_id = user_repositories.owner_github_id
+                LEFT JOIN organizations org_owners
+                  ON scans.repository_kind = 'organization'
+                 AND org_owners.platform = scans.platform
+                 AND org_owners.github_id = org_repositories.organization_github_id
               SQL
             end
 

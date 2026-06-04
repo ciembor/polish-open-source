@@ -6,6 +6,7 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PackagePathHelpers do
       include PolishOpenSourceRank::Web::Presentation::LogoIconHelpers
       include PolishOpenSourceRank::Web::Presentation::ViewHelpers
       include PolishOpenSourceRank::Web::Presentation::ProfilePathHelpers
+      include PolishOpenSourceRank::Web::Presentation::PackageOwnerHelpers
       include PolishOpenSourceRank::Web::Presentation::PackagePathHelpers
 
       def app_path(path)
@@ -77,6 +78,20 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PackagePathHelpers do
     end
   end
 
+  describe '#package_owner_display_name' do
+    it 'adds the login to the owner name when both are available' do
+      row = repository_row(repository_owner_name: 'Alice Example', repository_owner_login: 'alice')
+
+      expect(helper.package_owner_display_name(row)).to eq('Alice Example (alice)')
+    end
+
+    it 'uses the login alone when the owner name is missing or duplicated' do
+      expect(helper.package_owner_display_name(repository_row(repository_owner_login: 'alice'))).to eq('alice')
+      expect(helper.package_owner_display_name(repository_row(repository_owner_name: 'Alice',
+                                                              repository_owner_login: 'alice'))).to eq('alice')
+    end
+  end
+
   def repository_row(attributes = {})
     {
       registry_url: nil,
@@ -84,7 +99,9 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PackagePathHelpers do
       repository_platform: 'github',
       repository_full_name: 'alice/app',
       repository_html_url: 'https://github.com/alice/app',
-      repository_kind: 'user'
+      repository_kind: 'user',
+      repository_owner_name: nil,
+      repository_owner_login: nil
     }.merge(attributes)
   end
 end

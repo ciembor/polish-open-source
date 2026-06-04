@@ -114,6 +114,7 @@ module PolishOpenSourceRank
                        MIN(scans.platform) AS repository_platform,
                        #{PackageRepositoryLinkSql.representative_url},
                        #{PackageRepositoryLinkSql.representative_description},
+                       #{PackageRepositoryLinkSql.representative_owner_name},
                        #{owner_login_sql('MIN(scans.full_name)')} AS repository_owner_login
                 FROM registry_package_snapshots snapshots
                 INNER JOIN registry_packages packages
@@ -183,6 +184,7 @@ module PolishOpenSourceRank
                        MIN(scans.platform) AS repository_platform,
                        #{PackageRepositoryLinkSql.representative_url},
                        #{PackageRepositoryLinkSql.representative_description},
+                       #{PackageRepositoryLinkSql.representative_owner_name},
                        #{owner_login_sql('MIN(scans.full_name)')} AS repository_owner_login
                 FROM registry_package_snapshots snapshots
                 INNER JOIN registry_packages packages

@@ -233,6 +233,14 @@
   white-space: nowrap;
 }
 
+.ranking-list__title-meta {
+  color: var(--muted);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .ranking-list__description,
 .ranking-list__meta,
 .ranking-list__empty {

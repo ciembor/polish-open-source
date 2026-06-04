@@ -6,6 +6,7 @@ module PolishOpenSourceRank
       module RoutingHelpers
         include LanguagePathHelpers
         include NavigationHelpers
+        include PackageOwnerHelpers
         include PackagePathHelpers
         include ProfilePathHelpers
         include RankingSectionPathHelpers

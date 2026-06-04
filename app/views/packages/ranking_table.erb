@@ -7,6 +7,7 @@
         <% registry_url = safe_external_url(row[:registry_url]) %>
         <% repository_profile_url = package_repository_profile_link(row) %>
         <% repository_source_url = package_repository_link(row) %>
+        <% owner_display_name = package_owner_display_name(row) %>
         <li class="ranking-list__item<% if place_class %> <%= h place_class %><% end %>">
           <span class="rank-cell rank-mark"><%= index + 1 %></span>
           <div class="ranking-list__body">
@@ -15,6 +16,9 @@
                 <a class="primary-link" href="<%= h repository_profile_url %>"><%= h row.fetch(:package_name) %></a>
               <% else %>
                 <span><%= h row.fetch(:package_name) %></span>
+              <% end %>
+              <% if owner_display_name %>
+                <span class="ranking-list__title-meta"> - <%= h owner_display_name %></span>
               <% end %>
             </div>
             <% if row[:repository_description] && !row[:repository_description].empty? %>
