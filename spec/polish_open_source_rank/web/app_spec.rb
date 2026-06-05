@@ -560,6 +560,10 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     user = bootstrapped_database(database_path).dataset(:users).where(platform: 'github', login: 'alice').first
 
     expect(profile.body).to include('Chcesz usunąć tę stronę z bazy danych? Kliknij')
+    repositories_heading_index = profile.body.index('Najlepsze projekty')
+    deletion_prompt_index = profile.body.index('Chcesz usunąć tę stronę z bazy danych? Kliknij')
+
+    expect(repositories_heading_index).to be < deletion_prompt_index
     expect(profile.body).to include('Czy na pewno chcesz usunąć twój profil z bazy danych?')
     expect(invalid_delete.status).to eq(403)
     expect(delete.status).to eq(303)

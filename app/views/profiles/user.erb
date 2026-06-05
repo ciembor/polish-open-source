@@ -85,6 +85,18 @@
   </div>
 </section>
 
+<section class="profile-section profile-section--alt" aria-labelledby="profile-repositories-heading">
+  <div class="content">
+    <h2 id="profile-repositories-heading"><%= h t('users.repositories.title') %></h2>
+    <%= erb :"profiles/repository_grid", locals: {
+      repositories: @repositories,
+      empty_translation_key: 'users.repositories.empty',
+      path_builder: method(:repository_profile_path),
+      show_homepage: true
+    } %>
+  </div>
+</section>
+
 <% if @show_profile_delete_control %>
   <section class="profile-section profile-delete-section" aria-labelledby="profile-delete-heading">
     <div class="content profile-delete">
@@ -106,16 +118,4 @@
     </div>
   </section>
 <% end %>
-
-<section class="profile-section profile-section--alt" aria-labelledby="profile-repositories-heading">
-  <div class="content">
-    <h2 id="profile-repositories-heading"><%= h t('users.repositories.title') %></h2>
-    <%= erb :"profiles/repository_grid", locals: {
-      repositories: @repositories,
-      empty_translation_key: 'users.repositories.empty',
-      path_builder: method(:repository_profile_path),
-      show_homepage: true
-    } %>
-  </div>
-</section>
 <% end %>
