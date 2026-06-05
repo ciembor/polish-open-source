@@ -2,7 +2,11 @@
 
 RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway do
   let(:configuration) do
-    Struct.new(:discord_guild_id, :discord_bot_token).new('guild-1', 'bot-token')
+    Struct.new(:discord_guild_id, :discord_bot_token) do
+      def http_timeouts
+        { open_timeout: 1, read_timeout: 1, write_timeout: 1 }
+      end
+    end.new('guild-1', 'bot-token')
   end
 
   it 'creates roles with optional colors' do
@@ -58,5 +62,15 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::Discor
                                                                  { id: 'guild-1', type: 0, allow: '0', deny: '3072' },
                                                                  { id: 'role-1', type: 0, allow: '3072', deny: '0' }
                                                                ])
+  end
+
+  it 'counts JSON request timeouts before reraising them' do
+    gateway = described_class.new(configuration)
+    PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::OAuthHTTP.timeout_count = 0
+
+    allow(Net::HTTP).to receive(:start).and_raise(Net::ReadTimeout)
+
+    expect { gateway.create_invite(channel_id: 'channel-1') }.to raise_error(Net::ReadTimeout)
+    expect(PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::OAuthHTTP.timeout_count).to eq(1)
   end
 end

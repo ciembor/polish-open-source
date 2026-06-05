@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
-RSpec.describe PolishOpenSourceRank::Infrastructure::SQLiteRepositoryJobProgressSections do
+RSpec.describe(
+  PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteRepositoryJobProgressSections
+) do
   let(:database) do
     PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(
       File.join(Dir.mktmpdir, 'repository-progress.sqlite3')

@@ -80,23 +80,23 @@ end
 
 class FailingDiscordGateway
   def invite_available?(_code)
-    raise PolishOpenSourceRank::Web::Auth::DiscordGateway::Error
+    raise PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway::Error
   end
 
   def create_invite(channel_id:)
-    raise PolishOpenSourceRank::Web::Auth::DiscordGateway::Error, channel_id
+    raise PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway::Error, channel_id
   end
 end
 
 class FailingWelcomeDiscordGateway < FakeDiscordGateway
   def post_welcome_message(**_attributes)
-    raise PolishOpenSourceRank::Web::Auth::DiscordGateway::Error
+    raise PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway::Error
   end
 end
 
 class FailingMemberSyncDiscordGateway < FakeDiscordGateway
   def sync_member(**_attributes)
-    raise PolishOpenSourceRank::Web::Auth::DiscordGateway::Error
+    raise PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway::Error
   end
 end
 

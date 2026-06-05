@@ -5,4 +5,6 @@ require_relative '../lib/polish_open_source_rank'
 
 configuration = PolishOpenSourceRank::Configuration.load
 
-PolishOpenSourceRank::Infrastructure::DiscordInviteBot.build(configuration: configuration).run
+PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordInviteBot
+  .build(configuration: configuration)
+  .run

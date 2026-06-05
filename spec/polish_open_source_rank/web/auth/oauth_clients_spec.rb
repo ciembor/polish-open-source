@@ -228,10 +228,21 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
     end.to raise_error(PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway::Error)
   end
 
+  it 'raises typed OAuth errors for failed token exchange responses' do
+    configuration = PolishOpenSourceRank::Configuration.load
+    client = described_class.new(configuration)
+    capture_http_requests([response('401', 'Unauthorized', '{"message":"bad credentials"}')])
+
+    expect do
+      client.exchange_code(code: 'bad-code', redirect_uri: 'https://rank/auth/github/callback')
+    end.to raise_error(PolishOpenSourceRank::Web::Auth::GitHubOAuthClient::Error, /401/)
+  end
+
   it 'counts OAuth and Discord API timeouts before reraising them' do
     configuration = PolishOpenSourceRank::Configuration.load
     github_client = described_class.new(configuration)
     gateway = PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway.new(configuration)
+    PolishOpenSourceRank::Web::Auth::OAuthHTTP.timeout_count = 0
     PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::OAuthHTTP.timeout_count = 0
 
     allow(Net::HTTP).to receive(:start).and_raise(Net::ReadTimeout)
@@ -250,13 +261,14 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
       )
     end.to raise_error(Net::OpenTimeout)
 
-    expect(PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::OAuthHTTP.timeout_count).to eq(2)
+    expect(PolishOpenSourceRank::Web::Auth::OAuthHTTP.timeout_count).to eq(1)
+    expect(PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::OAuthHTTP.timeout_count).to eq(1)
   end
 
   it 'maps configured Discord role keys to role IDs' do
     ENV['DISCORD_ROLE_TOP_100_CITY_KRAKOW'] = 'krakow-role'
     ENV['DISCORD_ROLE_TOP_100_PL'] = 'top-100-role'
-    map = PolishOpenSourceRank::Web::Auth::DiscordRoleMap.new
+    map = PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordRoleMap.new
 
     expect(map.role_ids(%w[DISCORD_ROLE_TOP_100_PL MISSING])).to eq(['top-100-role'])
     expect(map.managed_role_ids).to include('top-100-role', 'krakow-role')

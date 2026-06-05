@@ -2,7 +2,9 @@
 
 RSpec.describe PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteJobProgressReadModel do
   it 'keeps the operations read model behind the extracted namespace' do
-    expect(described_class.superclass).to eq(PolishOpenSourceRank::Infrastructure::SQLiteJobProgress)
+    expect(described_class.superclass).to eq(
+      PolishOpenSourceRank::Contexts::Operations::Infrastructure::SQLite::SQLiteJobProgress
+    )
   end
 
   it 'reports independent monthly and package sections with duration estimates' do
