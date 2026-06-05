@@ -55,7 +55,7 @@
             <a class="nav__link js-secondary-control js-collapsible-control <%= active_nav_link_class(:languages) %>" href="<%= h app_path(language_index_path(period_slug: 'latest')) %>"><%= h t('nav.languages') %></a>
             <a class="nav__link js-secondary-control js-collapsible-control <%= active_nav_link_class(:packages) %>" href="<%= h app_path(package_index_path(period_slug: 'latest')) %>"><%= h t('nav.packages') %></a>
             <a class="nav__link js-secondary-control js-collapsible-control <%= active_nav_link_class(:editions) %>" href="<%= h app_path(editions_path) %>"><%= h t('nav.editions') %></a>
-            <a class="nav__link js-secondary-control js-collapsible-control <%= active_nav_link_class(:about) %>" href="<%= h app_path('/about') %>"><%= h t('nav.about') %></a>
+            <a class="nav__link js-secondary-control js-collapsible-control <%= active_nav_link_class(:about) %>" href="<%= h app_path(localized_public_path('/about', locale: current_locale)) %>"><%= h t('nav.about') %></a>
             <% if current_user %>
               <a class="nav__link js-secondary-control js-collapsible-control <%= active_nav_link_class(:profile) %>" href="<%= h app_path(user_profile_path(current_user)) %>"><%= h t('nav.profile') %></a>
             <% end %>

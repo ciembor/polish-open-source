@@ -712,6 +712,26 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect_locale_cookie(prefixed_polish_redirect, 'locale=pl')
   end
 
+  it 'keeps signed-in navigation on the selected English locale' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
+    request = Rack::MockRequest.new(described_class)
+
+    github_callback = sign_in_with_github(request)
+    english_redirect = request.get('/latest?lang=en', 'HTTP_COOKIE' => cookie_header(github_callback))
+    english_cookie = cookie_header(github_callback, english_redirect)
+    english_latest = request.get('/en/latest', 'HTTP_COOKIE' => english_cookie)
+    english_about = request.get('/en/about', 'HTTP_COOKIE' => english_cookie)
+    english_profile = request.get('/en/users/github/alice', 'HTTP_COOKIE' => english_cookie)
+
+    expect(english_redirect.location).to eq('http://example.org/en/latest')
+    expect(english_latest.body).to include('<html lang="en">')
+    expect(english_latest.body).to include('href="/en/about"')
+    expect(english_latest.body).to include('href="/en/users/github/alice"')
+    expect(english_about.body).to include('<html lang="en">')
+    expect(english_profile.body).to include('<html lang="en">')
+  end
+
   it 'renders links and assets under a configured app base path' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     ENV['BASE_URL'] = 'https://rank.example'
@@ -1678,8 +1698,10 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     )
   end
 
-  def cookie_header(response)
-    Array(response['Set-Cookie']).map { |cookie| cookie.split(';').first }.join('; ')
+  def cookie_header(*responses)
+    responses.flat_map { |response| Array(response['Set-Cookie']) }
+             .map { |cookie| cookie.split(';').first }
+             .join('; ')
   end
 
   def internal_auth_env(username: 'internal', password: 'local-internal-basic-auth-password')
