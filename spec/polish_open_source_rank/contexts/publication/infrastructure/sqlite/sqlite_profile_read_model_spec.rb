@@ -112,6 +112,14 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     expect(read_model.repository_profile('github', 'alice/missing', period_start: period)).to be_nil
   end
 
+  it 'hides user avatars flagged in the database' do
+    seed_user_record(id: 1, login: 'alice', avatar_url: 'https://avatars.example/alice.png', avatar_hidden: true)
+
+    profile = read_model.user_profile('github', 'alice', period_start: nil)
+
+    expect(profile).to include(login: 'alice', avatar_url: nil)
+  end
+
   it 'lists every public user identity for sitemap rendering' do
     seed_user_record(id: 1, login: 'alice')
     seed_user_record(id: 2, login: 'bob')
@@ -184,14 +192,24 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
                                       '2026-05-01T00:10:00Z'])
   end
 
-  def seed_user_record(id:, login:, city: nil, country: nil)
+  def seed_user_record(id:, login:, city: nil, country: nil, avatar_url: nil, avatar_hidden: false)
     database.execute(
       <<~SQL.strip,
         INSERT OR IGNORE INTO users(
-          platform, github_id, login, city, country, html_url, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+          platform, github_id, login, city, country, html_url, avatar_url, avatar_hidden, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       SQL
-      ['github', id, login, city, country, "https://github.com/#{login}", '2026-05-01T00:01:00Z']
+      [
+        'github',
+        id,
+        login,
+        city,
+        country,
+        "https://github.com/#{login}",
+        avatar_url,
+        avatar_hidden ? 1 : 0,
+        '2026-05-01T00:01:00Z'
+      ]
     )
   end
 

@@ -14,7 +14,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration do
     expect(database.fetch_value(package_table_sql('package_crawl_runs'))).to eq(1)
     expect(database.fetch_value(package_table_sql('registry_package_snapshots'))).to eq(1)
     expect(database.fetch_value(package_table_sql('public_snapshot_publications'))).to eq(1)
-    expect(database.table_info('users').map { |column| column.fetch('name') }).to include('platform')
+    expect(database.table_info('users').map { |column| column.fetch('name') }).to include('platform', 'avatar_hidden')
     expect(database.table_info('user_monthly_stats').map { |column| column.fetch('name') })
       .to include('merged_pull_requests_count')
     expect(database.table_info('organization_monthly_stats').map { |column| column.fetch('name') })
@@ -119,6 +119,7 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration do
 
     expect(database.table_info('user_monthly_stats').map { |column| column.fetch('name') })
       .to include('merged_pull_requests_count')
+    expect(database.table_info('users').map { |column| column.fetch('name') }).to include('avatar_hidden')
     expect(database.table_info('organization_monthly_stats').map { |column| column.fetch('name') })
       .to include('merged_pull_requests_count', 'members_count')
   end

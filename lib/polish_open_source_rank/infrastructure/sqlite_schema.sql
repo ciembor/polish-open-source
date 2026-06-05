@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS users (
   homepage TEXT,
   html_url TEXT NOT NULL,
   avatar_url TEXT,
+  avatar_hidden INTEGER NOT NULL DEFAULT 0,
   updated_at TEXT NOT NULL,
   PRIMARY KEY(platform, github_id),
   UNIQUE(platform, login)
