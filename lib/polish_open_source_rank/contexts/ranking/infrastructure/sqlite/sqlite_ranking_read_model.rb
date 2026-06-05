@@ -69,8 +69,12 @@ module PolishOpenSourceRank
               sql_scope, params = user_scope(scope)
               order_expression = order_expression(order_column)
               database.fetch_all(<<~SQL, [period_start, *params])
-                SELECT users.platform, users.login, users.name, users.email, users.homepage, users.html_url,
-                       users.avatar_url, stats.city, stats.country, stats.public_repo_count, stats.total_stars,
+                SELECT users.platform, users.login, users.profile_deleted,
+                       CASE users.profile_deleted WHEN 1 THEN NULL ELSE users.name END AS name,
+                       CASE users.profile_deleted WHEN 1 THEN NULL ELSE users.email END AS email,
+                       users.homepage, users.html_url,
+                       CASE users.avatar_hidden WHEN 1 THEN NULL ELSE users.avatar_url END AS avatar_url,
+                       stats.city, stats.country, stats.public_repo_count, stats.total_stars,
                        stats.monthly_stars_delta, stats.merged_pull_requests_count
                 FROM user_monthly_stats stats
                 INNER JOIN users ON users.platform = stats.platform AND users.github_id = stats.user_github_id

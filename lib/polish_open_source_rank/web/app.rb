@@ -14,6 +14,7 @@ module PolishOpenSourceRank
       include Controllers::LanguageRepositoryRankingController
       include Controllers::PackageController
       include Controllers::PackageRankingController
+      include Controllers::ProfileDeletionController
       include Controllers::PublicController
       include Controllers::SharedController
 

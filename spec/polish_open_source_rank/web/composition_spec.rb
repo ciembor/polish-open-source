@@ -76,4 +76,41 @@ RSpec.describe PolishOpenSourceRank::Web::Composition do
       public_database.execute('INSERT INTO markers(value) VALUES (?)', ['write'])
     end.to raise_error(Sequel::DatabaseError)
   end
+
+  it 'redacts public profiles in both working and public database files' do
+    working_path = seeded_profile_database_path
+    public_path = seeded_profile_database_path
+    configuration = instance_double(
+      PolishOpenSourceRank::Configuration,
+      database_path: working_path,
+      public_database_path: public_path
+    )
+
+    described_class.new(configuration: configuration).publication.delete_public_profile.call(
+      platform: 'github',
+      source_id: 1
+    )
+
+    expect(profile_deleted?(working_path)).to be(true)
+    expect(profile_deleted?(public_path)).to be(true)
+  end
+
+  def seeded_profile_database_path
+    File.join(Dir.mktmpdir, 'profile.sqlite3').tap do |path|
+      database = PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(path)
+      database.execute_batch(PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql)
+      database.execute(
+        'INSERT INTO users(platform, github_id, login, name, html_url, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+        ['github', 1, 'alice', 'Alice', 'https://github.com/alice', '2026-06-01T00:00:00Z']
+      )
+      database.close
+    end
+  end
+
+  def profile_deleted?(path)
+    database = PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(path)
+    database.dataset(:users).where(platform: 'github', github_id: 1).first.fetch(:profile_deleted) == 1
+  ensure
+    database&.close
+  end
 end

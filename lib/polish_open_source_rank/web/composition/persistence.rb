@@ -27,6 +27,13 @@ module PolishOpenSourceRank
           )
         end
 
+        def public_writable_database
+          public_path = configuration.public_database_path
+          return database if public_path == configuration.database_path
+
+          @public_writable_database ||= Shared::Infrastructure::SQLite::Database.open(public_path)
+        end
+
         private
 
         attr_reader :configuration

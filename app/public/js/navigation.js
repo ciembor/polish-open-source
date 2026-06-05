@@ -200,7 +200,40 @@ function handleBadgeMarkdownCopy(event) {
   copyText(button.dataset.copyText || "").then(() => markCopyButton(button));
 }
 
+function profileDeleteModal(button) {
+  const target = button.dataset.target;
+  return target ? document.querySelector(target) : null;
+}
+
+function closeProfileDeleteModal(modal) {
+  modal.hidden = true;
+}
+
+function handleProfileDeleteModal(event) {
+  const openButton = event.target.closest(".js-profile-delete-open");
+  if (openButton) {
+    const modal = profileDeleteModal(openButton);
+    if (modal) {
+      event.preventDefault();
+      modal.hidden = false;
+      modal.querySelector(".js-profile-delete-cancel")?.focus();
+    }
+    return;
+  }
+
+  const cancelButton = event.target.closest(".js-profile-delete-cancel");
+  if (cancelButton) {
+    closeProfileDeleteModal(cancelButton.closest(".js-profile-delete-modal"));
+    return;
+  }
+
+  if (event.target.classList.contains("js-profile-delete-modal")) {
+    closeProfileDeleteModal(event.target);
+  }
+}
+
 document.addEventListener("click", handleBadgeMarkdownCopy);
+document.addEventListener("click", handleProfileDeleteModal);
 window.addEventListener("resize", scheduleNavLayout);
 
 window.addEventListener("DOMContentLoaded", () => {

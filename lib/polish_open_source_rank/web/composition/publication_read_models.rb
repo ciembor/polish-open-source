@@ -34,8 +34,11 @@ module PolishOpenSourceRank
         end
 
         def public_profile_repository
-          @public_profile_repository ||=
-            Contexts::Publication::Infrastructure::SQLite::SQLitePublicProfileRepository.new(persistence.database)
+          @public_profile_repository ||= public_profile_repositories.then do |repositories|
+            next repositories.first if repositories.one?
+
+            Contexts::Publication::Infrastructure::SQLite::ReplicatedPublicProfileRepository.new(repositories)
+          end
         end
 
         def edition
@@ -48,6 +51,13 @@ module PolishOpenSourceRank
         private
 
         attr_reader :persistence
+
+        def public_profile_repositories
+          databases = [persistence.database, persistence.public_writable_database].uniq(&:path)
+          databases.map do |database|
+            Contexts::Publication::Infrastructure::SQLite::SQLitePublicProfileRepository.new(database)
+          end
+        end
       end
     end
   end

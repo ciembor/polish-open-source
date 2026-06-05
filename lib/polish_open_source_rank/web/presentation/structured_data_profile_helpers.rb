@@ -9,6 +9,7 @@ module PolishOpenSourceRank
         def profile_schema
           return repository_owner_profile_schema if @repository
           return organization_profile_schema(@organization) if @organization
+          return deleted_profile_schema if @profile[:profile_deleted] == 1
 
           profile = {
             '@type' => 'Person',
@@ -19,6 +20,14 @@ module PolishOpenSourceRank
           }
           add_optional_profile_fields(profile)
           profile
+        end
+
+        def deleted_profile_schema
+          {
+            '@type' => 'Person',
+            'name' => @profile.fetch(:login),
+            'url' => canonical_url
+          }
         end
 
         def add_optional_profile_fields(profile)

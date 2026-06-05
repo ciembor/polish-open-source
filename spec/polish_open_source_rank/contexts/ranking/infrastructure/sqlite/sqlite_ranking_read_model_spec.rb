@@ -37,6 +37,21 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     expect(read_model.ranked_users('poland', period, 'total_stars', limit: 0).length).to eq(1)
   end
 
+  it 'keeps deleted users in ranking order while marking their profile link as unavailable' do
+    seed_user(id: 1, login: 'alice', city: 'Kraków', total_stars: 30, delta: 0, activity: 10)
+    seed_user(id: 2, login: 'bob', city: 'Kraków', total_stars: 20, delta: 0, activity: 5, profile_deleted: true)
+
+    ranking = read_model.ranked_users('poland', period, 'total_stars')
+
+    expect(ranking.map { it.fetch(:login) }).to eq(%w[alice bob])
+    expect(ranking.last).to include(
+      login: 'bob',
+      profile_deleted: 1,
+      name: nil,
+      html_url: 'https://github.com/bob'
+    )
+  end
+
   it 'accepts ranking policy metric keys for callers outside SQL translation' do
     seed_user(id: 1, login: 'alice', city: 'Kraków', total_stars: 30, delta: 0, activity: 10)
     seed_repository(
@@ -160,13 +175,22 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     '2026-04-01'
   end
 
-  def seed_user(id:, login:, city:, total_stars:, delta:, activity:)
+  def seed_user(**attributes)
+    login = attributes.fetch(:login)
     database.execute(
-      'INSERT INTO users(platform, github_id, login, html_url, updated_at) VALUES (?, ?, ?, ?, ?)',
-      ['github', id, login, "https://github.com/#{login}", '2026-05-01T00:00:00Z']
+      <<~SQL,
+        INSERT INTO users(platform, github_id, login, name, html_url, profile_deleted, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      SQL
+      ['github', attributes.fetch(:id), login, login.capitalize, "https://github.com/#{login}",
+       attributes.fetch(:profile_deleted, false) ? 1 : 0,
+       '2026-05-01T00:00:00Z']
     )
-    database.execute(user_stats_sql, [period, 'github', id, login, city, 'Poland', 1, total_stars, delta, activity,
-                                      '2026-05-01T00:00:00Z'])
+    database.execute(
+      user_stats_sql,
+      [period, 'github', attributes.fetch(:id), login, attributes.fetch(:city), 'Poland', 1,
+       attributes.fetch(:total_stars), attributes.fetch(:delta), attributes.fetch(:activity), '2026-05-01T00:00:00Z']
+    )
   end
 
   def seed_repository(attributes)

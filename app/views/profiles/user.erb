@@ -1,5 +1,13 @@
 <%= erb :"profiles/subject_hero", locals: { record: @profile, translation_scope: 'users', translation_value_key: :user } %>
 
+<% if @profile[:profile_deleted] == 1 %>
+  <section class="profile-section profile-section--compact" aria-labelledby="profile-deleted-heading">
+    <div class="content profile-deleted">
+      <h2 id="profile-deleted-heading"><%= h t('users.deleted.title') %></h2>
+      <p><%= h t('users.deleted.body') %></p>
+    </div>
+  </section>
+<% else %>
 <% top_repository = @repositories.first %>
 <% spotlight_items = [
   { label: t('users.spotlight.country_rank'), value: (@profile[:elite_rank] ? "##{@profile[:elite_rank]}" : '-') }
@@ -77,6 +85,28 @@
   </div>
 </section>
 
+<% if @show_profile_delete_control %>
+  <section class="profile-section profile-delete-section" aria-labelledby="profile-delete-heading">
+    <div class="content profile-delete">
+      <h2 id="profile-delete-heading" class="visually-hidden"><%= h t('users.delete.title') %></h2>
+      <p>
+        <%= h t('users.delete.prompt_prefix') %>
+        <button class="profile-delete__link js-profile-delete-open" type="button" data-target="#profile-delete-modal"><%= h t('users.delete.link') %></button>.
+      </p>
+      <div id="profile-delete-modal" class="profile-delete-modal js-profile-delete-modal" role="dialog" aria-modal="true" aria-labelledby="profile-delete-modal-heading" hidden>
+        <div class="profile-delete-modal__panel">
+          <p id="profile-delete-modal-heading"><%= h t('users.delete.confirm') %></p>
+          <form class="profile-delete-modal__actions" method="post" action="<%= h app_path("#{user_profile_path(@profile)}/delete") %>">
+            <input type="hidden" name="csrf_token" value="<%= h csrf_token %>">
+            <button class="profile-delete-modal__confirm" type="submit"><%= h t('users.delete.confirm_yes') %></button>
+            <button class="profile-delete-modal__cancel js-profile-delete-cancel" type="button"><%= h t('users.delete.confirm_no') %></button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+<% end %>
+
 <section class="profile-section profile-section--alt" aria-labelledby="profile-repositories-heading">
   <div class="content">
     <h2 id="profile-repositories-heading"><%= h t('users.repositories.title') %></h2>
@@ -88,3 +118,4 @@
     } %>
   </div>
 </section>
+<% end %>

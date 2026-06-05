@@ -2,6 +2,7 @@
   <div class="content profile-hero__inner">
     <p class="eyebrow"><%= h platform_name(record.fetch(:platform)) %></p>
     <div class="profile-identity">
+      <% profile_deleted = record[:profile_deleted] == 1 %>
       <% avatar_url = safe_external_url(record[:avatar_url]) %>
       <% source_url = safe_external_url(record[:html_url]) %>
       <% homepage_url = safe_external_url(record[:homepage]) %>
@@ -13,20 +14,26 @@
       <div>
         <div class="profile-title-row">
           <h1><%= h(record[:name].to_s.empty? ? record.fetch(:login) : record[:name]) %></h1>
-          <%= erb :"shared/elite_medal", locals: { rank: record[:elite_rank], size: "large" } %>
-        </div>
-        <p class="profile-login">@<%= h record.fetch(:login) %></p>
-        <div class="profile-actions">
-          <% if source_url %>
-            <a class="profile-action" href="<%= h source_url %>"><%= h t("#{translation_scope}.links.source_profile", platform: platform_name(record.fetch(:platform))) %></a>
-          <% end %>
-          <% if homepage_url %>
-            <a class="profile-action" href="<%= h homepage_url %>"><%= h t('users.links.homepage') %></a>
+          <% unless profile_deleted %>
+            <%= erb :"shared/elite_medal", locals: { rank: record[:elite_rank], size: "large" } %>
           <% end %>
         </div>
+        <p class="profile-login"><%= h(profile_deleted ? t("#{translation_scope}.deleted.label") : record.fetch(:login)) %></p>
+        <% unless profile_deleted %>
+          <div class="profile-actions">
+            <% if source_url %>
+              <a class="profile-action" href="<%= h source_url %>"><%= h t("#{translation_scope}.links.source_profile", platform: platform_name(record.fetch(:platform))) %></a>
+            <% end %>
+            <% if homepage_url %>
+              <a class="profile-action" href="<%= h homepage_url %>"><%= h t('users.links.homepage') %></a>
+            <% end %>
+          </div>
+        <% end %>
       </div>
     </div>
   </div>
 </section>
 
-<%= erb :"shared/location_notice" %>
+<% unless profile_deleted %>
+  <%= erb :"shared/location_notice" %>
+<% end %>

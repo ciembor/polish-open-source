@@ -13,11 +13,9 @@ module PolishOpenSourceRank
             end
 
             def upsert_user(attributes)
-              upsert(
-                users_dataset,
-                { platform: attributes.fetch(:platform, 'github'), github_id: attributes.fetch(:github_id) },
-                record_mapper.user_record(attributes)
-              )
+              identity = { platform: attributes.fetch(:platform, 'github'), github_id: attributes.fetch(:github_id) }
+
+              upsert_user_record(identity, record_mapper.user_record(attributes))
             end
 
             def record_contributor_snapshot(snapshot)
@@ -25,8 +23,7 @@ module PolishOpenSourceRank
               contributor_stats_attributes = record_mapper.contributor_stats_attributes(snapshot)
 
               database.transaction do
-                upsert_without_transaction(
-                  users_dataset,
+                upsert_user_record_without_transaction(
                   { platform: snapshot.platform, github_id: snapshot.source_id },
                   record_mapper.user_record(contributor_attributes)
                 )
@@ -210,6 +207,34 @@ module PolishOpenSourceRank
                 { platform: attributes.fetch(:platform, 'github'), github_id: attributes.fetch(:github_id) },
                 record_mapper.organization_record(attributes)
               )
+            end
+
+            def upsert_user_record(identity, attributes)
+              database.transaction { upsert_user_record_without_transaction(identity, attributes) }
+            rescue Sequel::UniqueConstraintViolation
+              update_user_record(users_dataset.where(identity), attributes, identity)
+            end
+
+            def upsert_user_record_without_transaction(identity, attributes)
+              scoped = users_dataset.where(identity)
+              return unless update_user_record(scoped, attributes, identity).zero?
+
+              users_dataset.insert(attributes)
+            end
+
+            def update_user_record(scoped, attributes, identity)
+              existing = scoped.first
+              return scoped.update(redacted_user_update_attributes(attributes)) if deleted_user_record?(existing)
+
+              scoped.update(update_attributes(attributes, identity))
+            end
+
+            def deleted_user_record?(record)
+              record && record.fetch(:profile_deleted, 0).to_i == 1
+            end
+
+            def redacted_user_update_attributes(attributes)
+              attributes.slice(:login, :html_url, :updated_at)
             end
 
             def upsert(dataset, identity, attributes)

@@ -120,6 +120,38 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     expect(profile).to include(login: 'alice', avatar_url: nil)
   end
 
+  it 'returns only the public deletion marker for deleted user profiles' do
+    seed_user(
+      id: 1,
+      login: 'alice',
+      total_stars: 100,
+      name: 'Alice',
+      avatar_url: 'https://avatars.example/alice.png',
+      profile_deleted: true
+    )
+    seed_repository(id: 10, owner_id: 1, owner: 'alice', full_name: 'alice/app', language: 'Ruby', stars: 30)
+
+    profile = read_model.user_profile('github', 'alice', period_start: period)
+
+    expect(profile).to include(
+      login: 'alice',
+      profile_deleted: 1,
+      name: nil,
+      location_raw: nil,
+      city: nil,
+      country: nil,
+      email: nil,
+      homepage: nil,
+      html_url: nil,
+      avatar_url: nil,
+      elite_rank: nil,
+      city_rank: nil,
+      badges: [],
+      profile_badge: nil,
+      repositories: []
+    )
+  end
+
   it 'lists every public user identity for sitemap rendering' do
     seed_user_record(id: 1, login: 'alice')
     seed_user_record(id: 2, login: 'bob')
@@ -186,28 +218,50 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLi
     )
   end
 
-  def seed_user(id:, login:, total_stars:, period_start: period, city: 'Kraków', country: 'Poland')
-    seed_user_record(id: id, login: login, city: city, country: country)
-    database.execute(user_stats_sql, [period_start, 'github', id, login, city, country, 1, total_stars, 0, 1,
-                                      '2026-05-01T00:10:00Z'])
+  def seed_user(**attributes)
+    id = attributes.fetch(:id)
+    login = attributes.fetch(:login)
+    city = attributes.fetch(:city, 'Kraków')
+    country = attributes.fetch(:country, 'Poland')
+    seed_user_record(
+      id: id,
+      login: login,
+      city: city,
+      country: country,
+      name: attributes[:name],
+      avatar_url: attributes[:avatar_url],
+      profile_deleted: attributes.fetch(:profile_deleted, false)
+    )
+    database.execute(
+      user_stats_sql,
+      [attributes.fetch(:period_start, period), 'github', id, login, city, country, 1,
+       attributes.fetch(:total_stars), 0, 1, '2026-05-01T00:10:00Z']
+    )
   end
 
-  def seed_user_record(id:, login:, city: nil, country: nil, avatar_url: nil, avatar_hidden: false)
+  def seed_user_record(**attributes)
+    login = attributes.fetch(:login)
     database.execute(
       <<~SQL.strip,
         INSERT OR IGNORE INTO users(
-          platform, github_id, login, city, country, html_url, avatar_url, avatar_hidden, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          platform, github_id, login, name, location_raw, city, country, email, homepage, html_url, avatar_url,
+          avatar_hidden, profile_deleted, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       SQL
       [
         'github',
-        id,
+        attributes.fetch(:id),
         login,
-        city,
-        country,
+        attributes[:name],
+        'Krakow, Poland',
+        attributes[:city],
+        attributes[:country],
+        "#{login}@example.com",
+        "https://#{login}.example",
         "https://github.com/#{login}",
-        avatar_url,
-        avatar_hidden ? 1 : 0,
+        attributes[:avatar_url],
+        attributes.fetch(:avatar_hidden, false) ? 1 : 0,
+        attributes.fetch(:profile_deleted, false) ? 1 : 0,
         '2026-05-01T00:01:00Z'
       ]
     )

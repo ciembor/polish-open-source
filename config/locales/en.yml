@@ -527,6 +527,17 @@ en:
       poland_rank: "Poland rank"
       status: "Discord"
       title: "Your Discord access"
+    delete:
+      confirm: "Are you sure you want to remove your profile from the database?"
+      confirm_no: "No"
+      confirm_yes: "Yes"
+      link: "here"
+      prompt_prefix: "Do you want to remove this page from the database? Click"
+      title: "Profile deletion"
+    deleted:
+      body: "This profile has been removed from the database."
+      label: "Deleted"
+      title: "Profile deleted"
     profile_access:
       title: "Access and badge"
     repository_badges:

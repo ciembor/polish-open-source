@@ -219,7 +219,8 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
         canonical_path: '/users/github/ciembor',
         discord_panel: :discord_panel,
         discord_error: 'Sync failed',
-        show_profile_badges: true
+        show_profile_badges: true,
+        show_profile_delete_control: true
       )
       expect(view_context.session).to be_empty
     end
@@ -232,7 +233,19 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
         description: 'users.seo.description|platform=GitHub|user=Maciej (ciembor)',
         discord_panel: nil,
         discord_error: nil,
-        show_profile_badges: false
+        show_profile_badges: false,
+        show_profile_delete_control: false
+      )
+    end
+
+    it 'does not expose private controls for deleted profiles' do
+      state = page_state.user_profile(profile: profile.merge(profile_deleted: 1), own_profile: true)
+
+      expect(state).to include(
+        discord_panel: nil,
+        discord_error: nil,
+        show_profile_badges: false,
+        show_profile_delete_control: false
       )
     end
   end

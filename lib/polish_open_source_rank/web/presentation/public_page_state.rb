@@ -36,15 +36,17 @@ module PolishOpenSourceRank
         def user_profile(profile:, own_profile:)
           display_name = user_display_name(profile)
           source_name = call_view(:platform_name, profile.fetch(:platform))
+          private_controls = own_profile && profile[:profile_deleted] != 1
 
           {
             repositories: profile.fetch(:repositories),
             title: t('users.seo.title', user: display_name, platform: source_name),
             description: t('users.seo.description', user: display_name, platform: source_name),
             canonical_path: call_view(:user_profile_path, profile),
-            discord_panel: own_profile ? call_view(:show_discord_panel_for, profile) : nil,
-            discord_error: own_profile ? view_context.session.delete(:discord_error) : nil,
-            show_profile_badges: own_profile
+            discord_panel: private_controls ? call_view(:show_discord_panel_for, profile) : nil,
+            discord_error: private_controls ? view_context.session.delete(:discord_error) : nil,
+            show_profile_badges: private_controls,
+            show_profile_delete_control: private_controls
           }
         end
 

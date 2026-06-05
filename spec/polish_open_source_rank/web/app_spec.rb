@@ -537,6 +537,44 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(logout.location).to eq('http://example.org/latest')
   end
 
+  it 'lets signed-in users delete their public profile page without changing ranking order', :aggregate_failures do
+    database_path = seed_database
+    ENV['DATABASE_URL'] = "sqlite://#{database_path}"
+    ENV['PUBLIC_DATABASE_URL'] = ''
+    described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
+    request = Rack::MockRequest.new(described_class)
+
+    github_callback = sign_in_with_github(request)
+    session_cookie = cookie_header(github_callback)
+    profile = request.get('/users/github/alice', 'HTTP_COOKIE' => session_cookie)
+    profile_cookie = cookie_header(profile)
+    invalid_delete = request.post('/users/github/alice/delete', 'HTTP_COOKIE' => profile_cookie)
+    delete = request.post(
+      '/users/github/alice/delete',
+      'HTTP_COOKIE' => profile_cookie,
+      'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
+      input: Rack::Utils.build_query(csrf_token: csrf_token_from(profile))
+    )
+    deleted_profile = request.get('/users/github/alice', 'HTTP_COOKIE' => profile_cookie)
+    ranking = request.get('/latest/users/top')
+    user = bootstrapped_database(database_path).dataset(:users).where(platform: 'github', login: 'alice').first
+
+    expect(profile.body).to include('Chcesz usunąć tę stronę z bazy danych? Kliknij')
+    expect(profile.body).to include('Czy na pewno chcesz usunąć twój profil z bazy danych?')
+    expect(invalid_delete.status).to eq(403)
+    expect(delete.status).to eq(303)
+    expect(delete.location).to eq('http://example.org/users/github/alice')
+    expect(user).to include(profile_deleted: 1, name: nil, avatar_url: nil, avatar_hidden: 1)
+    expect(deleted_profile.body).to include('Profil usunięty')
+    expect(deleted_profile.body).to include('Usunięte')
+    expect(deleted_profile.body).not_to include('src="https://avatars.example/alice.png"')
+    expect(deleted_profile.body).not_to include('Profil na GitHub')
+    expect(deleted_profile.body).not_to include('href="/repositories/github/alice/app"')
+    expect(ranking.body).to include('<span class="primary-link primary-link--static">alice</span>')
+    expect(ranking.body).to include('href="https://github.com/alice"')
+    expect(ranking.body).not_to include('href="/users/github/alice"')
+  end
+
   it 'rejects replayed GitHub OAuth callback states' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')

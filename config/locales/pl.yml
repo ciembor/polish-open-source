@@ -529,6 +529,17 @@ pl:
       poland_rank: "Ranking Polski"
       status: "Discord"
       title: "Twój dostęp Discord"
+    delete:
+      confirm: "Czy na pewno chcesz usunąć twój profil z bazy danych?"
+      confirm_no: "Nie"
+      confirm_yes: "Tak"
+      link: "tutaj"
+      prompt_prefix: "Chcesz usunąć tę stronę z bazy danych? Kliknij"
+      title: "Usunięcie profilu"
+    deleted:
+      body: "Ten profil został usunięty z bazy danych."
+      label: "Usunięte"
+      title: "Profil usunięty"
     profile_access:
       title: "Dostęp i odznaka"
     repository_badges:

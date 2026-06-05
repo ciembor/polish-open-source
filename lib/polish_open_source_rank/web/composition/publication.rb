@@ -66,6 +66,12 @@ module PolishOpenSourceRank
           )
         end
 
+        def delete_public_profile
+          @delete_public_profile ||= Contexts::Publication::Application::DeletePublicProfile.new(
+            profile_repository: read_models.public_profile_repository
+          )
+        end
+
         def cache_revision
           @cache_revision ||= PublicCacheRevision.new(read_model: read_models.cache_revision)
         end

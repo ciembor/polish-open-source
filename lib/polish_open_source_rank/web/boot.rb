@@ -99,6 +99,7 @@ module PolishOpenSourceRank
           app.register Routes::LanguageRoutes
           app.register Routes::PackageRoutes
           app.register Routes::PublicRoutes
+          app.register Routes::ProfileDeletionRoutes
           app.register Routes::AuthRoutes
           app.register Routes::BadgeRoutes
           app.register Routes::InternalRoutes

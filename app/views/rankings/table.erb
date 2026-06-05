@@ -10,7 +10,11 @@
             <div class="ranking-list__title">
               <%= erb :"shared/platform_icon", locals: { platform: row.fetch(:platform, "github") } %>
               <% if kind == "users" %>
-                <a class="primary-link" href="<%= h app_path(user_profile_path(row)) %>"><%= h row.fetch(:login) %></a>
+                <% if row[:profile_deleted] == 1 %>
+                  <span class="primary-link primary-link--static"><%= h row.fetch(:login) %></span>
+                <% else %>
+                  <a class="primary-link" href="<%= h app_path(user_profile_path(row)) %>"><%= h row.fetch(:login) %></a>
+                <% end %>
               <% elsif kind == "repositories" %>
                 <a class="primary-link" href="<%= h app_path(repository_profile_path(row)) %>"><%= h row.fetch(:full_name) %></a>
               <% elsif kind == "organizations" %>
@@ -23,7 +27,9 @@
             <% if kind == "users" || kind == "organizations" %>
               <% location = row[:location_raw] || row[:city] || row[:country] || t('scope.poland') %>
               <span class="ranking-list__description">
-                <% if row[:name] && !row[:name].empty? %>
+                <% if kind == "users" && row[:profile_deleted] == 1 %>
+                  <%= h t('users.deleted.label') %>
+                <% elsif row[:name] && !row[:name].empty? %>
                   <%= h row[:name] %>
                 <% end %>
               </span>

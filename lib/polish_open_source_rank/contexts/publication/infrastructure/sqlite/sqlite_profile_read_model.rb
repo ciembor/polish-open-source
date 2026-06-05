@@ -34,6 +34,7 @@ module PolishOpenSourceRank
             def user_profile(platform, login, period_start:)
               user = fetch_user_profile(platform, login, period_start)
               return unless user
+              return deleted_user_profile(user) if user[:profile_deleted] == 1
 
               public_period = effective_public_period(user, period_start)
               country_rank = user_country_rank(user.fetch(:platform), user.fetch(:github_id), public_period)
@@ -114,10 +115,21 @@ module PolishOpenSourceRank
             attr_reader :badge_policy, :database, :published_badge_read_model, :user_language_badge_read_model
 
             def fetch_user_profile(platform, login, period_start)
-              database.fetch_all(<<~SQL, [period_start, platform, login]).first
-                SELECT users.platform, users.github_id AS source_id, users.github_id, users.login, users.name, users.location_raw, users.city,
-                       users.country, users.email, users.homepage, users.html_url,
-                       CASE users.avatar_hidden WHEN 1 THEN NULL ELSE users.avatar_url END AS avatar_url,
+              database.fetch_all(user_profile_sql, [period_start, platform, login]).first
+            end
+
+            def user_profile_sql
+              <<~SQL
+                SELECT users.platform, users.github_id AS source_id, users.github_id, users.login,
+                       users.profile_deleted,
+                       CASE users.profile_deleted WHEN 1 THEN NULL ELSE users.name END AS name,
+                       CASE users.profile_deleted WHEN 1 THEN NULL ELSE users.location_raw END AS location_raw,
+                       CASE users.profile_deleted WHEN 1 THEN NULL ELSE users.city END AS city,
+                       CASE users.profile_deleted WHEN 1 THEN NULL ELSE users.country END AS country,
+                       CASE users.profile_deleted WHEN 1 THEN NULL ELSE users.email END AS email,
+                       CASE users.profile_deleted WHEN 1 THEN NULL ELSE users.homepage END AS homepage,
+                       CASE users.profile_deleted WHEN 1 THEN NULL ELSE users.html_url END AS html_url,
+                       CASE WHEN users.profile_deleted = 1 OR users.avatar_hidden = 1 THEN NULL ELSE users.avatar_url END AS avatar_url,
                        stats.period_start, stats.public_repo_count, stats.total_stars, stats.monthly_stars_delta,
                        stats.merged_pull_requests_count
                 FROM users
@@ -128,6 +140,16 @@ module PolishOpenSourceRank
                 WHERE users.platform = ? AND users.login = ?
                 LIMIT 1
               SQL
+            end
+
+            def deleted_user_profile(user)
+              user.merge(
+                elite_rank: nil,
+                city_rank: nil,
+                badges: [],
+                profile_badge: nil,
+                repositories: []
+              )
             end
 
             def fetch_repository_profile(platform, full_name, period_start)

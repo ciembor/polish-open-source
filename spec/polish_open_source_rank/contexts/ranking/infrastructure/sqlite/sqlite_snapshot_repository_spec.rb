@@ -52,6 +52,36 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     expect(row('repository_monthly_stats')).to include(stargazers_count: 31, monthly_stars_delta: 4)
   end
 
+  it 'does not restore redacted user profile details during later crawls' do
+    repository.upsert_user(user_attributes)
+    database.dataset(:users).where(platform: 'github', github_id: 10).update(
+      name: nil,
+      location_raw: nil,
+      city: nil,
+      country: nil,
+      email: nil,
+      homepage: nil,
+      avatar_url: nil,
+      avatar_hidden: 1,
+      profile_deleted: 1
+    )
+
+    repository.upsert_user(user_attributes(login: 'alice-renamed'))
+
+    expect(row('users')).to include(
+      login: 'alice-renamed',
+      html_url: 'https://github.com/alice',
+      profile_deleted: 1,
+      name: nil,
+      location_raw: nil,
+      city: nil,
+      country: nil,
+      email: nil,
+      homepage: nil,
+      avatar_url: nil
+    )
+  end
+
   it 'persists organizations, organization repositories, and their star observations' do
     repository.record_organization_snapshot(organization_snapshot)
     repository.record_organization_repository_snapshot(
@@ -82,6 +112,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     allow(database).to receive(:dataset).with(:users).and_return(dataset)
     allow(database).to receive(:transaction).and_yield
     allow(dataset).to receive(:where).with({ platform: 'github', github_id: 10 }).and_return(initial_scope)
+    allow(initial_scope).to receive(:first).and_return(nil)
     allow(initial_scope).to receive(:update).with(
       {
         login: 'alice-renamed',
@@ -116,8 +147,28 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     ).twice
   end
 
+  it 'retries generic upserts as an update when the insert races with another writer' do
+    initial_scope = object_double(update_scope_contract)
+    dataset = object_double(dataset_contract)
+    database = object_double(database_contract)
+    repository = described_class.new(database, clock: clock)
+
+    allow(database).to receive(:dataset).with(:repositories).and_return(dataset)
+    allow(database).to receive(:transaction).and_yield
+    allow(dataset).to receive(:where).with({ platform: 'github', github_id: 100 }).and_return(initial_scope)
+    allow(initial_scope).to receive(:update).and_return(0, 1)
+    allow(dataset).to receive(:insert).and_raise(Sequel::UniqueConstraintViolation, 'race')
+
+    repository.upsert_repository(repository_attributes)
+
+    expect(initial_scope).to have_received(:update).with(
+      include(full_name: 'alice/app', owner_login: 'alice')
+    ).twice
+  end
+
   def update_scope_contract
     Object.new.tap do |scope|
+      def scope.first; end
       def scope.update(_attributes); end
     end
   end
