@@ -78,8 +78,8 @@ restart_app_services() {
 smoke_check_once() {
   curl -fsSL -o /dev/null "http://127.0.0.1:9293/healthz" &&
     curl -fsSL -o /dev/null "${PUBLIC_BASE_URL}/healthz" &&
-    curl -fsSL -o /dev/null "${PUBLIC_BASE_URL}/latest" &&
-    curl -fsSL -o /dev/null "${PUBLIC_BASE_URL}/en/latest"
+    curl -fsSL -o /dev/null "${PUBLIC_BASE_URL}/people" &&
+    curl -fsSL -o /dev/null "${PUBLIC_BASE_URL}/en/people"
 }
 
 wait_for_smoke_checks() {

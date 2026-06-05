@@ -223,7 +223,7 @@ module PolishOpenSourceRank
         end
 
         def home_rankings_canonical_path
-          call_view(:localized_public_path, '/', locale: call_view(:current_locale))
+          call_view(:people_rankings_path, period_slug: 'latest', scope_slug: 'poland')
         end
 
         def display_name(resource)

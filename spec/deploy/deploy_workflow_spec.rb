@@ -15,7 +15,7 @@ RSpec.describe File do
       'SESSION_SECRET in ${env_file} must be at least 64 characters before deploy.',
       'INTERNAL_BASIC_AUTH_PASSWORD in ${env_file} must be at least 32 characters before deploy.',
       'curl -fsSL -o /dev/null "http://127.0.0.1:9293/healthz"',
-      'curl -fsSL -o /dev/null "${PUBLIC_BASE_URL}/latest"',
+      'curl -fsSL -o /dev/null "${PUBLIC_BASE_URL}/people"',
       'No previous image available for rollback'
     )
   end

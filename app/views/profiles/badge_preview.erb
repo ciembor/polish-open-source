@@ -5,7 +5,7 @@
     <p class="badge-preview__label"><%= h label %></p>
   <% end %>
   <div class="badge-preview__showcase">
-    <a class="badge-preview__image-link" href="<%= h app_path('/latest') %>">
+    <a class="badge-preview__image-link" href="<%= h app_path(period_base_path('latest')) %>">
       <img src="<%= h app_path(badge_path) %>" alt="<%= h alt_text %>">
     </a>
   </div>

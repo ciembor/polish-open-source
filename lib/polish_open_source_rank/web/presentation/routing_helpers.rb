@@ -30,6 +30,8 @@ module PolishOpenSourceRank
         end
 
         def city_path(slug, period_slug: @period_slug)
+          return people_rankings_path(period_slug: 'latest', scope_slug: slug) if latest_period_slug?(period_slug)
+
           "#{period_base_path(period_slug)}/locations/#{slug}"
         end
 
@@ -40,11 +42,13 @@ module PolishOpenSourceRank
         end
 
         def ranking_path(kind, metric, period_slug: @period_slug, scope_slug: @scope.fetch(:slug))
+          return latest_ranking_path(kind, metric, scope_slug: scope_slug) if latest_period_slug?(period_slug)
+
           "#{scope_path({ slug: scope_slug }, period_slug: period_slug)}/#{kind}/#{metric}"
         end
 
         def period_base_path(period_slug)
-          path = period_slug.nil? || period_slug == 'latest' ? '/latest' : "/#{period_slug}"
+          path = period_slug.nil? || period_slug == 'latest' ? '/people' : "/#{period_slug}"
           localized_public_path(path, locale: current_locale)
         end
 
@@ -133,9 +137,9 @@ module PolishOpenSourceRank
           '/images/polish_open_source_banner.webp'
         end
 
-        def present_value?(value)
-          !value.to_s.empty?
-        end
+        def present_value?(value) = !value.to_s.empty?
+
+        def latest_period_slug?(period_slug) = period_slug.nil? || period_slug == 'latest'
       end
     end
   end

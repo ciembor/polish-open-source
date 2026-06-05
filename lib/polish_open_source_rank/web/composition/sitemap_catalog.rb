@@ -17,7 +17,28 @@ module PolishOpenSourceRank
           %w[organization-repositories top],
           %w[organization-repositories trending]
         ].freeze
-        STATIC_PATHS = ['/', '/organizations', '/about', '/editions', '/languages', '/packages'].freeze
+        PEOPLE_RANKING_SEGMENTS = [
+          %w[users top],
+          %w[users trending],
+          %w[users active],
+          %w[repositories top],
+          %w[repositories trending]
+        ].freeze
+        ORGANIZATION_RANKING_SEGMENTS = [
+          %w[organizations top],
+          %w[organizations trending],
+          %w[organizations active],
+          %w[organization-repositories top],
+          %w[organization-repositories trending]
+        ].freeze
+        STATIC_PATHS = [
+          '/people',
+          '/organizations',
+          '/about',
+          '/editions',
+          '/languages',
+          '/packages'
+        ].freeze
 
         def initialize(publication_read_models:, package_ranking_read_model:, show_rankings:, list_editions:)
           @publication_read_models = publication_read_models
@@ -36,14 +57,12 @@ module PolishOpenSourceRank
         attr_reader :publication_read_models, :package_ranking_read_model, :show_rankings, :list_editions
 
         def ranking_paths
-          latest_paths = ['/latest/organizations'] + ranking_scope_paths('/latest')
+          latest_paths = latest_ranking_scope_paths
           city_paths = city_slugs.flat_map do |slug|
             [
-              "/locations/#{slug}",
-              "/latest/locations/#{slug}",
-              "/organizations/locations/#{slug}",
-              "/latest/organizations/locations/#{slug}"
-            ] + ranking_scope_paths("/latest/locations/#{slug}")
+              "/people/locations/#{slug}",
+              "/organizations/locations/#{slug}"
+            ] + latest_ranking_scope_paths(scope_slug: slug)
           end
 
           edition_period_slugs.each_with_object(latest_paths + city_paths) do |period_slug, paths|
@@ -56,12 +75,31 @@ module PolishOpenSourceRank
           end
         end
 
+        def latest_ranking_scope_paths(scope_slug: 'poland')
+          people_prefix = scope_slug == 'poland' ? '/people' : "/people/locations/#{scope_slug}"
+          organization_prefix = scope_slug == 'poland' ? '/organizations' : "/organizations/locations/#{scope_slug}"
+
+          latest_people_ranking_scope_paths(people_prefix) +
+            latest_organization_ranking_scope_paths(organization_prefix)
+        end
+
+        def latest_people_ranking_scope_paths(prefix)
+          PEOPLE_RANKING_SEGMENTS.map { |kind, metric| "#{prefix}/#{kind}/#{metric}" }
+        end
+
+        def latest_organization_ranking_scope_paths(prefix)
+          ORGANIZATION_RANKING_SEGMENTS.map do |kind, metric|
+            suffix = kind == 'organization-repositories' ? "repositories/#{metric}" : metric
+            "#{prefix}/#{suffix}"
+          end
+        end
+
         def ranking_scope_paths(prefix)
           RANKING_SEGMENTS.map { |kind, metric| "#{prefix}/#{kind}/#{metric}" }
         end
 
         def language_paths(latest_period)
-          latest_paths = latest_period ? language_scope_paths('/latest') : []
+          latest_paths = latest_period ? language_scope_paths('') : []
           latest_paths + edition_period_slugs.flat_map { |period_slug| language_scope_paths("/#{period_slug}") }
         end
 
@@ -70,7 +108,7 @@ module PolishOpenSourceRank
         end
 
         def package_paths(latest_period)
-          latest_paths = latest_period ? package_scope_paths('/latest', latest_period) : []
+          latest_paths = latest_period ? package_scope_paths('', latest_period) : []
           latest_paths + edition_period_slugs.flat_map do |period_slug|
             package_scope_paths("/#{period_slug}", "#{period_slug}-01")
           end

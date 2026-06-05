@@ -5,7 +5,7 @@ RSpec.describe PolishOpenSourceRank::Web::RateLimiter do
     app = ->(_env) { [200, {}, ['ok']] }
     limiter = described_class.new(app)
 
-    status, = limiter.call('PATH_INFO' => '/latest', 'REMOTE_ADDR' => '127.0.0.1')
+    status, = limiter.call('PATH_INFO' => '/people', 'REMOTE_ADDR' => '127.0.0.1')
 
     expect(status).to eq(200)
   end

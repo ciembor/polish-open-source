@@ -5,7 +5,7 @@
     <p class="lede">
       <%= h t('auth.unranked.body', login: session[:unranked_github_login] || 'GitHub') %>
     </p>
-    <a class="ranking-action" href="<%= h app_path('/latest') %>"><%= h t('rankings.back') %></a>
+    <a class="ranking-action" href="<%= h app_path(period_base_path('latest')) %>"><%= h t('rankings.back') %></a>
   </div>
 </section>
 

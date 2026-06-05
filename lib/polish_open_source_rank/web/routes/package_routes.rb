@@ -7,6 +7,7 @@ module PolishOpenSourceRank
         def self.registered(app)
           app.get('/packages') { render_package_index('latest') }
           app.get('/packages/:ecosystem') { render_package_ecosystem('latest', params.fetch('ecosystem')) }
+          register_current_routes(app)
           register_latest_routes(app)
           register_period_routes(app)
         end
@@ -14,13 +15,24 @@ module PolishOpenSourceRank
         class << self
           private
 
-          def register_latest_routes(app)
-            app.get('/latest/packages/:ecosystem') { render_package_ecosystem('latest', params.fetch('ecosystem')) }
-            app.get(latest_package_repository_metric_route) do |ecosystem, repository_kind, metric|
+          def register_current_routes(app)
+            app.get(current_package_repository_metric_route) do |ecosystem, repository_kind, metric|
               render_package_ranking_detail('latest', ecosystem, metric, repository_kind_slug: repository_kind)
             end
-            app.get(latest_package_metric_route) do |ecosystem, metric|
+            app.get(current_package_metric_route) do |ecosystem, metric|
               render_package_ranking_detail('latest', ecosystem, metric)
+            end
+          end
+
+          def register_latest_routes(app)
+            app.get('/latest/packages/:ecosystem') do
+              redirect_canonical_public_path("/packages/#{params.fetch('ecosystem')}")
+            end
+            app.get(latest_package_repository_metric_route) do |ecosystem, repository_kind, metric|
+              redirect_canonical_public_path("/packages/#{ecosystem}/#{repository_kind}/#{metric}")
+            end
+            app.get(latest_package_metric_route) do |ecosystem, metric|
+              redirect_canonical_public_path("/packages/#{ecosystem}/#{metric}")
             end
           end
 
@@ -43,6 +55,14 @@ module PolishOpenSourceRank
 
           def latest_package_repository_metric_route
             Regexp.new("/latest/packages/([^/]+)/(#{repository_kind_slugs})/(#{package_metric_slugs})")
+          end
+
+          def current_package_metric_route
+            Regexp.new("/packages/([^/]+)/(#{package_metric_slugs})")
+          end
+
+          def current_package_repository_metric_route
+            Regexp.new("/packages/([^/]+)/(#{repository_kind_slugs})/(#{package_metric_slugs})")
           end
 
           def package_metric_slugs

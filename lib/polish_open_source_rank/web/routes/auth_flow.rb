@@ -63,7 +63,7 @@ module PolishOpenSourceRank
           session = context_call(:session)
           session[:current_user] = nil
           session[:auth_notice] = notice
-          context_call :redirect, context_call(:app_path, '/latest')
+          context_call :redirect, context_call(:app_path, context_call(:period_base_path, 'latest'))
         end
 
         def login_flow

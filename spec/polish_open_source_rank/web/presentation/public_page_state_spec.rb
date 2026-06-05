@@ -65,11 +65,13 @@ class PublicPageStateFakeViewContext
   end
 
   def package_ranking_path(ecosystem, metric_slug, period_slug:)
-    "/#{period_slug}/packages/#{ecosystem}/#{metric_slug}"
+    prefix = period_slug == 'latest' ? '' : "/#{period_slug}"
+    "#{prefix}/packages/#{ecosystem}/#{metric_slug}"
   end
 
   def package_repository_ranking_path(ecosystem, repository_kind, metric_slug, period_slug:)
-    "/#{period_slug}/packages/#{ecosystem}/#{repository_kind}s/#{metric_slug}"
+    prefix = period_slug == 'latest' ? '' : "/#{period_slug}"
+    "#{prefix}/packages/#{ecosystem}/#{repository_kind}s/#{metric_slug}"
   end
 
   def language_metric_label(metric)
@@ -93,6 +95,13 @@ class PublicPageStateFakeViewContext
     "/#{period_slug}"
   end
 
+  def people_rankings_path(period_slug:, scope_slug:)
+    return '/people' if period_slug == 'latest' && scope_slug == 'poland'
+    return "/people/locations/#{scope_slug}" if period_slug == 'latest'
+
+    "/#{period_slug}"
+  end
+
   def current_locale
     'pl'
   end
@@ -105,10 +114,19 @@ class PublicPageStateFakeViewContext
   end
 
   def city_path(slug, period_slug:)
+    return "/people/locations/#{slug}" if period_slug == 'latest'
+
     "/#{period_slug}/locations/#{slug}"
   end
 
   def organization_rankings_path(period_slug:, scope_slug: 'poland')
+    if period_slug == 'latest'
+      path = '/organizations'
+      return path if scope_slug == 'poland'
+
+      return "#{path}/locations/#{scope_slug}"
+    end
+
     path = "/#{period_slug}/organizations"
     return path if scope_slug == 'poland'
 
@@ -151,7 +169,7 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
         organization_repository_rankings: { top: [] },
         title: 'rankings.seo.home_title',
         description: 'rankings.seo.home_description',
-        canonical_path: '/'
+        canonical_path: '/people'
       )
     end
 
@@ -165,7 +183,7 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
       expect(state).to include(
         title: 'rankings.seo.title_latest|period=rankings.seo.current_period|scope=Krakow',
         description: 'rankings.seo.city_description_latest|period=rankings.seo.current_period|scope=Krakow',
-        canonical_path: '/latest/locations/krakow'
+        canonical_path: '/people/locations/krakow'
       )
     end
 
@@ -194,7 +212,7 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
       expect(state).to include(
         title: 'rankings.seo.organizations_title_latest|period=rankings.seo.current_period|scope=Krakow',
         description: 'rankings.seo.organizations_description_latest|period=rankings.seo.current_period|scope=Krakow',
-        canonical_path: '/latest/organizations/locations/krakow'
+        canonical_path: '/organizations/locations/krakow'
       )
     end
   end
@@ -315,7 +333,7 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
         title: 'packages.seo.repository_ranking_title|ecosystem=npm|kind=People repositories|metric=Downloads 30d',
         description: 'packages.seo.repository_ranking_description|ecosystem=npm|' \
                      'kind=People repositories|metric=Downloads 30d',
-        canonical_path: '/latest/packages/npm/users/top',
+        canonical_path: '/packages/npm/users/top',
         period_start: '2026-04-01'
       )
     end

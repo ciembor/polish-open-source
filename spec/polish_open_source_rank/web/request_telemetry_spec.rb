@@ -8,7 +8,7 @@ RSpec.describe PolishOpenSourceRank::Web::RequestTelemetry do
     middleware = described_class.new(app, logger: output, clock: -> { now += 0.0123 })
 
     status, headers, = middleware.call(
-      'PATH_INFO' => '/latest/users/top',
+      'PATH_INFO' => '/people/users/top',
       'REQUEST_METHOD' => 'GET',
       'HTTP_X_REQUEST_ID' => 'request-1'
     )
@@ -20,7 +20,7 @@ RSpec.describe PolishOpenSourceRank::Web::RequestTelemetry do
       'event' => 'http_request',
       'request_id' => 'request-1',
       'method' => 'GET',
-      'path_template' => '/:period/:scope/:kind/:metric',
+      'path_template' => '/people/:scope/:kind/:metric',
       'status' => 200,
       'cache' => 'miss'
     )

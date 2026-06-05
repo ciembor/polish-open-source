@@ -39,12 +39,12 @@ module PolishOpenSourceRank
         end
 
         def language_ranking_path(metric_slug, period_slug: @period_slug)
-          prefix = period_slug.nil? || period_slug == 'latest' ? '/latest' : "/#{period_slug}"
+          prefix = period_slug.nil? || period_slug == 'latest' ? '' : "/#{period_slug}"
           localized_public_path("#{prefix}/languages/#{metric_slug}", locale: current_locale)
         end
 
         def language_path(language, period_slug: @period_slug)
-          prefix = period_slug.nil? || period_slug == 'latest' ? '/latest' : "/#{period_slug}"
+          prefix = period_slug.nil? || period_slug == 'latest' ? '' : "/#{period_slug}"
           localized_public_path("#{prefix}/languages/#{Rack::Utils.escape_path(language)}", locale: current_locale)
         end
 

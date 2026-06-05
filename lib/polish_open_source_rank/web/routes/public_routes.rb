@@ -6,8 +6,8 @@ module PolishOpenSourceRank
       module PublicRoutes
         def self.registered(app)
           register_static_pages(app)
-          register_profile_routes(app)
           register_ranking_routes(app)
+          register_profile_routes(app)
         end
 
         class << self
@@ -31,12 +31,14 @@ module PolishOpenSourceRank
           end
 
           def register_ranking_shortcuts(app)
-            app.get('/') { render_rankings('latest', 'poland') }
-            app.get('/latest') { render_rankings('latest', 'poland') }
+            app.get('/') { redirect_canonical_public_path('/people') }
+            app.get('/people') { render_rankings('latest', 'poland') }
+            app.get('/latest') { redirect_canonical_public_path('/people') }
             app.get('/organizations') { render_rankings('latest', 'poland', section: 'organizations') }
             app.get('/organizations/locations/:slug') do
               render_city('latest', params.fetch('slug'), section: 'organizations')
             end
+            app.get('/people/locations/:slug') { render_city('latest', params.fetch('slug')) }
           end
 
           def register_about_routes(app)
@@ -78,17 +80,7 @@ module PolishOpenSourceRank
           end
 
           def register_latest_ranking_routes(app)
-            app.get('/latest/locations/:slug') { render_city('latest', params.fetch('slug')) }
-            app.get('/latest/organizations') { render_rankings('latest', 'poland', section: 'organizations') }
-            app.get('/latest/organizations/locations/:slug') do
-              render_city('latest', params.fetch('slug'), section: 'organizations')
-            end
-            app.get(%r{/latest/#{app::RANKING_DETAIL_SEGMENTS}}) do |kind, metric|
-              render_ranking_detail('latest', 'poland', kind, metric)
-            end
-            app.get(%r{/latest/locations/([^/]+)/#{app::RANKING_DETAIL_SEGMENTS}}) do |slug, kind, metric|
-              render_city_ranking_detail('latest', slug, kind, metric)
-            end
+            LatestRankingRoutes.register(app)
           end
 
           def register_historical_ranking_routes(app)
@@ -111,7 +103,9 @@ module PolishOpenSourceRank
           end
 
           def register_location_shortcut_routes(app)
-            app.get('/locations/:slug') { render_city('latest', params.fetch('slug')) }
+            app.get('/locations/:slug') do
+              redirect_canonical_public_path("/people/locations/#{params.fetch('slug')}")
+            end
           end
         end
       end

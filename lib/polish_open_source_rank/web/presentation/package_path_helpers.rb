@@ -37,7 +37,7 @@ module PolishOpenSourceRank
         end
 
         def package_ecosystem_path(ecosystem, period_slug: @period_slug)
-          prefix = period_slug.nil? || period_slug == 'latest' ? '/latest' : "/#{period_slug}"
+          prefix = period_slug.nil? || period_slug == 'latest' ? '' : "/#{period_slug}"
           path = "#{prefix}/packages/#{Rack::Utils.escape_path(ecosystem)}"
           localized_public_path(path, locale: current_locale)
         end

@@ -40,7 +40,7 @@ module PolishOpenSourceRank
               halt 403 unless valid_csrf_token?
 
               session.clear
-              redirect app_path('/latest')
+              redirect app_path(period_base_path('latest'))
             end
           end
         end

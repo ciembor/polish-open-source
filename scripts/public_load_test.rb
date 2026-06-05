@@ -12,10 +12,10 @@ Endpoint = Struct.new(:name, :path, :weight, keyword_init: true)
 Sample = Struct.new(:endpoint, :status, :duration_ms, :bytes, keyword_init: true)
 
 DEFAULT_ENDPOINTS = [
-  Endpoint.new(name: 'latest', path: '/latest', weight: 16),
-  Endpoint.new(name: 'ranking_users', path: '/latest/users/top', weight: 8),
-  Endpoint.new(name: 'ranking_repositories', path: '/latest/repositories/top', weight: 8),
-  Endpoint.new(name: 'organizations', path: '/latest/organizations', weight: 8),
+  Endpoint.new(name: 'people', path: '/people', weight: 16),
+  Endpoint.new(name: 'ranking_users', path: '/people/users/top', weight: 8),
+  Endpoint.new(name: 'ranking_repositories', path: '/people/repositories/top', weight: 8),
+  Endpoint.new(name: 'organizations', path: '/organizations', weight: 8),
   Endpoint.new(name: 'profile', path: '/users/github/alice', weight: 8),
   Endpoint.new(name: 'languages', path: '/languages', weight: 8),
   Endpoint.new(name: 'language_detail', path: '/languages/ruby', weight: 4),

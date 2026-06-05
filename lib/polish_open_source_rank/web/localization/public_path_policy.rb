@@ -4,9 +4,19 @@ module PolishOpenSourceRank
   module Web
     module Localization
       class PublicPathPolicy
-        ROOT_PATHS = ['/', '/latest', '/organizations', '/about', '/editions', '/languages'].freeze
+        ROOT_PATHS = [
+          '/',
+          '/latest',
+          '/people',
+          '/organizations',
+          '/about',
+          '/editions',
+          '/languages',
+          '/packages'
+        ].freeze
         PREFIX_PATHS = [
           '/latest/',
+          '/people/',
           '/editions/',
           '/languages/',
           '/packages',

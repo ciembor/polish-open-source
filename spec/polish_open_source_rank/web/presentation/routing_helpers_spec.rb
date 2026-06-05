@@ -38,12 +38,12 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::RoutingHelpers do
     helper_host.instance_variable_set(:@period_slug, 'latest')
     helper_host.instance_variable_set(:@scope, { slug: 'krakow' })
 
-    expect(helper_host.people_rankings_path).to eq('/latest/locations/krakow')
-    expect(helper_host.organization_rankings_path).to eq('/latest/organizations/locations/krakow')
-    expect(helper_host.section_scope_path({ slug: 'poland' }, section: 'people')).to eq('/latest')
-    expect(helper_host.section_scope_path({ slug: 'poland' }, section: 'organizations')).to eq('/latest/organizations')
+    expect(helper_host.people_rankings_path).to eq('/people/locations/krakow')
+    expect(helper_host.organization_rankings_path).to eq('/organizations/locations/krakow')
+    expect(helper_host.section_scope_path({ slug: 'poland' }, section: 'people')).to eq('/people')
+    expect(helper_host.section_scope_path({ slug: 'poland' }, section: 'organizations')).to eq('/organizations')
     expect(helper_host.section_scope_path({ slug: 'warszawa' }, section: 'organizations')).to(
-      eq('/latest/organizations/locations/warszawa')
+      eq('/organizations/locations/warszawa')
     )
   end
 

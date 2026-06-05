@@ -54,6 +54,10 @@ module PolishOpenSourceRank
 
           @auth_notice = session.delete(:auth_notice)
         end
+
+        def redirect_canonical_public_path(path)
+          redirect app_path(localized_public_path(path, locale: current_locale, query: current_query)), 301
+        end
       end
     end
   end

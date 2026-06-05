@@ -66,6 +66,17 @@ module PolishOpenSourceRank
 
       ROUTE_TEMPLATES = [
         [
+          %r{\A/(?:en/)?people(?:/locations/[^/]+)?/(users|repositories)/(top|trending|active|members)\z},
+          '/people/:scope/:kind/:metric'
+        ],
+        [%r{\A/(?:en/)?people(?:/locations/[^/]+)?\z}, '/people/:scope'],
+        [
+          %r{\A/(?:en/)?organizations(?:/locations/[^/]+)?/
+             (?:repositories/)?(top|trending|active|members)\z}x,
+          '/organizations/:scope/:kind/:metric'
+        ],
+        [%r{\A/(?:en/)?organizations(?:/locations/[^/]+)?\z}, '/organizations/:scope'],
+        [
           %r{\A/(?:en/)?(?:latest|\d{4}-\d{2})(?:/locations/[^/]+)?/
              (users|repositories|organizations|organization-repositories)/(top|trending|active|members)\z}x,
           '/:period/:scope/:kind/:metric'
