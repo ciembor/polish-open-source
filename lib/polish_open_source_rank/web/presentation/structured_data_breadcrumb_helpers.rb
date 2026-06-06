@@ -43,9 +43,9 @@ module PolishOpenSourceRank
         def profile_breadcrumbs
           return [{ name: @profile.fetch(:login), path: canonical_path }] if @profile
           return [{ name: @organization.fetch(:login), path: canonical_path }] if @organization
-          return [{ name: @repository.fetch(:full_name), path: canonical_path }] if @repository
+          return [{ name: repository_display_name(@repository), path: canonical_path }] if @repository
 
-          [{ name: @organization_repository.fetch(:full_name), path: canonical_path }]
+          [{ name: repository_display_name(@organization_repository), path: canonical_path }]
         end
 
         def current_resource_breadcrumbs

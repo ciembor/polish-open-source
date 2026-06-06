@@ -212,9 +212,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(organization_city_response.status).to eq(200)
     expect(response.status).to eq(200)
     expect(month_response.status).to eq(200)
-    expect(response.body).to include('alice/app')
+    expect(response.body).to include('>app<')
     expect_historical_month_page(month_response)
-    expect(organization_city_response.body).to include('polish-org/toolkit')
+    expect(organization_city_response.body).to include('>toolkit<')
     expect(organization_city_response.body).to include(
       'rel="canonical" href="https://rank.example/2026-04/organizations/locations/warszawa"'
     )
@@ -231,8 +231,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     expect(latest_response.status).to eq(200)
     expect(latest_response.body).to include('datetime="2026-04-01"')
-    expect(latest_response.body).to include('alice/app')
-    expect(profile_response.body).to include('alice/app')
+    expect(latest_response.body).to include('>app<')
+    expect(profile_response.body).to include('>app<')
     expect(package_response.status).to eq(200)
     expect(running_month_response.status).to eq(404)
   end
@@ -352,7 +352,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     )
 
     expect(response.status).to eq(200)
-    expect(response.body).to include('polish-org/toolkit')
+    expect(response.body).to include('>toolkit<')
   end
 
   it 'renders user profile pages from ranking users', :aggregate_failures do
@@ -1335,14 +1335,14 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('Top 10 według gwiazdek')
     expect(response.body).to include('Top 10 popularnych w miesiącu')
     expect(response.body).to include('⭐ 12 345')
-    expect(response.body).to include('alice/app')
+    expect(response.body).to include('>app<')
     expect(response.body).to include('Nice Ruby app')
-    expect(response.body).to include('polish-org/toolkit')
+    expect(response.body).to include('>toolkit<')
     expect(response.body).to include('Shared tooling')
     expect(response.body).to include('href="/languages/Ruby/repositories/top"')
     expect(response.body).to include('href="/languages/Ruby/users/top"')
     expect(
-      html_element(response.body, "//li[.//a[text()='alice/app']]//span[contains(@class, 'ranking-list__links')]" \
+      html_element(response.body, "//li[.//a[text()='app']]//span[contains(@class, 'ranking-list__links')]" \
                                   "/a[@href='https://github.com/alice/app' and text()='GitHub']")
     ).not_to be_nil
   end
@@ -1355,10 +1355,10 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(responses.fetch(:language_all_top).body).to include(
       'Top 100: Wszystkie repozytoria, Ruby, według gwiazdek'
     )
-    expect(responses.fetch(:language_all_top).body).to include('alice/app')
-    expect(responses.fetch(:language_all_top).body).to include('polish-org/toolkit')
+    expect(responses.fetch(:language_all_top).body).to include('>app<')
+    expect(responses.fetch(:language_all_top).body).to include('>toolkit<')
     expect(responses.fetch(:language_user_top).body).to include('Top 100: Repozytoria ludzi, Ruby, według gwiazdek')
-    expect(responses.fetch(:language_user_top).body).to include('alice/app')
+    expect(responses.fetch(:language_user_top).body).to include('>app<')
     expect(responses.fetch(:language_user_top).body).to include('Nice Ruby app')
     expect(
       html_element(
@@ -1366,7 +1366,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
         "//ol[@class='ranking-list' and @aria-labelledby='language-repository-ranking-detail-user-top']"
       )
     ).not_to be_nil
-    expect(responses.fetch(:language_organization_top).body).to include('polish-org/toolkit')
+    expect(responses.fetch(:language_organization_top).body).to include('>toolkit<')
     expect(responses.fetch(:language_organization_top).body).to include('Shared tooling')
   end
 
@@ -2036,7 +2036,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'Dostępne grupy',
       'Odznaka',
       'Odznaki repozytoriów',
-      '<p class="badge-preview__label">alice/app</p>',
+      '<p class="badge-preview__label">app</p>',
       'class="badge-markdown"',
       'class="badge-markdown__copy js-copy-badge-markdown"',
       'data-copy-label="Kopiuj"',

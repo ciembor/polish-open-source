@@ -20,7 +20,7 @@
           <div class="profile-spotlight__item profile-spotlight__item--repository">
             <dt><%= h top_repository_label %></dt>
             <dd>
-              <a class="primary-link" href="<%= h app_path(top_repository_path) %>"><%= h top_repository.fetch(:full_name) %></a>
+              <a class="primary-link" href="<%= h app_path(top_repository_path) %>"><%= h repository_display_name(top_repository) %></a>
               <span class="profile-spotlight__meta">⭐ <%= number(top_repository.fetch(:stargazers_count)) %></span>
             </dd>
           </div>

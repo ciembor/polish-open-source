@@ -9,7 +9,7 @@
           <span class="rank-cell rank-mark"><%= index + 1 %></span>
           <div class="ranking-list__body">
             <div class="ranking-list__title">
-              <a class="primary-link" href="<%= h app_path(path) %>"><%= h row.fetch(:full_name) %></a>
+              <a class="primary-link" href="<%= h app_path(path) %>"><%= h repository_display_name(row) %></a>
             </div>
             <% if row[:description] && !row[:description].empty? %>
               <span class="ranking-list__description"><%= h row[:description] %></span>

@@ -19,7 +19,7 @@ module PolishOpenSourceRank
         def repository_list_schema(row)
           {
             '@type' => 'SoftwareSourceCode',
-            'name' => row.fetch(:full_name),
+            'name' => repository_display_name(row),
             'url' => full_url(repository_profile_path(row)),
             'codeRepository' => row.fetch(:html_url)
           }.tap do |repository|
@@ -41,7 +41,7 @@ module PolishOpenSourceRank
         def organization_repository_list_schema(row)
           {
             '@type' => 'SoftwareSourceCode',
-            'name' => row.fetch(:full_name),
+            'name' => repository_display_name(row),
             'url' => full_url(organization_repository_profile_path(row)),
             'codeRepository' => row.fetch(:html_url)
           }.tap do |repository|

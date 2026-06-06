@@ -12,7 +12,7 @@
         <img
           class="profile-star-history__chart"
           src="<%= h chart_url %>"
-          alt="<%= h t('repositories.star_history.alt', repository: record.fetch(:full_name)) %>"
+          alt="<%= h t('repositories.star_history.alt', repository: repository_display_name(record)) %>"
           width="1200"
           height="600"
           loading="lazy"

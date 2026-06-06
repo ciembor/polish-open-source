@@ -15,11 +15,11 @@
                   <a class="primary-link" href="<%= h app_path(user_profile_path(row)) %>"><%= h row.fetch(:login) %></a>
                 <% end %>
               <% elsif kind == "repositories" %>
-                <a class="primary-link" href="<%= h app_path(repository_profile_path(row)) %>"><%= h row.fetch(:full_name) %></a>
+                <a class="primary-link" href="<%= h app_path(repository_profile_path(row)) %>"><%= h repository_display_name(row) %></a>
               <% elsif kind == "organizations" %>
                 <a class="primary-link" href="<%= h app_path(organization_profile_path(row)) %>"><%= h row.fetch(:login) %></a>
               <% else %>
-                <a class="primary-link" href="<%= h app_path(organization_repository_profile_path(row)) %>"><%= h row.fetch(:full_name) %></a>
+                <a class="primary-link" href="<%= h app_path(organization_repository_profile_path(row)) %>"><%= h repository_display_name(row) %></a>
               <% end %>
             </div>
 
