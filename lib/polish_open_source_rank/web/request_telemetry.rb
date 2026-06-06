@@ -82,9 +82,9 @@ module PolishOpenSourceRank
           '/:period/:scope/:kind/:metric'
         ],
         [%r{\A/(?:en/)?(?:latest|\d{4}-\d{2})(?:/locations/[^/]+)?\z}, '/:period/:scope'],
-        [%r{\A/(?:en/)?users/[^/]+/[^/]+\z}, '/users/:platform/:login'],
+        [%r{\A/(?:en/)?users/[^/]+/[^/]+(?:/[^/]+)?\z}, '/users/:platform/:login/:name_slug'],
         [%r{\A/(?:en/)?repositories/[^/]+/[^/]+/[^/]+\z}, '/repositories/:platform/:owner/:name'],
-        [%r{\A/(?:en/)?organizations/[^/]+/[^/]+\z}, '/organizations/:platform/:login'],
+        [%r{\A/(?:en/)?organizations/[^/]+/[^/]+(?:/[^/]+)?\z}, '/organizations/:platform/:login/:name_slug'],
         [
           %r{\A/(?:en/)?organizations/[^/]+/[^/]+/repositories/[^/]+\z},
           '/organizations/:platform/:login/repositories/:name'

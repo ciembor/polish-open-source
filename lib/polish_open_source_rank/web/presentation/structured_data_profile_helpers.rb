@@ -62,7 +62,8 @@ module PolishOpenSourceRank
             'url' => full_url(
               organization_profile_path(
                 platform: @organization_repository.fetch(:platform),
-                login: @organization_repository.fetch(:organization_login)
+                login: @organization_repository.fetch(:organization_login),
+                name: @organization_repository[:owner_name]
               )
             )
           }
@@ -83,7 +84,11 @@ module PolishOpenSourceRank
         end
 
         def repository_owner_profile_path
-          user_profile_path(platform: @repository.fetch(:platform), login: @repository.fetch(:owner_login))
+          user_profile_path(
+            platform: @repository.fetch(:platform),
+            login: @repository.fetch(:owner_login),
+            name: @repository[:owner_name]
+          )
         end
       end
     end

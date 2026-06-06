@@ -47,6 +47,21 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::RoutingHelpers do
     )
   end
 
+  it 'adds SEO slugs to profile paths only when the display name differs from the login', :aggregate_failures do
+    expect(helper_host.user_profile_path(platform: 'github', login: 'jkowalski', name: 'Jan Kowalski')).to eq(
+      '/users/github/jkowalski/jan-kowalski'
+    )
+    expect(helper_host.user_profile_path(platform: 'github', login: 'alice', name: 'Alice')).to eq(
+      '/users/github/alice'
+    )
+    expect(helper_host.organization_profile_path(platform: 'github', login: 'acme-dev', name: 'Acme Labs')).to eq(
+      '/organizations/github/acme-dev/acme-labs'
+    )
+    expect(helper_host.organization_profile_path(platform: 'github', login: 'polish-org', name: 'Polish Org')).to eq(
+      '/organizations/github/polish-org'
+    )
+  end
+
   it 'builds page-specific schema types' do
     helper_host.instance_variable_set(:@canonical_path, '/about')
     expect(helper_host.send(:structured_data_type)).to eq('AboutPage')

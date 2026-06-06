@@ -58,6 +58,17 @@ module PolishOpenSourceRank
         def redirect_canonical_public_path(path)
           redirect app_path(localized_public_path(path, locale: current_locale, query: current_query)), 301
         end
+
+        def redirect_to_canonical_profile_path(path)
+          canonical_path = Localization::PublicPathPolicy.strip_locale_prefix(path)
+          return if env.fetch('polish_open_source_rank.unlocalized_path', request.path_info) == canonical_path
+
+          redirect app_path(localized_public_path(canonical_path, locale: current_locale, query: current_query)), 301
+        end
+
+        def assign_public_page(attributes) = attributes.each { |name, value| instance_variable_set("@#{name}", value) }
+
+        def public_page_state = (@public_page_state ||= Presentation::PublicPageState.new(self))
       end
     end
   end

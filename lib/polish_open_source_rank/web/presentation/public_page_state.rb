@@ -4,6 +4,8 @@ module PolishOpenSourceRank
   module Web
     module Presentation
       class PublicPageState
+        include PublicPageSeoHelpers
+
         def initialize(view_context)
           @view_context = view_context
         end
@@ -40,8 +42,8 @@ module PolishOpenSourceRank
 
           {
             repositories: profile.fetch(:repositories),
-            title: t('users.seo.title', user: display_name, platform: source_name),
-            description: t('users.seo.description', user: display_name, platform: source_name),
+            title: user_profile_seo_title(display_name, source_name),
+            description: user_profile_seo_description(profile, display_name, source_name),
             canonical_path: call_view(:user_profile_path, profile),
             discord_panel: private_controls ? call_view(:show_discord_panel_for, profile) : nil,
             discord_error: private_controls ? view_context.session.delete(:discord_error) : nil,
@@ -54,26 +56,22 @@ module PolishOpenSourceRank
           source_name = call_view(:platform_name, repository.fetch(:platform))
 
           {
-            title: t('repositories.seo.title', repository: repository.fetch(:full_name), platform: source_name),
-            description: t(
-              'repositories.seo.description',
-              repository: repository.fetch(:full_name),
-              platform: source_name
-            ),
+            title: repository_profile_seo_title(repository, source_name),
+            description: repository_profile_seo_description(repository, source_name),
             canonical_path: call_view(:repository_profile_path, repository),
             show_repository_badge: own_repository
           }
         end
 
         def organization_profile(organization:)
-          display_name = display_name(organization)
+          display_name = owner_display_name(organization[:name], organization.fetch(:login))
           source_name = call_view(:platform_name, organization.fetch(:platform))
 
           {
             repositories: organization.fetch(:repositories),
             popular_repositories: organization.fetch(:popular_repositories, organization.fetch(:repositories)),
-            title: t('organizations.seo.title', organization: display_name, platform: source_name),
-            description: t('organizations.seo.description', organization: display_name, platform: source_name),
+            title: organization_profile_seo_title(display_name, source_name),
+            description: organization_profile_seo_description(organization, display_name, source_name),
             canonical_path: call_view(:organization_profile_path, organization)
           }
         end
@@ -82,16 +80,8 @@ module PolishOpenSourceRank
           source_name = call_view(:platform_name, repository.fetch(:platform))
 
           {
-            title: t(
-              'organization_repositories.seo.title',
-              repository: repository.fetch(:full_name),
-              platform: source_name
-            ),
-            description: t(
-              'organization_repositories.seo.description',
-              repository: repository.fetch(:full_name),
-              platform: source_name
-            ),
+            title: organization_repository_profile_seo_title(repository, source_name),
+            description: organization_repository_profile_seo_description(repository, source_name),
             canonical_path: call_view(:organization_repository_profile_path, repository)
           }
         end
@@ -224,10 +214,6 @@ module PolishOpenSourceRank
 
         def home_rankings_canonical_path
           call_view(:people_rankings_path, period_slug: 'latest', scope_slug: 'poland')
-        end
-
-        def display_name(resource)
-          resource[:name].to_s.empty? ? resource.fetch(:login) : resource[:name]
         end
 
         def user_display_name(profile)

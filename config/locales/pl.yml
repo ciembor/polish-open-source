@@ -469,15 +469,19 @@ pl:
       alt: "Historia gwiazdek repozytorium %{repository}"
       title: "Historia gwiazdek"
     seo:
-      title: "%{repository} - projekt %{platform}"
-      description: "Publiczny projekt open source %{repository} na %{platform}, z metrykami rankingu i informacjami o właścicielu."
+      title: "%{repository} - %{language} na %{platform} - Open Source Polska"
+      title_without_language: "%{repository} - repozytorium na %{platform} - Open Source Polska"
+      description: "Repozytorium open source %{repository} na %{platform}. Właściciel: %{owner}. %{summary}"
+      summary_language: "Język: %{language}."
+      summary_stars: "Gwiazdki: %{stars}."
     summary:
       owner: "Właściciel"
       title: "Projekt"
   organization_repositories:
     seo:
-      title: "%{repository} - repozytorium organizacji na %{platform}"
-      description: "Publiczne repozytorium organizacji %{repository} na %{platform}, z metrykami rankingu i profilem właściciela."
+      title: "%{repository} - %{language} organizacji na %{platform} - Open Source Polska"
+      title_without_language: "%{repository} - repozytorium organizacji na %{platform} - Open Source Polska"
+      description: "Repozytorium organizacji %{repository} na %{platform}. Właściciel: %{owner}. %{summary}"
   organizations:
     avatar_alt: "Logo organizacji %{organization}"
     badge:
@@ -491,8 +495,9 @@ pl:
       title: "Najlepsze repozytoria"
       top_title: "Top repozytoria"
     seo:
-      title: "%{organization} - organizacja %{platform}"
-      description: "Publiczny profil organizacji open source %{organization} na %{platform}, z metrykami rankingu i najlepszymi repozytoriami."
+      title: "%{organization} - %{platform} - Open Source Polska"
+      description: "Organizacja open source %{organization} na %{platform}. Lokalizacja: %{location}. Najlepsze repozytoria, gwiazdki i aktywność w Open Source Polska."
+      description_without_location: "Organizacja open source %{organization} na %{platform}. Najlepsze repozytoria, gwiazdki i aktywność w Open Source Polska."
     spotlight:
       city_rank: "Pozycja w %{city}"
       country_rank: "Pozycja w rankingu Polski"
@@ -559,8 +564,9 @@ pl:
       language: "Język"
       title: "Najlepsze projekty"
     seo:
-      title: "%{user} - Open Source Polska"
-      description: "Publiczny profil open source użytkownika %{user} na %{platform}, z metrykami rankingu i najlepszymi projektami."
+      title: "%{user} - %{platform} - Open Source Polska"
+      description: "Profil open source %{user} na %{platform}. Lokalizacja: %{location}. Najlepsze projekty, gwiazdki i ranking w Open Source Polska."
+      description_without_location: "Profil open source %{user} na %{platform}. Najlepsze projekty, gwiazdki i ranking w Open Source Polska."
     summary:
       city: "Miasto"
       location: "Lokalizacja"

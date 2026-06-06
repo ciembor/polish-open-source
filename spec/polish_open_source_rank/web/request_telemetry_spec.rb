@@ -57,4 +57,17 @@ RSpec.describe PolishOpenSourceRank::Web::RequestTelemetry do
       'error_class' => 'RuntimeError'
     )
   end
+
+  it 'recognizes profile URLs with SEO slugs' do
+    output = StringIO.new
+    app = ->(_env) { [200, {}, ['ok']] }
+    middleware = described_class.new(app, logger: output, clock: -> { 1.0 })
+
+    middleware.call('PATH_INFO' => '/users/github/jkowalski/jan-kowalski', 'REQUEST_METHOD' => 'GET')
+
+    expect(JSON.parse(output.string)).to include(
+      'path_template' => '/users/:platform/:login/:name_slug',
+      'status' => 200
+    )
+  end
 end

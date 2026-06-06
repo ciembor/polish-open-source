@@ -57,20 +57,7 @@ module PolishOpenSourceRank
           end
 
           def register_profile_routes(app)
-            app.get('/users/:platform/:login') { render_user_profile(params.fetch('platform'), params.fetch('login')) }
-            app.get('/organizations/:platform/:login') do
-              render_organization_profile(params.fetch('platform'), params.fetch('login'))
-            end
-            app.get('/repositories/:platform/:owner/:name') do
-              render_repository_profile(params.fetch('platform'), params.fetch('owner'), params.fetch('name'))
-            end
-            app.get('/organization-repositories/:platform/:owner/:name') do
-              render_organization_repository_profile(
-                params.fetch('platform'),
-                params.fetch('owner'),
-                params.fetch('name')
-              )
-            end
+            ProfileRoutes.register(app)
           end
 
           def register_ranking_routes(app)

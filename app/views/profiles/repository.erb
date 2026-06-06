@@ -5,7 +5,7 @@
     <% fact_items = [
       {
         label: t('repositories.summary.owner'),
-        value_html: %(<a class="primary-link" href="#{h app_path(user_profile_path(platform: @repository.fetch(:platform), login: @repository.fetch(:owner_login)))}">#{h @repository.fetch(:owner_login)}</a>)
+        value_html: %(<a class="primary-link" href="#{h app_path(user_profile_path(platform: @repository.fetch(:platform), login: @repository.fetch(:owner_login), name: @repository[:owner_name]))}">#{h @repository.fetch(:owner_login)}</a>)
       },
       { label: t('users.summary.city'), value: (@repository[:owner_city] || t('users.summary.unknown')) }
     ] %>

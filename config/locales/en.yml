@@ -467,15 +467,19 @@ en:
       alt: "%{repository} star history"
       title: "Star history"
     seo:
-      title: "%{repository} - %{platform} project"
-      description: "%{repository} public open-source project on %{platform}, with ranking metrics and owner details."
+      title: "%{repository} - %{language} on %{platform} - Polish Open Source"
+      title_without_language: "%{repository} - repository on %{platform} - Polish Open Source"
+      description: "%{repository} open-source repository on %{platform}. Owner: %{owner}. %{summary}"
+      summary_language: "Language: %{language}."
+      summary_stars: "Stars: %{stars}."
     summary:
       owner: "Owner"
       title: "Project"
   organization_repositories:
     seo:
-      title: "%{repository} - organization repository on %{platform}"
-      description: "%{repository} public organization repository on %{platform}, with ranking metrics and owner profile."
+      title: "%{repository} - %{language} organization repository on %{platform} - Polish Open Source"
+      title_without_language: "%{repository} - organization repository on %{platform} - Polish Open Source"
+      description: "%{repository} organization repository on %{platform}. Owner: %{owner}. %{summary}"
   organizations:
     avatar_alt: "%{organization} organization logo"
     badge:
@@ -489,8 +493,9 @@ en:
       title: "Best repositories"
       top_title: "Top repositories"
     seo:
-      title: "%{organization} - %{platform} organization"
-      description: "%{organization} public open-source organization on %{platform}, with ranking metrics and top repositories."
+      title: "%{organization} - %{platform} - Polish Open Source"
+      description: "%{organization} open-source organization on %{platform}. Location: %{location}. Top repositories, stars, and activity on Polish Open Source."
+      description_without_location: "%{organization} open-source organization on %{platform}. Top repositories, stars, and activity on Polish Open Source."
     spotlight:
       city_rank: "%{city} rank"
       country_rank: "Poland rank"
@@ -557,8 +562,9 @@ en:
       language: "Language"
       title: "Best projects"
     seo:
-      title: "%{user} - Polish Open Source"
-      description: "%{user} public open-source profile on %{platform}, with ranking metrics and top projects."
+      title: "%{user} - %{platform} - Polish Open Source"
+      description: "%{user} open-source profile on %{platform}. Location: %{location}. Top projects, stars, and ranking on Polish Open Source."
+      description_without_location: "%{user} open-source profile on %{platform}. Top projects, stars, and ranking on Polish Open Source."
     summary:
       city: "City"
       location: "Location"

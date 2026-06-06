@@ -19,7 +19,7 @@ class PublicPageStateFakeViewContext
   end
 
   def user_profile_path(profile)
-    "/users/#{profile.fetch(:platform)}/#{profile.fetch(:login)}"
+    path_with_optional_slug("/users/#{profile.fetch(:platform)}/#{profile.fetch(:login)}", profile)
   end
 
   def show_discord_panel_for(_profile)
@@ -31,7 +31,10 @@ class PublicPageStateFakeViewContext
   end
 
   def organization_profile_path(organization)
-    "/organizations/#{organization.fetch(:platform)}/#{organization.fetch(:login)}"
+    path_with_optional_slug(
+      "/organizations/#{organization.fetch(:platform)}/#{organization.fetch(:login)}",
+      organization
+    )
   end
 
   def organization_repository_profile_path(repository)
@@ -138,6 +141,19 @@ class PublicPageStateFakeViewContext
       '2026-04-01' => 'April 2026'
     }.fetch(period_start)
   end
+
+  private
+
+  def path_with_optional_slug(path, resource)
+    name = resource.fetch(:name, '').to_s.strip
+    login = resource.fetch(:login)
+    return path if name.empty?
+
+    slug = name.downcase.gsub(/[^a-z0-9]+/, '-').gsub(/\A-+|-+\z/, '')
+    return path if slug.empty? || slug == login.downcase
+
+    "#{path}/#{slug}"
+  end
 end
 
 RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
@@ -233,7 +249,7 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
       expect(state).to include(
         repositories: [{ full_name: 'ciembor/app' }],
         title: 'users.seo.title|platform=GitHub|user=ciembor',
-        description: 'users.seo.description|platform=GitHub|user=ciembor',
+        description: 'users.seo.description_without_location|location=|platform=GitHub|user=ciembor',
         canonical_path: '/users/github/ciembor',
         discord_panel: :discord_panel,
         discord_error: 'Sync failed',
@@ -244,11 +260,14 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
     end
 
     it 'does not expose private profile affordances for public viewers' do
-      state = page_state.user_profile(profile: profile.merge(name: 'Maciej'), own_profile: false)
+      state = page_state.user_profile(
+        profile: profile.merge(name: 'Maciej', location_raw: 'Poznan, Poland'),
+        own_profile: false
+      )
 
       expect(state).to include(
         title: 'users.seo.title|platform=GitHub|user=Maciej (ciembor)',
-        description: 'users.seo.description|platform=GitHub|user=Maciej (ciembor)',
+        description: 'users.seo.description|location=Poznan, Poland|platform=GitHub|user=Maciej (ciembor)',
         discord_panel: nil,
         discord_error: nil,
         show_profile_badges: false,
@@ -272,7 +291,12 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
     let(:repository) do
       {
         platform: 'github',
-        full_name: 'ciembor/polish-open-source-rank'
+        full_name: 'ciembor/polish-open-source-rank',
+        language: 'Ruby',
+        owner_login: 'ciembor',
+        owner_name: 'Maciej',
+        description: 'Ranking for Polish open source repositories.',
+        stargazers_count: 1234
       }
     end
 
@@ -280,8 +304,12 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
       state = page_state.repository_profile(repository: repository, own_repository: true)
 
       expect(state).to include(
-        title: 'repositories.seo.title|platform=GitHub|repository=ciembor/polish-open-source-rank',
-        description: 'repositories.seo.description|platform=GitHub|repository=ciembor/polish-open-source-rank',
+        title: 'repositories.seo.title|language=Ruby|platform=GitHub|repository=ciembor/polish-open-source-rank',
+        description:
+          'repositories.seo.description|owner=Maciej (ciembor)|platform=GitHub|' \
+          'repository=ciembor/polish-open-source-rank|summary=repositories.seo.summary_language|' \
+          'language=Ruby Ranking for Polish open source repositories. ' \
+          'repositories.seo.summary_stars|stars=1234',
         canonical_path: '/repositories/github/ciembor/polish-open-source-rank',
         show_repository_badge: true
       )

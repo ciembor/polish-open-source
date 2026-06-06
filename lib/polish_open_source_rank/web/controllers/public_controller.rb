@@ -50,6 +50,7 @@ module PolishOpenSourceRank
           @period = latest_period
           @profile = publication.show_user_profile.call(platform: platform, login: login, period_start: @period)
           halt 404 unless @profile
+          redirect_to_canonical_profile_path(user_profile_path(@profile))
           profile_cache!(@profile)
           assign_public_page(public_page_state.user_profile(profile: @profile, own_profile: own_profile?(@profile)))
           erb :'profiles/user'
@@ -74,6 +75,7 @@ module PolishOpenSourceRank
           @organization = publication.show_organization_profile.call(platform: platform, login: login,
                                                                      period_start: @period)
           halt 404 unless @organization
+          redirect_to_canonical_profile_path(organization_profile_path(@organization))
           profile_cache!(@organization)
           assign_public_page(public_page_state.organization_profile(organization: @organization))
           erb :'profiles/organization'
@@ -116,10 +118,6 @@ module PolishOpenSourceRank
           )
           erb :'rankings/detail'
         end
-
-        def assign_public_page(attributes) = attributes.each { |name, value| instance_variable_set("@#{name}", value) }
-
-        def public_page_state = (@public_page_state ||= Presentation::PublicPageState.new(self))
       end
     end
   end

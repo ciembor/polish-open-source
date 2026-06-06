@@ -275,7 +275,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     missing_organization = request.get('/organizations/github/missing')
 
     expect(organization_profile.status).to eq(200)
-    expect(organization_profile.body).to include('<title>Polish Org - organizacja GitHub</title>')
+    expect(organization_profile.body).to include('<title>Polish Org (polish-org) - GitHub - Open Source Polska</title>')
     expect(organization_profile.body).to include('rel="canonical" href="https://rank.example/organizations/github/polish-org"')
     expect(organization_profile.body).to include('"@type": "Organization"')
     expect(organization_profile.body).to include('Najmocniejsze repozytorium')
@@ -289,7 +289,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(organization_badge.body).to include('1st')
     expect(organization_repository.status).to eq(200)
     expect(organization_repository.body).to include(
-      '<title>polish-org/toolkit - repozytorium organizacji na GitHub</title>'
+      '<title>polish-org/toolkit - Ruby organizacji na GitHub - Open Source Polska</title>'
     )
     expect(organization_repository.body).to include('href="/organizations/github/polish-org"')
     expect(organization_repository.body).to include('"@type": "SoftwareSourceCode"')
@@ -300,6 +300,41 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'src="https://api.star-history.com/chart?repos=polish-org%2Ftoolkit&amp;type=date&amp;legend=top-left"'
     )
     expect(missing_organization.status).to eq(404)
+  end
+
+  it 'redirects old profile URLs to canonical SEO slug URLs when names differ', :aggregate_failures do
+    database_path = seed_database
+    ENV['DATABASE_URL'] = "sqlite://#{database_path}"
+    database = PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(database_path)
+    snapshot_repository = snapshot_repository(database)
+    period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-04')
+
+    snapshot_repository.upsert_user(user_attributes(id: 50, login: 'jkowalski', name: 'Jan Kowalski', avatar_url: nil))
+    snapshot_repository.record_user_stats(user_stats(period, user_id: 50, login: 'jkowalski', total_stars: 321))
+    snapshot_repository.upsert_repository(repository_attributes(id: 150, owner_id: 50, owner_login: 'jkowalski'))
+    snapshot_repository.record_repository_stats(
+      repository_stats(period, repository_id: 150, owner_id: 50, owner_login: 'jkowalski', stars: 321)
+    )
+    database.execute('UPDATE organizations SET name = ? WHERE login = ?', ['Acme Labs', 'polish-org'])
+    request = Rack::MockRequest.new(described_class)
+
+    user_redirect = request.get('/users/github/jkowalski')
+    user_profile = request.get('/users/github/jkowalski/jan-kowalski')
+    organization_redirect = request.get('/organizations/github/polish-org')
+    organization_profile = request.get('/organizations/github/polish-org/acme-labs')
+
+    expect(user_redirect.status).to eq(301)
+    expect(user_redirect.location).to eq('http://example.org/users/github/jkowalski/jan-kowalski')
+    expect(user_profile.status).to eq(200)
+    expect(user_profile.body).to include(
+      'rel="canonical" href="https://rank.example/users/github/jkowalski/jan-kowalski"'
+    )
+    expect(organization_redirect.status).to eq(301)
+    expect(organization_redirect.location).to eq('http://example.org/organizations/github/polish-org/acme-labs')
+    expect(organization_profile.status).to eq(200)
+    expect(organization_profile.body).to include(
+      'rel="canonical" href="https://rank.example/organizations/github/polish-org/acme-labs"'
+    )
   end
 
   it 'renders organization repository pages for signed-in organization members without a 500' do
@@ -605,6 +640,28 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(ranking.body).to include('<span class="primary-link primary-link--static">alice</span>')
     expect(ranking.body).to include('href="https://github.com/alice"')
     expect(ranking.body).not_to include('href="/users/github/alice"')
+  end
+
+  it 'accepts profile deletion requests on SEO slug URLs' do
+    database_path = seed_database
+    ENV['DATABASE_URL'] = "sqlite://#{database_path}"
+    ENV['PUBLIC_DATABASE_URL'] = ''
+    database = PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(database_path)
+    database.execute('UPDATE users SET name = ? WHERE platform = ? AND login = ?', ['Alice Example', 'github', 'alice'])
+    described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
+    request = Rack::MockRequest.new(described_class)
+
+    github_callback = sign_in_with_github(request)
+    profile = request.get('/users/github/alice/alice-example', 'HTTP_COOKIE' => cookie_header(github_callback))
+    delete = request.post(
+      '/users/github/alice/alice-example/delete',
+      'HTTP_COOKIE' => cookie_header(profile),
+      'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
+      input: Rack::Utils.build_query(csrf_token: csrf_token_from(profile))
+    )
+
+    expect(delete.status).to eq(303)
+    expect(delete.location).to eq('http://example.org/users/github/alice/alice-example')
   end
 
   it 'rejects replayed GitHub OAuth callback states' do
@@ -1946,7 +2003,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile_response.status).to eq(200)
     expect_body_to_include(
       profile_response,
-      '<title>alice - Open Source Polska</title>',
+      '<title>alice - GitHub - Open Source Polska</title>',
       'rel="canonical" href="https://rank.example/users/github/alice"',
       'src="https://avatars.example/alice.png"',
       '"@type": "ProfilePage"',
@@ -2015,7 +2072,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     badge_response = responses.fetch(:badge_response)
     expect(ranking_response.body).to include('href="/repositories/github/alice/app"')
     expect(profile_response.status).to eq(200)
-    expect(profile_response.body).to include('<title>alice/app - projekt GitHub</title>')
+    expect(profile_response.body).to include('<title>alice/app - Ruby na GitHub - Open Source Polska</title>')
     expect(profile_response.body).to include('rel="canonical" href="https://rank.example/repositories/github/alice/app"')
     expect(profile_response.body).to include('"@type": "SoftwareSourceCode"')
     expect(profile_response.body).to include('class="profile-action"')
