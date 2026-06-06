@@ -1387,7 +1387,13 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   def expect_package_ecosystem_page(response, encoded_name)
     expect(response.status).to eq(200)
     expect(response.body).to include('@scope/tool')
-    expect(response.body).to include('<span class="ranking-list__title-meta"> - alice</span>')
+    expect(
+      html_element(
+        response.body,
+        "//li[.//a[text()='@scope/tool']]//div[@class='ranking-list__meta']" \
+        "/a[@class='muted-link muted-link--standalone' and @href='/users/github/alice' and text()='alice']"
+      )
+    ).not_to be_nil
     expect(response.body).not_to include("href=\"/packages/npm/names/#{encoded_name}\"")
     expect(response.body).to include('href="https://www.npmjs.com/package/@scope/tool"')
     expect_package_registry_and_repository_links(response)

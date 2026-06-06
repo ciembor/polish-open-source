@@ -78,6 +78,28 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PackagePathHelpers do
     end
   end
 
+  describe '#package_owner_profile_link' do
+    it 'links package owners to the local user profile when the package belongs to a user repository' do
+      row = repository_row(repository_owner_login: 'alice', repository_owner_name: 'Alice Example')
+
+      expect(helper.package_owner_profile_link(row)).to eq('/rank/users/github/alice/alice-example')
+    end
+
+    it 'links package owners to the local organization profile' do
+      row = repository_row(
+        repository_kind: 'organization',
+        repository_owner_login: 'polish-org',
+        repository_owner_name: 'Polish Org'
+      )
+
+      expect(helper.package_owner_profile_link(row)).to eq('/rank/organizations/github/polish-org')
+    end
+
+    it 'returns nil when the package owner login is missing' do
+      expect(helper.package_owner_profile_link(repository_row(repository_owner_login: nil))).to be_nil
+    end
+  end
+
   describe '#package_owner_display_name' do
     it 'adds the login to the owner name when both are available' do
       row = repository_row(repository_owner_name: 'Alice Example', repository_owner_login: 'alice')
