@@ -48,17 +48,22 @@ module PolishOpenSourceRank
         def repository_owner_profile_schema
           return organization_owner_profile_schema if @organization_repository
 
-          {
+          profile = {
             '@type' => 'Person',
-            'name' => @repository.fetch(:owner_login),
+            'name' => @repository[:owner_name].to_s.empty? ? @repository.fetch(:owner_login) : @repository[:owner_name],
             'url' => full_url(repository_owner_profile_path)
           }
+          profile['alternateName'] = @repository.fetch(:owner_login) if owner_name_available?(
+            @repository[:owner_name],
+            @repository.fetch(:owner_login)
+          )
+          profile
         end
 
         def organization_owner_profile_schema
-          {
+          profile = {
             '@type' => 'Organization',
-            'name' => @organization_repository.fetch(:organization_login),
+            'name' => organization_owner_name,
             'url' => full_url(
               organization_profile_path(
                 platform: @organization_repository.fetch(:platform),
@@ -67,6 +72,11 @@ module PolishOpenSourceRank
               )
             )
           }
+          profile['alternateName'] = @organization_repository.fetch(:organization_login) if owner_name_available?(
+            @organization_repository[:owner_name],
+            @organization_repository.fetch(:organization_login)
+          )
+          profile
         end
 
         def organization_profile_schema(organization)
@@ -89,6 +99,17 @@ module PolishOpenSourceRank
             login: @repository.fetch(:owner_login),
             name: @repository[:owner_name]
           )
+        end
+
+        def organization_owner_name
+          name = @organization_repository[:owner_name].to_s
+          return @organization_repository.fetch(:organization_login) if name.empty?
+
+          name
+        end
+
+        def owner_name_available?(name, login)
+          !name.to_s.empty? && name.to_s != login
         end
       end
     end

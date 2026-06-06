@@ -304,10 +304,10 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
       state = page_state.repository_profile(repository: repository, own_repository: true)
 
       expect(state).to include(
-        title: 'repositories.seo.title|language=Ruby|platform=GitHub|repository=ciembor/polish-open-source-rank',
+        title: 'repositories.seo.title|language=Ruby|platform=GitHub|repository=polish-open-source-rank',
         description:
-          'repositories.seo.description|owner=Maciej (ciembor)|platform=GitHub|' \
-          'repository=ciembor/polish-open-source-rank|summary=repositories.seo.summary_language|' \
+          'repositories.seo.description|owner=ciembor (Maciej)|platform=GitHub|' \
+          'repository=polish-open-source-rank|summary=repositories.seo.summary_language|' \
           'language=Ruby Ranking for Polish open source repositories. ' \
           'repositories.seo.summary_stars|stars=1234',
         canonical_path: '/repositories/github/ciembor/polish-open-source-rank',

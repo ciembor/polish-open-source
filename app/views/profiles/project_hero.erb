@@ -7,7 +7,7 @@
       </div>
       <div>
         <div class="profile-title-row">
-          <h1><%= h record.fetch(:full_name) %></h1>
+          <h1><%= h repository_display_name(record) %></h1>
         </div>
         <% if record[:description] && !record[:description].empty? %>
           <p class="lede"><%= h record[:description] %></p>

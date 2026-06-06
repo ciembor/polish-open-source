@@ -289,7 +289,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(organization_badge.body).to include('1st')
     expect(organization_repository.status).to eq(200)
     expect(organization_repository.body).to include(
-      '<title>polish-org/toolkit - Ruby organizacji na GitHub - Open Source Polska</title>'
+      '<title>toolkit - Ruby organizacji na GitHub - Open Source Polska</title>'
     )
     expect(organization_repository.body).to include('href="/organizations/github/polish-org"')
     expect(organization_repository.body).to include('"@type": "SoftwareSourceCode"')
@@ -2072,9 +2072,12 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     badge_response = responses.fetch(:badge_response)
     expect(ranking_response.body).to include('href="/repositories/github/alice/app"')
     expect(profile_response.status).to eq(200)
-    expect(profile_response.body).to include('<title>alice/app - Ruby na GitHub - Open Source Polska</title>')
+    expect(profile_response.body).to include('<title>app - Ruby na GitHub - Open Source Polska</title>')
     expect(profile_response.body).to include('rel="canonical" href="https://rank.example/repositories/github/alice/app"')
     expect(profile_response.body).to include('"@type": "SoftwareSourceCode"')
+    expect(profile_response.body).to include('<h1>app</h1>')
+    expect(profile_response.body).to include('>alice (Alice)<')
+    expect(profile_response.body).to include('"alternateName": "alice"')
     expect(profile_response.body).to include('class="profile-action"')
     expect(profile_response.body).not_to include('class="ranking-action"')
     expect(profile_response.body).not_to include('/icons/medal-gold.svg')

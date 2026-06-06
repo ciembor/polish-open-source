@@ -25,11 +25,13 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageSeoHelpers do
     expect(host.call(:user_profile_seo_description, {}, 'alice', 'GitHub')).to eq(
       'users.seo.description_without_location|location=|platform=GitHub|user=alice'
     )
-    expect(host.call(:repository_profile_seo_title, { full_name: 'alice/app', language: 'Ruby' }, 'GitHub')).to eq(
-      'repositories.seo.title|language=Ruby|platform=GitHub|repository=alice/app'
+    expect(
+      host.call(:repository_profile_seo_title, { full_name: 'alice/app', name: 'app', language: 'Ruby' }, 'GitHub')
+    ).to eq(
+      'repositories.seo.title|language=Ruby|platform=GitHub|repository=app'
     )
     expect(host.call(:repository_profile_seo_title, { full_name: 'alice/app' }, 'GitHub')).to eq(
-      'repositories.seo.title_without_language|language=|platform=GitHub|repository=alice/app'
+      'repositories.seo.title_without_language|language=|platform=GitHub|repository=app'
     )
     expect(
       host.call(:organization_profile_seo_description, { city: 'Warszawa' }, 'Acme Labs (acme)', 'GitHub')
@@ -40,12 +42,16 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageSeoHelpers do
       'organizations.seo.description_without_location|location=|organization=Acme Labs (acme)|platform=GitHub'
     )
     expect(
-      host.call(:organization_repository_profile_seo_title, { full_name: 'acme/tool', language: 'Go' }, 'GitHub')
+      host.call(
+        :organization_repository_profile_seo_title,
+        { full_name: 'acme/tool', name: 'tool', language: 'Go' },
+        'GitHub'
+      )
     ).to eq(
-      'organization_repositories.seo.title|language=Go|platform=GitHub|repository=acme/tool'
+      'organization_repositories.seo.title|language=Go|platform=GitHub|repository=tool'
     )
     expect(host.call(:organization_repository_profile_seo_title, { full_name: 'acme/tool' }, 'GitHub')).to eq(
-      'organization_repositories.seo.title_without_language|language=|platform=GitHub|repository=acme/tool'
+      'organization_repositories.seo.title_without_language|language=|platform=GitHub|repository=tool'
     )
   end
 
@@ -62,7 +68,9 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageSeoHelpers do
     expect(summary).to include('repositories.seo.summary_language|language=Ruby')
     expect(summary).to include('repositories.seo.summary_stars|stars=123')
     expect(host.call(:owner_display_name, 'Alice Example', 'alice')).to eq('Alice Example (alice)')
+    expect(host.call(:owner_login_display_name, 'Alice Example', 'alice')).to eq('alice (Alice Example)')
     expect(host.call(:owner_display_name, 'alice', 'alice')).to eq('alice')
+    expect(host.call(:repository_display_name, { full_name: 'alice/app' })).to eq('app')
     expect(host.call(:seo_excerpt, 'word ' * 40, limit: 20)).to end_with('...')
   end
 end

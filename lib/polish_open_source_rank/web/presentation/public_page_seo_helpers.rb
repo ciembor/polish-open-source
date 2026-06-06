@@ -4,6 +4,8 @@ module PolishOpenSourceRank
   module Web
     module Presentation
       module PublicPageSeoHelpers
+        include ProfileDisplayHelpers
+
         private
 
         def user_profile_seo_title(display_name, source_name)
@@ -20,20 +22,21 @@ module PolishOpenSourceRank
         end
 
         def repository_profile_seo_title(repository, source_name)
+          repository_name = repository_display_name(repository)
           key = if present_value?(repository[:language])
                   'repositories.seo.title'
                 else
                   'repositories.seo.title_without_language'
                 end
-          t(key, repository: repository.fetch(:full_name), platform: source_name, language: repository[:language])
+          t(key, repository: repository_name, platform: source_name, language: repository[:language])
         end
 
         def repository_profile_seo_description(repository, source_name)
           t(
             'repositories.seo.description',
-            repository: repository.fetch(:full_name),
+            repository: repository_display_name(repository),
             platform: source_name,
-            owner: owner_display_name(repository[:owner_name], repository.fetch(:owner_login)),
+            owner: owner_login_display_name(repository[:owner_name], repository.fetch(:owner_login)),
             summary: repository_seo_summary(repository)
           )
         end
@@ -52,32 +55,27 @@ module PolishOpenSourceRank
         end
 
         def organization_repository_profile_seo_title(repository, source_name)
+          repository_name = repository_display_name(repository)
           key = if present_value?(repository[:language])
                   'organization_repositories.seo.title'
                 else
                   'organization_repositories.seo.title_without_language'
                 end
-          t(key, repository: repository.fetch(:full_name), platform: source_name, language: repository[:language])
+          t(key, repository: repository_name, platform: source_name, language: repository[:language])
         end
 
         def organization_repository_profile_seo_description(repository, source_name)
           t(
             'organization_repositories.seo.description',
-            repository: repository.fetch(:full_name),
+            repository: repository_display_name(repository),
             platform: source_name,
-            owner: owner_display_name(repository[:owner_name], repository.fetch(:organization_login)),
+            owner: owner_login_display_name(repository[:owner_name], repository.fetch(:organization_login)),
             summary: repository_seo_summary(repository)
           )
         end
 
         def seo_location(resource)
           resource[:location_raw] || resource[:city] || resource[:country]
-        end
-
-        def owner_display_name(name, login)
-          return login if name.to_s.empty? || name.to_s.casecmp?(login)
-
-          "#{name} (#{login})"
         end
 
         def repository_seo_summary(repository)

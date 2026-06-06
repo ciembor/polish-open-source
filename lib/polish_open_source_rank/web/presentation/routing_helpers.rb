@@ -8,6 +8,7 @@ module PolishOpenSourceRank
         include NavigationHelpers
         include PackageOwnerHelpers
         include PackagePathHelpers
+        include ProfileDisplayHelpers
         include ProfilePathHelpers
         include RankingSectionPathHelpers
         include StructuredDataHelpers
