@@ -47,6 +47,10 @@ In sandboxed or non-interactive shells, prefer repo entrypoints such as
 That keeps commands on the project's pinned Ruby even when the shell PATH falls
 back to `/usr/bin/bundle`.
 
+Use `bin/gh` for GitHub CLI operations because Codex shells may omit Homebrew
+from `PATH`. Authentication, pull request merge policy, and Actions inspection
+are documented in [GitHub Operations](github-operations.md).
+
 Mutation checks are available on demand through [Mutant](https://github.com/mbj/mutant):
 
 ```sh

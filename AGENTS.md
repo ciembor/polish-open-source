@@ -4,6 +4,9 @@ DO NOT introduce Reek code smells in the code
 AVOID generating code with code smells
 In sandboxed or non-interactive shells, use repo entrypoints like `bin/bundle`,
 `bin/rspec`, `bin/rake`, and `bin/quality` instead of plain `bundle exec ...`.
+For GitHub pull requests, merges, and Actions, read
+`docs/github-operations.md` and use `bin/gh`; do not depend on Homebrew being in
+`PATH`.
 
 # OBEY A Philosophy of Software Design by John Ousterhout
 

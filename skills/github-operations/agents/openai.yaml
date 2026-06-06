@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitHub Operations"
+  short_description: "Inspect PRs, merge safely, and fix CI"
+  default_prompt: "Use $github-operations to inspect repository pull requests, handle Dependabot updates, merge eligible changes, and diagnose GitHub Actions failures."

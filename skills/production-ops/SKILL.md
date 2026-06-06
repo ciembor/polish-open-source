@@ -25,6 +25,8 @@ Read only the files needed for the task:
   manual crawl commands
 - `docs/operations-runbook.md`: restarts, alert checks, incident workflow, and
   backup restore procedure
+- `docs/github-operations.md`: GitHub CLI authentication, Actions inspection,
+  workflow dispatch, and post-merge verification
 - `docs/publication.md`: publication and `publish_snapshot --rollback` tasks
 - `docs/performance.md`: latency, traffic spikes, and SLO-oriented triage
 

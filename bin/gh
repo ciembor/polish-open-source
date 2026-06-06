@@ -1,0 +1,16 @@
+#!/bin/sh
+set -eu
+
+if [ -n "${GH_BIN:-}" ]; then
+  exec "$GH_BIN" "$@"
+fi
+
+for candidate in /opt/homebrew/bin/gh /usr/local/bin/gh; do
+  if [ -x "$candidate" ]; then
+    exec "$candidate" "$@"
+  fi
+done
+
+printf '%s\n' \
+  "GitHub CLI was not found. Install it with Homebrew or set GH_BIN." >&2
+exit 127
