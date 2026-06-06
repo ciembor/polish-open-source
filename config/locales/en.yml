@@ -190,7 +190,6 @@ en:
     top_projects: "Top projects"
     top_users_stars: "Top users: stars"
   elite:
-    medal_alt: "Polish Elite %{rank} place medal"
     place: "%{rank} place"
     rank: "Polish Elite"
   date:

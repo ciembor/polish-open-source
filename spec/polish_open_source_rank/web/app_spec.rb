@@ -622,13 +622,13 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(replay.status).to eq(400)
   end
 
-  it 'keeps podium medals on profile pages', :aggregate_failures do
+  it 'does not render podium medals on profile pages', :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     request = Rack::MockRequest.new(described_class)
 
-    expect(request.get('/users/github/alice').body).to include('/icons/medal-gold.svg')
-    expect(request.get('/users/github/bob').body).to include('/icons/medal-silver.svg')
-    expect(request.get('/users/github/carol').body).to include('/icons/medal-bronze.svg')
+    expect(request.get('/users/github/alice').body).not_to include('/icons/medal-gold.svg')
+    expect(request.get('/users/github/bob').body).not_to include('/icons/medal-silver.svg')
+    expect(request.get('/users/github/carol').body).not_to include('/icons/medal-bronze.svg')
   end
 
   it 'renders repository profile pages and GitHub badges from ranking projects', :aggregate_failures do
@@ -1501,9 +1501,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     podium_classes = html_elements(response.body, "//ol[@aria-labelledby='ranking-detail-users']/li")
                      .first(3)
                      .map { |element| element.attributes['class'] }
-    expect(podium_classes).to include('ranking-list__item first_place')
-    expect(podium_classes).to include('ranking-list__item second_place')
-    expect(podium_classes).to include('ranking-list__item third_place')
+    expect(podium_classes).to all(eq('ranking-list__item'))
     expect(response.body).not_to include('<table>')
   end
 
@@ -1960,7 +1958,6 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       '#1',
       'Najlepsze projekty',
       'alice/app',
-      '/icons/medal-gold.svg',
       '12 345'
     )
     expect(profile_response.body).not_to include('class="ranking-action"')
@@ -2023,7 +2020,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile_response.body).to include('"@type": "SoftwareSourceCode"')
     expect(profile_response.body).to include('class="profile-action"')
     expect(profile_response.body).not_to include('class="ranking-action"')
-    expect(profile_response.body).to include('/icons/medal-gold.svg')
+    expect(profile_response.body).not_to include('/icons/medal-gold.svg')
     expect(profile_response.body).to include('<h2 id="repository-star-history-heading">Historia gwiazdek</h2>')
     expect(profile_response.body).to include('href="https://www.star-history.com/alice/app"')
     expect(profile_response.body).to include(

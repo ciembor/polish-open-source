@@ -8,7 +8,6 @@
       <div>
         <div class="profile-title-row">
           <h1><%= h record.fetch(:full_name) %></h1>
-          <%= erb :"shared/elite_medal", locals: { rank: record[:elite_rank], size: "large" } %>
         </div>
         <% if record[:description] && !record[:description].empty? %>
           <p class="lede"><%= h record[:description] %></p>

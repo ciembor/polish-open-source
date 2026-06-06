@@ -103,14 +103,6 @@ module PolishOpenSourceRank
           Contexts::Ranking::Domain::LocationCatalog.scopes
         end
 
-        def elite_medal_path(rank)
-          case rank.to_i
-          when 1 then '/icons/medal-gold.svg'
-          when 2 then '/icons/medal-silver.svg'
-          when 3 then '/icons/medal-bronze.svg'
-          end
-        end
-
         def period_label(period_start)
           date = Date.parse(period_start)
           "#{t('date.months').fetch(date.month - 1)} #{date.year}"

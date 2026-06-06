@@ -1,4 +1,0 @@
-<% medal_path = elite_medal_path(rank) %>
-<% if medal_path %>
-  <img class="elite-medal <%= h defined?(size) && size == "large" ? "elite-medal--large" : "" %>" src="<%= h app_path(medal_path) %>" alt="<%= h t('elite.medal_alt', rank: rank) %>">
-<% end %>

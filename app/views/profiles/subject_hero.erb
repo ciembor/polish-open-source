@@ -14,9 +14,6 @@
       <div>
         <div class="profile-title-row">
           <h1><%= h(record[:name].to_s.empty? ? record.fetch(:login) : record[:name]) %></h1>
-          <% unless profile_deleted %>
-            <%= erb :"shared/elite_medal", locals: { rank: record[:elite_rank], size: "large" } %>
-          <% end %>
         </div>
         <p class="profile-login"><%= h(profile_deleted ? t("#{translation_scope}.deleted.label") : record.fetch(:login)) %></p>
         <% unless profile_deleted %>

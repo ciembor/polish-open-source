@@ -353,18 +353,6 @@
   color: var(--accent-strong);
 }
 
-.second_place {
-  background: linear-gradient(130deg, #bbb 0%, #eee 50%);
-}
-
-.first_place {
-  background: linear-gradient(130deg, #d4af37 0%, #fff3b0 50%);
-}
-
-.third_place {
-  background: linear-gradient(130deg, #b87333 0%, #ffd1a3 50%);
-}
-
 .metric {
   color: var(--accent);
   font-weight: 900;
@@ -380,17 +368,4 @@
   align-items: center;
   display: inline-flex;
   gap: 6px;
-}
-
-.elite-medal {
-  display: inline-block;
-  height: 22px;
-  object-fit: contain;
-  vertical-align: -5px;
-  width: 22px;
-}
-
-.elite-medal--large {
-  height: 54px;
-  width: 54px;
 }
