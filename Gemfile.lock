@@ -102,7 +102,7 @@ GEM
     psych (5.4.0)
       date
       stringio
-    puma (8.0.1)
+    puma (8.0.2)
       nio4r (~> 2.0)
     racc (1.8.1)
     rack (3.2.6)
@@ -236,7 +236,7 @@ DEPENDENCIES
   zeitwerk (~> 2.7)
 
 RUBY VERSION
-   ruby 4.0.5p0
+  ruby 4.0.5p0
 
 BUNDLED WITH
-   4.0.10
+  4.0.10
