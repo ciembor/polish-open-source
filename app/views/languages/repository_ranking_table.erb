@@ -5,6 +5,8 @@
       <% rows.each_with_index do |row, index| %>
         <% repository = { platform: row.fetch(:platform), full_name: row.fetch(:full_name) } %>
         <% path = row.fetch(:repository_kind) == "organization" ? organization_repository_profile_path(repository) : repository_profile_path(repository) %>
+        <% owner = { platform: row.fetch(:platform), login: row.fetch(:owner_login) } %>
+        <% owner_path = row.fetch(:repository_kind) == "organization" ? organization_profile_path(owner) : user_profile_path(owner) %>
         <li class="ranking-list__item">
           <span class="rank-cell rank-mark"><%= index + 1 %></span>
           <div class="ranking-list__body">
@@ -14,6 +16,9 @@
             <% if row[:description] && !row[:description].empty? %>
               <span class="ranking-list__description"><%= h row[:description] %></span>
             <% end %>
+            <div class="ranking-list__meta">
+              <a class="muted-link muted-link--standalone" href="<%= h app_path(owner_path) %>"><%= h row.fetch(:owner_login) %></a>
+            </div>
           </div>
           <div class="ranking-list__metrics">
             <span class="metric" title="<%= h metric_label %>" aria-label="<%= h metric_label %>: <%= h number(row.fetch(metric)) %>">

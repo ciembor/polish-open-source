@@ -4,14 +4,8 @@ module PolishOpenSourceRank
   module Web
     module Presentation
       module PackageOwnerHelpers
-        def package_owner_display_name(row)
-          login = row[:repository_owner_login].to_s
-          return if login.empty?
-
-          name = row[:repository_owner_name].to_s
-          return login if name.empty? || name.casecmp?(login)
-
-          "#{name} (#{login})"
+        def package_owner_login(row)
+          row[:repository_owner_login].to_s.strip.then { |login| login unless login.empty? }
         end
 
         def package_owner_profile_link(row)

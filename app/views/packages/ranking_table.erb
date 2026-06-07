@@ -7,7 +7,7 @@
         <% repository_profile_url = package_repository_profile_link(row) %>
         <% repository_source_url = package_repository_link(row) %>
         <% owner_profile_url = package_owner_profile_link(row) %>
-        <% owner_display_name = package_owner_display_name(row) %>
+        <% owner_login = package_owner_login(row) %>
         <li class="ranking-list__item">
           <span class="rank-cell rank-mark"><%= index + 1 %></span>
           <div class="ranking-list__body">
@@ -21,12 +21,12 @@
             <% if row[:repository_description] && !row[:repository_description].empty? %>
               <span class="ranking-list__description"><%= h row[:repository_description] %></span>
             <% end %>
-            <% if owner_display_name %>
+            <% if owner_login %>
               <div class="ranking-list__meta">
                 <% if owner_profile_url %>
-                  <a class="muted-link muted-link--standalone" href="<%= h owner_profile_url %>"><%= h owner_display_name %></a>
+                  <a class="muted-link muted-link--standalone" href="<%= h owner_profile_url %>"><%= h owner_login %></a>
                 <% else %>
-                  <span><%= h owner_display_name %></span>
+                  <span><%= h owner_login %></span>
                 <% end %>
               </div>
             <% end %>

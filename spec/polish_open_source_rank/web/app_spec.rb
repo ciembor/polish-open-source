@@ -1342,6 +1342,14 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('href="/languages/Ruby/repositories/top"')
     expect(response.body).to include('href="/languages/Ruby/users/top"')
     expect(
+      html_element(response.body, "//li[.//a[text()='app']]//div[@class='ranking-list__meta']" \
+                                  "/a[@href='/users/github/alice' and text()='alice']")
+    ).not_to be_nil
+    expect(
+      html_element(response.body, "//li[.//a[text()='toolkit']]//div[@class='ranking-list__meta']" \
+                                  "/a[@href='/organizations/github/polish-org' and text()='polish-org']")
+    ).not_to be_nil
+    expect(
       html_element(response.body, "//li[.//a[text()='app']]//span[contains(@class, 'ranking-list__links')]" \
                                   "/a[@href='https://github.com/alice/app' and text()='GitHub']")
     ).not_to be_nil

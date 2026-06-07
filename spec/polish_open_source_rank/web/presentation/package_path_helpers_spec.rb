@@ -100,17 +100,16 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PackagePathHelpers do
     end
   end
 
-  describe '#package_owner_display_name' do
-    it 'adds the login to the owner name when both are available' do
+  describe '#package_owner_login' do
+    it 'uses only the login when an owner name is available' do
       row = repository_row(repository_owner_name: 'Alice Example', repository_owner_login: 'alice')
 
-      expect(helper.package_owner_display_name(row)).to eq('Alice Example (alice)')
+      expect(helper.package_owner_login(row)).to eq('alice')
     end
 
-    it 'uses the login alone when the owner name is missing or duplicated' do
-      expect(helper.package_owner_display_name(repository_row(repository_owner_login: 'alice'))).to eq('alice')
-      expect(helper.package_owner_display_name(repository_row(repository_owner_name: 'Alice',
-                                                              repository_owner_login: 'alice'))).to eq('alice')
+    it 'normalizes blank and padded logins' do
+      expect(helper.package_owner_login(repository_row(repository_owner_login: ' alice '))).to eq('alice')
+      expect(helper.package_owner_login(repository_row(repository_owner_login: ' '))).to be_nil
     end
   end
 

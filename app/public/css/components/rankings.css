@@ -271,7 +271,9 @@
   justify-content: flex-end;
 }
 
-.ranking-list__meta span {
+.ranking-list__meta span,
+.ranking-list__meta > .muted-link--standalone {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

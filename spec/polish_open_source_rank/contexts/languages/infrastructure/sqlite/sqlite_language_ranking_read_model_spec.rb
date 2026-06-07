@@ -77,9 +77,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Languages::Infrastructure::SQLite
     )
     expect(organization_top.first).to include(
       full_name: 'org/ruby-c',
+      owner_login: 'org',
       repository_kind: 'organization',
       repository_stars_count: 90
     )
+    expect(user_rankings.fetch(:repository_stars_count).first).to include(owner_login: 'alice')
   end
 
   it 'uses repository stats from the requested period for both user and organization rankings' do
