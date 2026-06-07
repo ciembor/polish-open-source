@@ -13,4 +13,9 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::LanguagePathHelpers do
       expect(helper.language_initial('bitbake')).to eq('B')
     end
   end
+
+  it 'falls back to the language initial when an icon is unavailable', :aggregate_failures do
+    expect(helper.language_icon_exists?('Move')).to be(false)
+    expect(helper.language_initial('Move')).to eq('M')
+  end
 end

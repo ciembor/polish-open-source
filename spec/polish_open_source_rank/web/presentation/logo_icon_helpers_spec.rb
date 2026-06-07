@@ -25,5 +25,16 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::LogoIconHelpers do
     it 'returns false when a public icon is missing' do
       expect(helper.logo_icon_exists?('/icons/languages/definitely_missing.svg')).to be(false)
     end
+
+    it 'returns false when a public icon is empty' do
+      Dir.mktmpdir do |directory|
+        icon_path = Pathname(directory).join('app/public/icons/languages/empty.svg')
+        icon_path.dirname.mkpath
+        icon_path.write('')
+        allow(PolishOpenSourceRank).to receive(:root).and_return(Pathname(directory))
+
+        expect(helper.logo_icon_exists?('/icons/languages/empty.svg')).to be(false)
+      end
+    end
   end
 end

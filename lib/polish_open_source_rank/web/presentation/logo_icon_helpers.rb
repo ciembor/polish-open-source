@@ -5,9 +5,8 @@ module PolishOpenSourceRank
     module Presentation
       module LogoIconHelpers
         def logo_icon_exists?(path)
-          PolishOpenSourceRank.root
-                              .join('app/public', path.delete_prefix('/'))
-                              .file?
+          icon_path = PolishOpenSourceRank.root.join('app/public', path.delete_prefix('/'))
+          icon_path.file? && !icon_path.empty?
         end
 
         def logo_icon_initial(value)
