@@ -355,6 +355,28 @@
   color: var(--accent-strong);
 }
 
+.ranking-pagination {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.ranking-pagination__side {
+  min-width: 0;
+}
+
+.ranking-pagination__side--next {
+  text-align: right;
+}
+
+.ranking-pagination__status {
+  color: var(--muted);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
 .second_place {
   background: linear-gradient(130deg, #bbb 0%, #eee 50%);
 }

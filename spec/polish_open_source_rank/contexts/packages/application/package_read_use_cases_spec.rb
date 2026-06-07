@@ -53,7 +53,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application do
       ecosystem: 'npm',
       period_start: '2026-04-01',
       metric: 'downloads_total',
-      limit: 20
+      limit: 20,
+      offset: 0
     )
   end
 

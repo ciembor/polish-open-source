@@ -106,14 +106,17 @@ module PolishOpenSourceRank
           }
         end
 
-        def language_ranking_detail(period_slug:, period_start:, metric_slug:, metric:, ranking:)
+        def language_ranking_detail(period_slug:, period_start:, metric_slug:, metric:, pagination:)
+          path = call_view(:language_ranking_path, metric_slug, period_slug: period_slug)
           {
             language_metric_slug: metric_slug,
             language_metric: metric,
-            language_ranking: ranking,
+            language_ranking: pagination.records,
+            ranking_pagination: pagination,
+            pagination_path: path,
             title: t('languages.seo.ranking_title', metric: call_view(:language_metric_label, metric)),
             description: t('languages.seo.ranking_description', metric: call_view(:language_metric_label, metric)),
-            canonical_path: call_view(:language_ranking_path, metric_slug, period_slug: period_slug),
+            canonical_path: paginated_path(path, pagination.number),
             period_start: period_start
           }
         end
@@ -139,10 +142,15 @@ module PolishOpenSourceRank
             language_repository_kind: page.fetch(:repository_kind),
             language_repository_metric_slug: page.fetch(:metric_slug),
             language_repository_metric: page.fetch(:metric),
-            language_repository_ranking: page.fetch(:ranking),
+            language_repository_ranking: page.fetch(:pagination).records,
+            ranking_pagination: page.fetch(:pagination),
+            pagination_path: language_repository_ranking_canonical_path(page),
             title: language_repository_ranking_seo_title(page),
             description: language_repository_ranking_seo_description(page),
-            canonical_path: language_repository_ranking_canonical_path(page),
+            canonical_path: paginated_path(
+              language_repository_ranking_canonical_path(page),
+              page.fetch(:pagination).number
+            ),
             period_start: page.fetch(:period_start)
           }
         end
@@ -169,24 +177,29 @@ module PolishOpenSourceRank
             package_metric_slug: page.fetch(:metric_slug),
             package_metric: page.fetch(:metric),
             package_repository_kind: page.fetch(:repository_kind),
-            package_ranking: page.fetch(:ranking),
+            package_ranking: page.fetch(:pagination).records,
+            ranking_pagination: page.fetch(:pagination),
+            pagination_path: package_ranking_canonical_path(page),
             title: package_ranking_seo_title(page),
             description: package_ranking_seo_description(page),
-            canonical_path: package_ranking_canonical_path(page),
+            canonical_path: paginated_path(package_ranking_canonical_path(page), page.fetch(:pagination).number),
             period_start: page.fetch(:period_start)
           }
         end
 
-        def ranking_detail(scope:, period_slug:, kind:, metric:, ranking:)
+        def ranking_detail(scope:, period_slug:, kind:, metric:, pagination:)
           ranking_name = call_view(:ranking_title, kind, metric)
           scope_name = call_view(:scope_name, scope)
           period_name = seo_period_label(period_slug)
+          path = ranking_detail_path(scope, period_slug, kind, metric)
 
           {
-            ranking: ranking,
+            ranking: pagination.records,
+            ranking_pagination: pagination,
+            pagination_path: path,
             title: t('rankings.seo.detail_title', ranking: ranking_name, scope: scope_name, period: period_name),
             description: ranking_detail_description(kind, metric, ranking_name, scope_name, period_name),
-            canonical_path: ranking_detail_path(scope, period_slug, kind, metric)
+            canonical_path: paginated_path(path, pagination.number)
           }
         end
 
@@ -348,6 +361,10 @@ module PolishOpenSourceRank
 
         def package_metric_text(page)
           call_view(:package_metric_label, page.fetch(:metric), ecosystem: page.fetch(:ecosystem))
+        end
+
+        def paginated_path(path, page)
+          page == 1 ? path : "#{path}?page=#{page}"
         end
 
         def call_view(method_name, *, **)

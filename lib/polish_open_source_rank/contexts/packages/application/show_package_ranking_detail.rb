@@ -11,7 +11,7 @@ module PolishOpenSourceRank
             @package_ranking_read_model = package_ranking_read_model
           end
 
-          def call(ecosystem:, metric:, period_start:, limit: DEFAULT_LIMIT, repository_kind: nil)
+          def call(ecosystem:, metric:, period_start:, limit: DEFAULT_LIMIT, offset: 0, repository_kind: nil)
             return [] unless period_start
 
             ecosystem = Domain::Ecosystem.require_supported!(ecosystem)
@@ -19,7 +19,8 @@ module PolishOpenSourceRank
               ecosystem: ecosystem,
               period_start: period_start,
               metric: metric,
-              limit: limit
+              limit: limit,
+              offset: offset
             }
             arguments[:repository_kind] = repository_kind if repository_kind
             package_ranking_read_model.ranked_packages(**arguments)

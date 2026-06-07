@@ -288,13 +288,6 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     end.to raise_error(ArgumentError, 'Unsupported package ranking metric: downloads_30d; DROP TABLE packages')
   end
 
-  it 'does not expose non-country package scopes' do
-    seed_package(ecosystem: 'npm', name: 'alpha', downloads_30d: 10)
-
-    expect(read_model.ranked_packages(ecosystem: 'npm', period_start: period, metric: 'downloads_30d',
-                                      scope: 'krakow')).to be_empty
-  end
-
   def package_names(ecosystem, metric)
     read_model.ranked_packages(ecosystem: ecosystem, period_start: period, metric: metric).map do |package|
       package.fetch(:package_name)

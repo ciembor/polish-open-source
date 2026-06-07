@@ -69,6 +69,18 @@ module PolishOpenSourceRank
         def assign_public_page(attributes) = attributes.each { |name, value| instance_variable_set("@#{name}", value) }
 
         def public_page_state = (@public_page_state ||= Presentation::PublicPageState.new(self))
+
+        def ranking_paginator
+          Presentation::RankingPaginator.new(params['page'])
+        rescue Presentation::RankingPaginator::InvalidPage
+          halt 404
+        end
+
+        def fetch_ranking_page(paginator, &)
+          paginator.fetch(&)
+        rescue Presentation::RankingPaginator::InvalidPage
+          halt 404
+        end
       end
     end
   end

@@ -1,23 +1,23 @@
 # frozen_string_literal: true
 
 class DetailRankingReadModel
-  def user_rankings(*) = nil
+  def ranked_user_metric(*) = [{ login: 'alice' }]
 
-  def repository_rankings(*) = nil
+  def ranked_repository_metric(*) = [{ full_name: 'alice/app' }]
 
-  def organization_rankings(*) = nil
+  def ranked_organization_metric(*) = [{ login: 'polish-org' }]
 
-  def organization_repository_rankings(*) = nil
+  def ranked_organization_repository_metric(*) = [{ full_name: 'polish-org/toolkit' }]
 end
 
 RSpec.describe PolishOpenSourceRank::Contexts::Publication::Application::ShowRankingDetail do
   let(:read_model) do
     instance_double(
       DetailRankingReadModel,
-      user_rankings: { top: [{ login: 'alice' }] },
-      repository_rankings: { top: [{ full_name: 'alice/app' }] },
-      organization_rankings: { top: [{ login: 'polish-org' }] },
-      organization_repository_rankings: { top: [{ full_name: 'polish-org/toolkit' }] }
+      ranked_user_metric: [{ login: 'alice' }],
+      ranked_repository_metric: [{ full_name: 'alice/app' }],
+      ranked_organization_metric: [{ login: 'polish-org' }],
+      ranked_organization_repository_metric: [{ full_name: 'polish-org/toolkit' }]
     )
   end
 
@@ -37,5 +37,12 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Application::ShowRan
       use_case.call(scope: 'poland', kind: 'organization-repositories', metric: 'top', period_start: '2026-04-01')
     ).to eq([{ full_name: 'polish-org/toolkit' }])
     expect(use_case.call(scope: 'poland', kind: 'users', metric: 'top', period_start: nil)).to eq([])
+    expect(read_model).to have_received(:ranked_user_metric).with(
+      'poland',
+      '2026-04-01',
+      :user_top,
+      limit: 100,
+      offset: 0
+    )
   end
 end

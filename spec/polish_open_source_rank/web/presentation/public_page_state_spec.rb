@@ -160,6 +160,15 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
   subject(:page_state) { described_class.new(view_context) }
 
   let(:view_context) { PublicPageStateFakeViewContext.new }
+  let(:pagination) do
+    PolishOpenSourceRank::Web::Presentation::RankingPaginator::Page.new(
+      records: ranking,
+      number: 2,
+      offset: 100,
+      previous_page: 1,
+      next_page: 3
+    )
+  end
 
   describe '#rankings' do
     let(:page) do
@@ -325,20 +334,24 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
         period_slug: '2026-04',
         kind: 'users',
         metric: 'top',
-        ranking: ranking
+        pagination: pagination
       )
 
       expect(state).to include(
         ranking: ranking,
+        ranking_pagination: pagination,
+        pagination_path: '/2026-04/locations/krakow/users/top',
         title: 'rankings.seo.detail_title|period=April 2026|ranking=Users Top|scope=Krakow',
         description:
           'rankings.seo.detail_description|metric=Total stars|period=April 2026|ranking=Users Top|scope=Krakow',
-        canonical_path: '/2026-04/locations/krakow/users/top'
+        canonical_path: '/2026-04/locations/krakow/users/top?page=2'
       )
     end
   end
 
   describe '#package_ranking_detail' do
+    let(:ranking) { [{ package_name: '@scope/tool' }] }
+
     it 'builds package repository ranking state from semantic page attributes' do
       state = page_state.package_ranking_detail(
         {
@@ -348,7 +361,7 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
           metric_slug: 'top',
           metric: 'downloads_30d',
           repository_kind: 'user',
-          ranking: [{ package_name: '@scope/tool' }]
+          pagination: pagination
         }
       )
 
@@ -357,17 +370,21 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
         package_metric_slug: 'top',
         package_metric: 'downloads_30d',
         package_repository_kind: 'user',
-        package_ranking: [{ package_name: '@scope/tool' }],
+        package_ranking: ranking,
+        ranking_pagination: pagination,
+        pagination_path: '/packages/npm/users/top',
         title: 'packages.seo.repository_ranking_title|ecosystem=npm|kind=People repositories|metric=Downloads 30d',
         description: 'packages.seo.repository_ranking_description|ecosystem=npm|' \
                      'kind=People repositories|metric=Downloads 30d',
-        canonical_path: '/packages/npm/users/top',
+        canonical_path: '/packages/npm/users/top?page=2',
         period_start: '2026-04-01'
       )
     end
   end
 
   describe '#language_repository_ranking_detail' do
+    let(:ranking) { [{ full_name: 'polish-org/toolkit' }] }
+
     it 'builds language repository ranking state from semantic page attributes' do
       state = page_state.language_repository_ranking_detail(
         {
@@ -377,7 +394,7 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
           repository_kind: 'organization',
           metric_slug: 'top',
           metric: 'repository_stars_count',
-          ranking: [{ full_name: 'polish-org/toolkit' }]
+          pagination: pagination
         }
       )
 
@@ -386,11 +403,13 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
         language_repository_kind: 'organization',
         language_repository_metric_slug: 'top',
         language_repository_metric: 'repository_stars_count',
-        language_repository_ranking: [{ full_name: 'polish-org/toolkit' }],
+        language_repository_ranking: ranking,
+        ranking_pagination: pagination,
+        pagination_path: '/2026-04/languages/Ruby/organizations/top',
         title: 'languages.seo.repository_ranking_title|kind=Organization repositories|language=Ruby|metric=Stars',
         description: 'languages.seo.repository_ranking_description|' \
                      'kind=Organization repositories|language=Ruby|metric=Stars',
-        canonical_path: '/2026-04/languages/Ruby/organizations/top',
+        canonical_path: '/2026-04/languages/Ruby/organizations/top?page=2',
         period_start: '2026-04-01'
       )
     end
@@ -404,7 +423,7 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
           repository_kind: nil,
           metric_slug: 'top',
           metric: 'repository_stars_count',
-          ranking: [{ full_name: 'alice/app' }]
+          pagination: pagination
         }
       )
 
@@ -412,7 +431,7 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
         language_repository_kind: nil,
         title: 'languages.seo.repository_ranking_title|kind=All repositories|language=Ruby|metric=Stars',
         description: 'languages.seo.repository_ranking_description|kind=All repositories|language=Ruby|metric=Stars',
-        canonical_path: '/2026-04/languages/Ruby/repositories/top'
+        canonical_path: '/2026-04/languages/Ruby/repositories/top?page=2'
       )
     end
   end

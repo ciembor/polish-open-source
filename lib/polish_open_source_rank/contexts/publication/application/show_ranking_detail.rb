@@ -9,22 +9,24 @@ module PolishOpenSourceRank
             @ranking_read_model = ranking_read_model
           end
 
-          def call(scope:, kind:, metric:, period_start:)
+          RANKINGS = {
+            'users' => [:ranked_user_metric, Contexts::Ranking::Domain::RankingPolicy::USER_RANKINGS],
+            'repositories' => [:ranked_repository_metric,
+                               Contexts::Ranking::Domain::RankingPolicy::REPOSITORY_RANKINGS],
+            'organizations' => [:ranked_organization_metric,
+                                Contexts::Ranking::Domain::RankingPolicy::ORGANIZATION_RANKINGS],
+            'organization-repositories' => [
+              :ranked_organization_repository_metric,
+              Contexts::Ranking::Domain::RankingPolicy::ORGANIZATION_REPOSITORY_RANKINGS
+            ]
+          }.freeze
+
+          def call(scope:, kind:, metric:, period_start:, limit: 100, offset: 0)
             return [] unless period_start
 
-            case kind
-            when 'users'
-              ranking_read_model.user_rankings(scope, period_start: period_start).fetch(metric.to_sym)
-            when 'repositories'
-              ranking_read_model.repository_rankings(scope, period_start: period_start).fetch(metric.to_sym)
-            when 'organizations'
-              ranking_read_model.organization_rankings(scope, period_start: period_start).fetch(metric.to_sym)
-            else
-              ranking_read_model.organization_repository_rankings(
-                scope,
-                period_start: period_start
-              ).fetch(metric.to_sym)
-            end
+            method_name, metrics = RANKINGS.fetch(kind)
+            metric_key = metrics.fetch(metric.to_sym).key
+            ranking_read_model.public_send(method_name, scope, period_start, metric_key, limit: limit, offset: offset)
           end
 
           private

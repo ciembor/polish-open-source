@@ -46,26 +46,40 @@ module PolishOpenSourceRank
               end
             end
 
-            def ranked_user_metric(scope, period_start, metric_key, limit: Domain::RankingPolicy::RANKING_LIMIT)
-              ranked_users(scope, period_start, Domain::RankingPolicy.column(metric_key), limit: limit)
+            def ranked_user_metric(scope, period_start, metric_key, limit: Domain::RankingPolicy::RANKING_LIMIT,
+                                   offset: 0)
+              ranked_users(scope, period_start, Domain::RankingPolicy.column(metric_key), limit: limit, offset: offset)
             end
 
-            def ranked_repository_metric(scope, period_start, metric_key, limit: Domain::RankingPolicy::RANKING_LIMIT)
-              ranked_repositories(scope, period_start, Domain::RankingPolicy.column(metric_key), limit: limit)
+            def ranked_repository_metric(scope, period_start, metric_key, limit: Domain::RankingPolicy::RANKING_LIMIT,
+                                         offset: 0)
+              ranked_repositories(
+                scope,
+                period_start,
+                Domain::RankingPolicy.column(metric_key),
+                limit: limit,
+                offset: offset
+              )
             end
 
             def ranked_organization_metric(scope, period_start, metric_key,
-                                           limit: Domain::RankingPolicy::RANKING_LIMIT)
-              ranked_organizations(scope, period_start, Domain::RankingPolicy.column(metric_key), limit: limit)
+                                           limit: Domain::RankingPolicy::RANKING_LIMIT, offset: 0)
+              ranked_organizations(
+                scope,
+                period_start,
+                Domain::RankingPolicy.column(metric_key),
+                limit: limit,
+                offset: offset
+              )
             end
 
             def ranked_organization_repository_metric(scope, period_start, metric_key,
-                                                      limit: Domain::RankingPolicy::RANKING_LIMIT)
+                                                      limit: Domain::RankingPolicy::RANKING_LIMIT, offset: 0)
               ranked_organization_repositories(scope, period_start, Domain::RankingPolicy.column(metric_key),
-                                               limit: limit)
+                                               limit: limit, offset: offset)
             end
 
-            def ranked_users(scope, period_start, order_column, limit: Domain::RankingPolicy::RANKING_LIMIT)
+            def ranked_users(scope, period_start, order_column, limit: Domain::RankingPolicy::RANKING_LIMIT, offset: 0)
               sql_scope, params = user_scope(scope)
               order_expression = order_expression(order_column)
               database.fetch_all(<<~SQL, [period_start, *params])
@@ -81,10 +95,12 @@ module PolishOpenSourceRank
                 WHERE stats.period_start = ? AND #{sql_scope} #{positive_ranking_filter(order_column)}
                 ORDER BY #{order_expression} DESC, users.platform ASC, users.login COLLATE NOCASE ASC
                 LIMIT #{Domain::RankingPolicy.bounded_limit(limit)}
+                OFFSET #{bounded_offset(offset)}
               SQL
             end
 
-            def ranked_repositories(scope, period_start, order_column, limit: Domain::RankingPolicy::RANKING_LIMIT)
+            def ranked_repositories(scope, period_start, order_column, limit: Domain::RankingPolicy::RANKING_LIMIT,
+                                    offset: 0)
               sql_scope, params = repository_scope(scope)
               order_expression = order_expression(order_column)
               database.fetch_all(<<~SQL, [period_start, *params])
@@ -99,10 +115,12 @@ module PolishOpenSourceRank
                 ORDER BY #{order_expression} DESC, repositories.platform ASC,
                          repositories.full_name COLLATE NOCASE ASC
                 LIMIT #{Domain::RankingPolicy.bounded_limit(limit)}
+                OFFSET #{bounded_offset(offset)}
               SQL
             end
 
-            def ranked_organizations(scope, period_start, order_column, limit: Domain::RankingPolicy::RANKING_LIMIT)
+            def ranked_organizations(scope, period_start, order_column, limit: Domain::RankingPolicy::RANKING_LIMIT,
+                                     offset: 0)
               sql_scope, params = organization_scope(scope)
               order_expression = order_expression(order_column)
               database.fetch_all(<<~SQL, [period_start, *params])
@@ -118,11 +136,12 @@ module PolishOpenSourceRank
                 ORDER BY #{order_expression} DESC, organizations.platform ASC,
                          organizations.login COLLATE NOCASE ASC
                 LIMIT #{Domain::RankingPolicy.bounded_limit(limit)}
+                OFFSET #{bounded_offset(offset)}
               SQL
             end
 
             def ranked_organization_repositories(scope, period_start, order_column,
-                                                 limit: Domain::RankingPolicy::RANKING_LIMIT)
+                                                 limit: Domain::RankingPolicy::RANKING_LIMIT, offset: 0)
               sql_scope, params = organization_repository_scope(scope)
               order_expression = order_expression(order_column)
               database.fetch_all(<<~SQL, [period_start, *params])
@@ -138,6 +157,7 @@ module PolishOpenSourceRank
                 ORDER BY #{order_expression} DESC, repositories.platform ASC,
                          repositories.full_name COLLATE NOCASE ASC
                 LIMIT #{Domain::RankingPolicy.bounded_limit(limit)}
+                OFFSET #{bounded_offset(offset)}
               SQL
             end
 
@@ -153,6 +173,10 @@ module PolishOpenSourceRank
               return '' unless Domain::RankingPolicy.positive_ranking?(order_column)
 
               "AND #{order_expression(order_column)} > 0"
+            end
+
+            def bounded_offset(offset)
+              [offset.to_i, 0].max
             end
 
             def user_scope(scope)

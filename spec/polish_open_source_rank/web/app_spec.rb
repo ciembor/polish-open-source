@@ -237,12 +237,36 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(running_month_response.status).to eq(404)
   end
 
-  it 'renders full top 100 pages for each ranking type', :aggregate_failures do
+  it 'renders ranking detail pages for each ranking type', :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
 
     responses = ranking_detail_responses
 
     expect_rankings_detail_pages(responses)
+  end
+
+  it 'paginates all ranking records in groups of 100', :aggregate_failures do
+    path = seed_database
+    seed_many_ranked_users(path)
+    ENV['DATABASE_URL'] = "sqlite://#{path}"
+    request = Rack::MockRequest.new(described_class)
+
+    first_page = request.get('/people/users/top')
+    second_page = request.get('/people/users/top?page=2')
+    missing_page = request.get('/people/users/top?page=3')
+    invalid_page = request.get('/people/users/top?page=0')
+
+    expect(html_elements(first_page.body, "//ol[@aria-labelledby='ranking-detail-users']/li").length).to eq(100)
+    expect(first_page.body).to include('href="/people/users/top?page=2">Następna</a>')
+    expect(second_page.status).to eq(200)
+    expect(html_elements(second_page.body, "//ol[@aria-labelledby='ranking-detail-users']/li").length).to eq(2)
+    expect(second_page.body).to include('<span class="rank-cell rank-mark">101</span>')
+    expect(second_page.body).to include('href="/people/users/top">Poprzednia</a>')
+    expect(second_page.body).to include(
+      'rel="canonical" href="https://rank.example/people/users/top?page=2"'
+    )
+    expect(missing_page.status).to eq(404)
+    expect(invalid_page.status).to eq(404)
   end
 
   it 'renders package ranking pages without package profiles', :aggregate_failures do
@@ -807,7 +831,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(polish_response.body).to include('<html lang="pl">')
     expect(polish_response.body).to include('aria-label="Język"')
     expect(polish_response.body).to include('Ludzie')
-    expect(polish_response.body).to include('Zobacz top 100')
+    expect(polish_response.body).to include('Zobacz więcej')
     expect(polish_response.body).to include('href="/en/people"')
   end
 
@@ -1367,11 +1391,11 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   def expect_language_repository_detail_pages(responses)
     expect(responses.fetch(:language_all_top).body).to include(
-      'Top 100: Wszystkie repozytoria, Ruby, według gwiazdek'
+      'Wszystkie repozytoria, Ruby, według gwiazdek'
     )
     expect(responses.fetch(:language_all_top).body).to include('>app<')
     expect(responses.fetch(:language_all_top).body).to include('>toolkit<')
-    expect(responses.fetch(:language_user_top).body).to include('Top 100: Repozytoria ludzi, Ruby, według gwiazdek')
+    expect(responses.fetch(:language_user_top).body).to include('Repozytoria ludzi, Ruby, według gwiazdek')
     expect(responses.fetch(:language_user_top).body).to include('>app<')
     expect(responses.fetch(:language_user_top).body).to include('Nice Ruby app')
     expect(
@@ -1385,9 +1409,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   end
 
   def expect_language_detail_pages(responses)
-    expect(responses.fetch(:top).body).to include('Top 100 języków według liczby repozytoriów')
-    expect(responses.fetch(:stars).body).to include('Top 100 języków według gwiazdek')
-    expect(responses.fetch(:trending).body).to include('Top 100 popularnych języków')
+    expect(responses.fetch(:top).body).to include('Języki według liczby repozytoriów')
+    expect(responses.fetch(:stars).body).to include('Języki według gwiazdek')
+    expect(responses.fetch(:trending).body).to include('Popularne języki')
   end
 
   def expect_package_ranking_pages(responses, encoded_name)
@@ -1463,8 +1487,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   end
 
   def expect_npm_package_top_pages(responses)
-    expect(responses.fetch(:top).body).to include('Top 100 według pobrań z 30 dni')
-    expect(responses.fetch(:user_top).body).to include('Top 100: Repozytoria ludzi, npm, według pobrań z 30 dni')
+    expect(responses.fetch(:top).body).to include('Według pobrań z 30 dni')
+    expect(responses.fetch(:user_top).body).to include('Repozytoria ludzi, npm, według pobrań z 30 dni')
     expect(responses.fetch(:user_top).body).to include('@scope/tool')
     expect(
       html_element(
@@ -1472,26 +1496,26 @@ RSpec.describe PolishOpenSourceRank::Web::App do
         "//ol[@class='ranking-list' and @aria-labelledby='package-ranking-detail-top']"
       )
     ).not_to be_nil
-    expect(responses.fetch(:period_user_top).body).to include('Top 100: Repozytoria ludzi, npm, według pobrań z 30 dni')
+    expect(responses.fetch(:period_user_top).body).to include('Repozytoria ludzi, npm, według pobrań z 30 dni')
   end
 
   def expect_homebrew_package_pages(responses)
     expect(responses.fetch(:homebrew).body).to include('polish-tool')
     expect(responses.fetch(:homebrew).body).to include('ranking-grid ranking-grid--odd-package-metrics')
-    expect(responses.fetch(:homebrew_top).body).to include('Top 100 według instalacji z 30 dni')
+    expect(responses.fetch(:homebrew_top).body).to include('Według instalacji z 30 dni')
     expect(responses.fetch(:homebrew_top).body).to include('Instalacje 30 dni')
   end
 
   def expect_rubygems_package_pages(responses)
     expect(responses.fetch(:rubygems).body).to include('ranking-grid ranking-grid--compact')
     expect(responses.fetch(:rubygems).body).not_to include('ranking-grid--odd-package-metrics')
-    expect(responses.fetch(:rubygems_dependents).body).to include('Top 100 według zależnych pakietów')
+    expect(responses.fetch(:rubygems_dependents).body).to include('Według zależnych pakietów')
     expect(responses.fetch(:rubygems_dependents).body).to include('🔗 23')
   end
 
   def expect_nuget_package_pages(responses)
     expect(responses.fetch(:nuget).body).to include('Polish.Tool')
-    expect(responses.fetch(:nuget_downloads).body).to include('Top 100 według pobrań łącznie')
+    expect(responses.fetch(:nuget_downloads).body).to include('Według pobrań łącznie')
   end
 
   def expect_package_index_page(response)
@@ -1529,48 +1553,48 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect_ranking_page_hero(
       responses.fetch(:user),
       eyebrow: 'Ranking open source: ludzie',
-      title: 'Top 100 według zmergowanych PR'
+      title: 'Według zmergowanych PR'
     )
-    expect(responses.fetch(:user).body).to include('Top 100 według zmergowanych PR')
+    expect(responses.fetch(:user).body).to include('Według zmergowanych PR')
     expect(responses.fetch(:user).body).to include('🚀 8')
     expect(responses.fetch(:repository).status).to eq(200)
     expect_ranking_page_hero(
       responses.fetch(:repository),
       eyebrow: 'Ranking open source: ludzie',
-      title: 'Top 100 popularnych repozytoriów'
+      title: 'Popularne repozytoria'
     )
-    expect(responses.fetch(:repository).body).to include('Top 100 popularnych repozytoriów')
+    expect(responses.fetch(:repository).body).to include('Popularne repozytoria')
     expect(responses.fetch(:organization).status).to eq(200)
     expect_ranking_page_hero(
       responses.fetch(:organization),
       eyebrow: 'Ranking open source: organizacje',
-      title: 'Top 100 według gwiazdek'
+      title: 'Według gwiazdek'
     )
-    expect(responses.fetch(:organization).body).to include('Top 100 według gwiazdek')
-    expect(responses.fetch(:organization).body).not_to include('Top 100 organizacji według gwiazdek')
+    expect(responses.fetch(:organization).body).to include('Według gwiazdek')
+    expect(responses.fetch(:organization).body).not_to include('Organizacje według gwiazdek')
     expect(responses.fetch(:organization_active).status).to eq(200)
     expect_ranking_page_hero(
       responses.fetch(:organization_active),
       eyebrow: 'Ranking open source: organizacje',
-      title: 'Top 100 według zmergowanych PR'
+      title: 'Według zmergowanych PR'
     )
-    expect(responses.fetch(:organization_active).body).to include('Top 100 według zmergowanych PR')
-    expect(responses.fetch(:organization_active).body).not_to include('Top 100 organizacji według zmergowanych PR')
+    expect(responses.fetch(:organization_active).body).to include('Według zmergowanych PR')
+    expect(responses.fetch(:organization_active).body).not_to include('Organizacje według zmergowanych PR')
     expect(responses.fetch(:organization_active).body).to include('🚀 3')
     expect(responses.fetch(:organization_repository).status).to eq(200)
     expect_ranking_page_hero(
       responses.fetch(:organization_repository),
       eyebrow: 'Ranking open source: organizacje',
-      title: 'Top 100 popularnych repozytoriów organizacji'
+      title: 'Popularne repozytoria organizacji'
     )
-    expect(responses.fetch(:organization_repository).body).to include('Top 100 popularnych repozytoriów organizacji')
+    expect(responses.fetch(:organization_repository).body).to include('Popularne repozytoria organizacji')
   end
 
   def expect_latest_user_ranking_page(response)
     expect(response.status).to eq(200)
-    expect_ranking_page_hero(response, eyebrow: 'Ranking open source: ludzie', title: 'Top 100 według gwiazdek')
-    expect(response.body).to include('Top 100 według gwiazdek')
-    expect(response.body).not_to include('Top 100 użytkowników według gwiazdek')
+    expect_ranking_page_hero(response, eyebrow: 'Ranking open source: ludzie', title: 'Według gwiazdek')
+    expect(response.body).to include('Według gwiazdek')
+    expect(response.body).not_to include('Użytkownicy według gwiazdek')
     expect(response.body).to include('Gwiazdek')
     expect(response.body).not_to include('/icons/medal-gold.svg')
     expect(html_element(response.body, "//ol[@class='ranking-list' and @aria-labelledby='ranking-detail-users']"))
@@ -1589,9 +1613,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect_ranking_page_hero(
       response,
       eyebrow: 'Ranking open source: ludzie',
-      title: 'Top 100 repozytoriów według gwiazdek'
+      title: 'Repozytoria według gwiazdek'
     )
-    expect(response.body).to include('Top 100 repozytoriów według gwiazdek')
+    expect(response.body).to include('Repozytoria według gwiazdek')
   end
 
   def expect_ranking_page_hero(response, eyebrow:, title:)
@@ -1610,6 +1634,17 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       snapshot_repository.record_repository_stats(
         repository_stats(period, repository_id: id + 10, owner_id: id, owner_login: login, stars: stars)
       )
+    end
+  end
+
+  def seed_many_ranked_users(path)
+    repository = snapshot_repository(bootstrapped_database(path))
+    period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-04')
+
+    (4..102).each do |id|
+      login = format('user%03d', id)
+      repository.upsert_user(user_attributes(id: id, login: login, name: login, avatar_url: nil))
+      repository.record_user_stats(user_stats(period, user_id: id, login: login, total_stars: 3_000 - id))
     end
   end
 
@@ -1949,7 +1984,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'href="/languages"',
       'href="https://github.com/ciembor/polish-open-source"',
       'Repozytorium',
-      'Zobacz top 100',
+      'Zobacz więcej',
       'href="/editions"',
       'application/ld+json'
     )

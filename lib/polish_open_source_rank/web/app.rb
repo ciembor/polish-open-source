@@ -16,6 +16,7 @@ module PolishOpenSourceRank
       include Controllers::PackageRankingController
       include Controllers::ProfileDeletionController
       include Controllers::PublicController
+      include Controllers::RankingDetailController
       include Controllers::SharedController
 
       RANKING_DETAIL_SEGMENTS = '(users|repositories|organizations|organization-repositories)/' \

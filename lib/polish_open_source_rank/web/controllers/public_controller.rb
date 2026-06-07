@@ -95,29 +95,6 @@ module PolishOpenSourceRank
           assign_public_page(public_page_state.organization_repository_profile(repository: @organization_repository))
           erb :'profiles/organization_repository'
         end
-
-        def render_ranking_detail(period_slug, scope, kind, metric)
-          unless ranking_metric?(kind, metric)
-            halt_negative_public_404!('ranking-detail', period_slug, scope, kind, metric)
-          end
-
-          @scope = scope_data(scope)
-          @period_slug = period_slug
-          @period = period_for(period_slug)
-          @kind = kind
-          @metric = metric
-          public_html_cache!('ranking-detail', period_slug, scope, kind, metric, @period,
-                             public_cache_revision(@period))
-          assign_public_page public_page_state.ranking_detail(
-            scope: @scope,
-            period_slug: @period_slug,
-            kind: kind,
-            metric: metric,
-            ranking: publication.show_ranking_detail.call(scope: scope, kind: kind, metric: metric,
-                                                          period_start: @period)
-          )
-          erb :'rankings/detail'
-        end
       end
     end
   end

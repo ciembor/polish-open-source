@@ -7,7 +7,7 @@ module PolishOpenSourceRank
         module SQLite
           class SQLitePackageRankingReadModel
             DEFAULT_LIMIT = 100
-            MAX_LIMIT = 100
+            MAX_LIMIT = DEFAULT_LIMIT + 1
             METRIC_EXPRESSIONS = Shared::Infrastructure::SQLite::SqlExpressionMap.new(
               {
                 downloads_30d: 'snapshots.downloads_30d',
@@ -46,15 +46,14 @@ module PolishOpenSourceRank
               metrics.to_h { |metric| [metric.to_sym, sort_rankings(rows, metric, limit)] }
             end
 
-            def ranked_packages(ecosystem:, period_start:, metric:, scope: 'poland', limit: DEFAULT_LIMIT,
+            def ranked_packages(ecosystem:, period_start:, metric:, limit: DEFAULT_LIMIT, offset: 0,
                                 repository_kind: nil)
               validate_metric!(metric)
               validate_ecosystem_metric!(ecosystem, metric)
               validate_repository_kind!(repository_kind)
-              return [] unless scope == 'poland'
 
               database.fetch_all(
-                ranked_packages_sql(metric, limit, repository_kind),
+                ranked_packages_sql(metric, limit, offset, repository_kind),
                 ranked_packages_bindings(period_start, ecosystem, repository_kind)
               )
             end
@@ -91,7 +90,7 @@ module PolishOpenSourceRank
               bindings
             end
 
-            def ranked_packages_sql(metric, limit, repository_kind)
+            def ranked_packages_sql(metric, limit, offset, repository_kind)
               <<~SQL
                 SELECT snapshots.ecosystem,
                        packages.package_name,
@@ -145,6 +144,7 @@ module PolishOpenSourceRank
                 HAVING #{metric_filter_sql(metric)}
                 ORDER BY #{metric_expression(metric)} DESC, packages.package_name COLLATE NOCASE ASC
                 LIMIT #{bounded_limit(limit)}
+                OFFSET #{bounded_offset(offset)}
               SQL
             end
 
@@ -407,9 +407,9 @@ module PolishOpenSourceRank
               repository_kind ? 'AND scans.repository_kind = ?' : ''
             end
 
-            def bounded_limit(limit)
-              limit.to_i.clamp(1, MAX_LIMIT)
-            end
+            def bounded_limit(limit) = limit.to_i.clamp(1, MAX_LIMIT)
+
+            def bounded_offset(offset) = [offset.to_i, 0].max
           end
         end
       end

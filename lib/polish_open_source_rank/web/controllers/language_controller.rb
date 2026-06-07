@@ -25,14 +25,16 @@ module PolishOpenSourceRank
 
           @period_slug = period_slug
           @period = period_for(period_slug)
+          paginator = ranking_paginator
           public_html_cache!(
             'language-ranking-detail',
             period_slug,
             metric_slug,
+            paginator.number,
             @period,
             public_cache_revision(@period)
           )
-          assign_language_ranking_page(period_slug, metric_slug, metric)
+          assign_language_ranking_page(period_slug, metric_slug, metric, paginator)
           erb :'languages/ranking_detail'
         end
 
@@ -54,15 +56,22 @@ module PolishOpenSourceRank
           erb :'languages/show'
         end
 
-        def assign_language_ranking_page(period_slug, metric_slug, metric)
-          ranking = languages.show_language_ranking_detail.call(metric: metric, period_start: @period)
+        def assign_language_ranking_page(period_slug, metric_slug, metric, paginator)
+          pagination = fetch_ranking_page(paginator) do |limit:, offset:|
+            languages.show_language_ranking_detail.call(
+              metric: metric,
+              period_start: @period,
+              limit: limit,
+              offset: offset
+            )
+          end
           assign_public_page(
             public_page_state.language_ranking_detail(
               period_slug: period_slug,
               period_start: @period,
               metric_slug: metric_slug,
               metric: metric,
-              ranking: ranking
+              pagination: pagination
             )
           )
         end

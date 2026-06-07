@@ -6,6 +6,7 @@ module PolishOpenSourceRank
       module Domain
         class RankingPolicy
           RANKING_LIMIT = 100
+          MAX_QUERY_LIMIT = RANKING_LIMIT + 1
           TRENDING_COLUMN = 'monthly_stars_delta'
           POSITIVE_RANKING_COLUMNS = [TRENDING_COLUMN, 'members_count'].freeze
           Metric = Data.define(:key, :column, :trending) do
@@ -63,7 +64,7 @@ module PolishOpenSourceRank
           end
 
           def self.bounded_limit(limit)
-            limit.to_i.clamp(1, RANKING_LIMIT)
+            limit.to_i.clamp(1, MAX_QUERY_LIMIT)
           end
         end
       end

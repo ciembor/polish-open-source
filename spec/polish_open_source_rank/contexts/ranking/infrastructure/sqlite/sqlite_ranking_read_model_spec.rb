@@ -84,10 +84,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     read_model = described_class.new(capturing_database)
 
     read_model.ranked_users('poland', period, 'total_stars', limit: '1000; DROP TABLE users')
-    read_model.ranked_users('poland', period, 'total_stars', limit: 0)
+    read_model.ranked_users('poland', period, 'total_stars', limit: 0, offset: -10)
 
-    expect(capturing_database.calls[0].fetch(:sql)).to match(/LIMIT 100\n\z/)
-    expect(capturing_database.calls[1].fetch(:sql)).to match(/LIMIT 1\n\z/)
+    expect(capturing_database.calls[0].fetch(:sql)).to match(/LIMIT 101\nOFFSET 0\n\z/)
+    expect(capturing_database.calls[1].fetch(:sql)).to match(/LIMIT 1\nOFFSET 0\n\z/)
   end
 
   it 'rejects unsupported order columns before SQL is generated' do

@@ -7,7 +7,7 @@ module PolishOpenSourceRank
         module SQLite
           class SQLiteLanguageRankingReadModel
             DEFAULT_LIMIT = 100
-            MAX_LIMIT = 100
+            MAX_LIMIT = DEFAULT_LIMIT + 1
             REPOSITORY_KINDS = %w[user organization].freeze
             LANGUAGE_METRIC_EXPRESSIONS = Shared::Infrastructure::SQLite::SqlExpressionMap.new(
               {
@@ -49,12 +49,12 @@ module PolishOpenSourceRank
               )
             end
 
-            def ranked_languages(period_start:, metric:, limit: DEFAULT_LIMIT, repository_kind: nil)
+            def ranked_languages(period_start:, metric:, limit: DEFAULT_LIMIT, offset: 0, repository_kind: nil)
               validate_language_metric!(metric)
               validate_repository_kind!(repository_kind)
 
               database.fetch_all(
-                ranked_languages_sql(metric, limit, repository_kind),
+                ranked_languages_sql(metric, limit, offset, repository_kind),
                 language_bindings(period_start, repository_kind)
               )
             end
@@ -71,12 +71,13 @@ module PolishOpenSourceRank
               end
             end
 
-            def ranked_repositories(language:, period_start:, metric:, limit: DEFAULT_LIMIT, repository_kind: nil)
+            def ranked_repositories(language:, period_start:, metric:, limit: DEFAULT_LIMIT, offset: 0,
+                                    repository_kind: nil)
               validate_repository_metric!(metric)
               validate_repository_kind!(repository_kind)
 
               database.fetch_all(
-                ranked_repositories_sql(metric, limit, repository_kind),
+                ranked_repositories_sql(metric, limit, offset, repository_kind),
                 language_bindings(period_start, repository_kind) + [language]
               )
             end
@@ -85,7 +86,7 @@ module PolishOpenSourceRank
 
             attr_reader :database
 
-            def ranked_languages_sql(metric, limit, repository_kind)
+            def ranked_languages_sql(metric, limit, offset, repository_kind)
               <<~SQL
                 WITH language_repositories AS (#{repository_union_sql(repository_kind)})
                 SELECT language,
@@ -97,6 +98,7 @@ module PolishOpenSourceRank
                 HAVING #{language_metric_filter_sql(metric)}
                 ORDER BY #{language_metric_expression(metric)} DESC, language COLLATE NOCASE ASC
                 LIMIT #{bounded_limit(limit)}
+                OFFSET #{bounded_offset(offset)}
               SQL
             end
 
@@ -114,7 +116,7 @@ module PolishOpenSourceRank
               SQL
             end
 
-            def ranked_repositories_sql(metric, limit, repository_kind)
+            def ranked_repositories_sql(metric, limit, offset, repository_kind)
               <<~SQL
                 WITH language_repositories AS (#{repository_union_sql(repository_kind)})
                 SELECT language,
@@ -132,6 +134,7 @@ module PolishOpenSourceRank
                   #{repository_metric_filter_sql(metric)}
                 ORDER BY #{repository_metric_expression(metric)} DESC, full_name COLLATE NOCASE ASC
                 LIMIT #{bounded_limit(limit)}
+                OFFSET #{bounded_offset(offset)}
               SQL
             end
 
@@ -234,6 +237,10 @@ module PolishOpenSourceRank
 
             def bounded_limit(limit)
               limit.to_i.clamp(1, MAX_LIMIT)
+            end
+
+            def bounded_offset(offset)
+              [offset.to_i, 0].max
             end
           end
         end
