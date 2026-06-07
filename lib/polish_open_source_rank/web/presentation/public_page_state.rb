@@ -364,7 +364,7 @@ module PolishOpenSourceRank
         end
 
         def paginated_path(path, page)
-          page == 1 ? path : "#{path}?page=#{page}"
+          page == 1 ? path : "#{path}/page/#{page}"
         end
 
         def call_view(method_name, *, **)

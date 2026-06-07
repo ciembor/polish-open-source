@@ -16,12 +16,12 @@ module PolishOpenSourceRank
           render_rankings(period_slug, slug, section: section)
         end
 
-        def render_city_ranking_detail(period_slug, slug, kind, metric)
+        def render_city_ranking_detail(period_slug, slug, kind, metric, page = nil)
           unless CITY_SLUGS.include?(slug)
             halt_negative_public_404!('city-ranking-detail', period_slug, slug, kind, metric)
           end
 
-          render_ranking_detail(period_slug, slug, kind, metric)
+          render_ranking_detail(period_slug, slug, kind, metric, page)
         end
 
         def render_rankings(period_slug, scope, section: 'people')

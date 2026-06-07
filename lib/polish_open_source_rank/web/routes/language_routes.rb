@@ -6,11 +6,11 @@ module PolishOpenSourceRank
       module LanguageRoutes
         def self.registered(app)
           app.get('/languages') { render_language_index('latest') }
-          app.get(current_language_repository_metric_route) do |language, repository_kind, metric|
-            render_language_repository_ranking_detail('latest', language, repository_kind, metric)
+          app.get(current_language_repository_metric_route(app)) do |language, repository_kind, metric, page|
+            render_language_repository_ranking_detail('latest', language, repository_kind, metric, page)
           end
-          app.get(current_language_metric_route) do |metric|
-            render_language_ranking_detail('latest', metric)
+          app.get(current_language_metric_route(app)) do |metric, page|
+            render_language_ranking_detail('latest', metric, page)
           end
           app.get(%r{/languages/([^/]+)}) do |language|
             render_language('latest', language)
@@ -36,32 +36,37 @@ module PolishOpenSourceRank
 
           def register_period_routes(app)
             app.get(%r{/(\d{4}-\d{2})/languages}) { |period_slug| render_language_index(period_slug) }
-            app.get(period_language_repository_metric_route) do |period_slug, language, repository_kind, metric|
-              render_language_repository_ranking_detail(period_slug, language, repository_kind, metric)
+            app.get(period_language_repository_metric_route(app)) do |period_slug, language, repository_kind, metric,
+                                                                    page|
+              render_language_repository_ranking_detail(period_slug, language, repository_kind, metric, page)
             end
-            app.get(period_language_metric_route) do |period_slug, metric|
-              render_language_ranking_detail(period_slug, metric)
+            app.get(period_language_metric_route(app)) do |period_slug, metric, page|
+              render_language_ranking_detail(period_slug, metric, page)
             end
             app.get(%r{/(\d{4}-\d{2})/languages/([^/]+)}) do |period_slug, language|
               render_language(period_slug, language)
             end
           end
 
-          def current_language_repository_metric_route
-            Regexp.new("/languages/([^/]+)/(#{repository_kind_slugs})/(#{repository_metric_slugs})")
+          def current_language_repository_metric_route(app)
+            Regexp.new(
+              "/languages/([^/]+)/(#{repository_kind_slugs})/(#{repository_metric_slugs})" \
+              "#{app::RANKING_PAGE_SEGMENT}"
+            )
           end
 
-          def current_language_metric_route
-            Regexp.new("/languages/(#{language_metric_slugs})")
+          def current_language_metric_route(app)
+            Regexp.new("/languages/(#{language_metric_slugs})#{app::RANKING_PAGE_SEGMENT}")
           end
 
           def latest_language_repository_metric_route
             Regexp.new("/latest/languages/([^/]+)/(#{repository_kind_slugs})/(#{repository_metric_slugs})")
           end
 
-          def period_language_repository_metric_route
+          def period_language_repository_metric_route(app)
             Regexp.new(
-              "/(\\d{4}-\\d{2})/languages/([^/]+)/(#{repository_kind_slugs})/(#{repository_metric_slugs})"
+              "/(\\d{4}-\\d{2})/languages/([^/]+)/(#{repository_kind_slugs})/(#{repository_metric_slugs})" \
+              "#{app::RANKING_PAGE_SEGMENT}"
             )
           end
 
@@ -69,8 +74,8 @@ module PolishOpenSourceRank
             Regexp.new("/latest/languages/(#{language_metric_slugs})")
           end
 
-          def period_language_metric_route
-            Regexp.new("/(\\d{4}-\\d{2})/languages/(#{language_metric_slugs})")
+          def period_language_metric_route(app)
+            Regexp.new("/(\\d{4}-\\d{2})/languages/(#{language_metric_slugs})#{app::RANKING_PAGE_SEGMENT}")
           end
 
           def language_metric_slugs

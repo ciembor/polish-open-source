@@ -71,13 +71,15 @@ module PolishOpenSourceRank
           end
 
           def register_historical_ranking_routes(app)
-            app.get(%r{/(\d{4}-\d{2})/#{app::RANKING_DETAIL_SEGMENTS}}) do |period_slug, kind, metric|
-              render_ranking_detail(period_slug, 'poland', kind, metric)
+            app.get(
+              %r{/(\d{4}-\d{2})/#{app::RANKING_DETAIL_SEGMENTS}#{app::RANKING_PAGE_SEGMENT}}
+            ) do |period_slug, kind, metric, page|
+              render_ranking_detail(period_slug, 'poland', kind, metric, page)
             end
             app.get(
-              %r{/(\d{4}-\d{2})/locations/([^/]+)/#{app::RANKING_DETAIL_SEGMENTS}}
-            ) do |period_slug, slug, kind, metric|
-              render_city_ranking_detail(period_slug, slug, kind, metric)
+              %r{/(\d{4}-\d{2})/locations/([^/]+)/#{app::RANKING_DETAIL_SEGMENTS}#{app::RANKING_PAGE_SEGMENT}}
+            ) do |period_slug, slug, kind, metric, page|
+              render_city_ranking_detail(period_slug, slug, kind, metric, page)
             end
             app.get(%r{/(\d{4}-\d{2})}) { |period_slug| render_rankings(period_slug, 'poland') }
             app.get(%r{/(\d{4}-\d{2})/organizations}) do |period_slug|

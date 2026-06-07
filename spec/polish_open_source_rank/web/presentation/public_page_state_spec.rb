@@ -344,7 +344,7 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
         title: 'rankings.seo.detail_title|period=April 2026|ranking=Users Top|scope=Krakow',
         description:
           'rankings.seo.detail_description|metric=Total stars|period=April 2026|ranking=Users Top|scope=Krakow',
-        canonical_path: '/2026-04/locations/krakow/users/top?page=2'
+        canonical_path: '/2026-04/locations/krakow/users/top/page/2'
       )
     end
   end
@@ -376,7 +376,7 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
         title: 'packages.seo.repository_ranking_title|ecosystem=npm|kind=People repositories|metric=Downloads 30d',
         description: 'packages.seo.repository_ranking_description|ecosystem=npm|' \
                      'kind=People repositories|metric=Downloads 30d',
-        canonical_path: '/packages/npm/users/top?page=2',
+        canonical_path: '/packages/npm/users/top/page/2',
         period_start: '2026-04-01'
       )
     end
@@ -409,7 +409,7 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
         title: 'languages.seo.repository_ranking_title|kind=Organization repositories|language=Ruby|metric=Stars',
         description: 'languages.seo.repository_ranking_description|' \
                      'kind=Organization repositories|language=Ruby|metric=Stars',
-        canonical_path: '/2026-04/languages/Ruby/organizations/top?page=2',
+        canonical_path: '/2026-04/languages/Ruby/organizations/top/page/2',
         period_start: '2026-04-01'
       )
     end
@@ -431,7 +431,7 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
         language_repository_kind: nil,
         title: 'languages.seo.repository_ranking_title|kind=All repositories|language=Ruby|metric=Stars',
         description: 'languages.seo.repository_ranking_description|kind=All repositories|language=Ruby|metric=Stars',
-        canonical_path: '/2026-04/languages/Ruby/repositories/top?page=2'
+        canonical_path: '/2026-04/languages/Ruby/repositories/top/page/2'
       )
     end
   end

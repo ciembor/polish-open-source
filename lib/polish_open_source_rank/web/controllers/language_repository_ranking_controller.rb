@@ -6,13 +6,14 @@ module PolishOpenSourceRank
       module LanguageRepositoryRankingController
         private
 
-        def render_language_repository_ranking_detail(period_slug, language, repository_kind_slug, metric_slug)
+        def render_language_repository_ranking_detail(period_slug, language, repository_kind_slug, metric_slug,
+                                                      page = nil)
           repository_kind = language_repository_kind_for_slug(repository_kind_slug)
           metric = Contexts::Languages::Domain::LanguageRepositoryRankingMetric.key_for_slug(metric_slug)
 
           @period_slug = period_slug
           @period = period_for(period_slug)
-          paginator = ranking_paginator
+          paginator = ranking_paginator(page)
           cache_language_repository_ranking!(period_slug, language, repository_kind_slug, metric_slug, paginator.number)
           pagination = language_repository_ranking(language, repository_kind, metric, paginator)
           halt 404 if pagination.records.empty?

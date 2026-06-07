@@ -70,8 +70,11 @@ module PolishOpenSourceRank
 
         def public_page_state = (@public_page_state ||= Presentation::PublicPageState.new(self))
 
-        def ranking_paginator
-          Presentation::RankingPaginator.new(params['page'])
+        def ranking_paginator(route_page = nil)
+          paginator = Presentation::RankingPaginator.new(route_page || params['page'])
+          redirect_first_ranking_page! if route_page && paginator.number == 1
+          redirect_query_ranking_page!(paginator) if route_page.nil? && params['page']
+          paginator
         rescue Presentation::RankingPaginator::InvalidPage
           halt 404
         end
@@ -80,6 +83,17 @@ module PolishOpenSourceRank
           paginator.fetch(&)
         rescue Presentation::RankingPaginator::InvalidPage
           halt 404
+        end
+
+        def redirect_query_ranking_page!(paginator)
+          path = env.fetch('polish_open_source_rank.unlocalized_path', request.path_info)
+          path = "#{path}/page/#{paginator.number}" unless paginator.number == 1
+          redirect app_path(localized_public_path(path, locale: current_locale)), 301
+        end
+
+        def redirect_first_ranking_page!
+          path = env.fetch('polish_open_source_rank.unlocalized_path', request.path_info).delete_suffix('/page/1')
+          redirect app_path(localized_public_path(path, locale: current_locale)), 301
         end
       end
     end

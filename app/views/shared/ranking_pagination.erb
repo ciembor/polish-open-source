@@ -2,13 +2,13 @@
   <nav class="ranking-pagination" aria-label="<%= h t('rankings.pagination.label') %>">
     <span class="ranking-pagination__side">
       <% if pagination.previous_page %>
-        <a class="ranking-action" href="<%= h app_path(pagination.previous_page == 1 ? path : "#{path}?page=#{pagination.previous_page}") %>"><%= h t('rankings.pagination.previous') %></a>
+        <a class="ranking-action" href="<%= h app_path(pagination.previous_page == 1 ? path : "#{path}/page/#{pagination.previous_page}") %>"><%= h t('rankings.pagination.previous') %></a>
       <% end %>
     </span>
     <span class="ranking-pagination__status"><%= h t('rankings.pagination.page', page: pagination.number) %></span>
     <span class="ranking-pagination__side ranking-pagination__side--next">
       <% if pagination.next_page %>
-        <a class="ranking-action" href="<%= h app_path("#{path}?page=#{pagination.next_page}") %>"><%= h t('rankings.pagination.next') %></a>
+        <a class="ranking-action" href="<%= h app_path("#{path}/page/#{pagination.next_page}") %>"><%= h t('rankings.pagination.next') %></a>
       <% end %>
     </span>
   </nav>

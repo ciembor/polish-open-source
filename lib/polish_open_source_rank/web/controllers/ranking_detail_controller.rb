@@ -6,14 +6,14 @@ module PolishOpenSourceRank
       module RankingDetailController
         private
 
-        def render_ranking_detail(period_slug, scope, kind, metric)
+        def render_ranking_detail(period_slug, scope, kind, metric, page = nil)
           halt_negative_public_404!('ranking-detail', period_slug, scope, kind, metric) unless ranking_metric?(
             kind,
             metric
           )
 
           assign_ranking_detail_context(period_slug, scope, kind, metric)
-          paginator = ranking_paginator
+          paginator = ranking_paginator(page)
           cache_ranking_detail!(period_slug, scope, kind, metric, paginator.number)
           pagination = general_ranking_page(scope, kind, metric, paginator)
           assign_public_page(ranking_detail_state(kind, metric, pagination))

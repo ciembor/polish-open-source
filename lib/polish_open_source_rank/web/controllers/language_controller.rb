@@ -20,12 +20,12 @@ module PolishOpenSourceRank
           erb :'languages/index'
         end
 
-        def render_language_ranking_detail(period_slug, metric_slug)
+        def render_language_ranking_detail(period_slug, metric_slug, page = nil)
           metric = Contexts::Languages::Domain::LanguageRankingMetric.key_for_slug(metric_slug)
 
           @period_slug = period_slug
           @period = period_for(period_slug)
-          paginator = ranking_paginator
+          paginator = ranking_paginator(page)
           public_html_cache!(
             'language-ranking-detail',
             period_slug,

@@ -6,7 +6,7 @@ module PolishOpenSourceRank
       module PackageRankingController
         private
 
-        def render_package_ranking_detail(period_slug, ecosystem, metric_slug, repository_kind_slug: nil)
+        def render_package_ranking_detail(period_slug, ecosystem, metric_slug, repository_kind_slug: nil, page: nil)
           metric = Contexts::Packages::Domain::PackageRankingMetric.key_for_slug(metric_slug)
           repository_kind = repository_kind_for_slug(repository_kind_slug)
           unless Contexts::Packages::Domain::PackageRankingMetric.supported_for_ecosystem?(ecosystem, metric)
@@ -14,7 +14,7 @@ module PolishOpenSourceRank
           end
           @period_slug = period_slug
           @period = period_for(period_slug)
-          paginator = ranking_paginator
+          paginator = ranking_paginator(page)
           cache_package_ranking!(period_slug, ecosystem, metric_slug, repository_kind_slug, paginator.number)
           render_package_ranking_page(period_slug, ecosystem, metric_slug, metric, repository_kind, paginator)
         end

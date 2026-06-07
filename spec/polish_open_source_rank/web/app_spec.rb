@@ -252,21 +252,29 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     request = Rack::MockRequest.new(described_class)
 
     first_page = request.get('/people/users/top')
-    second_page = request.get('/people/users/top?page=2')
-    missing_page = request.get('/people/users/top?page=3')
-    invalid_page = request.get('/people/users/top?page=0')
+    second_page = request.get('/people/users/top/page/2')
+    missing_page = request.get('/people/users/top/page/3')
+    invalid_page = request.get('/people/users/top/page/0')
+    first_page_alias = request.get('/people/users/top/page/1')
+    query_page = request.get('/people/users/top?page=2')
+    invalid_query_page = request.get('/people/users/top?page=0')
 
     expect(html_elements(first_page.body, "//ol[@aria-labelledby='ranking-detail-users']/li").length).to eq(100)
-    expect(first_page.body).to include('href="/people/users/top?page=2">Następna</a>')
+    expect(first_page.body).to include('href="/people/users/top/page/2">Następna</a>')
     expect(second_page.status).to eq(200)
     expect(html_elements(second_page.body, "//ol[@aria-labelledby='ranking-detail-users']/li").length).to eq(2)
     expect(second_page.body).to include('<span class="rank-cell rank-mark">101</span>')
     expect(second_page.body).to include('href="/people/users/top">Poprzednia</a>')
     expect(second_page.body).to include(
-      'rel="canonical" href="https://rank.example/people/users/top?page=2"'
+      'rel="canonical" href="https://rank.example/people/users/top/page/2"'
     )
     expect(missing_page.status).to eq(404)
     expect(invalid_page.status).to eq(404)
+    expect(first_page_alias.status).to eq(301)
+    expect(first_page_alias.location).to eq('http://example.org/people/users/top')
+    expect(query_page.status).to eq(301)
+    expect(query_page.location).to eq('http://example.org/people/users/top/page/2')
+    expect(invalid_query_page.status).to eq(404)
   end
 
   it 'renders package ranking pages without package profiles', :aggregate_failures do

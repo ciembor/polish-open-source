@@ -21,6 +21,7 @@ module PolishOpenSourceRank
 
       RANKING_DETAIL_SEGMENTS = '(users|repositories|organizations|organization-repositories)/' \
                                 '(top|trending|active|members)'
+      RANKING_PAGE_SEGMENT = '(?:/page/([1-9]\d*))?'
       SUPPORTED_LOCALES = Boot::SUPPORTED_LOCALES
       DEFAULT_LOCALE = Boot::DEFAULT_LOCALE
       SESSION_COOKIE_KEY = Boot::SESSION_COOKIE_KEY
