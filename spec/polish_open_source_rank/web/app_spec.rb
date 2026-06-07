@@ -155,6 +155,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       '<meta name="google-analytics-measurement-id" content="G-ABC123DEF4">'
     )
     expect(with_analytics.body).to include('/js/google_analytics.js')
+    expect(with_analytics.body).to include(
+      '<script async src="https://www.googletagmanager.com/gtag/js?id=G-ABC123DEF4"></script>'
+    )
   end
 
   it 'redirects legacy latest ranking routes to canonical section paths', :aggregate_failures do

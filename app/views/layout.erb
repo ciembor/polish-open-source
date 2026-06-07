@@ -47,7 +47,8 @@
     </script>
     <script defer src="<%= h asset_path('/js/navigation.js') %>"></script>
     <% if google_analytics_measurement_id %>
-      <script defer src="<%= h asset_path('/js/google_analytics.js') %>"></script>
+      <script src="<%= h asset_path('/js/google_analytics.js') %>"></script>
+      <script async src="<%= h google_analytics_script_url %>"></script>
     <% end %>
   </head>
   <body>
