@@ -14,7 +14,7 @@ IOWeight=200
 OOMScoreAdjust=-500
 
 ExecStartPre=-/usr/bin/podman rm -f polish-open-source-rank
-ExecStart=/usr/bin/podman run --name=polish-open-source-rank --user=1000:1000 --read-only --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m --memory=1200m --memory-swap=1200m --memory-reservation=512m --cpus=1.0 --pids-limit=256 -p 127.0.0.1:9293:9293 --env-file /home/ciembor/polish-open-source-rank/.env.local -e RACK_ENV=production -e APP_BASE_PATH=/ -e BASE_URL=https://polish-open-source.pl -v /home/ciembor/polish-open-source-rank/db:/app/db:rw -v /home/ciembor/polish-open-source-rank/log:/app/log:rw localhost/polish-open-source-rank:latest
+ExecStart=/usr/bin/podman run --name=polish-open-source-rank --user=1000:1000 --read-only --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m --memory=1200m --memory-swap=1200m --memory-reservation=512m --cpus=1.0 --pids-limit=256 -p 127.0.0.1:9293:9293 --env-file /home/ciembor/polish-open-source-rank/.env.local -e RACK_ENV=production -e APP_BASE_PATH=/ -e BASE_URL=https://polish-open-source.pl -e GOOGLE_ANALYTICS_MEASUREMENT_ID=G-QHRZZZLKPE -v /home/ciembor/polish-open-source-rank/db:/app/db:rw -v /home/ciembor/polish-open-source-rank/log:/app/log:rw localhost/polish-open-source-rank:latest
 ExecStartPost=-/usr/bin/systemctl start --no-block polish-open-source-rank-crawl-resume.service
 ExecStop=/usr/bin/podman stop --time 30 polish-open-source-rank
 ExecStopPost=-/usr/bin/podman rm -f polish-open-source-rank

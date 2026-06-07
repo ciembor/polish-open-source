@@ -9,6 +9,7 @@ RSpec.describe File do
     expect(unit).to include(
       'ExecStartPost=-/usr/bin/systemctl start --no-block polish-open-source-rank-crawl-resume.service',
       '--user=1000:1000 --read-only --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m',
+      '-e GOOGLE_ANALYTICS_MEASUREMENT_ID=G-QHRZZZLKPE',
       '-v /home/ciembor/polish-open-source-rank/db:/app/db:rw',
       '-v /home/ciembor/polish-open-source-rank/log:/app/log:rw'
     )
