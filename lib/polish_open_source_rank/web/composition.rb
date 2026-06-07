@@ -48,7 +48,7 @@ module PolishOpenSourceRank
       def sitemap_catalog
         contexts[:sitemap_catalog] ||= SitemapCatalog.new(
           publication_read_models: publication_read_models,
-          package_ranking_read_model: package_ranking_read_model,
+          ranking_catalog: sitemap_ranking_catalog,
           show_rankings: publication.show_rankings,
           list_editions: publication.list_editions
         )
@@ -73,6 +73,21 @@ module PolishOpenSourceRank
       def package_ranking_read_model
         contexts[:package_ranking_read_model] ||=
           Contexts::Packages::Infrastructure::SQLite::SQLitePackageRankingReadModel.new(persistence.public_database)
+      end
+
+      def sitemap_ranking_catalog
+        contexts[:sitemap_ranking_catalog] ||= SitemapRankingCatalog.new(
+          catalogs: [
+            PublicRankingSitemapCatalog.new(show_ranking_detail: publication.show_ranking_detail),
+            LanguageRankingSitemapCatalog.new(
+              show_language_ranking_detail: languages.show_language_ranking_detail
+            ),
+            PackageRankingSitemapCatalog.new(
+              package_ranking_read_model: package_ranking_read_model,
+              show_package_ranking_detail: packages.show_package_ranking_detail
+            )
+          ]
+        )
       end
     end
   end

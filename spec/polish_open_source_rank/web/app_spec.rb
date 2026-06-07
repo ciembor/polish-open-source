@@ -1115,7 +1115,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   end
 
   it 'serves robots.txt and sitemap.xml for crawlers', :aggregate_failures do
-    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    path = seed_database
+    seed_many_ranked_users(path)
+    ENV['DATABASE_URL'] = "sqlite://#{path}"
     request = Rack::MockRequest.new(described_class)
 
     robots = request.get('/robots.txt')
@@ -1129,6 +1131,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(sitemap.content_type).to include('application/xml')
     sitemap_locations = REXML::XPath.match(xml_document(sitemap.body), '//url/loc').map(&:text)
     expect(sitemap_locations).to include('https://rank.example/people')
+    expect(sitemap_locations).to include('https://rank.example/people/users/top/page/2')
     expect(sitemap_locations).to include('https://rank.example/organizations')
     expect(sitemap_locations).to include('https://rank.example/organizations/active')
     expect(sitemap_locations).to include('https://rank.example/organizations/locations/krakow')
