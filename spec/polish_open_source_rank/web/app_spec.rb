@@ -653,6 +653,12 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     github_callback = sign_in_with_github(request)
     profile = request.get('/users/github/alice/alice-example', 'HTTP_COOKIE' => cookie_header(github_callback))
+    expect(profile.body).to include(
+      '[![Badge Polish Open Source](https://rank.example/badges/users/github/alice.svg)]' \
+      '(https://rank.example/people)'
+    )
+    expect(profile.body).not_to include('/badges/users/github/alice/alice-example.svg')
+
     delete = request.post(
       '/users/github/alice/alice-example/delete',
       'HTTP_COOKIE' => cookie_header(profile),
@@ -1572,7 +1578,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     podium_classes = html_elements(response.body, "//ol[@aria-labelledby='ranking-detail-users']/li")
                      .first(3)
                      .map { |element| element.attributes['class'] }
-    expect(podium_classes).to all(eq('ranking-list__item'))
+    expect(podium_classes).to eq(
+      ['ranking-list__item first_place', 'ranking-list__item second_place', 'ranking-list__item third_place']
+    )
     expect(response.body).not_to include('<table>')
   end
 

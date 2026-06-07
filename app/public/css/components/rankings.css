@@ -355,6 +355,18 @@
   color: var(--accent-strong);
 }
 
+.second_place {
+  background: linear-gradient(130deg, #bbb 0%, #eee 50%);
+}
+
+.first_place {
+  background: linear-gradient(130deg, #d4af37 0%, #fff3b0 50%);
+}
+
+.third_place {
+  background: linear-gradient(130deg, #b87333 0%, #ffd1a3 50%);
+}
+
 .metric {
   color: var(--accent);
   font-weight: 900;

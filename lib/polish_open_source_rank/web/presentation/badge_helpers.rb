@@ -5,15 +5,21 @@ module PolishOpenSourceRank
     module Presentation
       module BadgeHelpers
         def repository_badge_path(repository)
-          "#{repository_profile_path(repository).sub('/repositories/', '/badges/repositories/')}.svg"
+          platform = Rack::Utils.escape_path(repository.fetch(:platform, 'github'))
+          owner, name = repository.fetch(:full_name).split('/', 2)
+          "/badges/repositories/#{platform}/#{Rack::Utils.escape_path(owner)}/#{Rack::Utils.escape_path(name)}.svg"
         end
 
         def user_badge_path(user)
-          "#{user_profile_path(user).sub('/users/', '/badges/users/')}.svg"
+          platform = Rack::Utils.escape_path(user.fetch(:platform, 'github'))
+          login = Rack::Utils.escape_path(user.fetch(:login))
+          "/badges/users/#{platform}/#{login}.svg"
         end
 
         def organization_badge_path(organization)
-          "#{organization_profile_path(organization).sub('/organizations/', '/badges/organizations/')}.svg"
+          platform = Rack::Utils.escape_path(organization.fetch(:platform, 'github'))
+          login = Rack::Utils.escape_path(organization.fetch(:login))
+          "/badges/organizations/#{platform}/#{login}.svg"
         end
 
         def linked_badge_markdown(alt, badge_path)
