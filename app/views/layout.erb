@@ -35,6 +35,9 @@
     <% settings.css_asset_files.each do |css_path| %>
       <link rel="stylesheet" href="<%= h asset_path(css_path) %>">
     <% end %>
+    <% if google_analytics_measurement_id %>
+      <meta name="google-analytics-measurement-id" content="<%= h google_analytics_measurement_id %>">
+    <% end %>
     <% if @refresh_seconds %>
       <meta http-equiv="refresh" content="<%= h @refresh_seconds %>">
     <% end %>
@@ -43,6 +46,9 @@
       <%= structured_data %>
     </script>
     <script defer src="<%= h asset_path('/js/navigation.js') %>"></script>
+    <% if google_analytics_measurement_id %>
+      <script defer src="<%= h asset_path('/js/google_analytics.js') %>"></script>
+    <% end %>
   </head>
   <body>
     <header class="site-header">

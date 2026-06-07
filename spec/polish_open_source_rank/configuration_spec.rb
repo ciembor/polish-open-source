@@ -12,6 +12,7 @@ RSpec.describe PolishOpenSourceRank::Configuration do
       USER_ACTION_HTTP_OPEN_TIMEOUT USER_ACTION_HTTP_READ_TIMEOUT USER_ACTION_HTTP_WRITE_TIMEOUT
       RACK_ENV SESSION_SECRET
       INTERNAL_BASIC_AUTH_USERNAME INTERNAL_BASIC_AUTH_PASSWORD
+      GOOGLE_ANALYTICS_MEASUREMENT_ID
       EMPTY_VALUE
       SENTRY_DSN SENTRY_ENVIRONMENT SENTRY_RELEASE SENTRY_TRACES_SAMPLE_RATE
       NPM_REGISTRY_REQUESTS_PER_MINUTE RUBYGEMS_REGISTRY_REQUESTS_PER_MINUTE
@@ -118,6 +119,18 @@ RSpec.describe PolishOpenSourceRank::Configuration do
     expect(configuration.database_path).to eq('tmp/transformed.sqlite3')
     expect(configuration.requests_per_minute).to eq(44)
     expect(configuration.app_base_path).to eq('/rank')
+  end
+
+  it 'exposes the optional Google Analytics measurement id' do
+    configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
+
+    expect(configuration.google_analytics_measurement_id).to be_nil
+
+    ENV['GOOGLE_ANALYTICS_MEASUREMENT_ID'] = 'G-ABC123DEF4'
+
+    configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
+
+    expect(configuration.google_analytics_measurement_id).to eq('G-ABC123DEF4')
   end
 
   it 'keeps Sentry disabled without a DSN' do

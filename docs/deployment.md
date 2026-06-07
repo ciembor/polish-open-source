@@ -64,6 +64,8 @@ before granting additional maintainers deploy permission.
 - The Rack app emits security headers, including HSTS, for public, auth, badge,
   and internal responses. Edge and nginx config may also emit HSTS, but the app
   middleware is the repository-owned regression surface.
+- Google Analytics is disabled unless `GOOGLE_ANALYTICS_MEASUREMENT_ID` is set
+  in `.env.local`.
 - Monthly, package, and resume crawls are started by systemd one-shot services
   and use the same mounted `db/` and `log/` directories as the web app.
 - `/internal/jobs` reflects SQLite state from that shared app database, so stale

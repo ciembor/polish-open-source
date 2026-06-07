@@ -6,13 +6,13 @@ module PolishOpenSourceRank
       CONTENT_SECURITY_POLICY = [
         "default-src 'self'",
         "base-uri 'self'",
-        "connect-src 'self'",
+        "connect-src 'self' https://*.google-analytics.com https://analytics.google.com",
         "font-src 'self'",
         "form-action 'self'",
         "frame-ancestors 'none'",
         "img-src 'self' https: data:",
         "object-src 'none'",
-        "script-src 'self'",
+        "script-src 'self' https://www.googletagmanager.com",
         "style-src 'self'"
       ].join('; ')
       PERMISSIONS_POLICY = [

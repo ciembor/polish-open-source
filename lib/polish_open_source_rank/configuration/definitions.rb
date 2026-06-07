@@ -96,7 +96,8 @@ module PolishOpenSourceRank
           env: 'APP_BASE_PATH',
           default: '',
           constructor: proc { |value| normalize_app_base_path(value) }
-        }
+        },
+        google_analytics_measurement_id: env('GOOGLE_ANALYTICS_MEASUREMENT_ID')
       }
     end
     private_class_method :public_web_settings

@@ -141,6 +141,22 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect_poland_ranking_page(response)
   end
 
+  it 'renders Google Analytics tags only when a measurement id is configured', :aggregate_failures do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    request = Rack::MockRequest.new(described_class)
+
+    without_analytics = request.get('/people')
+    ENV['GOOGLE_ANALYTICS_MEASUREMENT_ID'] = 'G-ABC123DEF4'
+    with_analytics = request.get('/people')
+
+    expect(without_analytics.body).not_to include('google-analytics-measurement-id')
+    expect(without_analytics.body).not_to include('/js/google_analytics.js')
+    expect(with_analytics.body).to include(
+      '<meta name="google-analytics-measurement-id" content="G-ABC123DEF4">'
+    )
+    expect(with_analytics.body).to include('/js/google_analytics.js')
+  end
+
   it 'redirects legacy latest ranking routes to canonical section paths', :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     request = Rack::MockRequest.new(described_class)
@@ -1051,6 +1067,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     responses.each do |response|
       expect(response['Content-Security-Policy']).to include("default-src 'self'")
       expect(response['Content-Security-Policy']).to include("frame-ancestors 'none'")
+      expect(response['Content-Security-Policy']).to include('https://www.googletagmanager.com')
+      expect(response['Content-Security-Policy']).to include('https://*.google-analytics.com')
       expect(response['Content-Security-Policy']).not_to include("'unsafe-inline'")
       expect(response['X-Content-Type-Options']).to eq('nosniff')
       expect(response['Strict-Transport-Security']).to eq('max-age=31536000; includeSubDomains')

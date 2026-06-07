@@ -32,6 +32,11 @@ module PolishOpenSourceRank
           SafeExternalUrl.normalize(value)
         end
 
+        def google_analytics_measurement_id
+          measurement_id = configuration.google_analytics_measurement_id.to_s.strip
+          measurement_id.empty? ? nil : measurement_id
+        end
+
         def number(value)
           value.to_i.to_s.reverse.gsub(/(\d{3})(?=\d)/, '\1 ').reverse
         end
