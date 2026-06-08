@@ -20,7 +20,7 @@
 <section class="profile-section profile-section--alt" aria-labelledby="organization-badge-heading">
   <div class="content">
     <h2 id="organization-badge-heading"><%= h t('organizations.badge.title') %></h2>
-    <%= erb :"profiles/badge_preview", locals: { label: @organization.fetch(:login), badge_path: organization_badge_path(@organization), alt_text: t('organizations.badge.alt') } %>
+    <%= erb :"profiles/inline_badge_preview", locals: { badge_path: organization_badge_path(@organization), alt_text: t('organizations.badge.alt') } %>
   </div>
 </section>
 

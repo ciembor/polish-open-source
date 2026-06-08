@@ -325,22 +325,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     organization_repository = request.get('/organization-repositories/github/polish-org/toolkit')
     missing_organization = request.get('/organizations/github/missing')
 
-    expect(organization_profile.status).to eq(200)
-    expect(organization_profile.body).to include('<title>Polish Org (polish-org) - GitHub - Open Source Polska</title>')
-    expect(organization_profile.body).to include('rel="canonical" href="https://rank.example/organizations/github/polish-org"')
-    expect(organization_profile.body).to include('"@type": "Organization"')
-    expect(organization_profile.body).to include('Najmocniejsze repozytorium')
-    expect(organization_profile.body).to include('Top repozytoria')
-    expect(organization_profile.body).to include('Popularne w miesiącu')
-    expect(organization_profile.body).to include('Pozycja w Warszawa')
-    expect(organization_profile.body).to include(
-      '<section class="profile-section" aria-labelledby="organization-spotlight-heading">'
-    )
-    expect(organization_profile.body).not_to include(
-      '<section class="profile-section profile-section--compact" aria-labelledby="organization-spotlight-heading">'
-    )
-    expect(organization_profile.body).to include('href="/organization-repositories/github/polish-org/toolkit"')
-    expect(organization_profile.body).not_to include('Twój dostęp Discord')
+    expect_organization_profile_page(organization_profile)
     expect(organization_badge.status).to eq(200)
     expect(organization_badge.body).to include('Polish Open Source Org')
     expect(organization_badge.body).to include('1st')
@@ -2118,6 +2103,29 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(badge_response.content_type).to include('image/svg+xml')
     expect_body_to_include(badge_response, 'Polish Open Source', '1st', 'href="https://rank.example/people"')
     expect(missing_response.status).to eq(404)
+  end
+
+  def expect_organization_profile_page(response)
+    expect(response.status).to eq(200)
+    expect_body_to_include(
+      response,
+      '<title>Polish Org (polish-org) - GitHub - Open Source Polska</title>',
+      'rel="canonical" href="https://rank.example/organizations/github/polish-org"',
+      '"@type": "Organization"',
+      'Najmocniejsze repozytorium',
+      'Top repozytoria',
+      'Popularne w miesiącu',
+      'Pozycja w Warszawa',
+      '<section class="profile-section" aria-labelledby="organization-spotlight-heading">',
+      'class="inline-badge-preview"',
+      '/badges/organizations/github/polish-org.svg',
+      'class="badge-markdown__copy js-copy-badge-markdown"',
+      'href="/organization-repositories/github/polish-org/toolkit"'
+    )
+    expect(response.body).not_to include(
+      '<section class="profile-section profile-section--compact" aria-labelledby="organization-spotlight-heading">'
+    )
+    expect(response.body).not_to include('Twój dostęp Discord')
   end
 
   def expect_signed_in_profile(github_callback, profile)

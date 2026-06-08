@@ -462,7 +462,7 @@
   width: auto;
 }
 
-.repository-badge-preview {
+.inline-badge-preview {
   height: 37.5px;
   align-items: stretch;
   display: flex;
@@ -472,19 +472,19 @@
   width: 100%;
 }
 
-.repository-badge-preview img {
+.inline-badge-preview img {
   display: block;
   height: 24.5px;
   object-fit: contain;
   width: auto;
 }
 
-.repository-badge-preview .badge-preview__showcase {
+.inline-badge-preview .badge-preview__showcase {
   flex: 0 0 auto;
   min-height: 0;
 }
 
-.repository-badge-preview .badge-markdown {
+.inline-badge-preview .badge-markdown {
   flex: 1 1 auto;
   min-width: 0;
 }
