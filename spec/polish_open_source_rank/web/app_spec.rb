@@ -333,6 +333,12 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(organization_profile.body).to include('Top repozytoria')
     expect(organization_profile.body).to include('Popularne w miesiącu')
     expect(organization_profile.body).to include('Pozycja w Warszawa')
+    expect(organization_profile.body).to include(
+      '<section class="profile-section" aria-labelledby="organization-spotlight-heading">'
+    )
+    expect(organization_profile.body).not_to include(
+      '<section class="profile-section profile-section--compact" aria-labelledby="organization-spotlight-heading">'
+    )
     expect(organization_profile.body).to include('href="/organization-repositories/github/polish-org/toolkit"')
     expect(organization_profile.body).not_to include('Twój dostęp Discord')
     expect(organization_badge.status).to eq(200)
