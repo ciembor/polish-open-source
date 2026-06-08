@@ -59,6 +59,8 @@
           repositories: @repositories,
           empty_translation_key: 'organizations.repositories.empty',
           path_builder: method(:organization_repository_profile_path),
+          badge_path_builder: method(:repository_badge_path),
+          badge_alt_text: t('repositories.badge.alt'),
           show_homepage: false,
           grid_class: 'project-grid project-grid--stacked'
         } %>
@@ -69,6 +71,8 @@
           repositories: @popular_repositories,
           empty_translation_key: 'organizations.repositories.empty',
           path_builder: method(:organization_repository_profile_path),
+          badge_path_builder: method(:repository_badge_path),
+          badge_alt_text: t('repositories.badge.alt'),
           show_homepage: false,
           grid_class: 'project-grid project-grid--stacked'
         } %>

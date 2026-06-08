@@ -31,6 +31,10 @@ module PolishOpenSourceRank
               request.platform_key,
               request.full_name_key,
               period_start: request.period_start_key
+            ) || profile_read_model.organization_repository_profile(
+              request.platform_key,
+              request.full_name_key,
+              period_start: request.period_start_key
             )
             badge = profile&.fetch(:polish_repo_badge, nil)
             badge && BadgeView.new(badge)

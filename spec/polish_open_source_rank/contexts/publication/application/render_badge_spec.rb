@@ -5,6 +5,8 @@ class PublicationProfileReadModel
 
   def repository_profile(*) = nil
 
+  def organization_repository_profile(*) = nil
+
   def organization_profile(*) = nil
 end
 
@@ -40,6 +42,24 @@ RSpec.describe PolishOpenSourceRank::Contexts::Publication::Application::RenderB
 
     expect(result).to be_a(PolishOpenSourceRank::Contexts::Publication::Application::BadgeView)
     expect(result.fetch(:value)).to eq('1st')
+  end
+
+  it 'falls back to organization repository badges for repository badge routes' do
+    read_model = instance_double(
+      PublicationProfileReadModel,
+      repository_profile: nil,
+      organization_repository_profile: { polish_repo_badge: { label: 'Polish Repo', value: '2nd' } }
+    )
+
+    result = described_class.new(profile_read_model: read_model).repository(
+      platform: 'github',
+      owner: 'polish-org',
+      name: 'toolkit',
+      period_start: '2026-04-01'
+    )
+
+    expect(result).to be_a(PolishOpenSourceRank::Contexts::Publication::Application::BadgeView)
+    expect(result.fetch(:value)).to eq('2nd')
   end
 
   it 'wraps organization badges in a badge response model' do

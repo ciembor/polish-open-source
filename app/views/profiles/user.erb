@@ -26,7 +26,6 @@
 } %>
 
 <% profile_badge_visible = @show_profile_badges && @profile.fetch(:badges, []).any? %>
-<% repository_badges = @repositories.select { |repository| repository[:polish_repo_badge] && repository[:polish_repo_badge][:value] } %>
 <% if @discord_panel || profile_badge_visible %>
   <section class="profile-section" aria-label="<%= h t('users.profile_access.title') %>">
     <div class="content profile-access-grid">
@@ -40,17 +39,6 @@
             <%= erb :"profiles/badge_preview", locals: { label: @profile.fetch(:login), badge_path: user_badge_path(@profile), alt_text: t('users.badge.alt'), variant: 'badge-preview--profile' } %>
           </div>
         </article>
-      <% end %>
-    </div>
-  </section>
-<% end %>
-
-<% if @show_profile_badges && repository_badges.any? %>
-  <section class="profile-section profile-section--alt" aria-labelledby="profile-repository-badges-heading">
-    <div class="content">
-      <h2 id="profile-repository-badges-heading"><%= h t('users.repository_badges.title') %></h2>
-      <% repository_badges.each do |repository| %>
-        <%= erb :"profiles/user_repository_badge_preview", locals: { repository: repository } %>
       <% end %>
     </div>
   </section>
@@ -92,6 +80,8 @@
       repositories: @repositories,
       empty_translation_key: 'users.repositories.empty',
       path_builder: method(:repository_profile_path),
+      badge_path_builder: (@show_profile_badges ? method(:repository_badge_path) : nil),
+      badge_alt_text: t('repositories.badge.alt'),
       show_homepage: true
     } %>
   </div>

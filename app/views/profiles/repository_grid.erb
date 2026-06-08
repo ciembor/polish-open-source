@@ -31,6 +31,11 @@
         <% if show_homepage && homepage_url %>
           <a class="muted-link muted-link--standalone" href="<%= h homepage_url %>"><%= h t('users.links.homepage') %></a>
         <% end %>
+        <% if defined?(badge_path_builder) && badge_path_builder && repository[:polish_repo_badge] && repository[:polish_repo_badge][:value] %>
+          <div class="project-card__badge">
+            <%= erb :"profiles/inline_badge_preview", locals: { badge_path: badge_path_builder.call(repository), alt_text: badge_alt_text } %>
+          </div>
+        <% end %>
       </article>
     <% end %>
   </div>

@@ -418,6 +418,11 @@
   margin-bottom: 0;
 }
 
+.project-card__badge {
+  margin-top: auto;
+  min-width: 0;
+}
+
 .badge-preview {
   align-items: stretch;
   display: flex;
@@ -463,8 +468,7 @@
 }
 
 .inline-badge-preview {
-  height: 37.5px;
-  align-items: stretch;
+  align-items: center;
   display: flex;
   flex-direction: row;
   gap: 20px;
@@ -474,7 +478,7 @@
 
 .inline-badge-preview img {
   display: block;
-  height: 24.5px;
+  height: 20px;
   object-fit: contain;
   width: auto;
 }
@@ -487,10 +491,6 @@
 .inline-badge-preview .badge-markdown {
   flex: 1 1 auto;
   min-width: 0;
-}
-
-.user-repository-badge-preview + .user-repository-badge-preview {
-  margin-top: 20px;
 }
 
 .badge-preview--profile .badge-preview__showcase {

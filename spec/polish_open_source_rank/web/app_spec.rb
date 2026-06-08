@@ -322,6 +322,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     organization_profile = request.get('/organizations/github/polish-org')
     organization_badge = request.get('/badges/organizations/github/polish-org.svg')
+    organization_repository_badge = request.get('/badges/repositories/github/polish-org/toolkit.svg')
     organization_repository = request.get('/organization-repositories/github/polish-org/toolkit')
     missing_organization = request.get('/organizations/github/missing')
 
@@ -329,6 +330,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(organization_badge.status).to eq(200)
     expect(organization_badge.body).to include('Polish Open Source Org')
     expect(organization_badge.body).to include('1st')
+    expect(organization_repository_badge.status).to eq(200)
+    expect(organization_repository_badge.body).to include('Polish .rb Repo')
     expect(organization_repository.status).to eq(200)
     expect(organization_repository.body).to include(
       '<title>toolkit - Ruby organizacji na GitHub - Open Source Polska</title>'
@@ -2119,6 +2122,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       '<section class="profile-section" aria-labelledby="organization-spotlight-heading">',
       'class="inline-badge-preview"',
       '/badges/organizations/github/polish-org.svg',
+      'class="project-card__badge"',
+      '/badges/repositories/github/polish-org/toolkit.svg',
       'class="badge-markdown__copy js-copy-badge-markdown"',
       'href="/organization-repositories/github/polish-org/toolkit"'
     )
@@ -2138,8 +2143,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'href="/auth/discord"',
       'Dostępne grupy',
       'Odznaka',
-      'Odznaki repozytoriów',
-      '<p class="badge-preview__label">app</p>',
+      'class="project-card__badge"',
       'class="badge-markdown"',
       'class="badge-markdown__copy js-copy-badge-markdown"',
       'data-copy-label="Kopiuj"',
@@ -2150,6 +2154,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       '/badges/repositories/github/alice/app.svg'
     )
     expect(profile.body).not_to include('Odznaka na GitHub')
+    expect(profile.body).not_to include('Odznaki repozytoriów')
+    expect(profile.body).not_to include('<p class="badge-preview__label">app</p>')
     expect(profile.body).not_to include('Ranking Polski')
     expect(profile.body).not_to include('Ranking Kraków')
     expect(profile.body).not_to include('Nie ma cię w rankingu?')
