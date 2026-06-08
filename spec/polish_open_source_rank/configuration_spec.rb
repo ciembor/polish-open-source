@@ -12,7 +12,7 @@ RSpec.describe PolishOpenSourceRank::Configuration do
       USER_ACTION_HTTP_OPEN_TIMEOUT USER_ACTION_HTTP_READ_TIMEOUT USER_ACTION_HTTP_WRITE_TIMEOUT
       RACK_ENV SESSION_SECRET
       INTERNAL_BASIC_AUTH_USERNAME INTERNAL_BASIC_AUTH_PASSWORD
-      GOOGLE_ANALYTICS_MEASUREMENT_ID
+      GOOGLE_ANALYTICS_MEASUREMENT_ID CLOUDFLARE_ZONE_ID CLOUDFLARE_API_TOKEN
       EMPTY_VALUE
       SENTRY_DSN SENTRY_ENVIRONMENT SENTRY_RELEASE SENTRY_TRACES_SAMPLE_RATE
       NPM_REGISTRY_REQUESTS_PER_MINUTE RUBYGEMS_REGISTRY_REQUESTS_PER_MINUTE
@@ -131,6 +131,21 @@ RSpec.describe PolishOpenSourceRank::Configuration do
     configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
 
     expect(configuration.google_analytics_measurement_id).to eq('G-ABC123DEF4')
+  end
+
+  it 'exposes optional Cloudflare purge credentials' do
+    configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
+
+    expect(configuration.cloudflare_zone_id).to be_nil
+    expect(configuration.cloudflare_api_token).to be_nil
+
+    ENV['CLOUDFLARE_ZONE_ID'] = 'zone-id'
+    ENV['CLOUDFLARE_API_TOKEN'] = 'api-token'
+
+    configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
+
+    expect(configuration.cloudflare_zone_id).to eq('zone-id')
+    expect(configuration.cloudflare_api_token).to eq('api-token')
   end
 
   it 'keeps Sentry disabled without a DSN' do

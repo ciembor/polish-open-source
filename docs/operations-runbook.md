@@ -31,6 +31,47 @@ The host alert timer also reads these optional thresholds from
 - `PRODUCTION_ALERT_P95_LATENCY_MS_THRESHOLD=1000`
 - `PRODUCTION_ALERT_SQLITE_RETRY_THRESHOLD=10`
 
+## Cloudflare cache purge
+
+Set these variables in `/home/ciembor/polish-open-source-rank/.env.local`:
+
+- `CLOUDFLARE_ZONE_ID`
+- `CLOUDFLARE_API_TOKEN`
+
+The token must be scoped to the `polish-open-source.pl` zone with
+`Zone -> Cache Purge -> Purge`. Keep it out of commits and rotate it if it is
+ever pasted into chat, logs, or a shell history that other people can read.
+
+Verify a token without printing it:
+
+```sh
+curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+  https://api.cloudflare.com/client/v4/user/tokens/verify
+```
+
+Verify purge permission with a narrow URL purge before relying on automatic
+monthly purges:
+
+```sh
+curl -fsS -X POST "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/purge_cache" \
+  -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  --data '{"files":["https://polish-open-source.pl/healthz"]}'
+```
+
+`bin/publish_snapshot` uses `purge_everything` after successful monthly publish
+and rollback because those actions update public pages and badges across many
+routes. If a public badge or page is stale, first compare Cloudflare and origin:
+
+```sh
+curl -I https://polish-open-source.pl/badges/repositories/github/ciembor/agent-rules-books.svg
+ssh ciembor@maciej-ciemborowicz.eu \
+  'curl -sS -I http://127.0.0.1:9293/badges/repositories/github/ciembor/agent-rules-books.svg'
+```
+
+If origin is correct and Cloudflare is stale, purge Cloudflare. If origin is
+wrong, inspect publication data before purging CDN cache.
+
 ## Production session secret
 
 `SESSION_SECRET` in `/home/ciembor/polish-open-source-rank/.env.local` must be

@@ -30,14 +30,8 @@ module PolishOpenSourceRank
 
     def self.definition_groups
       [
-        runtime_settings,
-        database_settings,
-        request_settings,
-        package_registry_settings,
-        source_settings,
-        auth_settings,
-        public_web_settings,
-        sentry_settings
+        runtime_settings, database_settings, request_settings, package_registry_settings,
+        source_settings, auth_settings, public_web_settings, sentry_settings
       ]
     end
     private_class_method :definition_groups
@@ -97,7 +91,9 @@ module PolishOpenSourceRank
           default: '',
           constructor: proc { |value| normalize_app_base_path(value) }
         },
-        google_analytics_measurement_id: env('GOOGLE_ANALYTICS_MEASUREMENT_ID')
+        google_analytics_measurement_id: env('GOOGLE_ANALYTICS_MEASUREMENT_ID'),
+        cloudflare_zone_id: env('CLOUDFLARE_ZONE_ID'),
+        cloudflare_api_token: env('CLOUDFLARE_API_TOKEN')
       }
     end
     private_class_method :public_web_settings

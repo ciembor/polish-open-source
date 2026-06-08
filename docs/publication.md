@@ -79,6 +79,41 @@ bin/publish_snapshot --rollback
 Rollback marks the current snapshot as `rolled_back` and restores the previous
 `published` snapshot.
 
+## Cloudflare Cache Purge
+
+Monthly publication changes public rankings, profiles, language pages, package
+pages, badges, sitemap-visible URLs, canonical URLs, and `latest` aliases
+together. After a successful publish or rollback, `bin/publish_snapshot` purges
+Cloudflare with `purge_everything` when both variables are configured:
+
+```sh
+CLOUDFLARE_ZONE_ID=<zone-id>
+CLOUDFLARE_API_TOKEN=<api-token>
+```
+
+The API token must have `Zone -> Cache Purge -> Purge` permission scoped to the
+`polish-open-source.pl` zone. If either variable is missing, publication still
+succeeds and logs that Cloudflare purge was skipped. If the Cloudflare API call
+fails, publication also stays successful and logs the failure; the origin data
+and ETags are already updated, while edge cache may serve stale content until
+TTL expiry or a manual purge.
+
+Manual verification:
+
+```sh
+curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+  https://api.cloudflare.com/client/v4/user/tokens/verify
+```
+
+Manual emergency purge for a single stale URL:
+
+```sh
+curl -fsS -X POST "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/purge_cache" \
+  -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  --data '{"files":["https://polish-open-source.pl/badges/repositories/github/ciembor/agent-rules-books.svg"]}'
+```
+
 ## Separate Snapshot for Public Reads
 
 By default, the web app serves public pages from `DATABASE_URL` to stay

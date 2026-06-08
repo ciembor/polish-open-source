@@ -1,6 +1,6 @@
 ---
 name: production-ops
-description: Use when a request involves production access, incident triage, deploy or rollback, service restarts, Podman containers, systemd units, journalctl logs, /internal/jobs, manual crawl operations, or production database inspection for Polish Open Source Rank. Read docs/deployment.md, docs/crawl-jobs.md, and docs/operations-runbook.md first; also read docs/publication.md for snapshot publication work and docs/performance.md for traffic or latency incidents.
+description: Use when a request involves production access, incident triage, deploy or rollback, service restarts, Podman containers, systemd units, journalctl logs, /internal/jobs, manual crawl operations, production database inspection, Cloudflare, CDN cache, cache purge, stale public pages, or stale badges for Polish Open Source Rank. Read docs/deployment.md, docs/crawl-jobs.md, and docs/operations-runbook.md first; also read docs/publication.md and docs/web-app.md for snapshot publication, Cloudflare, badge cache, and public cache work, and docs/performance.md for traffic or latency incidents.
 ---
 
 # Production Ops
@@ -24,10 +24,11 @@ Read only the files needed for the task:
 - `docs/crawl-jobs.md`: production services, resume semantics, Podman usage, and
   manual crawl commands
 - `docs/operations-runbook.md`: restarts, alert checks, incident workflow, and
-  backup restore procedure
+  backup restore procedure, including Cloudflare cache purge setup and checks
 - `docs/github-operations.md`: GitHub CLI authentication, Actions inspection,
   workflow dispatch, and post-merge verification
 - `docs/publication.md`: publication and `publish_snapshot --rollback` tasks
+- `docs/web-app.md`: public cache rules, Cloudflare behavior, and badge cache expectations
 - `docs/performance.md`: latency, traffic spikes, and SLO-oriented triage
 
 ## Default Workflow
@@ -52,11 +53,16 @@ Read only the files needed for the task:
    - monthly snapshot job: `polish-open-source-rank-monthly.service`
    - package rankings job: `polish-open-source-rank-packages.service`
    - crawl loop: `polish-open-source-rank-crawl.service`
+   - stale public badge/page with correct origin: Cloudflare purge
 4. If database inspection is needed, inspect it from the app container context with
    `sudo podman exec -w /app polish-open-source-rank ...`, not with ad hoc host-side
    assumptions.
 5. After any change, verify the relevant public endpoint, job state, or service status
    end to end.
+6. For cache, Cloudflare, stale badge, or stale public page tasks, read
+   `docs/operations-runbook.md`, `docs/publication.md`, and `docs/web-app.md`
+   before changing production state. Compare public Cloudflare responses with
+   origin responses on `127.0.0.1:9293` before purging.
 
 ## Guardrails
 

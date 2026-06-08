@@ -12,7 +12,11 @@ PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration.new(
 
 repository_class = PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLite::
                    SQLitePublicSnapshotPublicationRepository
-repository = repository_class.new(database, backup_root: PolishOpenSourceRank.root.join('db/publication_backups').to_s)
+repository = repository_class.new(
+  database,
+  backup_root: PolishOpenSourceRank.root.join('db/publication_backups').to_s,
+  public_cache_purger: PolishOpenSourceRank::Infrastructure::CloudflareCachePurger.from_configuration(configuration)
+)
 
 if ARGV.include?('--rollback')
   period = repository.rollback

@@ -10,5 +10,6 @@ for operational checklists, routing, and guardrails.
   review Dependabot updates, merge eligible changes, and diagnose or repair
   GitHub Actions failures.
 - [production-ops](production-ops/SKILL.md): production access, deploy or rollback,
-  service triage, Podman containers, systemd units, `journalctl`, `/internal/jobs`,
-  and production database inspection.
+  service triage, Cloudflare/cache purge, stale public pages or badges, Podman
+  containers, systemd units, `journalctl`, `/internal/jobs`, and production
+  database inspection.

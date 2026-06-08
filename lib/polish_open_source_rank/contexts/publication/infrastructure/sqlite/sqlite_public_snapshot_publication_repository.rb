@@ -19,12 +19,14 @@ module PolishOpenSourceRank
               database,
               clock: -> { Time.now.utc },
               backup_root: nil,
-              badge_materializer: SQLitePublishedBadgeMaterializer.new(database)
+              badge_materializer: SQLitePublishedBadgeMaterializer.new(database),
+              public_cache_purger: nil
             )
               @database = database
               @clock = clock
               @backup_root = backup_root
               @badge_materializer = badge_materializer
+              @public_cache_purger = public_cache_purger
             end
 
             def stage(period_start)
@@ -59,6 +61,7 @@ module PolishOpenSourceRank
                   error: nil
                 )
               end
+              purge_public_cache
             end
 
             def rollback
@@ -70,12 +73,13 @@ module PolishOpenSourceRank
                 mark_rolled_back(current.fetch(:period_start))
                 upsert_publication(previous, status: 'published', published_at: timestamp, error: nil)
               end
+              purge_public_cache
               previous
             end
 
             private
 
-            attr_reader :backup_root, :badge_materializer, :clock, :database
+            attr_reader :backup_root, :badge_materializer, :clock, :database, :public_cache_purger
 
             def verification_failures(period_start)
               [
@@ -174,6 +178,10 @@ module PolishOpenSourceRank
 
             def timestamp
               clock.call.iso8601
+            end
+
+            def purge_public_cache
+              public_cache_purger&.purge_public_cache
             end
           end
         end

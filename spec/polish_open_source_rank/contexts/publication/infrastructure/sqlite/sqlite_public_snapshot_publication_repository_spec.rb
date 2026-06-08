@@ -44,15 +44,32 @@ RSpec.describe 'SQLitePublicSnapshotPublicationRepository' do
     expect(published_badge('organization_repository', 21)).to include(label: 'Polish Repo', rank: 2)
   end
 
+  it 'purges public cache after publishing the snapshot' do
+    seed_publishable_month('2026-05-01')
+    public_cache_purger = public_cache_purger_spy
+    repository = repository_class.new(
+      database,
+      clock: clock,
+      backup_root: backup_root,
+      public_cache_purger: public_cache_purger
+    )
+
+    repository.publish('2026-05-01')
+
+    expect(public_cache_purger).to have_received(:purge_public_cache).once
+  end
+
   it 'keeps the current public period when badge materialization fails' do
     seed_publishable_month('2026-04-01')
     seed_publishable_month('2026-05-01')
     repository.publish('2026-04-01')
+    public_cache_purger = public_cache_purger_spy
     failing_repository = repository_class.new(
       database,
       clock: clock,
       backup_root: backup_root,
-      badge_materializer: failing_badge_materializer
+      badge_materializer: failing_badge_materializer,
+      public_cache_purger: public_cache_purger
     )
 
     expect { failing_repository.publish('2026-05-01') }.to raise_error('badge materialization failed')
@@ -60,6 +77,7 @@ RSpec.describe 'SQLitePublicSnapshotPublicationRepository' do
     expect(publication('2026-04-01')).to include(status: 'published')
     expect(publication('2026-05-01')).to include(status: 'verified')
     expect(published_badge('repository', 10, period_start: '2026-05-01')).to be_nil
+    expect(public_cache_purger).not_to have_received(:purge_public_cache)
   end
 
   it 'rejects incomplete snapshots and keeps the failure visible' do
@@ -102,11 +120,41 @@ RSpec.describe 'SQLitePublicSnapshotPublicationRepository' do
     expect(publication('2026-04-01')).to include(status: 'published')
   end
 
+  it 'purges public cache after rolling back the snapshot' do
+    seed_publishable_month('2026-04-01')
+    seed_publishable_month('2026-05-01')
+    public_cache_purger = public_cache_purger_spy
+    repository = repository_class.new(
+      database,
+      clock: clock,
+      backup_root: backup_root,
+      public_cache_purger: public_cache_purger
+    )
+    repository.publish('2026-04-01')
+    repository.publish('2026-05-01')
+    public_cache_purger = public_cache_purger_spy
+    rollback_repository = repository_class.new(
+      database,
+      clock: clock,
+      backup_root: backup_root,
+      public_cache_purger: public_cache_purger
+    )
+
+    rollback_repository.rollback
+
+    expect(public_cache_purger).to have_received(:purge_public_cache).once
+  end
+
   def publication(period_start)
     database.fetch_all(
       'SELECT * FROM public_snapshot_publications WHERE period_start = ?',
       [period_start]
     ).first
+  end
+
+  def public_cache_purger_spy
+    public_cache_purger_class = Class.new { def purge_public_cache; end }
+    instance_spy(public_cache_purger_class, purge_public_cache: true)
   end
 
   def published_badge(kind, subject_id, period_start: '2026-05-01')

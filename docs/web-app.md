@@ -139,8 +139,11 @@ stale-while-revalidate, and allows 24 hours of stale-if-error so Cloudflare can
 serve the last cached anonymous page instead of surfacing origin `502`, `503`,
 or `504` responses during jobs. Badges use the same 24-hour stale-if-error
 window; stable negative public 404s use a 5-minute stale-if-error window.
-Do not force a long edge TTL unless snapshot publish and rollback also purge the
-public HTML prefixes.
+Snapshot publish and rollback purge Cloudflare when `CLOUDFLARE_ZONE_ID` and
+`CLOUDFLARE_API_TOKEN` are configured. The purge uses `purge_everything` because
+monthly publications update rankings, profiles, language and package pages, and
+badges together. Do not force a long edge TTL without keeping that purge
+configured.
 
 ## Internal Operations Access
 
