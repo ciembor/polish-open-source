@@ -12,7 +12,6 @@
   .monitor-log-grid,
   .platform-grid,
   .profile-grid,
-  .profile-access-grid,
   .project-grid {
     grid-template-columns: 1fr;
   }

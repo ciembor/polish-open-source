@@ -225,11 +225,14 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.profile-access-grid {
-  align-items: stretch;
-  display: grid;
-  gap: 20px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.profile-discord-panel {
+  display: flex;
+  justify-content: center;
+}
+
+.profile-discord-panel .discord-panel {
+  max-width: 620px;
+  width: 100%;
 }
 
 .profile-summary,
@@ -423,26 +426,6 @@
   min-width: 0;
 }
 
-.badge-preview {
-  align-items: stretch;
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-  min-width: 0;
-  width: 100%;
-}
-
-.badge-preview + .badge-preview {
-  margin-top: 20px;
-}
-
-.badge-preview__label {
-  color: var(--muted);
-  font-size: 0.92rem;
-  font-weight: 800;
-  margin: 0;
-}
-
 .badge-preview__showcase {
   align-items: center;
   display: flex;
@@ -457,14 +440,6 @@
   max-width: 100%;
   min-width: 0;
   overflow: hidden;
-}
-
-.badge-preview img {
-  display: block;
-  height: 20px;
-  max-width: 100%;
-  object-fit: contain;
-  width: auto;
 }
 
 .inline-badge-preview {
@@ -491,20 +466,6 @@
 .inline-badge-preview .badge-markdown {
   flex: 1 1 auto;
   min-width: 0;
-}
-
-.badge-preview--profile .badge-preview__showcase {
-  min-height: 52px;
-}
-
-.badge-preview--profile img {
-  height: 46px;
-}
-
-.badge-preview code {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .badge-markdown {
@@ -651,7 +612,6 @@
 
 @media (max-width: 780px) {
   .organization-repository-columns,
-  .profile-access-grid,
   .profile-grid {
     grid-template-columns: 1fr;
   }

@@ -26,20 +26,19 @@
 } %>
 
 <% profile_badge_visible = @show_profile_badges && @profile.fetch(:badges, []).any? %>
-<% if @discord_panel || profile_badge_visible %>
+<% if @discord_panel %>
   <section class="profile-section" aria-label="<%= h t('users.profile_access.title') %>">
-    <div class="content profile-access-grid">
-      <% if @discord_panel %>
-        <%= erb :"auth/discord_panel", locals: { panel: @discord_panel, error: @discord_error } %>
-      <% end %>
-      <% if profile_badge_visible %>
-        <article class="profile-summary profile-access-card profile-badge-panel">
-          <h2 id="profile-badge-heading"><%= h t('users.badge.title') %></h2>
-          <div class="profile-access-card__body">
-            <%= erb :"profiles/badge_preview", locals: { label: @profile.fetch(:login), badge_path: user_badge_path(@profile), alt_text: t('users.badge.alt'), variant: 'badge-preview--profile' } %>
-          </div>
-        </article>
-      <% end %>
+    <div class="content profile-discord-panel">
+      <%= erb :"auth/discord_panel", locals: { panel: @discord_panel, error: @discord_error } %>
+    </div>
+  </section>
+<% end %>
+
+<% if profile_badge_visible %>
+  <section class="profile-section profile-section--alt" aria-labelledby="profile-badge-heading">
+    <div class="content">
+      <h2 id="profile-badge-heading"><%= h t('users.badge.title') %></h2>
+      <%= erb :"profiles/inline_badge_preview", locals: { badge_path: user_badge_path(@profile), alt_text: t('users.badge.alt') } %>
     </div>
   </section>
 <% end %>

@@ -2143,6 +2143,8 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'href="/auth/discord"',
       'Dostępne grupy',
       'Odznaka',
+      'profile-discord-panel',
+      'class="inline-badge-preview"',
       'class="project-card__badge"',
       'class="badge-markdown"',
       'class="badge-markdown__copy js-copy-badge-markdown"',
@@ -2156,6 +2158,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile.body).not_to include('Odznaka na GitHub')
     expect(profile.body).not_to include('Odznaki repozytoriów')
     expect(profile.body).not_to include('<p class="badge-preview__label">app</p>')
+    expect(profile.body).not_to include('badge-preview--profile')
     expect(profile.body).not_to include('Ranking Polski')
     expect(profile.body).not_to include('Ranking Kraków')
     expect(profile.body).not_to include('Nie ma cię w rankingu?')
