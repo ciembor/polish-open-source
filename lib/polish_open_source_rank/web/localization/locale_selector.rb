@@ -9,21 +9,14 @@ module PolishOpenSourceRank
           @default = default
         end
 
-        def select(params:, cookies:, accept_language:, path_locale: nil)
+        def select(params:, cookies:, path_locale: nil)
           supported(path_locale) ||
             supported(params['lang']) ||
             supported(cookies['locale']) ||
-            accepted(accept_language) ||
             @default
         end
 
         private
-
-        def accepted(header)
-          header.to_s.split(',').filter_map do |language|
-            supported(language.split(';', 2).first.to_s.strip.split('-', 2).first)
-          end.first
-        end
 
         def supported(locale)
           @supported.include?(locale) ? locale : nil

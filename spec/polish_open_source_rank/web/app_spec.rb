@@ -849,11 +849,11 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(about_response.body).not_to include('Publiczne profile, projekty')
   end
 
-  it 'renders Polish content when requested by accepted language' do
+  it 'renders Polish content by default without using the accepted language' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     request = Rack::MockRequest.new(described_class)
 
-    polish_response = request.get('/people', 'HTTP_ACCEPT_LANGUAGE' => 'pl-PL,pl;q=0.9')
+    polish_response = request.get('/people', 'HTTP_ACCEPT_LANGUAGE' => 'en-US,en;q=0.9')
 
     expect(polish_response.body).to include('<html lang="pl">')
     expect(polish_response.body).to include('aria-label="Język"')

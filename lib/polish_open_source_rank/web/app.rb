@@ -35,8 +35,7 @@ module PolishOpenSourceRank
         @locale = settings.locale_selector.select(
           path_locale: env.fetch('polish_open_source_rank.path_locale', nil),
           params: params,
-          cookies: request.cookies,
-          accept_language: request.env.fetch('HTTP_ACCEPT_LANGUAGE', nil)
+          cookies: request.cookies
         )
         redirect_to_locale_variant! if request.get?
         set_locale_cookie!(@locale) if persist_selected_locale?
