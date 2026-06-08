@@ -340,6 +340,11 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(organization_repository.body).to include('"@type": "SoftwareSourceCode"')
     expect(organization_repository.body).to include('id="organization-repository-star-history-heading"')
     expect(organization_repository.body).to include('>Historia gwiazdek</h2>')
+    expect(organization_repository.body).to include(
+      '<h2 id="organization-repository-badge-heading">Odznaka</h2>'
+    )
+    expect(organization_repository.body).to include('/badges/repositories/github/polish-org/toolkit.svg')
+    expect(organization_repository.body).to include('class="badge-markdown__copy js-copy-badge-markdown"')
     expect(organization_repository.body).to include('href="https://www.star-history.com/polish-org/toolkit"')
     expect(organization_repository.body).to include(
       'src="https://api.star-history.com/chart?repos=polish-org%2Ftoolkit&amp;type=date&amp;legend=top-left"'
@@ -2098,10 +2103,14 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       '#1',
       'Najlepsze projekty',
       'alice/app',
-      '12 345'
+      '12 345',
+      '<h2 id="profile-badge-heading">Odznaka</h2>',
+      '/badges/users/github/alice.svg',
+      '/badges/repositories/github/alice/app.svg',
+      'class="badge-markdown__copy js-copy-badge-markdown"'
     )
     expect(profile_response.body).not_to include('class="ranking-action"')
-    expect(profile_response.body).not_to include('/badges/users/github/alice.svg')
+    expect(profile_response.body).not_to include('Twój dostęp Discord')
     expect(badge_response.status).to eq(200)
     expect(badge_response.content_type).to include('image/svg+xml')
     expect_body_to_include(badge_response, 'Polish Open Source', '1st', 'href="https://rank.example/people"')
@@ -2199,12 +2208,11 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'src="https://api.star-history.com/chart?repos=alice%2Fapp&amp;type=date&amp;legend=top-left"'
     )
     expect(profile_response.body).not_to include('Odznaka na GitHub')
-    expect(profile_response.body).not_to include('/badges/repositories/github/alice/app.svg')
-    expect(owner_profile_response.body).to include('<h2 id="repository-badge-heading">Odznaka</h2>')
+    expect(profile_response.body).to include('<h2 id="repository-badge-heading">Odznaka</h2>')
     expect(owner_profile_response.body).not_to include('Odznaka na GitHub')
-    expect(owner_profile_response.body).to include('class="badge-markdown__copy js-copy-badge-markdown"')
-    expect(owner_profile_response.body).to include('/badges/repositories/github/alice/app.svg')
-    expect(owner_profile_response.body).to include(
+    expect(profile_response.body).to include('class="badge-markdown__copy js-copy-badge-markdown"')
+    expect(profile_response.body).to include('/badges/repositories/github/alice/app.svg')
+    expect(profile_response.body).to include(
       '[![Badge Polish Repo](https://rank.example/badges/repositories/github/alice/app.svg)]'
     )
     expect(badge_response.status).to eq(200)

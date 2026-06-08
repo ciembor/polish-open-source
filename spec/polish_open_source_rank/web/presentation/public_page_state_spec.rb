@@ -262,7 +262,6 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
         canonical_path: '/users/github/ciembor',
         discord_panel: :discord_panel,
         discord_error: 'Sync failed',
-        show_profile_badges: true,
         show_profile_delete_control: true
       )
       expect(view_context.session).to be_empty
@@ -279,7 +278,6 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
         description: 'users.seo.description|location=Poznan, Poland|platform=GitHub|user=Maciej (ciembor)',
         discord_panel: nil,
         discord_error: nil,
-        show_profile_badges: false,
         show_profile_delete_control: false
       )
     end
@@ -290,7 +288,6 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
       expect(state).to include(
         discord_panel: nil,
         discord_error: nil,
-        show_profile_badges: false,
         show_profile_delete_control: false
       )
     end
@@ -309,8 +306,8 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
       }
     end
 
-    it 'builds repository page state and ownership flag' do
-      state = page_state.repository_profile(repository: repository, own_repository: true)
+    it 'builds repository page state' do
+      state = page_state.repository_profile(repository: repository)
 
       expect(state).to include(
         title: 'repositories.seo.title|language=Ruby|platform=GitHub|repository=polish-open-source-rank',
@@ -319,8 +316,7 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::PublicPageState do
           'repository=polish-open-source-rank|summary=repositories.seo.summary_language|' \
           'language=Ruby Ranking for Polish open source repositories. ' \
           'repositories.seo.summary_stars|stars=1234',
-        canonical_path: '/repositories/github/ciembor/polish-open-source-rank',
-        show_repository_badge: true
+        canonical_path: '/repositories/github/ciembor/polish-open-source-rank'
       )
     end
   end

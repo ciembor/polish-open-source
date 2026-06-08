@@ -63,9 +63,7 @@ module PolishOpenSourceRank
                                                                  period_start: @period)
           halt 404 unless @repository
           repository_profile_cache!(@repository)
-          assign_public_page(
-            public_page_state.repository_profile(repository: @repository, own_repository: own_repository?(@repository))
-          )
+          assign_public_page(public_page_state.repository_profile(repository: @repository))
           erb :'profiles/repository'
         end
 

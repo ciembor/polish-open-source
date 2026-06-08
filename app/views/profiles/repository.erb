@@ -22,7 +22,7 @@
       { label: t('rankings.metric.stars'), value: "⭐ #{number(@repository[:stargazers_count])}" },
       { label: t('rankings.metric.new_stars'), value: "⭐ #{number(@repository[:monthly_stars_delta])}" }
     ] %>
-    <% if @show_repository_badge && @repository[:polish_repo_badge] && @repository[:polish_repo_badge][:value] %>
+    <% if @repository[:polish_repo_badge] && @repository[:polish_repo_badge][:value] %>
       <% metric_items << { label: @repository[:polish_repo_badge].fetch(:label), value: @repository[:polish_repo_badge].fetch(:value) } %>
     <% end %>
     <%= erb :"profiles/metric_card", locals: {
@@ -36,7 +36,7 @@
 
 <%= erb :"profiles/star_history", locals: { record: @repository, heading_id: 'repository-star-history-heading' } %>
 
-<% if @show_repository_badge && @repository[:polish_repo_badge] && @repository[:polish_repo_badge][:value] %>
+<% if @repository[:polish_repo_badge] && @repository[:polish_repo_badge][:value] %>
   <section class="profile-section profile-section--alt" aria-labelledby="repository-badge-heading">
     <div class="content">
       <h2 id="repository-badge-heading"><%= h t('repositories.badge.title') %></h2>

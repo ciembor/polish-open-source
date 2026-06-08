@@ -38,3 +38,15 @@
   record: @organization_repository,
   heading_id: 'organization-repository-star-history-heading'
 } %>
+
+<% if @organization_repository[:polish_repo_badge] && @organization_repository[:polish_repo_badge][:value] %>
+  <section class="profile-section profile-section--alt" aria-labelledby="organization-repository-badge-heading">
+    <div class="content">
+      <h2 id="organization-repository-badge-heading"><%= h t('repositories.badge.title') %></h2>
+      <%= erb :"profiles/inline_badge_preview", locals: {
+        badge_path: repository_badge_path(@organization_repository),
+        alt_text: t('repositories.badge.alt')
+      } %>
+    </div>
+  </section>
+<% end %>

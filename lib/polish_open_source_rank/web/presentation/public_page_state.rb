@@ -47,19 +47,17 @@ module PolishOpenSourceRank
             canonical_path: call_view(:user_profile_path, profile),
             discord_panel: private_controls ? call_view(:show_discord_panel_for, profile) : nil,
             discord_error: private_controls ? view_context.session.delete(:discord_error) : nil,
-            show_profile_badges: private_controls,
             show_profile_delete_control: private_controls
           }
         end
 
-        def repository_profile(repository:, own_repository:)
+        def repository_profile(repository:)
           source_name = call_view(:platform_name, repository.fetch(:platform))
 
           {
             title: repository_profile_seo_title(repository, source_name),
             description: repository_profile_seo_description(repository, source_name),
-            canonical_path: call_view(:repository_profile_path, repository),
-            show_repository_badge: own_repository
+            canonical_path: call_view(:repository_profile_path, repository)
           }
         end
 

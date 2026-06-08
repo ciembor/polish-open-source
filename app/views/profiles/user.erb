@@ -25,7 +25,7 @@
   top_repository_path: top_repository ? repository_profile_path(top_repository) : nil
 } %>
 
-<% profile_badge_visible = @show_profile_badges && @profile.fetch(:badges, []).any? %>
+<% profile_badge_visible = @profile.fetch(:badges, []).any? %>
 <% if @discord_panel %>
   <section class="profile-section" aria-label="<%= h t('users.profile_access.title') %>">
     <div class="content profile-discord-panel">
@@ -58,10 +58,8 @@
     <% metric_items = [] %>
     <% metric_items << { label: t('rankings.metric.stars'), value: "⭐ #{number(@profile[:total_stars])}" } unless @profile[:total_stars].nil? %>
     <% metric_items << { label: t('rankings.metric.new_stars'), value: "⭐ #{number(@profile[:monthly_stars_delta])}" } unless @profile[:monthly_stars_delta].nil? %>
-    <% if @show_profile_badges %>
-      <% @profile.fetch(:badges, []).each do |badge| %>
-        <% metric_items << { label: badge.fetch(:label), value: (badge[:value] || t('users.metrics.outside_ranking')) } %>
-      <% end %>
+    <% @profile.fetch(:badges, []).each do |badge| %>
+      <% metric_items << { label: badge.fetch(:label), value: (badge[:value] || t('users.metrics.outside_ranking')) } %>
     <% end %>
     <%= erb :"profiles/metric_card", locals: {
       title: t('users.metrics.title'),
@@ -79,7 +77,7 @@
       repositories: @repositories,
       empty_translation_key: 'users.repositories.empty',
       path_builder: method(:repository_profile_path),
-      badge_path_builder: (@show_profile_badges ? method(:repository_badge_path) : nil),
+      badge_path_builder: method(:repository_badge_path),
       badge_alt_text: t('repositories.badge.alt'),
       show_homepage: true
     } %>
