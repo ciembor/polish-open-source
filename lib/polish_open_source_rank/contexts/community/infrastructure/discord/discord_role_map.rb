@@ -44,15 +44,19 @@ module PolishOpenSourceRank
               @role_catalog = role_catalog
             end
 
-            def prepare(period_start:)
+            def prepare(period_start:, role_keys: nil)
               static_role_ids = static_role_ids(GLOBAL_KEYS + city_role_keys)
               return PreparedRoles.new(managed_role_ids: static_role_ids, role_ids_by_key: {}) unless gateway
 
-              languages = published_languages(period_start)
-              state = provisioning_state
-              ensure_language_resources(languages, state)
+              dynamic_role_keys = dynamic_role_keys(period_start, role_keys)
+              if dynamic_role_keys.empty?
+                return PreparedRoles.new(managed_role_ids: static_role_ids, role_ids_by_key: {})
+              end
 
-              build_prepared_roles(static_role_ids, dynamic_role_ids_by_key(languages, state.roles))
+              state = provisioning_state
+              ensure_language_resources(dynamic_role_keys, state)
+
+              build_prepared_roles(static_role_ids, dynamic_role_ids_by_key(dynamic_role_keys, state.roles))
             end
 
             def managed_role_ids(prepared: nil)
@@ -102,11 +106,14 @@ module PolishOpenSourceRank
               )
             end
 
-            def ensure_language_resources(languages, state)
-              languages.each do |language|
-                ensure_language_role_and_channel(Domain::DiscordLanguageRoleKey.build_open(language), state)
-                ensure_language_role_and_channel(Domain::DiscordLanguageRoleKey.build_top(language), state)
-              end
+            def dynamic_role_keys(period_start, role_keys)
+              return role_keys.filter { |key| Domain::DiscordLanguageRoleKey.new(key).dynamic? }.uniq if role_keys
+
+              language_role_keys(published_languages(period_start))
+            end
+
+            def ensure_language_resources(role_keys, state)
+              role_keys.each { |role_key| ensure_language_role_and_channel(role_key, state) }
             end
 
             def ensure_language_role_and_channel(role_key, state)
@@ -158,9 +165,9 @@ module PolishOpenSourceRank
               state.channel_creation_disabled = true
             end
 
-            def dynamic_role_ids_by_key(languages, roles)
+            def dynamic_role_ids_by_key(role_keys, roles)
               roles_by_name = roles.to_h { |role| [role.fetch('name'), role.fetch('id')] }
-              language_role_keys(languages).to_h do |key|
+              role_keys.to_h do |key|
                 [key, roles_by_name[role_catalog.role_name(key)]]
               end.compact
             end

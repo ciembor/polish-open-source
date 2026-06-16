@@ -19,15 +19,17 @@ module PolishOpenSourceRank
           end
 
           def call(period_start:, limit: 10)
-            prepared_roles = role_map.prepare(period_start: period_start)
-            sync_job_repository.pending(limit: limit).each do |job|
+            jobs = sync_job_repository.pending(limit: limit)
+            prepared_roles = prepare_roles(jobs, period_start)
+            jobs.each do |job|
               sync_job(SyncContext.new(job: job, period_start: period_start, prepared_roles: prepared_roles))
             end
           end
 
           def call_for(platform:, source_id:, period_start:)
-            prepared_roles = role_map.prepare(period_start: period_start)
-            sync_job_repository.pending_for(platform, source_id).each do |job|
+            jobs = sync_job_repository.pending_for(platform, source_id)
+            prepared_roles = prepare_roles(jobs, period_start)
+            jobs.each do |job|
               sync_job(SyncContext.new(job: job, period_start: period_start, prepared_roles: prepared_roles))
             end
           end
@@ -35,6 +37,13 @@ module PolishOpenSourceRank
           private
 
           attr_reader :access_read_model, :member_gateway, :profile_read_model, :role_map, :sync_job_repository
+
+          def prepare_roles(jobs, period_start)
+            role_map.prepare(
+              period_start: period_start,
+              role_keys: jobs.flat_map { |job| access(job, period_start).fetch(:role_keys) }.uniq
+            )
+          end
 
           def sync_job(context)
             job = context.job

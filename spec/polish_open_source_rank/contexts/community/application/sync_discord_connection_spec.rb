@@ -9,13 +9,18 @@ class AccessReadModelForSync
 end
 
 class RoleMapForSync
+  attr_reader :prepared_role_keys
+
   Prepared = Struct.new(:managed_role_ids, :role_ids_by_key, keyword_init: true) do
     def role_ids(keys)
       keys.filter_map { |key| role_ids_by_key.fetch(key, nil) }
     end
   end
 
-  def prepare(*)
+  def prepare(period_start: nil, role_keys: nil)
+    raise ArgumentError, 'missing period start' unless period_start
+
+    @prepared_role_keys = role_keys
     Prepared.new(managed_role_ids: %w[role-top role-old], role_ids_by_key: { 'top' => 'role-top' })
   end
 
@@ -73,6 +78,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::SyncDisco
   it 'syncs only the requested connected account' do
     repository = seeded_repository
     gateway = MemberGatewayForSync.new
+    role_map = RoleMapForSync.new
     repository.request_oauth_sync(
       platform: 'github',
       source_id: 1,
@@ -91,8 +97,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::SyncDisco
       welcome_channel_id: nil
     )
 
-    use_case(repository, gateway).call_for(platform: 'github', source_id: 1, period_start: '2026-04-01')
+    use_case(repository, gateway, role_map: role_map)
+      .call_for(platform: 'github', source_id: 1, period_start: '2026-04-01')
 
+    expect(role_map.prepared_role_keys).to eq(%w[top])
     expect(gateway.synced).to include(discord_user_id: 'discord-1', access_token: 'access-token')
     expect(repository.sync_status('github', 1)).to eq('synced')
     expect(repository.sync_status('github', 2)).to eq('pending')
@@ -115,13 +123,13 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::SyncDisco
     expect(repository.sync_status('github', 1)).to eq('failed')
   end
 
-  def use_case(repository, gateway)
+  def use_case(repository, gateway, role_map: RoleMapForSync.new)
     described_class.new(
       sync_job_repository: repository,
       profile_read_model: ProfileReadModelForSync.new,
       access_read_model: AccessReadModelForSync.new,
       member_gateway: gateway,
-      role_map: RoleMapForSync.new
+      role_map: role_map
     )
   end
 

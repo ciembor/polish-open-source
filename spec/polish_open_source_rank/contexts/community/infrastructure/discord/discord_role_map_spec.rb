@@ -80,6 +80,33 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::Discor
       end).to eq(%w[Languages ruby top-100-ruby])
     end
 
+    it 'provisions only requested dynamic language roles when role keys are provided' do
+      prepared = map.prepare(
+        period_start: '2026-04-01',
+        role_keys: ['DISCORD_ROLE_LANGUAGE:ruby:Ruby']
+      )
+
+      expect(prepared.role_ids_by_key).to eq('DISCORD_ROLE_LANGUAGE:ruby:Ruby' => 'role-1')
+      expect(gateway_data.fetch(:created_roles).map { |role| role.fetch('name') }).to eq(['Ruby'])
+      expect(gateway_data.fetch(:created_channels).map do |channel|
+        channel.fetch('name')
+      end).to eq(%w[Languages ruby])
+    end
+
+    it 'skips dynamic provisioning when requested role keys are static' do
+      ENV['DISCORD_ROLE_TOP_100_PL'] = 'country-role'
+
+      prepared = map.prepare(
+        period_start: '2026-04-01',
+        role_keys: ['DISCORD_ROLE_TOP_100_PL']
+      )
+
+      expect(prepared.managed_role_ids).to include('country-role')
+      expect(prepared.role_ids_by_key).to be_empty
+      expect(gateway_data.fetch(:created_roles)).to be_empty
+      expect(gateway_data.fetch(:created_channels)).to be_empty
+    end
+
     context 'when the Languages category already exists' do
       let(:initial_channels) do
         [{ 'id' => 'category-1', 'name' => 'Languages', 'type' => 4, 'permission_overwrites' => [] }]
