@@ -149,6 +149,31 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::Discor
       end
     end
 
+    context 'when Discord refuses another dynamic role because the server role limit is reached' do
+      before do
+        allow(gateway).to receive(:create_role)
+          .with(name: 'Ruby', color: nil)
+          .and_raise(
+            PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway::Error,
+            '400 {"message":"Maximum number of server roles reached (250)","code":30005}'
+          )
+      end
+
+      it 'keeps static roles available and omits missing dynamic roles' do
+        ENV['DISCORD_ROLE_TOP_100_PL'] = 'country-role'
+
+        prepared = map.prepare(
+          period_start: '2026-04-01',
+          role_keys: ['DISCORD_ROLE_TOP_100_PL', 'DISCORD_ROLE_LANGUAGE:ruby:Ruby']
+        )
+
+        expect(prepared.managed_role_ids).to include('country-role')
+        expect(prepared.role_ids_by_key).to be_empty
+        expect(gateway_data.fetch(:created_roles)).to be_empty
+        expect(gateway_data.fetch(:created_channels).map { |channel| channel.fetch('name') }).to eq(['Languages'])
+      end
+    end
+
     def discord_gateway_contract
       Object.new.tap do |gateway|
         def gateway.guild_roles; end

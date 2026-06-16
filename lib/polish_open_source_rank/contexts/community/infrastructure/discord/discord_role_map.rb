@@ -27,6 +27,7 @@ module PolishOpenSourceRank
               :channels,
               :category_id,
               :channel_creation_disabled,
+              :role_creation_disabled,
               keyword_init: true
             )
 
@@ -95,7 +96,8 @@ module PolishOpenSourceRank
                 roles: gateway.guild_roles,
                 channels: channels,
                 category_id: ensure_category_id(channels),
-                channel_creation_disabled: false
+                channel_creation_disabled: false,
+                role_creation_disabled: false
               )
             end
 
@@ -117,7 +119,9 @@ module PolishOpenSourceRank
             end
 
             def ensure_language_role_and_channel(role_key, state)
-              role = ensure_dynamic_role(role_key, state.roles)
+              role = ensure_dynamic_role(role_key, state)
+              return unless role
+
               ensure_dynamic_channel(role_key, role.fetch('id'), state)
             end
 
@@ -133,7 +137,10 @@ module PolishOpenSourceRank
               category.fetch('id')
             end
 
-            def ensure_dynamic_role(role_key, roles)
+            def ensure_dynamic_role(role_key, state)
+              return if state.role_creation_disabled
+
+              roles = state.roles
               role_name = role_catalog.role_name(role_key)
               role = roles.find { |candidate| candidate.fetch('name') == role_name }
               return role if role
@@ -141,6 +148,11 @@ module PolishOpenSourceRank
               role = gateway.create_role(name: role_name, color: Domain::DiscordLanguageRoleKey.new(role_key).role_color)
               roles << role
               role
+            rescue DiscordApiGateway::Error => e
+              raise unless server_role_limit?(e)
+
+              state.role_creation_disabled = true
+              nil
             end
 
             def ensure_dynamic_channel(role_key, role_id, state)
@@ -180,6 +192,10 @@ module PolishOpenSourceRank
 
             def category_channel_limit?(error)
               error.message.include?('CHANNEL_PARENT_MAX_CHANNELS')
+            end
+
+            def server_role_limit?(error)
+              error.message.include?('"code": 30005') || error.message.include?('Maximum number of server roles')
             end
           end
         end
