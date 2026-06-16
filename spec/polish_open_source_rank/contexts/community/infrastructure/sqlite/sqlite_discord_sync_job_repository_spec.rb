@@ -27,6 +27,27 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
     expect(repository.pending(limit: 1).first).to include(discord_username: 'Alice D', login: 'alice', source_id: 1)
   end
 
+  it 'returns pending jobs scoped to one connected account' do
+    request_oauth_sync
+    database.execute(
+      'INSERT INTO users(platform, github_id, login, html_url, updated_at) VALUES (?, ?, ?, ?, ?)',
+      ['github', 2, 'bob', 'https://github.com/bob', '2026-05-01T00:01:00Z']
+    )
+    repository.request_oauth_sync(
+      platform: 'github',
+      source_id: 2,
+      discord_user_id: 'discord-2',
+      discord_username: 'Bob',
+      access_token: 'bob-token',
+      welcome_channel_id: nil
+    )
+
+    jobs = repository.pending_for('github', 1)
+
+    expect(jobs.map { |job| job.fetch(:discord_user_id) }).to all(eq('discord-1'))
+    expect(jobs.map { |job| job.fetch(:action_kind) }).to contain_exactly('member_sync', 'welcome_message')
+  end
+
   it 'skips welcome messages when OAuth sync has no welcome channel' do
     request_oauth_sync(welcome_channel_id: nil)
 

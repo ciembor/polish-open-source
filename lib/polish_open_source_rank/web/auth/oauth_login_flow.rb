@@ -73,13 +73,14 @@ module PolishOpenSourceRank
         end
 
         def initialize(github_oauth_client:, discord_oauth_client:, public_github_profile:,
-                       register_public_github_profile:, connect_discord_account:)
+                       register_public_github_profile:, connect_discord_account:, sync_discord_connection:)
           @dependencies = {
             github_oauth_client: github_oauth_client,
             discord_oauth_client: discord_oauth_client,
             public_github_profile: public_github_profile,
             register_public_github_profile: register_public_github_profile,
-            connect_discord_account: connect_discord_account
+            connect_discord_account: connect_discord_account,
+            sync_discord_connection: sync_discord_connection
           }
         end
 
@@ -101,11 +102,12 @@ module PolishOpenSourceRank
         def finish_discord(login)
           token = login.exchange_code(discord_oauth_client)
           access_token = token.fetch('access_token')
-          login.connect_account(
+          connection = login.connect_account(
             use_case: connect_discord_account,
             discord_user: discord_oauth_client.user(access_token),
             access_token: access_token
           )
+          sync_connected_account(connection)
           DiscordResult.success
         rescue DiscordOAuthClient::Error
           DiscordResult.failure('oauth')
@@ -155,6 +157,19 @@ module PolishOpenSourceRank
 
         def connect_discord_account
           dependencies.fetch(:connect_discord_account)
+        end
+
+        def sync_discord_connection
+          dependencies.fetch(:sync_discord_connection)
+        end
+
+        def sync_connected_account(connection)
+          profile = connection.profile
+          sync_discord_connection.call_for(
+            platform: profile.fetch(:platform),
+            source_id: profile.fetch(:source_id),
+            period_start: nil
+          )
         end
       end
     end

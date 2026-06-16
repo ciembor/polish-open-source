@@ -25,6 +25,13 @@ module PolishOpenSourceRank
             end
           end
 
+          def call_for(platform:, source_id:, period_start:)
+            prepared_roles = role_map.prepare(period_start: period_start)
+            sync_job_repository.pending_for(platform, source_id).each do |job|
+              sync_job(SyncContext.new(job: job, period_start: period_start, prepared_roles: prepared_roles))
+            end
+          end
+
           private
 
           attr_reader :access_read_model, :member_gateway, :profile_read_model, :role_map, :sync_job_repository

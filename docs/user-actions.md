@@ -36,6 +36,8 @@
 ## Operational Outbox Processing
 
 - `bin/discord_sync [limit]` processes pending and retryable Discord jobs.
+- Discord OAuth callbacks sync the connected account immediately after storing
+  the outbox jobs.
 - Jobs finish with status `pending`, `synced`, `failed`, or `retryable`.
 - Repeating the Discord connect flow overwrites existing intents for the same
   profile and action kind instead of creating duplicates.

@@ -57,6 +57,20 @@ module PolishOpenSourceRank
               SQL
             end
 
+            def pending_for(platform, source_id)
+              database.fetch_all(<<~SQL, [platform, source_id])
+                SELECT #{pending_columns_sql}
+                FROM discord_sync_jobs
+                JOIN users
+                  ON users.platform = discord_sync_jobs.platform
+                 AND users.github_id = discord_sync_jobs.user_github_id
+                WHERE discord_sync_jobs.platform = ?
+                  AND discord_sync_jobs.user_github_id = ?
+                  AND discord_sync_jobs.status IN ('pending', 'retryable')
+                ORDER BY discord_sync_jobs.updated_at ASC
+              SQL
+            end
+
             def mark_synced(job)
               update_status(job, terminal_status_attributes(status: 'synced', error: nil, synced_at: timestamp))
             end

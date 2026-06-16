@@ -76,6 +76,40 @@ class FakeDiscordGateway
   def post_welcome_message(**attributes)
     @welcome = attributes
   end
+
+  def guild_roles
+    @guild_roles ||= [
+      { 'id' => 'role-top-100', 'name' => 'Polish Elite' },
+      { 'id' => 'role-krakow', 'name' => 'Kraków Elite' },
+      { 'id' => 'role-gold', 'name' => 'Top 1' }
+    ]
+  end
+
+  def guild_channels
+    @guild_channels ||= [{ 'id' => 'language-category', 'name' => 'Languages', 'type' => 4 }]
+  end
+
+  def create_role(name:, color: nil)
+    { 'id' => "role-#{name.downcase.tr(' ', '-')}", 'name' => name, 'color' => color }.tap do |role|
+      guild_roles << role
+    end
+  end
+
+  def create_channel(name:, type:, parent_id: nil, permission_overwrites: nil)
+    {
+      'id' => "channel-#{name}",
+      'name' => name,
+      'type' => type,
+      'parent_id' => parent_id,
+      'permission_overwrites' => permission_overwrites || []
+    }.tap do |channel|
+      guild_channels << channel
+    end
+  end
+
+  def private_channel_overwrites(role_id)
+    [{ id: role_id, type: 0, allow: '3072', deny: '0' }]
+  end
 end
 
 class FailingDiscordGateway
@@ -444,7 +478,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     discord_callback = finish_discord_auth(request, github_callback)
 
-    expect_queued_discord_sync(request, discord_callback)
+    expect_synced_discord_account(request, discord_callback, discord_gateway)
     expect(github_client.exchanged).to eq(['github-code'])
     expect(discord_client.exchanged).to eq(['discord-code'])
   end
@@ -577,7 +611,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile.body).to include('Nie udało się zsynchronizować konta Discord')
   end
 
-  it 'queues Discord member sync without waiting for the gateway' do
+  it 'returns to the profile with retry status when immediate Discord member sync fails' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     ENV['DISCORD_GUILD_ID'] = '1505949566229286972'
     ENV['DISCORD_INVITE_CHANNEL_ID'] = '1505949566699176050'
@@ -597,7 +631,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
     expect(discord_callback.status).to eq(302)
     expect(discord_callback.location).to eq('https://discord.com/channels/1505949566229286972/1505949566699176050')
-    expect(profile.body).to include('Synchronizacja Discord jest w kolejce')
+    expect(profile.body).to include('Synchronizacja Discord ponawia się po tymczasowym błędzie')
   end
 
   it 'rejects Discord sync when the logged-in GitHub profile is no longer ranked' do
@@ -2178,12 +2212,18 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(profile.body).not_to include('Discord niepołączony')
   end
 
-  def expect_queued_discord_sync(request, discord_callback)
+  def expect_synced_discord_account(request, discord_callback, discord_gateway)
     expect(discord_callback.status).to eq(302)
     expect(discord_callback.location).to eq('https://discord.com/channels/guild-1/invite-channel')
     profile = request.get('/users/github/alice', 'HTTP_COOKIE' => cookie_header(discord_callback))
     expect(profile.body).to include('Alice Discord')
-    expect(profile.body).to include('Synchronizacja Discord jest w kolejce')
+    expect(profile.body).not_to include('Synchronizacja Discord jest w kolejce')
+    expect(discord_gateway.synced).to include(
+      discord_user_id: 'discord-1',
+      access_token: 'discord-access',
+      github_login: 'alice'
+    )
+    expect(discord_gateway.welcome).to include(channel_id: 'invite-channel', discord_user_id: 'discord-1')
   end
 
   def expect_repository_profile_page(**responses)

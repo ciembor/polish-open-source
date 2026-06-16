@@ -69,6 +69,8 @@ before granting additional maintainers deploy permission.
   configured explicitly.
 - Monthly, package, and resume crawls are started by systemd one-shot services
   and use the same mounted `db/` and `log/` directories as the web app.
+- Discord account sync runs during the Discord OAuth callback; the Discord bot
+  remains responsible for gateway invite events.
 - `/internal/jobs` reflects SQLite state from that shared app database, so stale
   package sections usually mean the package crawl is still running, the process
   died and left scans in `processing`, or the last package run failed while work

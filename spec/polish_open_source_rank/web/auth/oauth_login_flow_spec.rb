@@ -15,6 +15,10 @@ class OAuthFlowCallable
 
     result
   end
+
+  def call_for(**)
+    call(**)
+  end
 end
 
 RSpec.describe PolishOpenSourceRank::Web::Auth::OAuthLoginFlow do
@@ -27,7 +31,14 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::OAuthLoginFlow do
     @current_user = { platform: 'github', login: 'alice', github_id: 1 }
     @public_github_profile = OAuthFlowCallable.new(@existing_profile)
     @register_public_github_profile = OAuthFlowCallable.new(@registered_profile)
-    @connect_discord_account = OAuthFlowCallable.new
+    @connected_discord = PolishOpenSourceRank::Contexts::Community::Application::ConnectDiscordAccount::Result.new(
+      profile: { platform: 'github', source_id: 1, login: 'alice' },
+      access: {},
+      role_ids: [],
+      sync_status: 'pending'
+    )
+    @connect_discord_account = OAuthFlowCallable.new(@connected_discord)
+    @sync_discord_connection = OAuthFlowCallable.new
     @github_oauth_client = github_oauth_client
     @discord_oauth_client = discord_oauth_client
     @flow = described_class.new(
@@ -35,7 +46,8 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::OAuthLoginFlow do
       discord_oauth_client: @discord_oauth_client,
       public_github_profile: @public_github_profile,
       register_public_github_profile: @register_public_github_profile,
-      connect_discord_account: @connect_discord_account
+      connect_discord_account: @connect_discord_account,
+      sync_discord_connection: @sync_discord_connection
     )
   end
 
@@ -93,6 +105,10 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::OAuthLoginFlow do
         period_start: @period_start,
         welcome_channel_id: 'welcome-channel'
       }
+    )
+    expect(@sync_discord_connection.calls).to contain_exactly(
+      args: [],
+      kwargs: { platform: 'github', source_id: 1, period_start: nil }
     )
   end
 

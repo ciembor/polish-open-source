@@ -73,7 +73,8 @@ module PolishOpenSourceRank
             discord_oauth_client: community.discord_oauth_client,
             public_github_profile: method(:public_github_profile),
             register_public_github_profile: context_call(:publication).register_public_github_profile,
-            connect_discord_account: community.connect_discord_account
+            connect_discord_account: community.connect_discord_account,
+            sync_discord_connection: community.sync_discord_connection
           )
         end
 

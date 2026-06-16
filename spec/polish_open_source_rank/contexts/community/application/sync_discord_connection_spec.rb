@@ -70,6 +70,34 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::SyncDisco
     expect(repository.sync_status('github', 1)).to eq('synced')
   end
 
+  it 'syncs only the requested connected account' do
+    repository = seeded_repository
+    gateway = MemberGatewayForSync.new
+    repository.request_oauth_sync(
+      platform: 'github',
+      source_id: 1,
+      discord_user_id: 'discord-1',
+      discord_username: 'Alice',
+      access_token: 'access-token',
+      welcome_channel_id: nil
+    )
+    insert_user(2, 'bob')
+    repository.request_oauth_sync(
+      platform: 'github',
+      source_id: 2,
+      discord_user_id: 'discord-2',
+      discord_username: 'Bob',
+      access_token: 'bob-token',
+      welcome_channel_id: nil
+    )
+
+    use_case(repository, gateway).call_for(platform: 'github', source_id: 1, period_start: '2026-04-01')
+
+    expect(gateway.synced).to include(discord_user_id: 'discord-1', access_token: 'access-token')
+    expect(repository.sync_status('github', 1)).to eq('synced')
+    expect(repository.sync_status('github', 2)).to eq('pending')
+  end
+
   it 'retries invite sync failures and marks repeated failures as failed' do
     repository = seeded_repository
     repository.request_invite_sync(
@@ -98,14 +126,18 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Application::SyncDisco
   end
 
   def seeded_repository
-    database = PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(
+    @database = PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(
       File.join(Dir.mktmpdir, 'rank.sqlite3')
     )
-    database.execute_batch(PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql)
-    database.execute(
+    @database.execute_batch(PolishOpenSourceRank::Infrastructure::SQLiteSchema.sql)
+    insert_user(1, 'alice')
+    PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite::SQLiteDiscordSyncJobRepository.new(@database)
+  end
+
+  def insert_user(source_id, login)
+    @database.execute(
       'INSERT INTO users(platform, github_id, login, html_url, updated_at) VALUES (?, ?, ?, ?, ?)',
-      ['github', 1, 'alice', 'https://github.com/alice', '2026-05-01T00:01:00Z']
+      ['github', source_id, login, "https://github.com/#{login}", '2026-05-01T00:01:00Z']
     )
-    PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite::SQLiteDiscordSyncJobRepository.new(database)
   end
 end
