@@ -64,6 +64,7 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
     responses = [
       json_response(JSON.generate(fixture_json('external_payloads/discord_oauth_user.json'))),
       json_response(JSON.generate(fixture_json('external_payloads/discord_member.json'))),
+      empty_response,
       empty_response
     ]
     requests, = capture_http_requests(responses)
@@ -80,11 +81,11 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
       managed_role_ids: %w[role-1 role-3]
     )
 
-    expect(requests.map(&:method)).to eq(%w[GET GET PATCH])
+    expect(requests.map(&:method)).to eq(%w[GET GET PATCH PATCH])
     expect(JSON.parse(requests.fetch(2).body)).to eq(
-      'nick' => 'alice',
       'roles' => %w[unmanaged-role role-1]
     )
+    expect(JSON.parse(requests.fetch(3).body)).to eq('nick' => 'alice')
   end
 
   it 'uses configured HTTP timeouts for OAuth and Discord API requests' do
@@ -122,6 +123,7 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
       json_response('{}'),
       empty_response,
       json_response('{"roles":["role-3","unmanaged-role"]}'),
+      empty_response,
       empty_response
     ]
     requests, = capture_http_requests(responses)
@@ -136,11 +138,12 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
       managed_role_ids: %w[role-1 role-2 role-3]
     )
 
-    expect(requests.map(&:method)).to eq(%w[POST GET PUT GET PATCH])
+    expect(requests.map(&:method)).to eq(%w[POST GET PUT GET PATCH PATCH])
     expect(requests.fetch(0).body).to include('"max_uses":1')
     expect(requests.fetch(2).body).to include('user-token')
-    expect(requests.fetch(4).body).to include('alice', 'role-1', 'role-2', 'unmanaged-role')
+    expect(requests.fetch(4).body).to include('role-1', 'role-2', 'unmanaged-role')
     expect(requests.fetch(4).body).not_to include('role-3')
+    expect(requests.fetch(5).body).to include('alice')
   end
 
   it 'builds an invite URL when Discord only returns the invite code' do

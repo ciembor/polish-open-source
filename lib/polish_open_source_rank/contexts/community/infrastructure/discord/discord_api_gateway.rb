@@ -97,10 +97,24 @@ module PolishOpenSourceRank
             end
 
             def sync_member_profile(discord_user_id, nick:, role_ids:)
+              sync_member_roles(discord_user_id, role_ids)
+              sync_member_nick(discord_user_id, nick)
+            end
+
+            def sync_member_roles(discord_user_id, role_ids)
               uri = URI("#{API_BASE}/guilds/#{configuration.discord_guild_id}/members/#{discord_user_id}")
               request = Net::HTTP::Patch.new(uri, bot_headers)
-              request.body = JSON.generate(nick: nick, roles: role_ids)
+              request.body = JSON.generate(roles: role_ids)
               perform_plain(uri, request)
+            end
+
+            def sync_member_nick(discord_user_id, nick)
+              uri = URI("#{API_BASE}/guilds/#{configuration.discord_guild_id}/members/#{discord_user_id}")
+              request = Net::HTTP::Patch.new(uri, bot_headers)
+              request.body = JSON.generate(nick: nick)
+              perform_plain(uri, request)
+            rescue Error => e
+              raise unless missing_permissions?(e)
             end
 
             def guild_roles
@@ -186,6 +200,10 @@ module PolishOpenSourceRank
             end
 
             private
+
+            def missing_permissions?(error)
+              error.message.include?('"code": 50013') || error.message.include?('Missing Permissions')
+            end
 
             def bot_headers
               {

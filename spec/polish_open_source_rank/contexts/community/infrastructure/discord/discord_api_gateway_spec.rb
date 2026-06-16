@@ -64,6 +64,43 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::Discor
                                                                ])
   end
 
+  it 'syncs member roles before nickname changes' do
+    gateway = described_class.new(configuration)
+    requests = []
+    allow(gateway).to receive(:perform_plain) do |uri, request|
+      requests << [uri.to_s, request.method, JSON.parse(request.body)]
+    end
+
+    gateway.sync_member_profile('user-1', nick: 'github-login', role_ids: %w[role-1 role-2])
+
+    expect(requests).to eq([
+                             ['https://discord.com/api/v10/guilds/guild-1/members/user-1', 'PATCH',
+                              { 'roles' => %w[role-1 role-2] }],
+                             ['https://discord.com/api/v10/guilds/guild-1/members/user-1', 'PATCH',
+                              { 'nick' => 'github-login' }]
+                           ])
+  end
+
+  it 'keeps synced roles when Discord refuses nickname changes' do
+    gateway = described_class.new(configuration)
+    requests = []
+    allow(gateway).to receive(:perform_plain) do |uri, request|
+      requests << [uri.to_s, request.method, JSON.parse(request.body)]
+      raise described_class::Error, '403 {"message": "Missing Permissions", "code": 50013}' if requests.length == 2
+    end
+
+    expect do
+      gateway.sync_member_profile('user-1', nick: 'github-login', role_ids: %w[role-1])
+    end.not_to raise_error
+
+    expect(requests).to eq([
+                             ['https://discord.com/api/v10/guilds/guild-1/members/user-1', 'PATCH',
+                              { 'roles' => %w[role-1] }],
+                             ['https://discord.com/api/v10/guilds/guild-1/members/user-1', 'PATCH',
+                              { 'nick' => 'github-login' }]
+                           ])
+  end
+
   it 'counts JSON request timeouts before reraising them' do
     gateway = described_class.new(configuration)
     PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::OAuthHTTP.timeout_count = 0
