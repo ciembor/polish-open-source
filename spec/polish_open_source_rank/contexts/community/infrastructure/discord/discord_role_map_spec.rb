@@ -95,6 +95,33 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::Discor
       end
     end
 
+    context 'when Discord refuses another channel in the Languages category' do
+      let(:initial_channels) do
+        [{ 'id' => 'category-1', 'name' => 'Languages', 'type' => 4, 'permission_overwrites' => [] }]
+      end
+
+      before do
+        allow(gateway).to receive(:create_channel)
+          .with(name: 'ruby', type: 0, parent_id: 'category-1', permission_overwrites: [{ id: 'role-1' }])
+          .and_raise(
+            PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway::Error,
+            '400 {"code":"CHANNEL_PARENT_MAX_CHANNELS"}'
+          )
+      end
+
+      it 'keeps provisioned language roles and stops creating channels for this pass' do
+        prepared = map.prepare(period_start: '2026-04-01')
+
+        expect(prepared.role_ids_by_key).to include(
+          'DISCORD_ROLE_LANGUAGE:ruby:Ruby' => 'role-1',
+          'DISCORD_ROLE_TOP_100_LANGUAGE:ruby:Ruby' => 'role-2'
+        )
+        expect(prepared.managed_role_ids).to include('role-1', 'role-2')
+        expect(gateway_data.fetch(:created_roles).map { |role| role.fetch('name') }).to eq(['Ruby', 'Top 100 Ruby'])
+        expect(gateway_data.fetch(:created_channels)).to be_empty
+      end
+    end
+
     def discord_gateway_contract
       Object.new.tap do |gateway|
         def gateway.guild_roles; end

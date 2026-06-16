@@ -22,7 +22,13 @@ module PolishOpenSourceRank
             end
 
             # Mutable provisioning snapshot used while ensuring dynamic roles and channels.
-            ProvisioningState = Struct.new(:roles, :channels, :category_id, keyword_init: true)
+            ProvisioningState = Struct.new(
+              :roles,
+              :channels,
+              :category_id,
+              :channel_creation_disabled,
+              keyword_init: true
+            )
 
             GLOBAL_KEYS = %w[
               DISCORD_ROLE_TOP_100_PL
@@ -84,7 +90,8 @@ module PolishOpenSourceRank
               ProvisioningState.new(
                 roles: gateway.guild_roles,
                 channels: channels,
-                category_id: ensure_category_id(channels)
+                category_id: ensure_category_id(channels),
+                channel_creation_disabled: false
               )
             end
 
@@ -130,6 +137,8 @@ module PolishOpenSourceRank
             end
 
             def ensure_dynamic_channel(role_key, role_id, state)
+              return if state.channel_creation_disabled
+
               channel_name = Domain::DiscordLanguageRoleKey.new(role_key).channel_name
               return unless channel_name
 
@@ -143,6 +152,10 @@ module PolishOpenSourceRank
                 permission_overwrites: gateway.private_channel_overwrites(role_id)
               )
               channels << channel
+            rescue DiscordApiGateway::Error => e
+              raise unless category_channel_limit?(e)
+
+              state.channel_creation_disabled = true
             end
 
             def dynamic_role_ids_by_key(languages, roles)
@@ -156,6 +169,10 @@ module PolishOpenSourceRank
               languages.flat_map do |language|
                 [Domain::DiscordLanguageRoleKey.build_open(language), Domain::DiscordLanguageRoleKey.build_top(language)]
               end
+            end
+
+            def category_channel_limit?(error)
+              error.message.include?('CHANNEL_PARENT_MAX_CHANNELS')
             end
           end
         end
