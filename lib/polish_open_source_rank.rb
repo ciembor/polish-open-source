@@ -6,6 +6,8 @@ require 'json'
 require 'time'
 require 'zeitwerk'
 
+ENV['TZ'] = 'Europe/Warsaw'
+
 module PolishOpenSourceRank
   def self.root
     Pathname(__dir__).parent

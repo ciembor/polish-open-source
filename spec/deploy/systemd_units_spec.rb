@@ -27,6 +27,7 @@ RSpec.describe File do
       'IOWeight=20',
       '/usr/bin/flock -n /home/ciembor/polish-open-source-rank/tmp/crawl.lock',
       '--name=polish-open-source-rank-monthly',
+      '-e TZ=Europe/Warsaw',
       'bundle exec ruby bin/monthly_rankings',
       '--user=1000:1000 --read-only --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m'
     )
@@ -34,7 +35,7 @@ RSpec.describe File do
     expect(unit).to include(
       '--memory=768m --memory-swap=768m --memory-reservation=512m --cpus=0.5 --cpu-shares=128 --pids-limit=256'
     )
-    expect(timer).to include('OnCalendar=*-*-01 00:00:00')
+    expect(timer).to include('OnCalendar=*-*-01 00:00:00 Europe/Warsaw')
     expect(timer).to include('Persistent=true')
   end
 
@@ -49,6 +50,7 @@ RSpec.describe File do
       'CPUWeight=20',
       'IOWeight=20',
       '/usr/bin/flock /home/ciembor/polish-open-source-rank/tmp/packages.lock',
+      '-e TZ=Europe/Warsaw',
       '--user=1000:1000 --read-only --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m',
       '-v /home/ciembor/polish-open-source-rank/db:/app/db:rw'
     )
@@ -59,7 +61,7 @@ RSpec.describe File do
     expect(service).to include(
       '--repository-limit all --scan-limit all --manifest-limit all --registry-limit all'
     )
-    expect(timer).to include('OnCalendar=*-*-01 00:00:00')
+    expect(timer).to include('OnCalendar=*-*-01 00:00:00 Europe/Warsaw')
     expect(timer).to include('Persistent=true')
   end
 
@@ -72,6 +74,7 @@ RSpec.describe File do
       'Restart=on-failure',
       'RestartSec=300',
       '--name=polish-open-source-rank-publish',
+      '-e TZ=Europe/Warsaw',
       '--user=1000:1000 --read-only --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m',
       '-v /home/ciembor/polish-open-source-rank/db:/app/db:rw',
       'bundle exec ruby bin/publish_snapshot'

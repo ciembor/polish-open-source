@@ -9,6 +9,15 @@ RSpec.describe PolishOpenSourceRank::Shared::Domain::Period do
     expect(period.key).to eq('2026-04')
   end
 
+  it 'uses the Warsaw calendar at the start of a month' do
+    utc_time = Time.utc(2026, 6, 30, 22)
+
+    period = described_class.previous_month(utc_time.getlocal.to_date)
+
+    expect(utc_time.getlocal.to_date).to eq(Date.new(2026, 7, 1))
+    expect(period.key).to eq('2026-06')
+  end
+
   it 'parses a month and checks time membership' do
     period = described_class.parse('2026-02')
 

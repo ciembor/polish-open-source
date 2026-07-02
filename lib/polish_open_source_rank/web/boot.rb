@@ -23,7 +23,6 @@ module PolishOpenSourceRank
 
       class << self
         def configure(app)
-          ENV['TZ'] = 'Europe/Warsaw'
           configure_static_paths(app)
           configure_view_services(app)
           configure_injected_services(app)
