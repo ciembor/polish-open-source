@@ -7,7 +7,7 @@ GEM
     bundler-audit (0.9.3)
       bundler (>= 1.2.0)
       thor (~> 1.0)
-    concurrent-ruby (1.3.6)
+    concurrent-ruby (1.3.7)
     date (3.5.1)
     diff-lcs (1.6.2)
     discordrb (3.7.2)
