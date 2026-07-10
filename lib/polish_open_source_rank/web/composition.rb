@@ -78,13 +78,10 @@ module PolishOpenSourceRank
       def sitemap_ranking_catalog
         contexts[:sitemap_ranking_catalog] ||= SitemapRankingCatalog.new(
           catalogs: [
-            PublicRankingSitemapCatalog.new(show_ranking_detail: publication.show_ranking_detail),
-            LanguageRankingSitemapCatalog.new(
-              show_language_ranking_detail: languages.show_language_ranking_detail
-            ),
+            PublicRankingSitemapCatalog.new,
+            LanguageRankingSitemapCatalog.new,
             PackageRankingSitemapCatalog.new(
-              package_ranking_read_model: package_ranking_read_model,
-              show_package_ranking_detail: packages.show_package_ranking_detail
+              package_ranking_read_model: package_ranking_read_model
             )
           ]
         )

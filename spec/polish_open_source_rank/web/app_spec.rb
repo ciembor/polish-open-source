@@ -1185,7 +1185,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(sitemap.content_type).to include('application/xml')
     sitemap_locations = REXML::XPath.match(xml_document(sitemap.body), '//url/loc').map(&:text)
     expect(sitemap_locations).to include('https://rank.example/people')
-    expect(sitemap_locations).to include('https://rank.example/people/users/top/page/2')
+    expect(sitemap_locations).not_to include('https://rank.example/people/users/top/page/2')
     expect(sitemap_locations).to include('https://rank.example/organizations')
     expect(sitemap_locations).to include('https://rank.example/organizations/active')
     expect(sitemap_locations).to include('https://rank.example/organizations/locations/krakow')

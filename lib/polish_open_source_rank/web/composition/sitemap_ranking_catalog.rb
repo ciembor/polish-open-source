@@ -3,39 +3,6 @@
 module PolishOpenSourceRank
   module Web
     class Composition
-      # Expands one canonical ranking path into every non-empty paginated URL.
-      module SitemapPageSeries
-        module_function
-
-        def paths(path)
-          paths = [path]
-          2.upto(Presentation::RankingPaginator::MAX_PAGE) do |page|
-            break if yield((page - 1) * Presentation::RankingPaginator::PER_PAGE).empty?
-
-            paths << "#{path}/page/#{page}"
-          end
-          paths
-        end
-      end
-
-      # Couples one canonical path with the query that determines its non-empty pages.
-      class SitemapQuerySeries
-        def initialize(path, query)
-          @path = path
-          @query = query
-        end
-
-        def paths(reader)
-          SitemapPageSeries.paths(path) do |offset|
-            reader.call(**query, limit: 1, offset: offset)
-          end
-        end
-
-        private
-
-        attr_reader :path, :query
-      end
-
       # Combines independently owned ranking URL inventories.
       class SitemapRankingCatalog
         def initialize(catalogs:)
@@ -57,16 +24,6 @@ module PolishOpenSourceRank
         Route = Data.define(:kind, :metric, :suffix)
         # Binds a ranking route to its public prefix, geographic scope, and snapshot.
         Scope = Data.define(:prefix, :slug, :period_start) do
-          def series(route)
-            SitemapQuerySeries.new(
-              "#{prefix}/#{route.suffix}",
-              scope: slug,
-              kind: route.kind,
-              metric: route.metric,
-              period_start: period_start
-            )
-          end
-
           def people_prefix
             slug == 'poland' ? '/people' : "/people/locations/#{slug}"
           end
@@ -105,17 +62,11 @@ module PolishOpenSourceRank
           %w[organization-repositories trending repositories/trending]
         ].map { |values| Route.new(*values) }.freeze
 
-        def initialize(show_ranking_detail:)
-          @show_ranking_detail = show_ranking_detail
-        end
-
         def paths(latest_period:, period_slugs:)
           latest_paths(latest_period) + period_slugs.flat_map { |slug| historical_paths(slug) }
         end
 
         private
-
-        attr_reader :show_ranking_detail
 
         def latest_paths(period_start)
           latest_scope_paths(Scope.new(nil, 'poland', period_start)) +
@@ -149,11 +100,7 @@ module PolishOpenSourceRank
         end
 
         def route_paths(scope, routes)
-          routes.flat_map { |route| route_page_paths(scope, route) }
-        end
-
-        def route_page_paths(scope, route)
-          scope.series(route).paths(show_ranking_detail)
+          routes.map { |route| "#{scope.prefix}/#{route.suffix}" }
         end
 
         def city_slugs
@@ -165,17 +112,9 @@ module PolishOpenSourceRank
       class LanguageRankingSitemapCatalog
         # Binds language ranking metrics to a public period prefix and snapshot.
         Period = Data.define(:prefix, :start) do
-          def series(metric)
-            SitemapQuerySeries.new(
-              "#{prefix}/languages/#{metric.slug}",
-              metric: metric.key,
-              period_start: start
-            )
+          def path(metric)
+            "#{prefix}/languages/#{metric.slug}"
           end
-        end
-
-        def initialize(show_language_ranking_detail:)
-          @show_language_ranking_detail = show_language_ranking_detail
         end
 
         def paths(latest_period:, period_slugs:)
@@ -183,8 +122,6 @@ module PolishOpenSourceRank
         end
 
         private
-
-        attr_reader :show_language_ranking_detail
 
         def current_paths(latest_period)
           latest_period ? period_paths(Period.new('', latest_period)) : []
@@ -201,7 +138,7 @@ module PolishOpenSourceRank
         end
 
         def metric_paths(period, metric)
-          period.series(metric).paths(show_language_ranking_detail)
+          period.path(metric)
         end
       end
 
@@ -215,27 +152,21 @@ module PolishOpenSourceRank
         end
         # Owns package metric URL generation for one ecosystem and snapshot.
         Ecosystem = Data.define(:path, :name, :period_start) do
-          def paths(reader)
+          def paths
             [path] + Contexts::Packages::Domain::PackageRankingMetric.all(ecosystem: name).flat_map do |metric|
-              metric_paths(metric, reader)
+              metric_path(metric)
             end
           end
 
           private
 
-          def metric_paths(metric, reader)
-            SitemapQuerySeries.new(
-              "#{path}/#{metric.slug}",
-              ecosystem: name,
-              metric: metric.key,
-              period_start: period_start
-            ).paths(reader)
+          def metric_path(metric)
+            "#{path}/#{metric.slug}"
           end
         end
 
-        def initialize(package_ranking_read_model:, show_package_ranking_detail:)
+        def initialize(package_ranking_read_model:)
           @package_ranking_read_model = package_ranking_read_model
-          @show_package_ranking_detail = show_package_ranking_detail
         end
 
         def paths(latest_period:, period_slugs:)
@@ -244,7 +175,7 @@ module PolishOpenSourceRank
 
         private
 
-        attr_reader :package_ranking_read_model, :show_package_ranking_detail
+        attr_reader :package_ranking_read_model
 
         def current_paths(latest_period)
           latest_period ? period_paths(Period.new('', latest_period)) : []
@@ -265,7 +196,7 @@ module PolishOpenSourceRank
         end
 
         def ecosystem_paths(period, ecosystem)
-          period.ecosystem(ecosystem).paths(show_package_ranking_detail)
+          period.ecosystem(ecosystem).paths
         end
 
         def package_ranking_ecosystem?(ecosystem)
