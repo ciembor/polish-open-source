@@ -11,13 +11,13 @@ module PolishOpenSourceRank
               SET monthly_stars_delta = COALESCE((
                     SELECT MAX(
                              organization_repository_monthly_stats.stargazers_count -
-                               previous_observations.stargazers_count,
+                               previous_stats.stargazers_count,
                              0
                            )
-                    FROM organization_repository_star_observations previous_observations
-                    WHERE previous_observations.period_start = ?
-                      AND previous_observations.platform = organization_repository_monthly_stats.platform
-                      AND previous_observations.repository_github_id =
+                    FROM organization_repository_monthly_stats previous_stats
+                    WHERE previous_stats.period_start = ?
+                      AND previous_stats.platform = organization_repository_monthly_stats.platform
+                      AND previous_stats.repository_github_id =
                           organization_repository_monthly_stats.repository_github_id
                   ), 0),
                   updated_at = ?
@@ -177,7 +177,7 @@ module PolishOpenSourceRank
               SQL
             end
 
-            def refresh_organization_repository_star_deltas_from_observations(period, platform:)
+            def refresh_organization_repository_star_deltas_from_previous_stats(period, platform:)
               database.execute(
                 REFRESH_ORGANIZATION_REPOSITORY_STAR_DELTAS_SQL,
                 [previous_period_start(period), timestamp, period.start_date.to_s, platform]

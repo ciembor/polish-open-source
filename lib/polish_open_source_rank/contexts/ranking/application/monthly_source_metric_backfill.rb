@@ -146,12 +146,12 @@ module PolishOpenSourceRank
             work = BACKFILL_WORK.fetch(:organization_repository_stars)
             return if completed_subject_ids(period, source, work).include?(source.platform)
 
-            log(source, 'refreshing organization repository stars from stored observations')
+            log(source, 'refreshing organization repository stars from previous monthly stats')
             record_work_event(
               period,
               work.merge(platform: source.platform, subject_id: source.platform, subject_label: source.platform)
             ) do
-              store.refresh_organization_repository_star_deltas_from_observations(
+              store.refresh_organization_repository_star_deltas_from_previous_stats(
                 period,
                 platform: source.platform
               )

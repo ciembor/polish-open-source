@@ -151,7 +151,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::MonthlySour
     )
   end
 
-  it 'refreshes organization repository stars from stored observations' do
+  it 'refreshes organization repository stars from previous monthly stats' do
     source = instance_double(GitHubSource, platform: 'github', supports_organizations?: true)
     allow(work_events).to receive(:successful_subject_ids).with(
       {
@@ -162,13 +162,13 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::MonthlySour
         platform: 'github'
       }
     ).and_return(Set.new)
-    allow(store).to receive(:refresh_organization_repository_star_deltas_from_observations)
+    allow(store).to receive(:refresh_organization_repository_star_deltas_from_previous_stats)
     allow(store).to receive(:refresh_organization_repository_metrics)
 
     described_class.new(store: store, sources: [source], logger: logger, work_events: work_events)
                    .call(period, refresh_organization_stars: true)
 
-    expect(store).to have_received(:refresh_organization_repository_star_deltas_from_observations)
+    expect(store).to have_received(:refresh_organization_repository_star_deltas_from_previous_stats)
       .with(period, platform: 'github')
     expect(store).to have_received(:refresh_organization_repository_metrics).with(period, platform: 'github')
   end
@@ -184,13 +184,13 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::MonthlySour
         platform: 'github'
       }
     ).and_return(Set['github'])
-    allow(store).to receive(:refresh_organization_repository_star_deltas_from_observations)
+    allow(store).to receive(:refresh_organization_repository_star_deltas_from_previous_stats)
     allow(store).to receive(:refresh_organization_repository_metrics)
 
     described_class.new(store: store, sources: [source], logger: logger, work_events: work_events)
                    .call(period, refresh_organization_stars: true)
 
-    expect(store).not_to have_received(:refresh_organization_repository_star_deltas_from_observations)
+    expect(store).not_to have_received(:refresh_organization_repository_star_deltas_from_previous_stats)
     expect(store).not_to have_received(:refresh_organization_repository_metrics)
   end
 

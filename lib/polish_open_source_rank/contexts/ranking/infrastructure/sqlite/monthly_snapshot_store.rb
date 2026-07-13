@@ -116,8 +116,8 @@ module PolishOpenSourceRank
               snapshot_repository.organization_stats_for_period(period, platform)
             end
 
-            def refresh_organization_repository_star_deltas_from_observations(period, platform:)
-              snapshot_repository.refresh_organization_repository_star_deltas_from_observations(
+            def refresh_organization_repository_star_deltas_from_previous_stats(period, platform:)
+              snapshot_repository.refresh_organization_repository_star_deltas_from_previous_stats(
                 period,
                 platform: platform
               )

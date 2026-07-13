@@ -126,7 +126,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     repository.record_organization_repository_snapshot(
       organization_repository_snapshot(source_id: 201, name: 'docs', stars: 10, delta: 0)
     )
-    repository.refresh_organization_repository_star_deltas_from_observations(period, platform: 'github')
+    repository.refresh_organization_repository_star_deltas_from_previous_stats(period, platform: 'github')
     repository.refresh_organization_repository_metrics(period, platform: 'github')
 
     expect(row('organization_monthly_stats')).to include(
