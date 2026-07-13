@@ -211,8 +211,7 @@ module PolishOpenSourceRank
         return false unless response.code.to_i == 403
 
         body = response.body.to_s
-        body.include?('forbids access via a fine-grained personal access tokens') ||
-          body.include?('Resource not accessible by personal access token')
+        body.include?('forbids access via a fine-grained personal access tokens')
       end
 
       def rate_limited_response?(response)

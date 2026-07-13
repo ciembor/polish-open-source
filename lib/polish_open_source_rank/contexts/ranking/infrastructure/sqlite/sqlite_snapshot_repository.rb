@@ -6,6 +6,24 @@ module PolishOpenSourceRank
       module Infrastructure
         module SQLite
           class SQLiteSnapshotRepository
+            REFRESH_ORGANIZATION_REPOSITORY_STAR_DELTAS_SQL = <<~SQL
+              UPDATE organization_repository_monthly_stats
+              SET monthly_stars_delta = COALESCE((
+                    SELECT MAX(
+                             organization_repository_monthly_stats.stargazers_count -
+                               previous_observations.stargazers_count,
+                             0
+                           )
+                    FROM organization_repository_star_observations previous_observations
+                    WHERE previous_observations.period_start = ?
+                      AND previous_observations.platform = organization_repository_monthly_stats.platform
+                      AND previous_observations.repository_github_id =
+                          organization_repository_monthly_stats.repository_github_id
+                  ), 0),
+                  updated_at = ?
+              WHERE period_start = ? AND platform = ?
+            SQL
+
             REFRESH_ORGANIZATION_REPOSITORY_METRICS_SQL = <<~SQL
               UPDATE organization_monthly_stats
               SET public_repo_count = COALESCE((
@@ -159,30 +177,11 @@ module PolishOpenSourceRank
               SQL
             end
 
-            def organization_repository_stats_for_period(period, platform)
-              database.fetch_all(<<~SQL, [period.start_date.to_s, platform])
-                SELECT stats.period_start, stats.platform, stats.repository_github_id,
-                       stats.repository_github_id AS source_id, repositories.full_name,
-                       stats.organization_github_id, stats.organization_login,
-                       stats.organization_city, stats.organization_country,
-                       stats.stargazers_count, stats.monthly_stars_delta
-                FROM organization_repository_monthly_stats stats
-                INNER JOIN organization_repositories repositories
-                  ON repositories.platform = stats.platform
-                 AND repositories.github_id = stats.repository_github_id
-                WHERE stats.period_start = ? AND stats.platform = ?
-                ORDER BY repositories.full_name COLLATE NOCASE ASC
-              SQL
-            end
-
-            def record_organization_repository_star_delta(attributes)
-              database.dataset(:organization_repository_monthly_stats)
-                      .where(
-                        period_start: attributes.fetch(:period_start),
-                        platform: attributes.fetch(:platform, 'github'),
-                        repository_github_id: attributes.fetch(:repository_github_id)
-                      )
-                      .update(monthly_stars_delta: attributes.fetch(:monthly_stars_delta), updated_at: timestamp)
+            def refresh_organization_repository_star_deltas_from_observations(period, platform:)
+              database.execute(
+                REFRESH_ORGANIZATION_REPOSITORY_STAR_DELTAS_SQL,
+                [previous_period_start(period), timestamp, period.start_date.to_s, platform]
+              )
             end
 
             def refresh_organization_repository_metrics(period, platform:)
@@ -371,6 +370,10 @@ module PolishOpenSourceRank
 
             def timestamp
               clock.call.iso8601
+            end
+
+            def previous_period_start(period)
+              (period.start_date << 1).to_s
             end
           end
         end

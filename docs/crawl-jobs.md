@@ -157,7 +157,7 @@ Monthly ranking resume behavior:
 - `--use-stars-diff` uses previous stored repository star observations instead
   of fetching monthly star history again from the source API.
 - `--refresh-organization-stars` repairs organization repository monthly star
-  deltas for already stored organization repositories and recomputes
+  deltas from the previous stored repository star observations and recomputes
   organization star totals from those repository rows.
 
 Package ranking resume behavior:

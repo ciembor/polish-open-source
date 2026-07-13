@@ -87,22 +87,6 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubClient do
     expect(authorizations).to eq(['Bearer token', nil])
   end
 
-  it 'retries public stargazer token policy failures without the token' do
-    authorizations = []
-    policy_error = JSON.generate('message' => 'Resource not accessible by personal access token')
-    stub_http(
-      response('403', 'Forbidden', policy_error),
-      ok_response([{ 'starred_at' => '2026-06-10T10:00:00Z' }], 'x-ratelimit-remaining' => '59')
-    ) do |request, _options|
-      authorizations << request['Authorization']
-    end
-
-    response = client.get('/repos/software-mansion/react-native-reanimated/stargazers')
-
-    expect(response.body).to eq([{ 'starred_at' => '2026-06-10T10:00:00Z' }])
-    expect(authorizations).to eq(['Bearer token', nil])
-  end
-
   it 'follows repository redirects and returns the redirected response body' do
     stub_http(
       response('301', 'Moved Permanently', '', 'location' => 'https://api.github.com/repos/QuestPDF/QuestPDF'),

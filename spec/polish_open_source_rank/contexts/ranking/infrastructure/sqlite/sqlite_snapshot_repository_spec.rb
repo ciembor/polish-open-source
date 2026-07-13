@@ -91,8 +91,17 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
       organization_repository_snapshot(period: period, stars: 20, delta: 3)
     )
 
-    expect(repository.organization_repository_stats_for_period(period, 'github')).to contain_exactly(
-      hash_including(full_name: 'polish-org/toolkit', monthly_stars_delta: 3)
+    repository_rows = database.fetch_all(<<~SQL, [period.start_date.to_s])
+      SELECT full_name, monthly_stars_delta
+      FROM organization_repository_monthly_stats
+      INNER JOIN organization_repositories
+        ON organization_repositories.platform = organization_repository_monthly_stats.platform
+       AND organization_repositories.github_id = organization_repository_monthly_stats.repository_github_id
+      WHERE period_start = ?
+    SQL
+
+    expect(repository_rows).to contain_exactly(
+      include(full_name: 'polish-org/toolkit', monthly_stars_delta: 3)
     )
     expect(row('organizations')).to include(login: 'polish-org', email: 'org@example.com')
     expect(row('organization_monthly_stats')).to include(
@@ -109,30 +118,21 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
   it 'refreshes organization repository star deltas and recomputes organization metrics' do
     repository.record_organization_snapshot(organization_snapshot)
     repository.record_organization_repository_snapshot(
+      organization_repository_snapshot(period: previous_period, source_id: 200, name: 'toolkit', stars: 16, delta: 0)
+    )
+    repository.record_organization_repository_snapshot(
       organization_repository_snapshot(source_id: 200, name: 'toolkit', stars: 20, delta: 0)
     )
     repository.record_organization_repository_snapshot(
       organization_repository_snapshot(source_id: 201, name: 'docs', stars: 10, delta: 0)
     )
-
-    repository.record_organization_repository_star_delta(
-      period_start: period.start_date.to_s,
-      platform: 'github',
-      repository_github_id: 200,
-      monthly_stars_delta: 4
-    )
-    repository.record_organization_repository_star_delta(
-      period_start: period.start_date.to_s,
-      platform: 'github',
-      repository_github_id: 201,
-      monthly_stars_delta: 2
-    )
+    repository.refresh_organization_repository_star_deltas_from_observations(period, platform: 'github')
     repository.refresh_organization_repository_metrics(period, platform: 'github')
 
     expect(row('organization_monthly_stats')).to include(
       public_repo_count: 2,
       total_stars: 30,
-      monthly_stars_delta: 6
+      monthly_stars_delta: 4
     )
   end
 

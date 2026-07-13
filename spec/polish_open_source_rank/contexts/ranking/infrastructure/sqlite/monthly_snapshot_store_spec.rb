@@ -62,11 +62,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     allow(snapshot_repository).to receive(:record_organization_snapshot).with(organization_snapshot)
     allow(snapshot_repository).to receive(:record_organization_repository_snapshot)
       .with(organization_repository_snapshot)
-    allow(snapshot_repository).to receive(:organization_repository_stats_for_period)
-      .with(period, 'gitlab')
-      .and_return([{ full_name: 'polish-org/toolkit' }])
-    allow(snapshot_repository).to receive(:record_organization_repository_star_delta)
-      .with(hash_including(full_name: 'polish-org/toolkit'))
+    allow(snapshot_repository).to receive(:refresh_organization_repository_star_deltas_from_observations)
+      .with(period, platform: 'gitlab')
     allow(snapshot_repository).to receive(:refresh_organization_repository_metrics)
       .with(period, platform: 'gitlab')
     allow(ranking_retention).to receive(:prune).with(period)
@@ -103,10 +100,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     snapshot_store.record_repository_snapshot(repository_snapshot)
     snapshot_store.record_organization_snapshot(organization_snapshot)
     snapshot_store.record_organization_repository_snapshot(organization_repository_snapshot)
-    expect(snapshot_store.organization_repository_stats_for_period(period, platform: 'gitlab')).to eq(
-      [{ full_name: 'polish-org/toolkit' }]
-    )
-    snapshot_store.record_organization_repository_star_delta(full_name: 'polish-org/toolkit')
+    snapshot_store.refresh_organization_repository_star_deltas_from_observations(period, platform: 'gitlab')
     snapshot_store.refresh_organization_repository_metrics(period, platform: 'gitlab')
     snapshot_store.prune_rankings(period)
   end

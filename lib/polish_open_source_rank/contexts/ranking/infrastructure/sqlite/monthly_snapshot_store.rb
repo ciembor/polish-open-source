@@ -116,12 +116,11 @@ module PolishOpenSourceRank
               snapshot_repository.organization_stats_for_period(period, platform)
             end
 
-            def organization_repository_stats_for_period(period, platform:)
-              snapshot_repository.organization_repository_stats_for_period(period, platform)
-            end
-
-            def record_organization_repository_star_delta(attributes)
-              snapshot_repository.record_organization_repository_star_delta(attributes)
+            def refresh_organization_repository_star_deltas_from_observations(period, platform:)
+              snapshot_repository.refresh_organization_repository_star_deltas_from_observations(
+                period,
+                platform: platform
+              )
             end
 
             def refresh_organization_repository_metrics(period, platform:)
