@@ -6,6 +6,36 @@ module PolishOpenSourceRank
       module Infrastructure
         module SQLite
           class SQLiteSnapshotRepository
+            REFRESH_ORGANIZATION_REPOSITORY_METRICS_SQL = <<~SQL
+              UPDATE organization_monthly_stats
+              SET public_repo_count = COALESCE((
+                    SELECT COUNT(*)
+                    FROM organization_repository_monthly_stats repository_stats
+                    WHERE repository_stats.period_start = organization_monthly_stats.period_start
+                      AND repository_stats.platform = organization_monthly_stats.platform
+                      AND repository_stats.organization_github_id =
+                          organization_monthly_stats.organization_github_id
+                  ), 0),
+                  total_stars = COALESCE((
+                    SELECT SUM(repository_stats.stargazers_count)
+                    FROM organization_repository_monthly_stats repository_stats
+                    WHERE repository_stats.period_start = organization_monthly_stats.period_start
+                      AND repository_stats.platform = organization_monthly_stats.platform
+                      AND repository_stats.organization_github_id =
+                          organization_monthly_stats.organization_github_id
+                  ), 0),
+                  monthly_stars_delta = COALESCE((
+                    SELECT SUM(repository_stats.monthly_stars_delta)
+                    FROM organization_repository_monthly_stats repository_stats
+                    WHERE repository_stats.period_start = organization_monthly_stats.period_start
+                      AND repository_stats.platform = organization_monthly_stats.platform
+                      AND repository_stats.organization_github_id =
+                          organization_monthly_stats.organization_github_id
+                  ), 0),
+                  updated_at = ?
+              WHERE period_start = ? AND platform = ?
+            SQL
+
             def initialize(database, clock: -> { Time.now.utc })
               @database = database
               @clock = clock
@@ -127,6 +157,39 @@ module PolishOpenSourceRank
                 WHERE period_start = ? AND platform = ?
                 ORDER BY login ASC
               SQL
+            end
+
+            def organization_repository_stats_for_period(period, platform)
+              database.fetch_all(<<~SQL, [period.start_date.to_s, platform])
+                SELECT stats.period_start, stats.platform, stats.repository_github_id,
+                       stats.repository_github_id AS source_id, repositories.full_name,
+                       stats.organization_github_id, stats.organization_login,
+                       stats.organization_city, stats.organization_country,
+                       stats.stargazers_count, stats.monthly_stars_delta
+                FROM organization_repository_monthly_stats stats
+                INNER JOIN organization_repositories repositories
+                  ON repositories.platform = stats.platform
+                 AND repositories.github_id = stats.repository_github_id
+                WHERE stats.period_start = ? AND stats.platform = ?
+                ORDER BY repositories.full_name COLLATE NOCASE ASC
+              SQL
+            end
+
+            def record_organization_repository_star_delta(attributes)
+              database.dataset(:organization_repository_monthly_stats)
+                      .where(
+                        period_start: attributes.fetch(:period_start),
+                        platform: attributes.fetch(:platform, 'github'),
+                        repository_github_id: attributes.fetch(:repository_github_id)
+                      )
+                      .update(monthly_stars_delta: attributes.fetch(:monthly_stars_delta), updated_at: timestamp)
+            end
+
+            def refresh_organization_repository_metrics(period, platform:)
+              database.execute(
+                REFRESH_ORGANIZATION_REPOSITORY_METRICS_SQL,
+                [timestamp, period.start_date.to_s, platform]
+              )
             end
 
             def record_organization_repository_snapshot(snapshot)

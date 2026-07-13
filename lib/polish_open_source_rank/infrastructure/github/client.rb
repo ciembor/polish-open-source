@@ -208,8 +208,11 @@ module PolishOpenSourceRank
       end
 
       def token_lifetime_policy_forbidden?(response)
-        response.code.to_i == 403 &&
-          response.body.to_s.include?('forbids access via a fine-grained personal access tokens')
+        return false unless response.code.to_i == 403
+
+        body = response.body.to_s
+        body.include?('forbids access via a fine-grained personal access tokens') ||
+          body.include?('Resource not accessible by personal access token')
       end
 
       def rate_limited_response?(response)

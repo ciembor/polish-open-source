@@ -151,6 +151,60 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::MonthlySour
     )
   end
 
+  it 'skips organization repository stars already refreshed in previous backfill attempts' do
+    source = instance_double(GitHubSource, platform: 'github', supports_organizations?: true)
+    done_row = { source_id: 10, repository_github_id: 10, full_name: 'done-org/app' }
+    pending_row = { source_id: 20, repository_github_id: 20, full_name: 'pending-org/app' }
+    allow(store).to receive(:organization_repository_stats_for_period)
+      .with(period, platform: 'github')
+      .and_return([done_row, pending_row])
+    allow(work_events).to receive(:successful_subject_ids).with(
+      {
+        period_start: '2026-04-01',
+        job_kind: 'monthly',
+        stage: 'organization_repository_stars',
+        unit_kind: 'organization_repository',
+        platform: 'github'
+      }
+    ).and_return(Set['10'])
+    allow(source).to receive(:repository_stars_delta).with(hash_including(full_name: 'pending-org/app'), period)
+                                                     .and_return(7)
+    allow(store).to receive(:record_organization_repository_star_delta)
+    allow(store).to receive(:refresh_organization_repository_metrics)
+
+    described_class.new(store: store, sources: [source], logger: logger, work_events: work_events)
+                   .call(period, refresh_organization_stars: true)
+
+    expect(source).not_to have_received(:repository_stars_delta).with(hash_including(full_name: 'done-org/app'), period)
+    expect(store).to have_received(:record_organization_repository_star_delta).with(
+      hash_including(full_name: 'pending-org/app', monthly_stars_delta: 7)
+    )
+    expect(store).to have_received(:refresh_organization_repository_metrics).with(period, platform: 'github')
+  end
+
+  it 'continues after one organization repository star refresh fails' do
+    source = instance_double(GitHubSource, platform: 'github', supports_organizations?: true)
+    bad_row = { source_id: 10, repository_github_id: 10, full_name: 'org/bad' }
+    good_row = { source_id: 20, repository_github_id: 20, full_name: 'org/good' }
+    allow(store).to receive(:organization_repository_stats_for_period)
+      .with(period, platform: 'github')
+      .and_return([bad_row, good_row])
+    allow(source).to receive(:repository_stars_delta).with(hash_including(full_name: 'org/bad'), period)
+                                                     .and_raise('blocked')
+    allow(source).to receive(:repository_stars_delta).with(hash_including(full_name: 'org/good'), period)
+                                                     .and_return(5)
+    allow(store).to receive(:record_organization_repository_star_delta)
+    allow(store).to receive(:refresh_organization_repository_metrics)
+
+    described_class.new(store: store, sources: [source], logger: logger, work_events: work_events)
+                   .call(period, refresh_organization_stars: true)
+
+    expect(store).to have_received(:record_organization_repository_star_delta).with(
+      hash_including(full_name: 'org/good', monthly_stars_delta: 5)
+    )
+    expect(logger.string).to include('refresh organization repository stars skipped for org/bad')
+  end
+
   it 'stops worker threads when joining source refreshes raises' do
     source_threads = instance_double(
       PolishOpenSourceRank::Contexts::Ranking::Application::MonthlySourceSnapshotRunner::SourceThreads,

@@ -86,7 +86,8 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
         '--existing-only',
         '--refresh-user-merged-prs',
         '--refresh-organization-members',
-        '--refresh-organization-merged-prs'
+        '--refresh-organization-merged-prs',
+        '--refresh-organization-stars'
       ],
       job: job,
       output: output
@@ -99,7 +100,8 @@ RSpec.describe PolishOpenSourceRank::Interfaces::CLI::MonthlyRankingsCommand do
       backfill: {
         refresh_user_merged_prs: true,
         refresh_organization_members: true,
-        refresh_organization_merged_prs: true
+        refresh_organization_merged_prs: true,
+        refresh_organization_stars: true
       }
     )
   end

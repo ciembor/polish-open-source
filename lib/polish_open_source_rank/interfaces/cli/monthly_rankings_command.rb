@@ -102,11 +102,16 @@ module PolishOpenSourceRank
           argv.include?('--refresh-organization-merged-prs')
         end
 
+        def refresh_organization_stars?
+          argv.include?('--refresh-organization-stars')
+        end
+
         def monthly_metric_backfill
           {}.tap do |backfill|
             backfill[:refresh_user_merged_prs] = true if refresh_user_merged_prs?
             backfill[:refresh_organization_members] = true if refresh_organization_members?
             backfill[:refresh_organization_merged_prs] = true if refresh_organization_merged_prs?
+            backfill[:refresh_organization_stars] = true if refresh_organization_stars?
           end
         end
       end

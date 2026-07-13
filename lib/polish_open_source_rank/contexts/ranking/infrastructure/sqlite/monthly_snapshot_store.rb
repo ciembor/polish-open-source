@@ -116,6 +116,18 @@ module PolishOpenSourceRank
               snapshot_repository.organization_stats_for_period(period, platform)
             end
 
+            def organization_repository_stats_for_period(period, platform:)
+              snapshot_repository.organization_repository_stats_for_period(period, platform)
+            end
+
+            def record_organization_repository_star_delta(attributes)
+              snapshot_repository.record_organization_repository_star_delta(attributes)
+            end
+
+            def refresh_organization_repository_metrics(period, platform:)
+              snapshot_repository.refresh_organization_repository_metrics(period, platform: platform)
+            end
+
             def prune_rankings(period)
               ranking_retention.prune(period)
             end

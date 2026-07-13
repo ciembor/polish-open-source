@@ -11,8 +11,20 @@ module PolishOpenSourceRank
               stage: 'organization_merged_pull_requests',
               unit_kind: 'organization'
             },
+            organization_repository_stars: {
+              stage: 'organization_repository_stars',
+              unit_kind: 'organization_repository'
+            },
             user_merged_pull_requests: { stage: 'user_merged_pull_requests', unit_kind: 'user' }
           }.freeze
+
+          BackfillRequest = Data.define(
+            :scope,
+            :refresh_user_merged_prs,
+            :refresh_organization_members,
+            :refresh_organization_merged_prs,
+            :refresh_organization_stars
+          )
 
           def initialize(store:, sources:, logger:, work_events:)
             @store = store
@@ -22,16 +34,16 @@ module PolishOpenSourceRank
           end
 
           def call(period, scope: nil, refresh_user_merged_prs: false, refresh_organization_members: false,
-                   refresh_organization_merged_prs: false)
+                   refresh_organization_merged_prs: false, refresh_organization_stars: false)
+            request = BackfillRequest.new(
+              scope: scope,
+              refresh_user_merged_prs: refresh_user_merged_prs,
+              refresh_organization_members: refresh_organization_members,
+              refresh_organization_merged_prs: refresh_organization_merged_prs,
+              refresh_organization_stars: refresh_organization_stars
+            )
             source_threads = MonthlySourceSnapshotRunner::SourceThreads.start(sources, []) do |source, _refresh|
-              refresh_source_metrics(
-                period,
-                source,
-                scope: scope,
-                refresh_user_merged_prs: refresh_user_merged_prs,
-                refresh_organization_members: refresh_organization_members,
-                refresh_organization_merged_prs: refresh_organization_merged_prs
-              )
+              refresh_source_metrics(period, source, request)
             end
             source_threads.join
             raise_if_every_source_failed(source_threads.errors)
@@ -44,25 +56,31 @@ module PolishOpenSourceRank
 
           attr_reader :logger, :sources, :store, :work_events
 
-          def refresh_source_metrics(period, source, scope:, refresh_user_merged_prs:, refresh_organization_members:,
-                                     refresh_organization_merged_prs:)
-            errors = []
-            if refresh_user_merged_prs && scope != :organizations
-              errors << refresh_stage(source, 'refresh merged pull requests') do
-                refresh_user_merged_prs_for_source(period, source)
-              end
-            end
-            if refresh_organization_merged_prs && scope != :users
-              errors << refresh_stage(source, 'refresh organization merged pull requests') do
-                refresh_organization_merged_prs_for_source(period, source)
-              end
-            end
-            if refresh_organization_members && scope != :users
-              errors << refresh_stage(source, 'refresh organization members') do
-                refresh_organization_members_for_source(period, source)
-              end
+          def refresh_source_metrics(period, source, request)
+            errors = backfill_stages(request).filter_map do |stage|
+              refresh_stage(source, stage.fetch(:name)) { send(stage.fetch(:method), period, source) }
             end
             Thread.current[:error] = errors.compact.first
+          end
+
+          def backfill_stages(request)
+            [
+              backfill_stage(request.refresh_user_merged_prs, :organizations, 'refresh merged pull requests',
+                             :refresh_user_merged_prs_for_source, request.scope),
+              backfill_stage(request.refresh_organization_merged_prs, :users,
+                             'refresh organization merged pull requests',
+                             :refresh_organization_merged_prs_for_source, request.scope),
+              backfill_stage(request.refresh_organization_members, :users, 'refresh organization members',
+                             :refresh_organization_members_for_source, request.scope),
+              backfill_stage(request.refresh_organization_stars, :users, 'refresh organization repository stars',
+                             :refresh_organization_repository_stars_for_source, request.scope)
+            ].compact
+          end
+
+          def backfill_stage(enabled, excluded_scope, name, method, scope)
+            return unless enabled && scope != excluded_scope
+
+            { name: name, method: method }
           end
 
           def refresh_stage(source, stage)
@@ -122,6 +140,15 @@ module PolishOpenSourceRank
             end
           end
 
+          def refresh_organization_repository_stars_for_source(period, source)
+            return unless source.supports_organizations?
+
+            rows = pending_organization_repository_backfill_rows(period, source)
+            log(source, "refreshing organization repository stars for #{rows.length} repositories")
+            rows.each { |row| refresh_organization_repository_stars_for_row(period, source, row) }
+            store.refresh_organization_repository_metrics(period, platform: source.platform)
+          end
+
           def pending_user_backfill_rows(period, source)
             rows = store.user_stats_for_period(period, platform: source.platform)
             completed = completed_subject_ids(period, source, BACKFILL_WORK.fetch(:user_merged_pull_requests))
@@ -131,6 +158,12 @@ module PolishOpenSourceRank
           def pending_organization_backfill_rows(period, source, work_name)
             rows = store.organization_stats_for_period(period, platform: source.platform)
             completed = completed_subject_ids(period, source, BACKFILL_WORK.fetch(work_name))
+            pending_backfill_rows(rows, completed)
+          end
+
+          def pending_organization_repository_backfill_rows(period, source)
+            rows = store.organization_repository_stats_for_period(period, platform: source.platform)
+            completed = completed_subject_ids(period, source, BACKFILL_WORK.fetch(:organization_repository_stars))
             pending_backfill_rows(rows, completed)
           end
 
@@ -180,6 +213,23 @@ module PolishOpenSourceRank
             end
           rescue StandardError => e
             log(source, "refresh merged pull requests skipped for #{row.fetch(:login)}: #{e.class}: #{e.message}")
+          end
+
+          def refresh_organization_repository_stars_for_row(period, source, row)
+            record_work_event(
+              period,
+              stage: 'organization_repository_stars',
+              unit_kind: 'organization_repository',
+              platform: source.platform,
+              subject_id: row.fetch(:source_id),
+              subject_label: row.fetch(:full_name)
+            ) do
+              monthly_stars_delta = source.repository_stars_delta(row, period)
+              store.record_organization_repository_star_delta(row.merge(monthly_stars_delta: monthly_stars_delta))
+            end
+          rescue StandardError => e
+            log(source, "refresh organization repository stars skipped for #{row.fetch(:full_name)}: " \
+                        "#{e.class}: #{e.message}")
           end
 
           def source_subject(row, source)

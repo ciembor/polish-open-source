@@ -14,6 +14,7 @@ Run a specific month:
 bin/monthly_rankings --month 2026-04
 bin/monthly_rankings --month 2026-04 --refresh
 bin/monthly_rankings --month 2026-04 --use-stars-diff
+bin/monthly_rankings --month 2026-04 --existing-only --scope organizations --refresh-organization-stars
 ```
 
 The monthly job favors stability over speed:
@@ -155,6 +156,9 @@ Monthly ranking resume behavior:
 - `--refresh` intentionally reprocesses the selected period, platform, or scope.
 - `--use-stars-diff` uses previous stored repository star observations instead
   of fetching monthly star history again from the source API.
+- `--refresh-organization-stars` repairs organization repository monthly star
+  deltas for already stored organization repositories and recomputes
+  organization star totals from those repository rows.
 
 Package ranking resume behavior:
 

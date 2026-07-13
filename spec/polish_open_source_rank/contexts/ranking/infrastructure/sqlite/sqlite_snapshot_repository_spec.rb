@@ -91,6 +91,9 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
       organization_repository_snapshot(period: period, stars: 20, delta: 3)
     )
 
+    expect(repository.organization_repository_stats_for_period(period, 'github')).to contain_exactly(
+      hash_including(full_name: 'polish-org/toolkit', monthly_stars_delta: 3)
+    )
     expect(row('organizations')).to include(login: 'polish-org', email: 'org@example.com')
     expect(row('organization_monthly_stats')).to include(
       total_stars: 20,
@@ -101,6 +104,36 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     expect(row('organization_repositories')).to include(full_name: 'polish-org/toolkit', archived: 0)
     expect(row('organization_repository_monthly_stats')).to include(stargazers_count: 17, monthly_stars_delta: 2)
     expect(row('organization_repository_star_observations')).to include(stargazers_count: 17)
+  end
+
+  it 'refreshes organization repository star deltas and recomputes organization metrics' do
+    repository.record_organization_snapshot(organization_snapshot)
+    repository.record_organization_repository_snapshot(
+      organization_repository_snapshot(source_id: 200, name: 'toolkit', stars: 20, delta: 0)
+    )
+    repository.record_organization_repository_snapshot(
+      organization_repository_snapshot(source_id: 201, name: 'docs', stars: 10, delta: 0)
+    )
+
+    repository.record_organization_repository_star_delta(
+      period_start: period.start_date.to_s,
+      platform: 'github',
+      repository_github_id: 200,
+      monthly_stars_delta: 4
+    )
+    repository.record_organization_repository_star_delta(
+      period_start: period.start_date.to_s,
+      platform: 'github',
+      repository_github_id: 201,
+      monthly_stars_delta: 2
+    )
+    repository.refresh_organization_repository_metrics(period, platform: 'github')
+
+    expect(row('organization_monthly_stats')).to include(
+      public_repo_count: 2,
+      total_stars: 30,
+      monthly_stars_delta: 6
+    )
   end
 
   it 'retries snapshot writes as an update when the insert races with another writer' do
@@ -275,19 +308,19 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     )
   end
 
-  def organization_repository_snapshot(period:, stars:, delta:)
+  def organization_repository_snapshot(stars:, delta:, period: self.period, source_id: 200, name: 'toolkit')
     PolishOpenSourceRank::Contexts::Ranking::Domain::OrganizationRepositorySnapshot.new(
       period: period,
       platform: 'github',
-      source_id: 200,
+      source_id: source_id,
       organization_source_id: 20,
       organization_login: 'polish-org',
       organization_city: 'Warszawa',
       organization_country: 'Poland',
-      name: 'toolkit',
-      full_name: 'polish-org/toolkit',
+      name: name,
+      full_name: "polish-org/#{name}",
       description: 'Toolkit',
-      html_url: 'https://github.com/polish-org/toolkit',
+      html_url: "https://github.com/polish-org/#{name}",
       homepage: nil,
       language: 'Ruby',
       fork: false,
