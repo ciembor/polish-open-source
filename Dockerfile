@@ -1,4 +1,4 @@
-FROM docker.io/library/ruby:4.0.5-slim-bookworm
+FROM docker.io/library/ruby:4.0.6-slim-bookworm
 
 ARG APP_UID=1000
 ARG APP_GID=1000
