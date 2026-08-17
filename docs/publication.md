@@ -21,43 +21,22 @@ sitemaps, canonical URLs, and `hreflang` use only the published month or the
 
 ## Historical Metric Semantics
 
-For GitHub, public repositories and organization repositories store two distinct
-monthly metrics:
+Public repositories and organization repositories store two distinct monthly
+metrics:
 
-- `stargazers_count`: the number of stars at the end of the published month;
-- `monthly_stars_delta`: only the stars gained in that month according to
-  `starred_at`.
+- `stargazers_count`: the number of stars observed during the monthly crawl;
+- `monthly_stars_delta`: the positive difference between that observation and
+  the previous stored monthly observation.
 
-GitLab and Codeberg do not expose dated star history today, so:
-
-- `stargazers_count` remains the value observed during the monthly crawl;
-- `monthly_stars_delta` is explicitly stored as `0` instead of pretending to be
-  a historical diff.
+Repositories without a previous monthly observation get `0` for
+`monthly_stars_delta`. This keeps the metric conservative without depending on
+dated stargazer lists, which are not available consistently across platforms
+and are restricted by GitHub for repositories the token does not administer.
 
 Languages and packages do not recalculate these values independently. Both
 sections join `repository_monthly_stats` or
 `organization_repository_monthly_stats` on the same `period_start`, so a
 published month does not mix repository data from another period.
-
-## Historical Star Backfill Plan
-
-Backfill applies only to GitHub months that were computed before historical star
-snapshots were introduced or that were run with `--use-stars-diff`.
-
-Cost estimation starts with a simple lower bound:
-
-- at least one stargazer-history request per repository and month;
-- minimum time of `repo_count / REQUESTS_PER_MINUTE`;
-- with the current `REQUESTS_PER_MINUTE=60`, a local snapshot with `300`
-  repositories gives a lower bound of about `5` minutes for one GitHub month,
-  before extra history pages, retries, and rate-limit waits.
-
-Recommended order:
-
-1. Start with the oldest published month missing historical stars.
-2. Run one month at a time, with resume support from SQLite job status.
-3. Pause further months if Sentry shows higher retries, 5xx responses, or
-   latency.
 
 ## Promotion
 

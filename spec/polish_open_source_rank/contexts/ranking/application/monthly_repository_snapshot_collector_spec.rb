@@ -3,9 +3,11 @@
 class RepositoryCollectorStore
   attr_reader :organization_snapshots, :snapshots
 
-  def initialize
+  def initialize(previous_repository_stars: {}, previous_organization_repository_stars: {})
     @snapshots = []
     @organization_snapshots = []
+    @previous_repository_stars = previous_repository_stars
+    @previous_organization_repository_stars = previous_organization_repository_stars
   end
 
   def record_repository_snapshot(snapshot)
@@ -14,6 +16,14 @@ class RepositoryCollectorStore
 
   def record_organization_repository_snapshot(snapshot)
     organization_snapshots << snapshot
+  end
+
+  def previous_repository_stars(_period, platform:, repository_source_id:)
+    @previous_repository_stars[[platform, repository_source_id]]
+  end
+
+  def previous_organization_repository_stars(_period, platform:, repository_source_id:)
+    @previous_organization_repository_stars[[platform, repository_source_id]]
   end
 end
 
@@ -65,14 +75,12 @@ class RepositoryCollectorAcceptedProfile
 end
 
 class RepositoryCollectorSource
-  attr_reader :delta_calls, :organization_streams, :platform
+  attr_reader :organization_streams, :platform
 
-  def initialize(repositories:, organization_repositories: {}, deltas: {}, platform: 'github')
+  def initialize(repositories:, organization_repositories: {}, platform: 'github')
     @repositories = repositories
     @organization_repositories = organization_repositories
-    @deltas = deltas
     @platform = platform
-    @delta_calls = []
     @organization_streams = []
   end
 
@@ -88,31 +96,6 @@ class RepositoryCollectorSource
     organization_streams << profile.login
     @organization_repositories.fetch(profile.login, []).each(&)
   end
-
-  def repository_stars_delta(repository, period)
-    delta_calls << [repository.full_name, period]
-    @deltas.fetch(repository.full_name)
-  end
-end
-
-class RepositoryCollectorHistoricalSource < RepositoryCollectorSource
-  attr_reader :star_snapshot_calls
-
-  def initialize(star_snapshots:, **attributes)
-    super(**attributes)
-    @star_snapshots = star_snapshots
-    @star_snapshot_calls = []
-  end
-
-  def repository_star_snapshot(repository, period)
-    star_snapshot_calls << [repository.full_name, period]
-    @star_snapshots.fetch(repository.full_name)
-  end
-
-  def repository_stars_delta(repository, period)
-    delta_calls << [repository.full_name, period]
-    repository_star_snapshot(repository, period).fetch(:monthly_stars_delta)
-  end
 end
 
 RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::MonthlyRepositorySnapshotCollector do
@@ -124,11 +107,11 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::MonthlyRepo
 
   it 'filters contributor repositories below the minimum star threshold' do
     source = RepositoryCollectorSource.new(
-      repositories: { 'alice' => [repository(10, 'alice/tiny', 4), repository(11, 'alice/app', 5)] },
-      deltas: { 'alice/app' => 2 }
+      repositories: { 'alice' => [repository(10, 'alice/tiny', 4), repository(11, 'alice/app', 5)] }
     )
+    store = RepositoryCollectorStore.new(previous_repository_stars: { ['github', 11] => 3 })
 
-    metrics = collector.contributor_metrics(accepted_profile(source: source, profile: profile))
+    metrics = collector(store: store).contributor_metrics(accepted_profile(source: source, profile: profile))
 
     expect(metrics).to have_attributes(public_repository_count: 1, total_stars: 5, monthly_stars_delta: 2)
     expect(store.snapshots).to eq([{ full_name: 'alice/app', stars: 5, monthly_stars_delta: 2 }])
@@ -143,44 +126,37 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::MonthlyRepo
 
     expect(metrics).to have_attributes(public_repository_count: 1, total_stars: 0, monthly_stars_delta: 0)
     expect(store.snapshots).to eq([{ full_name: 'alice/empty', stars: 0, monthly_stars_delta: 0 }])
-    expect(source.delta_calls).to be_empty
   end
 
-  it 'uses source-provided deltas for monthly stars' do
-    source = RepositoryCollectorSource.new(
-      repositories: { 'alice' => [repository(10, 'alice/app', 13)] },
-      deltas: { 'alice/app' => 3 }
-    )
+  it 'uses previous stored repository observations for monthly stars' do
+    source = RepositoryCollectorSource.new(repositories: { 'alice' => [repository(10, 'alice/app', 13)] })
+    store = RepositoryCollectorStore.new(previous_repository_stars: { ['github', 10] => 10 })
 
-    metrics = collector.contributor_metrics(accepted_profile(source: source, profile: profile))
+    metrics = collector(store: store).contributor_metrics(accepted_profile(source: source, profile: profile))
 
     expect(metrics).to have_attributes(total_stars: 13, monthly_stars_delta: 3)
-    expect(source.delta_calls).to eq([['alice/app', period]])
+    expect(store.snapshots).to eq([{ full_name: 'alice/app', stars: 13, monthly_stars_delta: 3 }])
   end
 
-  it 'keeps observed repository stars when a source provides historical star snapshots' do
-    source = RepositoryCollectorHistoricalSource.new(
-      repositories: { 'alice' => [repository(10, 'alice/app', 13)] },
-      star_snapshots: { 'alice/app' => { stars: 11, monthly_stars_delta: 4 } }
-    )
+  it 'does not report negative monthly stars when a repository loses stars' do
+    source = RepositoryCollectorSource.new(repositories: { 'alice' => [repository(10, 'alice/app', 13)] })
+    store = RepositoryCollectorStore.new(previous_repository_stars: { ['github', 10] => 15 })
 
-    metrics = collector.contributor_metrics(accepted_profile(source: source, profile: profile))
+    metrics = collector(store: store).contributor_metrics(accepted_profile(source: source, profile: profile))
 
-    expect(metrics).to have_attributes(total_stars: 13, monthly_stars_delta: 4)
-    expect(store.snapshots).to eq([{ full_name: 'alice/app', stars: 13, monthly_stars_delta: 4 }])
-    expect(source.star_snapshot_calls).to eq([['alice/app', period]])
-    expect(source.delta_calls).to eq([['alice/app', period]])
+    expect(metrics).to have_attributes(total_stars: 13, monthly_stars_delta: 0)
+    expect(store.snapshots).to eq([{ full_name: 'alice/app', stars: 13, monthly_stars_delta: 0 }])
   end
 
   it 'streams organization repositories through the organization entry point' do
     organization = profile_record(9, 'polish-org')
     source = RepositoryCollectorSource.new(
       repositories: {},
-      organization_repositories: { 'polish-org' => [repository(90, 'polish-org/toolkit', 9)] },
-      deltas: { 'polish-org/toolkit' => 6 }
+      organization_repositories: { 'polish-org' => [repository(90, 'polish-org/toolkit', 9)] }
     )
+    store = RepositoryCollectorStore.new(previous_organization_repository_stars: { ['github', 90] => 3 })
 
-    metrics = collector.organization_metrics(accepted_profile(source: source, profile: organization))
+    metrics = collector(store: store).organization_metrics(accepted_profile(source: source, profile: organization))
 
     expect(metrics).to have_attributes(public_repository_count: 1, total_stars: 9, monthly_stars_delta: 6)
     expect(store.organization_snapshots).to eq([{ full_name: 'polish-org/toolkit', stars: 9, monthly_stars_delta: 6 }])

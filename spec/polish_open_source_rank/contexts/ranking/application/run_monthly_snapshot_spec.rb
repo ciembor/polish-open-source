@@ -480,8 +480,10 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
   end
 
   it 'discovers candidates, rejects non-Polish profiles, and stores Polish snapshots' do
+    previous_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-03')
+    seed_previous_repository_observation(previous_period, source_id: 10, full_name: 'alice/app', stars: 9)
+    seed_previous_repository_observation(previous_period, source_id: 11, full_name: 'alice/lib', stars: 4)
     seed_alice_and_bob_discovery
-    github.deltas = { 'alice/app' => 3, 'alice/lib' => 1 }
     github.activities = { 'alice' => 7 }
     allow(store).to receive(:prune_rankings).and_call_original
 
@@ -500,28 +502,28 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect_persisted_alice_repositories
     expect_persisted_alice_repository_stats
     expect(github.user_calls).to eq([['alice', 1], ['bob', 2]])
-    expect(github.delta_periods).to eq([['alice/app', period], ['alice/lib', period]])
+    expect(github.delta_periods).to be_empty
     expect(github.activity_periods).to be_empty
   end
 
-  it 'uses source star history by default even when previous repository observations exist' do
+  it 'uses previous repository observations for monthly star deltas' do
     previous_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-03')
     seed_previous_repository_observation(previous_period)
     github.candidates = { 'Poland' => [{ source_id: 1, login: 'alice' }] }
     github.profiles = { 'alice' => profile(1, 'alice', 'Krakow, Poland') }
     github.repositories = { 'alice' => [repository(10, 'alice/app', 14)] }
-    github.deltas = { 'alice/app' => 9 }
 
     job.call(period)
 
-    expect(fetch_user_stats('alice')).to include(monthly_stars_delta: 9)
-    expect(fetch_repository_stats('alice/app')).to include(monthly_stars_delta: 9)
-    expect(github.delta_periods).to eq([['alice/app', period]])
+    expect(fetch_user_stats('alice')).to include(monthly_stars_delta: 4)
+    expect(fetch_repository_stats('alice/app')).to include(monthly_stars_delta: 4)
+    expect(github.delta_periods).to be_empty
   end
 
-  it 'uses source deltas and skips repositories below the catalog star threshold' do
+  it 'uses observed star differences and skips repositories below the catalog star threshold' do
     previous_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-03')
     seed_previous_repository_observation(previous_period)
+    seed_previous_repository_observation(previous_period, source_id: 11, full_name: 'alice/new', stars: 5)
     github.candidates = { 'Poland' => [{ source_id: 1, login: 'alice' }] }
     github.profiles = { 'alice' => profile(1, 'alice', 'Krakow, Poland') }
     github.repositories = {
@@ -531,7 +533,6 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
         repository(12, 'alice/empty', 0)
       ]
     }
-    github.deltas = { 'alice/app' => 4, 'alice/new' => 2 }
 
     job.call(period)
 
@@ -539,39 +540,37 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(fetch_repository_stats('alice/app')).to include(monthly_stars_delta: 4)
     expect(fetch_repository_stats('alice/new')).to include(monthly_stars_delta: 2)
     expect(fetch_repository_stats('alice/empty')).to be_nil
-    expect(github.delta_periods).to eq([['alice/app', period], ['alice/new', period]])
+    expect(github.delta_periods).to be_empty
   end
 
-  it 'keeps observed repository stars while using source-provided historical star deltas' do
+  it 'keeps observed repository stars while using previous observations for monthly deltas' do
     source = HistoricalStarGitHub.new
+    previous_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-03')
+    seed_previous_repository_observation(previous_period, stars: 9)
     source.candidates = { 'Poland' => [{ source_id: 1, login: 'alice' }] }
     source.profiles = { 'alice' => profile(1, 'alice', 'Krakow, Poland') }
     source.repositories = { 'alice' => [repository(10, 'alice/app', 12)] }
-    source.star_snapshots = {
-      'alice/app' => { stars: 9, monthly_stars_delta: 3 }
-    }
 
     run_job_with(source: source)
 
     expect(fetch_user_stats('alice')).to include(total_stars: 12, monthly_stars_delta: 3)
     expect(fetch_repository_stats('alice/app')).to include(stargazers_count: 12, monthly_stars_delta: 3)
-    expect(source.star_snapshot_periods).to eq([['alice/app', period]])
-    expect(source.delta_periods).to eq([['alice/app', period]])
+    expect(source.star_snapshot_periods).to be_empty
+    expect(source.delta_periods).to be_empty
   end
 
-  it 'uses repository star deltas from source history during a refresh' do
+  it 'uses previous repository observations during a refresh' do
     previous_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-03')
     seed_previous_repository_observation(previous_period)
     github.candidates = { 'Poland' => [{ source_id: 1, login: 'alice' }] }
     github.profiles = { 'alice' => profile(1, 'alice', 'Krakow, Poland') }
     github.repositories = { 'alice' => [repository(10, 'alice/app', 14)] }
-    github.deltas = { 'alice/app' => 9 }
 
     job.call(period, refresh: true)
 
-    expect(fetch_user_stats('alice')).to include(monthly_stars_delta: 9)
-    expect(fetch_repository_stats('alice/app')).to include(monthly_stars_delta: 9)
-    expect(github.delta_periods).to eq([['alice/app', period]])
+    expect(fetch_user_stats('alice')).to include(monthly_stars_delta: 4)
+    expect(fetch_repository_stats('alice/app')).to include(monthly_stars_delta: 4)
+    expect(github.delta_periods).to be_empty
   end
 
   it 'runs only the organization pipeline when scoped to organizations' do
@@ -753,6 +752,8 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
   end
 
   it 'discovers organizations, stores organization rankings, and persists organization repositories' do
+    previous_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-03')
+    seed_previous_organization_repository_observation(previous_period)
     organization_source = ranked_organization_source
 
     run_job_with(source: organization_source)
@@ -768,6 +769,7 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       INNER JOIN organization_repositories repositories
         ON repositories.platform = stats.platform
        AND repositories.github_id = stats.repository_github_id
+      WHERE stats.period_start = '#{period.start_date}'
     SQL
     expect(organization_rankings.fetch(:top).first).to include(login: 'polish-org', total_stars: 33)
     expect(organization_repository_rankings.fetch(:trending).first).to include(
@@ -777,36 +779,34 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     expect(organization_source.organization_calls).to eq([['polish-org', 9]])
   end
 
-  it 'keeps observed organization repository stars while using source-provided historical star deltas' do
+  it 'keeps observed organization repository stars while using previous observations for monthly deltas' do
     organization_source = HistoricalStarOrganizationGitHub.new
+    previous_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-03')
+    seed_previous_organization_repository_observation(previous_period)
     organization_source.organization_candidates = { 'Poland' => [{ source_id: 9, login: 'polish-org' }] }
     organization_source.organizations = { 'polish-org' => profile(9, 'polish-org', 'Warsaw, Poland') }
     organization_source.organization_repositories = { 'polish-org' => [repository(90, 'polish-org/toolkit', 33)] }
-    organization_source.star_snapshots = {
-      'polish-org/toolkit' => { stars: 27, monthly_stars_delta: 4 }
-    }
 
     run_job_with(source: organization_source)
 
     expect(fetch_row('SELECT total_stars, monthly_stars_delta FROM organization_monthly_stats'))
-      .to include(total_stars: 33, monthly_stars_delta: 4)
-    expect(fetch_row(<<~SQL)).to include(stargazers_count: 33, monthly_stars_delta: 4)
+      .to include(total_stars: 33, monthly_stars_delta: 6)
+    expect(fetch_row(<<~SQL)).to include(stargazers_count: 33, monthly_stars_delta: 6)
       SELECT stats.stargazers_count, stats.monthly_stars_delta
       FROM organization_repository_monthly_stats stats
       INNER JOIN organization_repositories repositories
         ON repositories.platform = stats.platform
        AND repositories.github_id = stats.repository_github_id
-      WHERE repositories.full_name = 'polish-org/toolkit'
+      WHERE stats.period_start = '#{period.start_date}' AND repositories.full_name = 'polish-org/toolkit'
     SQL
-    expect(organization_source.star_snapshot_periods).to eq([['polish-org/toolkit', period]])
-    expect(organization_source.delta_periods).to eq([['polish-org/toolkit', period]])
+    expect(organization_source.star_snapshot_periods).to be_empty
+    expect(organization_source.delta_periods).to be_empty
   end
 
-  it 'uses source organization repository deltas when previous observations exist' do
+  it 'uses previous organization repository observations when they exist' do
     previous_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-03')
     seed_previous_organization_repository_observation(previous_period)
     organization_source = ranked_organization_source
-    organization_source.deltas = { 'polish-org/toolkit' => 30 }
 
     build_job(
       store: store,
@@ -815,12 +815,12 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       logger: StringIO.new
     ).call(period)
 
-    expect(fetch_organization_stats('polish-org')).to include(monthly_stars_delta: 30)
+    expect(fetch_organization_stats('polish-org')).to include(monthly_stars_delta: 6)
     expect(organization_repository_rankings.fetch(:trending).first).to include(
       full_name: 'polish-org/toolkit',
-      monthly_stars_delta: 30
+      monthly_stars_delta: 6
     )
-    expect(organization_source.delta_periods).to eq([['polish-org/toolkit', period]])
+    expect(organization_source.delta_periods).to be_empty
   end
 
   def ranked_organization_source
@@ -828,11 +828,13 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
       source.organization_candidates = { 'Poland' => [{ source_id: 9, login: 'polish-org' }] }
       source.organizations = { 'polish-org' => profile(9, 'polish-org', 'Warsaw, Poland') }
       source.organization_repositories = { 'polish-org' => [repository(90, 'polish-org/toolkit', 33)] }
-      source.deltas = { 'polish-org/toolkit' => 6 }
     end
   end
 
   it 'streams organization repositories while calculating organization metrics' do
+    previous_period = PolishOpenSourceRank::Shared::Domain::Period.parse('2026-03')
+    seed_previous_organization_repository_observation(previous_period)
+    seed_previous_organization_repository_observation(previous_period, source_id: 91, name: 'docs', stars: 5)
     organization_source = StreamingOrganizationGitHub.new
     organization_source.organization_candidates = { 'Poland' => [{ source_id: 9, login: 'polish-org' }] }
     organization_source.organizations = { 'polish-org' => profile(9, 'polish-org', 'Warsaw, Poland') }
@@ -842,7 +844,6 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
         repository(91, 'polish-org/docs', 7)
       ]
     }
-    organization_source.deltas = { 'polish-org/toolkit' => 6, 'polish-org/docs' => 2 }
 
     run_job_with(source: organization_source)
 
@@ -1757,41 +1758,41 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Application::RunMonthlyS
     }
   end
 
-  def seed_previous_repository_observation(previous_period)
+  def seed_previous_repository_observation(previous_period, source_id: 10, full_name: 'alice/app', stars: 10)
     upsert_user(user_attributes(1, 'alice'))
-    upsert_repository(repository_attributes(10, 'alice/app'))
+    upsert_repository(repository_attributes(source_id, full_name))
     record_repository_stats(
       period_start: previous_period.start_date.to_s,
-      repository_github_id: 10,
+      repository_github_id: source_id,
       owner_github_id: 1,
       owner_login: 'alice',
       owner_city: 'Kraków',
       owner_country: 'Poland',
-      stargazers_count: 10,
+      stargazers_count: stars,
       monthly_stars_delta: 0
     )
   end
 
-  def seed_previous_organization_repository_observation(previous_period)
+  def seed_previous_organization_repository_observation(previous_period, source_id: 90, name: 'toolkit', stars: 27)
     snapshot_repository.record_organization_profile(organization_snapshot_record(previous_period))
     snapshot_repository.record_organization_repository_snapshot(
       PolishOpenSourceRank::Contexts::Ranking::Domain::OrganizationRepositorySnapshot.new(
         period: previous_period,
         platform: 'github',
-        source_id: 90,
+        source_id: source_id,
         organization_source_id: 9,
         organization_login: 'polish-org',
         organization_city: 'Warszawa',
         organization_country: 'Poland',
-        name: 'toolkit',
-        full_name: 'polish-org/toolkit',
+        name: name,
+        full_name: "polish-org/#{name}",
         description: 'Toolkit',
-        html_url: 'https://github.com/polish-org/toolkit',
+        html_url: "https://github.com/polish-org/#{name}",
         homepage: nil,
         language: 'Ruby',
         fork: false,
         archived: false,
-        stars: 27,
+        stars: stars,
         monthly_stars_delta: 0
       )
     )

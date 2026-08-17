@@ -5,7 +5,6 @@ require 'json'
 module PolishOpenSourceRank
   module Infrastructure
     class GitHubGateway
-      STAR_ACCEPT = 'application/vnd.github.star+json'
       PER_PAGE = 100
       SEARCH_PAGE_LIMIT = 10
       UNAVAILABLE_SEARCH_MESSAGES = [
@@ -90,19 +89,13 @@ module PolishOpenSourceRank
         repository_star_snapshot(repository, period).fetch(:monthly_stars_delta)
       end
 
-      def repository_star_snapshot(repository, period)
-        return empty_star_snapshot if repository.key?(:stars) && repository.fetch(:stars).zero?
-
-        owner, repo = repository_coordinates(repository)
-        first_page = stargazers_page(owner, repo, 1)
-        last_page = last_page_number(first_page.headers.fetch('link', nil)) || 1
-        return star_snapshot(first_page.body, period) if last_page == 1
-
-        count_star_snapshot_backwards(owner, repo, period, last_page)
-      rescue GitHubClient::Error => e
-        raise unless [403, 451].include?(e.status)
-
-        empty_star_snapshot
+      def repository_star_snapshot(repository, _period)
+        observed_stars = repository_stars(repository)
+        {
+          stars: observed_stars,
+          stargazers_count: observed_stars,
+          monthly_stars_delta: 0
+        }
       end
 
       def public_activity_count(profile, period)
@@ -196,47 +189,10 @@ module PolishOpenSourceRank
         end
       end
 
-      def stargazers_page(owner, repo, page)
-        client.get(
-          "/repos/#{owner}/#{repo}/stargazers",
-          params: { per_page: PER_PAGE, page: page },
-          accept: STAR_ACCEPT
-        )
-      end
+      def repository_stars(repository)
+        return repository.stars if repository.respond_to?(:stars)
 
-      def repository_coordinates(repository)
-        full_name = repository.fetch(:full_name)
-        match = full_name.match(%r{\A([^/]+)/([^/]+)\z})
-        raise ArgumentError, "Invalid GitHub repository full_name: #{full_name.inspect}" unless match
-
-        [match[1], match[2]]
-      end
-
-      def count_star_snapshot_backwards(owner, repo, period, last_page)
-        snapshot = empty_star_snapshot
-        last_page.downto(1) do |page|
-          times = stargazers_page(owner, repo, page).body.map { |star| Time.parse(star.fetch('starred_at')) }
-          historical_stars = times.count { |time| time.to_date < period.end_date }
-          snapshot[:stars] += historical_stars
-          snapshot[:stargazers_count] += historical_stars
-          snapshot[:monthly_stars_delta] += times.count { |time| period.cover_time?(time) }
-          break if times.any? && times.all? { |time| time.to_date < period.start_date }
-        end
-        snapshot
-      end
-
-      def star_snapshot(stargazers, period)
-        times = stargazers.map { |star| Time.parse(star.fetch('starred_at')) }
-        stars = times.count { |time| time.to_date < period.end_date }
-        {
-          stars: stars,
-          stargazers_count: stars,
-          monthly_stars_delta: times.count { |time| period.cover_time?(time) }
-        }
-      end
-
-      def empty_star_snapshot
-        { stars: 0, stargazers_count: 0, monthly_stars_delta: 0 }
+        Integer(repository.fetch(:stars))
       end
 
       def next_page?(link_header)

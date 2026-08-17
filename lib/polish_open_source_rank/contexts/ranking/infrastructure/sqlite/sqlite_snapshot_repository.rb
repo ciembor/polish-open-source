@@ -206,6 +206,24 @@ module PolishOpenSourceRank
               end
             end
 
+            def previous_repository_stars(period, platform:, repository_source_id:)
+              previous_stars(
+                repository_star_observations_dataset,
+                period,
+                platform: platform,
+                repository_source_id: repository_source_id
+              )
+            end
+
+            def previous_organization_repository_stars(period, platform:, repository_source_id:)
+              previous_stars(
+                organization_repository_star_observations_dataset,
+                period,
+                platform: platform,
+                repository_source_id: repository_source_id
+              )
+            end
+
             def upsert_repository(attributes)
               upsert(
                 repositories_dataset,
@@ -352,6 +370,15 @@ module PolishOpenSourceRank
                 },
                 repository_star_observation_record(attributes, observed_at)
               )
+            end
+
+            def previous_stars(dataset, period, platform:, repository_source_id:)
+              row = dataset.where(
+                period_start: previous_period_start(period),
+                platform: platform,
+                repository_github_id: repository_source_id
+              ).first
+              row && Integer(row.fetch(:stargazers_count))
             end
 
             def repository_star_observation_record(attributes, observed_at)

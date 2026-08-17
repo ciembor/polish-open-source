@@ -4,21 +4,21 @@ module PolishOpenSourceRank
   module Contexts
     module Ranking
       module Application
-        # Selects the repository star source for monthly snapshot metrics.
+        # Computes monthly star metrics from stored monthly observations.
         class MonthlyRepositoryStarSnapshotPolicy
-          def snapshot(accepted_profile, repository)
+          def snapshot(_accepted_profile, repository, previous_stars:)
             {
               stars: repository.stars,
-              monthly_stars_delta: monthly_stars_delta(accepted_profile, repository)
+              monthly_stars_delta: monthly_stars_delta(repository, previous_stars)
             }
           end
 
           private
 
-          def monthly_stars_delta(accepted_profile, repository)
-            return 0 if repository.zero_stars?
+          def monthly_stars_delta(repository, previous_stars)
+            return 0 unless previous_stars
 
-            accepted_profile.source.repository_stars_delta(repository, accepted_profile.period)
+            [repository.stars - previous_stars, 0].max
           end
         end
       end

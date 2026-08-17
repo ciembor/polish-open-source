@@ -31,9 +31,8 @@ write order.
    repositories, records repository work events, filters repositories below the
    ranking star threshold, stores repository snapshots, and returns
    `Domain::RepositoryMetrics`.
-8. `MonthlyRepositoryStarSnapshotPolicy` owns the choice between
-   source-provided historical star snapshots, stored snapshot diffs, and
-   source-provided monthly deltas.
+8. `MonthlyRepositoryStarSnapshotPolicy` computes monthly star deltas from the
+   current repository observation and the previous stored monthly observation.
 9. `MonthlySourceMetricBackfill` handles existing-snapshot metric refreshes
    such as merged pull requests and organization members without running
    discovery.

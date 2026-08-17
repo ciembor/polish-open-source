@@ -98,11 +98,9 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubGateway do
       .to eq([expected_fixture_repository])
   end
 
-  it 'counts fixture GitHub stargazer and public event payloads inside the requested period' do
-    client.queue(body: fixture_json('external_payloads/github_stargazers.json'))
+  it 'counts fixture GitHub public event payloads inside the requested period' do
     client.queue(body: fixture_json('external_payloads/github_public_events.json'))
 
-    expect(gateway.repository_stars_delta({ full_name: 'polish-org/toolkit' }, period)).to eq(1)
     expect(gateway.public_activity_count({ login: 'alice' }, period)).to eq(1)
   end
 
@@ -384,184 +382,14 @@ RSpec.describe PolishOpenSourceRank::Infrastructure::GitHubGateway do
       .to raise_error(PolishOpenSourceRank::Contexts::Ranking::Application::SourceNotFound)
   end
 
-  it 'counts monthly repository stars from a single stargazer page' do
-    client.queue(
-      body: [
-        { 'starred_at' => '2026-04-10T10:00:00Z' },
-        { 'starred_at' => '2026-05-01T00:00:00Z' }
-      ]
-    )
-
-    expect(gateway.repository_stars_delta({ full_name: 'alice/app' }, period)).to eq(1)
-    expect(client.paths).to eq(['/repos/alice/app/stargazers'])
-    expect(client.params).to eq([{ per_page: 100, page: 1 }])
-    expect(client.accepts).to eq([described_class::STAR_ACCEPT])
-  end
-
-  it 'returns historical repository stars and monthly delta from stargazer history' do
-    client.queue(
-      body: [
-        { 'starred_at' => '2026-03-10T10:00:00Z' },
-        { 'starred_at' => '2026-04-02T10:00:00Z' },
-        { 'starred_at' => '2026-04-30T23:59:59Z' },
-        { 'starred_at' => '2026-05-01T00:00:00Z' }
-      ]
-    )
-
-    expect(gateway.repository_star_snapshot({ full_name: 'alice/app' }, period)).to include(
-      stargazers_count: 3,
-      monthly_stars_delta: 2
-    )
-  end
-
-  it 'does not request stargazer history for repositories without stars' do
-    expect(gateway.repository_stars_delta({ full_name: 'alice/empty', stars: 0 }, period)).to eq(0)
-    expect(client.paths).to be_empty
-  end
-
-  it 'returns an empty star snapshot for repositories without stars' do
-    expect(gateway.repository_star_snapshot({ full_name: 'alice/empty', stars: 0 }, period)).to include(
-      stargazers_count: 0,
+  it 'uses observed repository stars without requesting stargazer history' do
+    expect(gateway.repository_star_snapshot({ full_name: 'alice/app', stars: 13 }, period)).to include(
+      stars: 13,
+      stargazers_count: 13,
       monthly_stars_delta: 0
     )
+    expect(gateway.repository_stars_delta({ full_name: 'alice/app', stars: 13 }, period)).to eq(0)
     expect(client.paths).to be_empty
-  end
-
-  it 'does not require pagination headers for single-page stargazers' do
-    client.queue_without_link(body: [{ 'starred_at' => '2026-04-10T10:00:00Z' }])
-
-    expect(gateway.repository_stars_delta({ full_name: 'alice/app' }, period)).to eq(1)
-  end
-
-  it 'rejects repository full names outside the GitHub owner/repo shape' do
-    expect { gateway.repository_stars_delta({ full_name: 'alice/team/app' }, period) }
-      .to raise_error(ArgumentError, 'Invalid GitHub repository full_name: "alice/team/app"')
-  end
-
-  it 'walks stargazer pages backwards and stops after older pages' do
-    client.queue(body: [], link: '<x?page=3>; rel="last"')
-    client.queue(body: [{ 'starred_at' => '2026-04-20T10:00:00Z' }])
-    client.queue(body: [{ 'starred_at' => '2026-03-20T10:00:00Z' }])
-
-    expect(gateway.repository_stars_delta({ full_name: 'alice/app' }, period)).to eq(1)
-    expect(client.params.map { |params| params.fetch(:page) }).to eq([1, 3, 2])
-  end
-
-  it 'walks stargazer pages backwards for historical star snapshots' do
-    client.queue(body: [], link: '<x?page=3>; rel="last"')
-    client.queue(
-      body: [
-        { 'starred_at' => '2026-05-01T00:00:00Z' },
-        { 'starred_at' => '2026-04-30T10:00:00Z' }
-      ]
-    )
-    client.queue(
-      body: [
-        { 'starred_at' => '2026-04-02T10:00:00Z' },
-        { 'starred_at' => '2026-03-20T10:00:00Z' }
-      ]
-    )
-    client.queue(body: [{ 'starred_at' => '2026-03-10T10:00:00Z' }])
-
-    expect(gateway.repository_star_snapshot({ full_name: 'alice/app' }, period)).to include(
-      stargazers_count: 4,
-      monthly_stars_delta: 2
-    )
-    expect(client.params.map { |params| params.fetch(:page) }).to eq([1, 3, 2, 1])
-  end
-
-  it 'walks stargazer pages backwards through page one' do
-    client.queue(body: [], link: '<x?page=2>; rel="last"')
-    client.queue(body: [{ 'starred_at' => '2026-04-20T10:00:00Z' }])
-    client.queue(body: [{ 'starred_at' => '2026-04-01T10:00:00Z' }])
-
-    expect(gateway.repository_stars_delta({ full_name: 'alice/app' }, period)).to eq(2)
-    expect(client.paths).to eq(['/repos/alice/app/stargazers', '/repos/alice/app/stargazers',
-                                '/repos/alice/app/stargazers'])
-    expect(client.params.map { |params| params.fetch(:page) }).to eq([1, 2, 1])
-  end
-
-  it 'parses multi-digit last stargazer page numbers' do
-    client.queue(body: [], link: '<x?page=12>; rel="last"')
-    client.queue(body: [{ 'starred_at' => '2026-03-20T10:00:00Z' }])
-
-    expect(gateway.repository_stars_delta({ full_name: 'alice/app' }, period)).to eq(0)
-    expect(client.params.map { |params| params.fetch(:page) }).to eq([1, 12])
-  end
-
-  it 'continues past empty stargazer pages while walking backwards' do
-    client.queue(body: [], link: '<x?page=3>; rel="last"')
-    client.queue(body: [])
-    client.queue(body: [{ 'starred_at' => '2026-04-20T10:00:00Z' }])
-    client.queue(body: [{ 'starred_at' => '2026-03-20T10:00:00Z' }])
-
-    expect(gateway.repository_stars_delta({ full_name: 'alice/app' }, period)).to eq(1)
-    expect(client.params.map { |params| params.fetch(:page) }).to eq([1, 3, 2, 1])
-  end
-
-  it 'continues past mixed old and current stargazer pages while walking backwards' do
-    client.queue(body: [], link: '<x?page=3>; rel="last"')
-    client.queue(
-      body: [
-        { 'starred_at' => '2026-04-20T10:00:00Z' },
-        { 'starred_at' => '2026-03-20T10:00:00Z' }
-      ]
-    )
-    client.queue(body: [{ 'starred_at' => '2026-04-10T10:00:00Z' }])
-    client.queue(body: [{ 'starred_at' => '2026-03-10T10:00:00Z' }])
-
-    expect(gateway.repository_stars_delta({ full_name: 'alice/app' }, period)).to eq(2)
-    expect(client.params.map { |params| params.fetch(:page) }).to eq([1, 3, 2, 1])
-  end
-
-  it 'treats unavailable stargazer history as zero monthly delta' do
-    client.queue_error(
-      PolishOpenSourceRank::Infrastructure::GitHubClient::Error.new(
-        'blocked',
-        status: 451,
-        body: '{"message":"Repository access blocked"}'
-      )
-    )
-
-    expect(gateway.repository_stars_delta({ full_name: 'alice/blocked' }, period)).to eq(0)
-  end
-
-  it 'treats forbidden stargazer history as zero monthly delta' do
-    client.queue_error(
-      PolishOpenSourceRank::Infrastructure::GitHubClient::Error.new(
-        'forbidden',
-        status: 403,
-        body: '{"message":"Resource not accessible"}'
-      )
-    )
-
-    expect(gateway.repository_stars_delta({ full_name: 'alice/forbidden' }, period)).to eq(0)
-  end
-
-  it 'treats forbidden stargazer history as an empty star snapshot' do
-    client.queue_error(
-      PolishOpenSourceRank::Infrastructure::GitHubClient::Error.new(
-        'forbidden',
-        status: 403,
-        body: '{"message":"Resource not accessible"}'
-      )
-    )
-
-    expect(gateway.repository_star_snapshot({ full_name: 'alice/forbidden' }, period)).to include(
-      stargazers_count: 0,
-      monthly_stars_delta: 0
-    )
-  end
-
-  it 'reraises unexpected stargazer history errors' do
-    error = PolishOpenSourceRank::Infrastructure::GitHubClient::Error.new(
-      'server error',
-      status: 500,
-      body: '{"message":"Server Error"}'
-    )
-    client.queue_error(error)
-
-    expect { gateway.repository_stars_delta({ full_name: 'alice/app' }, period) }.to raise_error(error)
   end
 
   it 'counts public activity in the month across public events' do

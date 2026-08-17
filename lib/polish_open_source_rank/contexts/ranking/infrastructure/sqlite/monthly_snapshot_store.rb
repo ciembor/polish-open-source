@@ -108,6 +108,22 @@ module PolishOpenSourceRank
               snapshot_repository.record_organization_repository_snapshot(snapshot)
             end
 
+            def previous_repository_stars(period, platform:, repository_source_id:)
+              snapshot_repository.previous_repository_stars(
+                period,
+                platform: platform,
+                repository_source_id: repository_source_id
+              )
+            end
+
+            def previous_organization_repository_stars(period, platform:, repository_source_id:)
+              snapshot_repository.previous_organization_repository_stars(
+                period,
+                platform: platform,
+                repository_source_id: repository_source_id
+              )
+            end
+
             def user_stats_for_period(period, platform:)
               snapshot_repository.user_stats_for_period(period, platform)
             end

@@ -52,6 +52,19 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
     expect(row('repository_monthly_stats')).to include(stargazers_count: 31, monthly_stars_delta: 4)
   end
 
+  it 'reads previous repository star observations for monthly deltas' do
+    repository.upsert_user(user_attributes)
+    repository.upsert_repository(repository_attributes)
+    repository.record_repository_stats(repository_stats(period: previous_period, stars: 27, delta: 2))
+
+    expect(
+      repository.previous_repository_stars(period, platform: 'github', repository_source_id: 100)
+    ).to eq(27)
+    expect(
+      repository.previous_repository_stars(period, platform: 'github', repository_source_id: 101)
+    ).to be_nil
+  end
+
   it 'does not restore redacted user profile details during later crawls' do
     repository.upsert_user(user_attributes)
     database.dataset(:users).where(platform: 'github', github_id: 10).update(
@@ -134,6 +147,20 @@ RSpec.describe PolishOpenSourceRank::Contexts::Ranking::Infrastructure::SQLite::
       total_stars: 30,
       monthly_stars_delta: 4
     )
+  end
+
+  it 'reads previous organization repository star observations for monthly deltas' do
+    repository.record_organization_profile(organization_snapshot)
+    repository.record_organization_repository_snapshot(
+      organization_repository_snapshot(period: previous_period, stars: 17, delta: 2)
+    )
+
+    expect(
+      repository.previous_organization_repository_stars(period, platform: 'github', repository_source_id: 200)
+    ).to eq(17)
+    expect(
+      repository.previous_organization_repository_stars(period, platform: 'github', repository_source_id: 201)
+    ).to be_nil
   end
 
   it 'retries snapshot writes as an update when the insert races with another writer' do

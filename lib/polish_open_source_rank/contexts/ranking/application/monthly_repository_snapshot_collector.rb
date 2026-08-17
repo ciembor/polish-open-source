@@ -49,7 +49,7 @@ module PolishOpenSourceRank
           end
 
           def store_repository(collection, repository, metrics)
-            star_snapshot = collection.star_snapshot(repository)
+            star_snapshot = collection.star_snapshot(store, repository)
             monthly_stars_delta = star_snapshot.fetch(:monthly_stars_delta)
             repository = repository.with_stars(star_snapshot.fetch(:stars))
             metrics.add(repository, monthly_stars_delta)
@@ -106,8 +106,16 @@ module PolishOpenSourceRank
               source.repositories_for(accepted_profile.profile).each(&)
             end
 
-            def star_snapshot(repository)
-              star_snapshot_policy.snapshot(accepted_profile, repository)
+            def star_snapshot(store, repository)
+              star_snapshot_policy.snapshot(
+                accepted_profile,
+                repository,
+                previous_stars: store.previous_repository_stars(
+                  accepted_profile.period,
+                  platform: accepted_profile.source_platform,
+                  repository_source_id: repository.source_id
+                )
+              )
             end
 
             def record_repository_snapshot(store, snapshot_factory, repository, monthly_stars_delta)
@@ -160,8 +168,16 @@ module PolishOpenSourceRank
               source.repositories_for_organization(accepted_profile.profile).each(&)
             end
 
-            def star_snapshot(repository)
-              star_snapshot_policy.snapshot(accepted_profile, repository)
+            def star_snapshot(store, repository)
+              star_snapshot_policy.snapshot(
+                accepted_profile,
+                repository,
+                previous_stars: store.previous_organization_repository_stars(
+                  accepted_profile.period,
+                  platform: accepted_profile.source_platform,
+                  repository_source_id: repository.source_id
+                )
+              )
             end
 
             def record_repository_snapshot(store, snapshot_factory, repository, monthly_stars_delta)
