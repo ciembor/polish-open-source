@@ -21,7 +21,7 @@ module PolishOpenSourceRank
               SELECT job_kind, stage, unit_kind, platform, ecosystem, subject_label, error, finished_at
               FROM job_work_events
               WHERE error IS NOT NULL
-              ORDER BY datetime(finished_at) DESC, id DESC
+              ORDER BY finished_at DESC, id DESC
               LIMIT 30
             SQL
             WORK_EVENT_STATS_SQL = <<~SQL.freeze
@@ -345,7 +345,7 @@ module PolishOpenSourceRank
                 SELECT job_kind AS platform, stage AS source, subject_label AS subject,
                        status AS detail, finished_at AS recorded_at
                 FROM job_work_events
-                ORDER BY datetime(finished_at) DESC, id DESC
+                ORDER BY finished_at DESC, id DESC
                 LIMIT 30
               SQL
             end

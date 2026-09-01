@@ -478,6 +478,19 @@ CREATE INDEX IF NOT EXISTS idx_job_work_events_period_kind_stage
 
 CREATE INDEX IF NOT EXISTS idx_job_work_events_finished_at
   ON job_work_events(finished_at);
+CREATE INDEX IF NOT EXISTS idx_job_work_events_finished_id
+  ON job_work_events(finished_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_job_work_events_error_finished_id
+  ON job_work_events(finished_at DESC, id DESC)
+  WHERE error IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_job_work_events_stats_recent
+  ON job_work_events(period_start, job_kind, stage, unit_kind, finished_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_job_work_events_platform_stats_recent
+  ON job_work_events(period_start, job_kind, stage, unit_kind, platform, finished_at DESC, id DESC)
+  WHERE platform IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_job_work_events_ecosystem_stats_recent
+  ON job_work_events(period_start, job_kind, stage, unit_kind, ecosystem, finished_at DESC, id DESC)
+  WHERE ecosystem IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_discord_connections_user
   ON discord_connections(platform, user_github_id);
 CREATE INDEX IF NOT EXISTS idx_published_badges_identity
