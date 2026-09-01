@@ -100,6 +100,13 @@ The current production shape stays intentionally conservative:
 - one shared SQLite database for web, monthly, packages, and user actions;
 - cache in front of the app, keyed by URL rather than locale cookie.
 
+Long-running crawl services must stay below the web app in CPU and I/O
+priority. Their systemd units use idle I/O scheduling plus low cgroup and Podman
+weights so the crawler can continue in the background without becoming the
+host's dominant workload. This protects scheduler fairness, but it does not
+remove SQLite write/read contention; large monthly runs can still cause brief
+public latency spikes until publication uses a separate read-only snapshot path.
+
 Do not add systemd socket activation, blue-green deploys, or a second web worker
 until the read-only public snapshot path is stable in production. With the current
 shared SQLite write path, more parallel web capacity can increase lock contention

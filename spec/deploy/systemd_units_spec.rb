@@ -2,6 +2,10 @@
 
 RSpec.describe File do
   let(:root) { described_class.expand_path('../..', __dir__) }
+  let(:crawl_container_limits) do
+    '--memory=768m --memory-swap=768m --memory-reservation=384m ' \
+      '--cpus=0.25 --cpu-shares=64 --blkio-weight=10 --pids-limit=256'
+  end
 
   it 'starts crawl resume without blocking the web service activation' do
     unit = described_class.read(described_class.join(root, 'deploy/polish-open-source-rank.service'))
@@ -22,9 +26,11 @@ RSpec.describe File do
     expect(unit).to include(
       'Restart=on-failure',
       'TimeoutStartSec=infinity',
-      'Nice=10',
-      'CPUWeight=20',
-      'IOWeight=20',
+      'Nice=19',
+      'IOSchedulingClass=idle',
+      'CPUQuota=20%',
+      'CPUWeight=1',
+      'IOWeight=1',
       '/usr/bin/flock -n /home/ciembor/polish-open-source-rank/tmp/crawl.lock',
       '--name=polish-open-source-rank-monthly',
       '-e TZ=Europe/Warsaw',
@@ -33,7 +39,7 @@ RSpec.describe File do
     )
     expect(unit).not_to include('--use-stars-diff')
     expect(unit).to include(
-      '--memory=768m --memory-swap=768m --memory-reservation=512m --cpus=0.5 --cpu-shares=128 --pids-limit=256'
+      crawl_container_limits
     )
     expect(timer).to include('OnCalendar=*-*-01 00:00:00 Europe/Warsaw')
     expect(timer).to include('Persistent=true')
@@ -46,16 +52,18 @@ RSpec.describe File do
     expect(service).to include(
       'After=network-online.target polish-open-source-rank-monthly.service',
       'OnSuccess=polish-open-source-rank-publish.service',
-      'Nice=10',
-      'CPUWeight=20',
-      'IOWeight=20',
+      'Nice=19',
+      'IOSchedulingClass=idle',
+      'CPUQuota=20%',
+      'CPUWeight=1',
+      'IOWeight=1',
       '/usr/bin/flock /home/ciembor/polish-open-source-rank/tmp/packages.lock',
       '-e TZ=Europe/Warsaw',
       '--user=1000:1000 --read-only --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m',
       '-v /home/ciembor/polish-open-source-rank/db:/app/db:rw'
     )
     expect(service).to include(
-      '--memory=768m --memory-swap=768m --memory-reservation=512m --cpus=0.5 --cpu-shares=128 --pids-limit=256'
+      crawl_container_limits
     )
     expect(service).to include('bundle exec ruby bin/package_rankings --require-monthly-complete')
     expect(service).to include(
@@ -89,14 +97,18 @@ RSpec.describe File do
     expect(unit).to include('-e CRAWL_ARGS')
     expect(unit).to include('bundle exec ruby bin/monthly_rankings ${CRAWL_ARGS:-}')
     expect(unit).not_to include('--use-stars-diff')
-    expect(unit).to include('Restart=on-failure')
-    expect(unit).to include('TimeoutStartSec=infinity')
-    expect(unit).to include('Nice=10')
-    expect(unit).to include('CPUWeight=20')
-    expect(unit).to include('IOWeight=20')
+    expect(unit).to include(
+      'Restart=on-failure',
+      'TimeoutStartSec=infinity',
+      'Nice=19',
+      'IOSchedulingClass=idle',
+      'CPUQuota=20%',
+      'CPUWeight=1',
+      'IOWeight=1'
+    )
     expect(unit).to include(
       '--user=1000:1000 --read-only --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m',
-      '--memory=768m --memory-swap=768m --memory-reservation=512m --cpus=0.5 --cpu-shares=128 --pids-limit=256'
+      crawl_container_limits
     )
   end
 
@@ -131,12 +143,14 @@ RSpec.describe File do
     expect(unit).to include('bundle exec ruby bin/resume_crawls')
     expect(unit).to include('SuccessExitStatus=75')
     expect(unit).to include('/usr/bin/flock -n -E 75 /home/ciembor/polish-open-source-rank/tmp/crawl.lock')
-    expect(unit).to include('Nice=10')
-    expect(unit).to include('CPUWeight=20')
-    expect(unit).to include('IOWeight=20')
+    expect(unit).to include('Nice=19')
+    expect(unit).to include('IOSchedulingClass=idle')
+    expect(unit).to include('CPUQuota=20%')
+    expect(unit).to include('CPUWeight=1')
+    expect(unit).to include('IOWeight=1')
     expect(unit).to include(
       '--user=1000:1000 --read-only --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m',
-      '--memory=768m --memory-swap=768m --memory-reservation=512m --cpus=0.5 --cpu-shares=128 --pids-limit=256'
+      crawl_container_limits
     )
   end
 end

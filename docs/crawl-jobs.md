@@ -105,6 +105,11 @@ app.
 - Crawl services run containers with the production environment file, the
   production database volume, `RACK_ENV=production`, and bounded memory/CPU
   limits.
+- Crawl services are intentionally deprioritized below the web app with
+  `Nice=19`, idle I/O scheduling, `CPUQuota=20%`, `CPUWeight=1`,
+  `IOWeight=1`, `--cpus=0.25`, `--cpu-shares=64`, and
+  `--blkio-weight=10`. These limits let crawls keep making progress while
+  public requests and unrelated host services keep scheduler priority.
 - The web service starts `polish-open-source-rank-crawl-resume.service` after
   the app container starts. That covers deploys and host/container restarts that
   left a crawl marked as `running` or `interrupted`.
