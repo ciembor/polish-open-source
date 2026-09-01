@@ -1141,6 +1141,22 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(target_blank_links).to all(include('rel="noopener noreferrer"'))
   end
 
+  it 'marks public data external links as nofollow', :aggregate_failures do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    request = Rack::MockRequest.new(described_class)
+    html = [
+      request.get('/people').body,
+      request.get('/repositories/github/alice/app').body,
+      request.get('/packages/npm/top').body,
+      request.get('/editions').body
+    ].join("\n")
+
+    expect(html).to include('href="https://github.com/alice" rel="nofollow noopener noreferrer"')
+    expect(html).to include('href="https://alice.example" rel="nofollow noopener noreferrer"')
+    expect(html).to include('href="https://www.npmjs.com/package/@scope/tool" rel="nofollow noopener noreferrer"')
+    expect(html).to include('href="https://www.star-history.com/alice/app" rel="nofollow noopener noreferrer"')
+  end
+
   it 'does not render unsafe external URLs from public data as href or src attributes', :aggregate_failures do
     path = seed_database
     ENV['DATABASE_URL'] = "sqlite://#{path}"

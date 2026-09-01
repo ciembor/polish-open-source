@@ -6,8 +6,14 @@ module PolishOpenSourceRank
   module Web
     module Presentation
       class SafeExternalUrl
+        PUBLIC_LINK_REL = 'nofollow noopener noreferrer'
+
         def self.normalize(value)
           new(value).normalize
+        end
+
+        def self.public_link_rel
+          PUBLIC_LINK_REL
         end
 
         def initialize(value)

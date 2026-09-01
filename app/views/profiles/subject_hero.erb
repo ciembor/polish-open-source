@@ -19,10 +19,10 @@
         <% unless profile_deleted %>
           <div class="profile-actions">
             <% if source_url %>
-              <a class="profile-action" href="<%= h source_url %>"><%= h t("#{translation_scope}.links.source_profile", platform: platform_name(record.fetch(:platform))) %></a>
+              <a class="profile-action" href="<%= h source_url %>" rel="<%= h PolishOpenSourceRank::Web::Presentation::SafeExternalUrl.public_link_rel %>"><%= h t("#{translation_scope}.links.source_profile", platform: platform_name(record.fetch(:platform))) %></a>
             <% end %>
             <% if homepage_url %>
-              <a class="profile-action" href="<%= h homepage_url %>"><%= h t('users.links.homepage') %></a>
+              <a class="profile-action" href="<%= h homepage_url %>" rel="<%= h PolishOpenSourceRank::Web::Presentation::SafeExternalUrl.public_link_rel %>"><%= h t('users.links.homepage') %></a>
             <% end %>
           </div>
         <% end %>

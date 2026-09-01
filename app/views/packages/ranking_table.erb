@@ -41,10 +41,10 @@
           </div>
           <span class="ranking-list__links ranking-list__links--edge">
             <% if repository_source_url %>
-              <a class="muted-link" href="<%= h repository_source_url %>"><%= h platform_name(row.fetch(:repository_platform)) %></a>
+              <a class="muted-link" href="<%= h repository_source_url %>" rel="<%= h PolishOpenSourceRank::Web::Presentation::SafeExternalUrl.public_link_rel %>"><%= h platform_name(row.fetch(:repository_platform)) %></a>
             <% end %>
             <% if registry_url %>
-              <a class="muted-link" href="<%= h registry_url %>"><%= h t('packages.links.package') %></a>
+              <a class="muted-link" href="<%= h registry_url %>" rel="<%= h PolishOpenSourceRank::Web::Presentation::SafeExternalUrl.public_link_rel %>"><%= h t('packages.links.package') %></a>
             <% end %>
           </span>
         </li>

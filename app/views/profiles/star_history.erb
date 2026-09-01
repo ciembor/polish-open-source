@@ -6,7 +6,7 @@
     <div class="content">
       <div class="profile-section__heading-row">
         <h2 id="<%= h heading_id %>"><%= h t('repositories.star_history.title') %></h2>
-        <a class="profile-action profile-action--inline" href="<%= h page_url %>">Star History</a>
+        <a class="profile-action profile-action--inline" href="<%= h page_url %>" rel="<%= h PolishOpenSourceRank::Web::Presentation::SafeExternalUrl.public_link_rel %>">Star History</a>
       </div>
       <article class="profile-star-history__panel">
         <img

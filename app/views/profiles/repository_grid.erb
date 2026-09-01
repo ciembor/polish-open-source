@@ -29,7 +29,7 @@
         </dl>
         <% homepage_url = safe_external_url(repository[:homepage]) %>
         <% if show_homepage && homepage_url %>
-          <a class="muted-link muted-link--standalone" href="<%= h homepage_url %>"><%= h t('users.links.homepage') %></a>
+          <a class="muted-link muted-link--standalone" href="<%= h homepage_url %>" rel="<%= h PolishOpenSourceRank::Web::Presentation::SafeExternalUrl.public_link_rel %>"><%= h t('users.links.homepage') %></a>
         <% end %>
         <% if defined?(badge_path_builder) && badge_path_builder && repository[:polish_repo_badge] && repository[:polish_repo_badge][:value] %>
           <div class="project-card__badge">
