@@ -81,6 +81,7 @@ RSpec.describe File do
       'After=network-online.target polish-open-source-rank-packages.service',
       'Restart=on-failure',
       'RestartSec=300',
+      'RestartPreventExitStatus=1',
       '--name=polish-open-source-rank-publish',
       '-e TZ=Europe/Warsaw',
       '--user=1000:1000 --read-only --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m',

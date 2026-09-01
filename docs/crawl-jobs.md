@@ -144,6 +144,10 @@ Failure behavior:
 - `polish-open-source-rank-crawl-resume.service` also retries after 60 seconds,
   but lock contention on `tmp/crawl.lock` exits with code `75` and is treated as
   a non-error because another crawl is already active.
+- `polish-open-source-rank-publish.service` does not retry exit status `1`.
+  Snapshot verification failures mean the monthly/package data is not ready yet;
+  retrying publication on a timer only adds host load until the missing crawl
+  work finishes.
 - `bin/resume_crawls` resumes tracked jobs with status `running` or
   `interrupted`.
 - A manually stopped systemd service is treated as an operator action; start the

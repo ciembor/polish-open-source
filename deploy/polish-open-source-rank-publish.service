@@ -10,6 +10,7 @@ WorkingDirectory=/home/ciembor/polish-open-source-rank
 EnvironmentFile=/home/ciembor/polish-open-source-rank/.env.local
 Restart=on-failure
 RestartSec=300
+RestartPreventExitStatus=1
 TimeoutStartSec=30min
 TimeoutStopSec=45
 Nice=10
