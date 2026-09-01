@@ -230,11 +230,12 @@ install_units() {
     "${SERVICE_NAME}-monthly.service" \
     "${SERVICE_NAME}-monthly.timer" \
     "${SERVICE_NAME}-publish.service" \
-    "${SERVICE_NAME}-packages.service" \
-    "${SERVICE_NAME}-packages.timer"; do
+    "${SERVICE_NAME}-packages.service"; do
     sudo install -m 0644 "deploy/${unit}" "/etc/systemd/system/${unit}"
   done
 
+  sudo systemctl disable --now "${SERVICE_NAME}-packages.timer" >/dev/null 2>&1 || true
+  sudo rm -f "/etc/systemd/system/${SERVICE_NAME}-packages.timer"
   sudo systemctl daemon-reload
   sudo systemctl enable "${SERVICE_NAME}.service"
   sudo systemctl enable "${SERVICE_NAME}-crawl-resume.service"
@@ -242,7 +243,6 @@ install_units() {
   sudo systemctl enable --now "${SERVICE_NAME}-alerts.timer"
   sudo systemctl enable --now "${SERVICE_NAME}-monitor.timer"
   sudo systemctl enable --now "${SERVICE_NAME}-monthly.timer"
-  sudo systemctl enable --now "${SERVICE_NAME}-packages.timer"
 }
 
 deploy_release() {

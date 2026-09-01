@@ -26,6 +26,7 @@ RSpec.describe File do
 
     expect(unit).to include(
       'Restart=on-failure',
+      'OnSuccess=polish-open-source-rank-packages.service',
       'TimeoutStartSec=infinity',
       'Nice=19',
       'IOSchedulingClass=idle',
@@ -46,9 +47,8 @@ RSpec.describe File do
     expect(timer).to include('Persistent=true')
   end
 
-  it 'runs scheduled package crawls after monthly crawls with the shared database volume' do
+  it 'runs package crawls after monthly success with the shared database volume' do
     service = described_class.read(described_class.join(root, 'deploy/polish-open-source-rank-packages.service'))
-    timer = described_class.read(described_class.join(root, 'deploy/polish-open-source-rank-packages.timer'))
 
     expect(service).to include(
       'After=network-online.target polish-open-source-rank-monthly.service',
@@ -70,8 +70,6 @@ RSpec.describe File do
     expect(service).to include(
       '--repository-limit all --scan-limit all --manifest-limit all --registry-limit all'
     )
-    expect(timer).to include('OnCalendar=*-*-01 00:00:00 Europe/Warsaw')
-    expect(timer).to include('Persistent=true')
   end
 
   it 'publishes the public snapshot after successful package crawls' do
@@ -91,6 +89,7 @@ RSpec.describe File do
       'ExecStartPost=/usr/bin/systemctl restart polish-open-source-rank.service'
     )
     expect(deploy).to include('"${SERVICE_NAME}-publish.service"')
+    expect(deploy).to include('systemctl disable --now "${SERVICE_NAME}-packages.timer"')
   end
 
   it 'runs manual crawls with persisted arguments and restart policy' do

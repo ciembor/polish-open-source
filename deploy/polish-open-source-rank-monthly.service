@@ -2,6 +2,7 @@
 Description=Polish Open Source Rank monthly snapshot
 Wants=network-online.target
 After=network-online.target
+OnSuccess=polish-open-source-rank-packages.service
 StartLimitIntervalSec=0
 
 [Service]

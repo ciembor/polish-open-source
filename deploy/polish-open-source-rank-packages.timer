@@ -1,9 +1,0 @@
-[Unit]
-Description=Run Polish Open Source Rank package snapshot after monthly rankings
-
-[Timer]
-OnCalendar=*-*-01 00:00:00 Europe/Warsaw
-Persistent=true
-
-[Install]
-WantedBy=timers.target
