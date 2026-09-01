@@ -7,6 +7,7 @@ ENV APP_HOME=/app \
     BUNDLE_APP_CONFIG=/app/tmp/bundle \
     BUNDLE_WITHOUT=development:test \
     HOME=/app/tmp \
+    PUMA_MAX_THREADS=3 \
     PORT=9293 \
     RACK_ENV=production \
     TMPDIR=/app/tmp
@@ -32,4 +33,4 @@ EXPOSE 9293
 
 USER app:app
 
-CMD ["bundle", "exec", "rackup", "--host", "0.0.0.0", "--port", "9293", "--option", "Threads=0:8"]
+CMD ["sh", "-lc", "exec bundle exec rackup --host 0.0.0.0 --port 9293 --option Threads=0:${PUMA_MAX_THREADS:-3}"]
