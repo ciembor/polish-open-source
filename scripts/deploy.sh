@@ -75,6 +75,25 @@ restart_app_services() {
   sudo systemctl restart "${SERVICE_NAME}-discord-bot"
 }
 
+refresh_public_database_snapshot() {
+  sudo podman rm -f "${SERVICE_NAME}-public-db-refresh" >/dev/null 2>&1 || true
+  sudo podman run --rm --name="${SERVICE_NAME}-public-db-refresh" \
+    --user=1000:1000 \
+    --read-only \
+    --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m \
+    --memory=512m --memory-swap=512m --memory-reservation=256m \
+    --cpus=0.5 --cpu-shares=128 --pids-limit=128 \
+    --env-file "${REMOTE_DIR}/.env.local" \
+    -e RACK_ENV=production \
+    -e APP_BASE_PATH=/ \
+    -e BASE_URL="${PUBLIC_BASE_URL}" \
+    -e PUBLIC_DATABASE_URL=sqlite://db/public.sqlite3 \
+    -v "${REMOTE_DIR}/db:/app/db:rw" \
+    -v "${REMOTE_DIR}/log:/app/log:rw" \
+    "${IMAGE_NAME}" \
+    bundle exec ruby bin/publish_snapshot --refresh-public-database
+}
+
 smoke_check_once() {
   curl -fsSL -o /dev/null "http://127.0.0.1:9293/healthz" &&
     curl -fsSL -o /dev/null "${PUBLIC_BASE_URL}/healthz" &&
@@ -244,6 +263,7 @@ deploy_release() {
   cd "${REMOTE_DIR}"
   sudo podman build -t "${RELEASE_IMAGE_NAME}" .
   sudo podman tag "${RELEASE_IMAGE_NAME}" "${IMAGE_NAME}"
+  refresh_public_database_snapshot
   restart_app_services
 
   if ! wait_for_smoke_checks; then

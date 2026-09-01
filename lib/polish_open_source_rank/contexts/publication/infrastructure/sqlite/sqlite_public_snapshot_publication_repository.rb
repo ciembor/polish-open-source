@@ -18,15 +18,13 @@ module PolishOpenSourceRank
             def initialize(
               database,
               clock: -> { Time.now.utc },
-              backup_root: nil,
               badge_materializer: SQLitePublishedBadgeMaterializer.new(database),
-              public_cache_purger: nil
+              publication_effects: SQLitePublicSnapshotPublicationEffects.new(database)
             )
               @database = database
               @clock = clock
-              @backup_root = backup_root
               @badge_materializer = badge_materializer
-              @public_cache_purger = public_cache_purger
+              @publication_effects = publication_effects
             end
 
             def stage(period_start)
@@ -46,7 +44,7 @@ module PolishOpenSourceRank
             def publish(period_start)
               stage(period_start)
               verify(period_start)
-              backup_path = checkpoint_and_backup(period_start)
+              backup_path = publication_effects.checkpoint_and_backup(period_start)
               database.transaction do
                 published_at = timestamp
                 previous = published_period
@@ -61,7 +59,12 @@ module PolishOpenSourceRank
                   error: nil
                 )
               end
-              purge_public_cache
+              publication_effects.refresh_public_database_snapshot
+              publication_effects.purge_public_cache
+            end
+
+            def refresh_public_database_snapshot
+              publication_effects.refresh_public_database_snapshot
             end
 
             def rollback
@@ -73,13 +76,14 @@ module PolishOpenSourceRank
                 mark_rolled_back(current.fetch(:period_start))
                 upsert_publication(previous, status: 'published', published_at: timestamp, error: nil)
               end
-              purge_public_cache
+              publication_effects.refresh_public_database_snapshot
+              publication_effects.purge_public_cache
               previous
             end
 
             private
 
-            attr_reader :backup_root, :badge_materializer, :clock, :database, :public_cache_purger
+            attr_reader :badge_materializer, :clock, :database, :publication_effects
 
             def verification_failures(period_start)
               [
@@ -162,26 +166,12 @@ module PolishOpenSourceRank
               )
             end
 
-            def checkpoint_and_backup(period_start)
-              database.execute('PRAGMA wal_checkpoint(TRUNCATE)')
-              return unless backup_root
-
-              FileUtils.mkdir_p(backup_root)
-              backup_path = File.join(backup_root, "public-#{period_start}.sqlite3")
-              FileUtils.cp(database.path, backup_path)
-              backup_path
-            end
-
             def publications
               database.dataset(:public_snapshot_publications)
             end
 
             def timestamp
               clock.call.iso8601
-            end
-
-            def purge_public_cache
-              public_cache_purger&.purge_public_cache
             end
           end
         end

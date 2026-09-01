@@ -12,6 +12,8 @@ RSpec.describe File do
       'ROLLBACK_CANDIDATE_IMAGE_NAME',
       'assert_production_session_secret',
       'assert_internal_basic_auth',
+      'refresh_public_database_snapshot',
+      'bundle exec ruby bin/publish_snapshot --refresh-public-database',
       'SESSION_SECRET in ${env_file} must be at least 64 characters before deploy.',
       'INTERNAL_BASIC_AUTH_PASSWORD in ${env_file} must be at least 32 characters before deploy.',
       'curl -fsSL -o /dev/null "http://127.0.0.1:9293/healthz"',

@@ -97,15 +97,16 @@ The current production shape stays intentionally conservative:
 
 - one host;
 - one web container behind nginx;
-- one shared SQLite database for web, monthly, packages, and user actions;
+- one working SQLite database for monthly, packages, job state, and user actions;
+- one read-only public SQLite snapshot for public web reads;
 - cache in front of the app, keyed by URL rather than locale cookie.
 
 Long-running crawl services must stay below the web app in CPU and I/O
 priority. Their systemd units use idle I/O scheduling plus low cgroup and Podman
 weights so the crawler can continue in the background without becoming the
-host's dominant workload. This protects scheduler fairness, but it does not
-remove SQLite write/read contention; large monthly runs can still cause brief
-public latency spikes until publication uses a separate read-only snapshot path.
+host's dominant workload. Public pages read from `PUBLIC_DATABASE_URL`, so
+large crawl writes no longer contend with normal anonymous reads on the same
+SQLite connection path.
 
 Do not add systemd socket activation, blue-green deploys, or a second web worker
 until the read-only public snapshot path is stable in production. With the current

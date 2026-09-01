@@ -69,6 +69,12 @@ before granting additional maintainers deploy permission.
   configured explicitly.
 - Monthly, package, and resume crawls are started by systemd one-shot services
   and use the same mounted `db/` and `log/` directories as the web app.
+- The web service sets `PUBLIC_DATABASE_URL=sqlite://db/public.sqlite3`.
+  Public read models use that read-only SQLite snapshot, while crawls and
+  operational state continue writing to the primary `DATABASE_URL`.
+- Deploy refreshes `db/public.sqlite3` from the working database before
+  restarting the web service; snapshot publish and rollback refresh it again
+  after changing the published period.
 - Discord account sync runs during the Discord OAuth callback; the Discord bot
   remains responsible for gateway invite events.
 - `/internal/jobs` reflects SQLite state from that shared app database, so stale

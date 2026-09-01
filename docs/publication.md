@@ -47,7 +47,9 @@ published month does not mix repository data from another period.
 3. a WAL checkpoint;
 4. a SQLite file backup to `db/publication_backups`;
 5. an atomic switch from the current `published` month to `superseded`, and the
-   new month to `published`.
+   new month to `published`;
+6. an atomic refresh of `PUBLIC_DATABASE_URL`, when it points at a separate
+   SQLite file.
 
 Rollback does not touch working data:
 
@@ -96,11 +98,20 @@ curl -fsS -X POST "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_I
 ## Separate Snapshot for Public Reads
 
 By default, the web app serves public pages from `DATABASE_URL` to stay
-compatible with the existing job flow. After preparing a separate file, set:
+compatible with local development and tests. Production sets:
 
 ```sh
 PUBLIC_DATABASE_URL=sqlite://db/public.sqlite3
 ```
 
-Public read models then open that file with `PRAGMA query_only = ON`, while user
-actions and job state continue writing to `DATABASE_URL`.
+Public read models then open that file with `PRAGMA query_only = ON`, while
+crawls, job state, and the primary user-action write path continue writing to
+`DATABASE_URL`.
+
+`bin/publish_snapshot` refreshes the public database after successful publish or
+rollback. The production publish service restarts the web container after a
+successful publish so existing SQLite connections reopen the atomically replaced
+file. `bin/publish_snapshot --refresh-public-database` performs only the atomic
+SQLite copy from the working database to `PUBLIC_DATABASE_URL`; deployment uses
+that command before restarting the web container so the read-only public file
+exists before the web app switches to it.

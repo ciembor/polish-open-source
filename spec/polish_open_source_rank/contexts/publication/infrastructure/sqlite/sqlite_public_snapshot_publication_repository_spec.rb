@@ -13,7 +13,7 @@ RSpec.describe 'SQLitePublicSnapshotPublicationRepository' do
   end
   let(:backup_root) { Dir.mktmpdir }
   let(:clock) { -> { Time.utc(2026, 6, 1, 12, 0, 0) } }
-  let(:repository) { repository_class.new(database, clock: clock, backup_root: backup_root) }
+  let(:repository) { build_repository }
 
   it 'promotes a verified snapshot atomically and creates a database backup' do
     seed_publishable_month('2026-04-01')
@@ -44,15 +44,44 @@ RSpec.describe 'SQLitePublicSnapshotPublicationRepository' do
     expect(published_badge('organization_repository', 21)).to include(label: 'Polish Repo', rank: 2)
   end
 
+  it 'refreshes the configured public database after publishing the snapshot' do
+    public_database_path = File.join(Dir.mktmpdir, 'public.sqlite3')
+    repository = build_repository(public_database_path: public_database_path)
+    seed_publishable_month('2026-05-01')
+
+    repository.publish('2026-05-01')
+
+    public_database = open_public_database(public_database_path)
+    expect(public_database.fetch_value('PRAGMA integrity_check')).to eq('ok')
+    expect(public_database.fetch_value('PRAGMA query_only')).to eq(1)
+    expect(public_database.fetch_value(published_period_sql)).to eq('2026-05-01')
+    expect(public_database.fetch_all(published_badge_sql, ['2026-05-01', 'user', 1]).first).to include(
+      label: 'Polish Open Source',
+      rank: 1
+    )
+  ensure
+    public_database&.close
+  end
+
+  it 'refreshes the configured public database without changing publication state' do
+    public_database_path = File.join(Dir.mktmpdir, 'public.sqlite3')
+    repository = build_repository(public_database_path: public_database_path)
+    seed_publishable_month('2026-05-01')
+
+    path = repository.refresh_public_database_snapshot
+
+    expect(path).to eq(public_database_path)
+    public_database = open_public_database(public_database_path)
+    expect(public_database.fetch_value('PRAGMA integrity_check')).to eq('ok')
+    expect(public_database.fetch_value(published_period_sql)).to be_nil
+  ensure
+    public_database&.close
+  end
+
   it 'purges public cache after publishing the snapshot' do
     seed_publishable_month('2026-05-01')
     public_cache_purger = public_cache_purger_spy
-    repository = repository_class.new(
-      database,
-      clock: clock,
-      backup_root: backup_root,
-      public_cache_purger: public_cache_purger
-    )
+    repository = build_repository(public_cache_purger: public_cache_purger)
 
     repository.publish('2026-05-01')
 
@@ -64,10 +93,7 @@ RSpec.describe 'SQLitePublicSnapshotPublicationRepository' do
     seed_publishable_month('2026-05-01')
     repository.publish('2026-04-01')
     public_cache_purger = public_cache_purger_spy
-    failing_repository = repository_class.new(
-      database,
-      clock: clock,
-      backup_root: backup_root,
+    failing_repository = build_repository(
       badge_materializer: failing_badge_materializer,
       public_cache_purger: public_cache_purger
     )
@@ -124,25 +150,31 @@ RSpec.describe 'SQLitePublicSnapshotPublicationRepository' do
     seed_publishable_month('2026-04-01')
     seed_publishable_month('2026-05-01')
     public_cache_purger = public_cache_purger_spy
-    repository = repository_class.new(
-      database,
-      clock: clock,
-      backup_root: backup_root,
-      public_cache_purger: public_cache_purger
-    )
+    repository = build_repository(public_cache_purger: public_cache_purger)
     repository.publish('2026-04-01')
     repository.publish('2026-05-01')
     public_cache_purger = public_cache_purger_spy
-    rollback_repository = repository_class.new(
-      database,
-      clock: clock,
-      backup_root: backup_root,
-      public_cache_purger: public_cache_purger
-    )
+    rollback_repository = build_repository(public_cache_purger: public_cache_purger)
 
     rollback_repository.rollback
 
     expect(public_cache_purger).to have_received(:purge_public_cache).once
+  end
+
+  it 'refreshes the configured public database after rolling back the snapshot' do
+    public_database_path = File.join(Dir.mktmpdir, 'public.sqlite3')
+    repository = build_repository(public_database_path: public_database_path)
+    seed_publishable_month('2026-04-01')
+    seed_publishable_month('2026-05-01')
+    repository.publish('2026-04-01')
+    repository.publish('2026-05-01')
+
+    repository.rollback
+
+    public_database = open_public_database(public_database_path)
+    expect(public_database.fetch_value(published_period_sql)).to eq('2026-04-01')
+  ensure
+    public_database&.close
   end
 
   def publication(period_start)
@@ -157,15 +189,51 @@ RSpec.describe 'SQLitePublicSnapshotPublicationRepository' do
     instance_spy(public_cache_purger_class, purge_public_cache: true)
   end
 
+  def build_repository(
+    badge_materializer: nil,
+    public_cache_purger: nil,
+    public_database_path: nil
+  )
+    repository_options = {
+      clock: clock,
+      publication_effects: build_publication_effects(
+        public_cache_purger: public_cache_purger,
+        public_database_path: public_database_path
+      )
+    }
+    repository_options[:badge_materializer] = badge_materializer if badge_materializer
+    repository_class.new(database, **repository_options)
+  end
+
+  def build_publication_effects(public_cache_purger: nil, public_database_path: nil)
+    effects_class = PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLite::
+                    SQLitePublicSnapshotPublicationEffects
+    effects_class.new(
+      database,
+      backup_root: backup_root,
+      public_cache_purger: public_cache_purger,
+      public_database_path: public_database_path
+    )
+  end
+
   def published_badge(kind, subject_id, period_start: '2026-05-01')
-    database.fetch_all(
-      <<~SQL,
-        SELECT label, status, rank
-        FROM published_badges
-        WHERE period_start = ? AND badge_kind = ? AND platform = 'github' AND subject_github_id = ?
-      SQL
-      [period_start, kind, subject_id]
-    ).first
+    database.fetch_all(published_badge_sql, [period_start, kind, subject_id]).first
+  end
+
+  def published_badge_sql
+    <<~SQL
+      SELECT label, status, rank
+      FROM published_badges
+      WHERE period_start = ? AND badge_kind = ? AND platform = 'github' AND subject_github_id = ?
+    SQL
+  end
+
+  def published_period_sql
+    "SELECT period_start FROM public_snapshot_publications WHERE status = 'published'"
+  end
+
+  def open_public_database(path)
+    PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(path, readonly: true)
   end
 
   def seed_publishable_month(period_start)

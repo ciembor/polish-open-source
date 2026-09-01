@@ -12,13 +12,22 @@ PolishOpenSourceRank::Infrastructure::PlatformSchemaMigration.new(
 
 repository_class = PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLite::
                    SQLitePublicSnapshotPublicationRepository
+publication_effects_class = PolishOpenSourceRank::Contexts::Publication::Infrastructure::SQLite::
+                            SQLitePublicSnapshotPublicationEffects
 repository = repository_class.new(
   database,
-  backup_root: PolishOpenSourceRank.root.join('db/publication_backups').to_s,
-  public_cache_purger: PolishOpenSourceRank::Infrastructure::CloudflareCachePurger.from_configuration(configuration)
+  publication_effects: publication_effects_class.new(
+    database,
+    backup_root: PolishOpenSourceRank.root.join('db/publication_backups').to_s,
+    public_cache_purger: PolishOpenSourceRank::Infrastructure::CloudflareCachePurger.from_configuration(configuration),
+    public_database_path: configuration.public_database_path
+  )
 )
 
-if ARGV.include?('--rollback')
+if ARGV.include?('--refresh-public-database')
+  path = repository.refresh_public_database_snapshot
+  puts(path ? "Refreshed public database snapshot #{path}" : 'Public database snapshot is disabled')
+elsif ARGV.include?('--rollback')
   period = repository.rollback
   puts(period ? "Rolled back public snapshot to #{period}" : 'No published snapshot with a rollback target')
 else

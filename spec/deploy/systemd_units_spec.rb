@@ -13,6 +13,7 @@ RSpec.describe File do
     expect(unit).to include(
       'ExecStartPost=-/usr/bin/systemctl start --no-block polish-open-source-rank-crawl-resume.service',
       '--user=1000:1000 --read-only --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m',
+      '-e PUBLIC_DATABASE_URL=sqlite://db/public.sqlite3',
       '-e GOOGLE_ANALYTICS_MEASUREMENT_ID=G-QHRZZZLKPE',
       '-v /home/ciembor/polish-open-source-rank/db:/app/db:rw',
       '-v /home/ciembor/polish-open-source-rank/log:/app/log:rw'
@@ -86,7 +87,8 @@ RSpec.describe File do
       '-e TZ=Europe/Warsaw',
       '--user=1000:1000 --read-only --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m',
       '-v /home/ciembor/polish-open-source-rank/db:/app/db:rw',
-      'bundle exec ruby bin/publish_snapshot'
+      'bundle exec ruby bin/publish_snapshot',
+      'ExecStartPost=/usr/bin/systemctl restart polish-open-source-rank.service'
     )
     expect(deploy).to include('"${SERVICE_NAME}-publish.service"')
   end
