@@ -134,6 +134,23 @@ RSpec.describe 'SQLitePublicSnapshotPublicationRepository' do
     )
   end
 
+  it 'rejects snapshots while package repository scans are still active' do
+    seed_publishable_month('2026-05-01')
+    seed_package_scan('2026-05-01', status: 'pending')
+
+    expect { repository.verify('2026-05-01') }.to raise_error(
+      repository_class::VerificationFailed,
+      /package crawls are not finished/
+    )
+  end
+
+  it 'accepts terminal unavailable package repository scans' do
+    seed_publishable_month('2026-05-01')
+    seed_package_scan('2026-05-01', status: 'unavailable')
+
+    expect { repository.verify('2026-05-01') }.not_to raise_error
+  end
+
   it 'rolls back to the previous published snapshot without deleting data' do
     seed_publishable_month('2026-04-01')
     seed_publishable_month('2026-05-01')
@@ -365,6 +382,15 @@ RSpec.describe 'SQLitePublicSnapshotPublicationRepository' do
     database.execute(<<~SQL, [period_start, ecosystem, status])
       INSERT INTO package_crawl_runs(period_start, ecosystem, status, started_at, finished_at, updated_at)
       VALUES (?, ?, ?, '2026-06-01T00:00:00Z', '2026-06-01T00:10:00Z', '2026-06-01T00:10:00Z')
+    SQL
+  end
+
+  def seed_package_scan(period_start, status:)
+    database.execute(<<~SQL, [period_start, status])
+      INSERT INTO package_repository_scans(
+        period_start, repository_kind, platform, repository_source_id, full_name, status, updated_at
+      )
+      VALUES (?, 'user', 'github', 10, 'alice/app', ?, '2026-06-01T00:10:00Z')
     SQL
   end
 

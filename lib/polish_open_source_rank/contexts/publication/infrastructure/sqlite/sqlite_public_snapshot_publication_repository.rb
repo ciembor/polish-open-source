@@ -110,13 +110,19 @@ module PolishOpenSourceRank
             end
 
             def package_runs_failure(period_start)
-              unfinished = database.fetch_value(<<~SQL, [period_start]).to_i
+              unfinished_runs = database.fetch_value(<<~SQL, [period_start]).to_i
                 SELECT COUNT(*)
                 FROM package_crawl_runs
                 WHERE period_start = ?
                   AND status != 'finished'
               SQL
-              return if unfinished.zero?
+              active_scans = database.fetch_value(<<~SQL, [period_start]).to_i
+                SELECT COUNT(*)
+                FROM package_repository_scans
+                WHERE period_start = ?
+                  AND status IN ('pending', 'processing', 'failed')
+              SQL
+              return if unfinished_runs.zero? && active_scans.zero?
 
               'package crawls are not finished'
             end

@@ -81,6 +81,7 @@ RSpec.describe File do
       'Restart=on-failure',
       'RestartSec=300',
       'RestartPreventExitStatus=1',
+      'ExecStartPre=/usr/bin/python3 /home/ciembor/polish-open-source-rank/scripts/ensure_publishable_snapshot.py',
       '--name=polish-open-source-rank-publish',
       '-e TZ=Europe/Warsaw',
       '--user=1000:1000 --read-only --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m',
