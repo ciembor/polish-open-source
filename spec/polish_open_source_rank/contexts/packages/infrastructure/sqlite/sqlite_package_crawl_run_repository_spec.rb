@@ -29,13 +29,14 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::SQLite:
     )
   end
 
-  it 'returns the active run for duplicate period and ecosystem starts' do
+  it 'creates an independent run for duplicate period and ecosystem starts' do
     first_id = repository.create(period, ecosystem: 'rubygems', refresh: false)
     second_id = repository.create(period, ecosystem: 'rubygems', refresh: true)
 
-    expect(second_id).to eq(first_id)
-    expect(database.fetch_value('SELECT COUNT(*) FROM package_crawl_runs')).to eq(1)
+    expect(second_id).not_to eq(first_id)
+    expect(database.fetch_value('SELECT COUNT(*) FROM package_crawl_runs')).to eq(2)
     expect(run(first_id)).to include(refresh: 0, status: 'running')
+    expect(run(second_id)).to include(refresh: 1, status: 'running')
   end
 
   it 'allows a new run after the previous one has finished' do

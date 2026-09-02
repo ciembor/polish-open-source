@@ -13,12 +13,7 @@ module PolishOpenSourceRank
 
             def create(period, ecosystem:, refresh:)
               validate_ecosystem!(ecosystem)
-              period_start = period_start(period)
-
-              database.transaction do
-                existing_run = active_run(period_start, ecosystem)
-                existing_run ? existing_run.fetch(:id) : insert_run(period_start, ecosystem, refresh)
-              end
+              insert_run(period_start(period), ecosystem, refresh)
             end
 
             def finish(run_id)
@@ -48,13 +43,6 @@ module PolishOpenSourceRank
                 started_at: timestamp,
                 updated_at: timestamp
               )
-            end
-
-            def active_run(period_start, ecosystem)
-              package_crawl_runs
-                .where(period_start: period_start, ecosystem: ecosystem, status: 'running')
-                .order(Sequel.desc(:id))
-                .first
             end
 
             def update(run_id, attributes)

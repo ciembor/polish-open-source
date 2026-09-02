@@ -146,6 +146,7 @@ RSpec.describe File do
     expect(unit).to include('bundle exec ruby bin/resume_crawls')
     expect(unit).to include('SuccessExitStatus=75')
     expect(unit).to include('/usr/bin/flock -n -E 75 /home/ciembor/polish-open-source-rank/tmp/crawl.lock')
+    expect(unit).to include('/usr/bin/flock -n -E 75 /home/ciembor/polish-open-source-rank/tmp/packages.lock')
     expect(unit).to include('Nice=19')
     expect(unit).to include('IOSchedulingClass=idle')
     expect(unit).to include('CPUQuota=20%')
