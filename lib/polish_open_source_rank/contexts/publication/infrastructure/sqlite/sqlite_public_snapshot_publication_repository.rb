@@ -110,11 +110,12 @@ module PolishOpenSourceRank
             end
 
             def package_runs_failure(period_start)
-              unfinished_runs = database.fetch_value(<<~SQL, [period_start]).to_i
-                SELECT COUNT(*)
+              latest_status = database.fetch_value(<<~SQL, [period_start])
+                SELECT status
                 FROM package_crawl_runs
                 WHERE period_start = ?
-                  AND status != 'finished'
+                ORDER BY datetime(started_at) DESC, id DESC
+                LIMIT 1
               SQL
               active_scans = database.fetch_value(<<~SQL, [period_start]).to_i
                 SELECT COUNT(*)
@@ -122,7 +123,7 @@ module PolishOpenSourceRank
                 WHERE period_start = ?
                   AND status IN ('pending', 'processing', 'failed')
               SQL
-              return if unfinished_runs.zero? && active_scans.zero?
+              return if latest_status == 'finished' && active_scans.zero?
 
               'package crawls are not finished'
             end

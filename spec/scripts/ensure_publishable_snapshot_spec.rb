@@ -11,9 +11,23 @@ RSpec.describe Pathname do
 
       _stdout, stderr, status = Open3.capture3(script_env(database_path), 'python3', script_path.to_s)
 
-      expect(status.exitstatus).to eq(1)
+      expect(status.exitstatus).to eq(75)
       expect(stderr).to include('package crawls are not finished')
       expect(stderr).to include('1 active scans')
+    end
+
+    it 'allows publication when the latest package crawl succeeded after an older failure' do
+      database_path = File.join(Dir.mktmpdir, 'publishable.sqlite3')
+      script_path = PolishOpenSourceRank.root.join('scripts/ensure_publishable_snapshot.py')
+      seed_database(database_path, scan_status: 'unavailable')
+      database = PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(database_path)
+      seed_package_run(database, status: 'failed', started_at: '2026-06-01T00:30:00Z')
+      seed_package_run(database, status: 'finished', started_at: '2026-06-01T01:00:00Z')
+
+      stdout, stderr, status = Open3.capture3(script_env(database_path), 'python3', script_path.to_s)
+
+      expect(status.success?).to be(true), stderr
+      expect(stdout).to include('Snapshot 2026-05-01 is publishable')
     end
 
     it 'allows publication when package repository scans are terminal' do
@@ -100,10 +114,10 @@ RSpec.describe Pathname do
     SQL
   end
 
-  def seed_package_run(database)
-    database.execute(<<~SQL)
+  def seed_package_run(database, status: 'finished', started_at: '2026-06-01T00:00:00Z')
+    database.execute(<<~SQL, [status, started_at])
       INSERT INTO package_crawl_runs(period_start, ecosystem, status, started_at, finished_at, updated_at)
-      VALUES ('2026-05-01', 'npm', 'finished', '2026-06-01T00:00:00Z', '2026-06-01T00:10:00Z', '2026-06-01T00:10:00Z')
+      VALUES ('2026-05-01', 'npm', ?, ?, '2026-06-01T00:10:00Z', '2026-06-01T00:10:00Z')
     SQL
   end
 

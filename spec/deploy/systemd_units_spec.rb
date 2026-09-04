@@ -80,6 +80,7 @@ RSpec.describe File do
       'After=network-online.target polish-open-source-rank-packages.service',
       'Restart=on-failure',
       'RestartSec=300',
+      'SuccessExitStatus=75',
       'RestartPreventExitStatus=1',
       'ExecStartPre=/usr/bin/python3 /home/ciembor/polish-open-source-rank/scripts/ensure_publishable_snapshot.py',
       '--name=polish-open-source-rank-publish',

@@ -151,6 +151,42 @@ RSpec.describe 'SQLitePublicSnapshotPublicationRepository' do
     expect { repository.verify('2026-05-01') }.not_to raise_error
   end
 
+  it 'accepts snapshots when a newer package crawl succeeded after an older failure' do
+    seed_publishable_month('2026-05-01')
+    seed_package_run(
+      '2026-05-01',
+      ecosystem: 'rubygems',
+      status: 'failed',
+      started_at: '2026-06-01T01:00:00Z',
+      finished_at: '2026-06-01T01:10:00Z'
+    )
+    seed_package_run(
+      '2026-05-01',
+      ecosystem: 'rubygems',
+      status: 'finished',
+      started_at: '2026-06-01T02:00:00Z',
+      finished_at: '2026-06-01T02:10:00Z'
+    )
+
+    expect { repository.verify('2026-05-01') }.not_to raise_error
+  end
+
+  it 'rejects snapshots when the latest package crawl failed' do
+    seed_publishable_month('2026-05-01')
+    seed_package_run(
+      '2026-05-01',
+      ecosystem: 'rubygems',
+      status: 'failed',
+      started_at: '2026-06-01T02:00:00Z',
+      finished_at: '2026-06-01T02:10:00Z'
+    )
+
+    expect { repository.verify('2026-05-01') }.to raise_error(
+      repository_class::VerificationFailed,
+      /package crawls are not finished/
+    )
+  end
+
   it 'rolls back to the previous published snapshot without deleting data' do
     seed_publishable_month('2026-04-01')
     seed_publishable_month('2026-05-01')
@@ -378,10 +414,16 @@ RSpec.describe 'SQLitePublicSnapshotPublicationRepository' do
     )
   end
 
-  def seed_package_run(period_start, ecosystem: 'npm', status: 'finished')
-    database.execute(<<~SQL, [period_start, ecosystem, status])
+  def seed_package_run(
+    period_start,
+    ecosystem: 'npm',
+    status: 'finished',
+    started_at: '2026-06-01T00:00:00Z',
+    finished_at: '2026-06-01T00:10:00Z'
+  )
+    database.execute(<<~SQL, [period_start, ecosystem, status, started_at, finished_at])
       INSERT INTO package_crawl_runs(period_start, ecosystem, status, started_at, finished_at, updated_at)
-      VALUES (?, ?, ?, '2026-06-01T00:00:00Z', '2026-06-01T00:10:00Z', '2026-06-01T00:10:00Z')
+      VALUES (?, ?, ?, ?, ?, '2026-06-01T00:10:00Z')
     SQL
   end
 

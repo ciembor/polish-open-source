@@ -27,7 +27,7 @@ def main():
 
     if failures:
         print(f"Snapshot {period_start} is not publishable: {'; '.join(failures)}", file=sys.stderr)
-        return 1
+        return 75
 
     print(f"Snapshot {period_start} is publishable")
     return 0
@@ -67,13 +67,14 @@ def verification_failures(connection, period_start):
     if missing_stats:
         failures.append(f"missing public stats: {', '.join(missing_stats)}")
 
-    unfinished_runs = scalar(
+    latest_run_status = scalar(
         connection,
         """
-        SELECT COUNT(*)
+        SELECT status
         FROM package_crawl_runs
         WHERE period_start = ?
-          AND status != 'finished'
+        ORDER BY datetime(started_at) DESC, id DESC
+        LIMIT 1
         """,
         [period_start],
     )
@@ -87,9 +88,9 @@ def verification_failures(connection, period_start):
         """,
         [period_start, *ACTIVE_SCAN_STATUSES],
     )
-    if unfinished_runs or active_scans:
+    if latest_run_status != "finished" or active_scans:
         failures.append(
-            f"package crawls are not finished: {unfinished_runs} unfinished runs, {active_scans} active scans"
+            f"package crawls are not finished: latest run is {latest_run_status or 'missing'}, {active_scans} active scans"
         )
 
     return failures
