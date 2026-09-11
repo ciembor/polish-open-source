@@ -19,7 +19,7 @@ contract.
 | `ranking` | `sync_runs`, `candidate_users`, `candidate_organizations`, `users`, `organizations`, `user_monthly_stats`, `organization_monthly_stats`, `repositories`, `organization_repositories`, `repository_monthly_stats`, `organization_repository_monthly_stats`, `repository_star_observations`, `organization_repository_star_observations`, `api_request_events` | Monthly source crawl and ranking owns platform identities, snapshots, source request telemetry, and ranking retention. |
 | `publication` | `public_snapshot_publications`, `published_badges` | Publication owns the currently public period and materialized badge state. It reads ranking snapshots to render public pages. |
 | `packages` | `package_crawl_runs`, `package_repository_scans`, `package_manifests`, `registry_packages`, `registry_package_links`, `registry_package_snapshots` | Package ranking owns manifest scans, registry resolution, and package metric snapshots. |
-| `community` | `discord_connections`, `discord_invites`, `discord_sync_jobs` | Community owns Discord account links, invites, and sync jobs. |
+| `community` | `discord_connections`, `discord_invites`, `manual_discord_invites`, `discord_sync_jobs` | Community owns Discord account links, invites, and sync jobs. |
 | `operations` | `crawl_job_runs`, `job_work_events` | Operations owns resumable command runs and work-event telemetry used by internal monitoring. |
 
 ## Shared Ranking Reads

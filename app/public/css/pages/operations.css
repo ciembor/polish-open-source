@@ -115,6 +115,45 @@
   text-transform: uppercase;
 }
 
+.monitor-form {
+  display: grid;
+  gap: 8px;
+  max-width: 560px;
+}
+
+.monitor-form label {
+  color: var(--ink);
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
+.monitor-form__row {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) max-content;
+}
+
+.monitor-form input {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  font: inherit;
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.monitor-success {
+  background: #eef8f1;
+  border: 1px solid #b9dec2;
+  border-radius: 8px;
+  color: #245c33;
+  font-weight: 800;
+  margin-bottom: 18px;
+  overflow-wrap: anywhere;
+  padding: 12px 14px;
+}
+
 .monitor-metric-groups {
   display: grid;
   gap: 16px;
@@ -283,4 +322,3 @@
 .monitor-log-list--errors li {
   border-top-color: #f1c2aa;
 }
-

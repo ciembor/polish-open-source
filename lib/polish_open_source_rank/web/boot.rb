@@ -66,6 +66,7 @@ module PolishOpenSourceRank
           app.set :discord_oauth_client, nil
           app.set :discord_gateway, nil
           app.set :discord_role_map, nil
+          app.set :github_profile_source, nil
         end
 
         def configure_middleware(app)

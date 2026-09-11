@@ -80,6 +80,27 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
     expect(read_model.published_languages(period_start: nil)).to eq([])
   end
 
+  it 'adds invited access for manual Discord invites outside the ranking' do
+    database.execute(
+      'INSERT INTO users(platform, github_id, login, html_url, updated_at) VALUES (?, ?, ?, ?, ?)',
+      ['github', 40, 'guest', 'https://github.com/guest', '2026-05-01T00:01:00Z']
+    )
+    database.execute(
+      <<~SQL,
+        INSERT INTO manual_discord_invites(platform, user_github_id, login, code, url, invited_by, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      SQL
+      ['github', 40, 'guest', 'manual-guest', 'https://discord.gg/manual-guest', 'maciej',
+       '2026-05-01T12:00:00Z']
+    )
+
+    expect(read_model.access('github', 40, period_start: nil)).to include(
+      role_keys: ['DISCORD_ROLE_INVITED'],
+      access_role_keys: ['DISCORD_ROLE_INVITED'],
+      badge_role_key: nil
+    )
+  end
+
   def period
     '2026-04-01'
   end

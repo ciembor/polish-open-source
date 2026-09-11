@@ -9,7 +9,12 @@ RSpec.describe PolishOpenSourceRank::Web::Composition do
       public_database_path: database_path,
       discord_bot_token: 'bot-token',
       discord_guild_id: 'guild-1',
-      http_timeouts: { open_timeout: 1, read_timeout: 2, write_timeout: 3 }
+      http_timeouts: { open_timeout: 1, read_timeout: 2, write_timeout: 3 },
+      discord_invite_channel_id: 'invite-channel',
+      github_token: 'github-token',
+      github_base_url: 'https://api.github.example',
+      requests_per_minute: 60,
+      user_action_http_timeouts: { open_timeout: 1, read_timeout: 2, write_timeout: 3 }
     )
 
     composition = described_class.new(configuration: configuration)
@@ -19,6 +24,9 @@ RSpec.describe PolishOpenSourceRank::Web::Composition do
     )
     expect(composition.community.sync_discord_connection).to be_a(
       PolishOpenSourceRank::Contexts::Community::Application::SyncDiscordConnection
+    )
+    expect(composition.community.invite_discord_guest).to be_a(
+      PolishOpenSourceRank::Contexts::Community::Application::InviteDiscordGuest
     )
   end
 

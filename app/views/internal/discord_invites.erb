@@ -1,0 +1,58 @@
+<section class="monitor-hero">
+  <div class="content">
+    <p class="eyebrow">Internal</p>
+    <h1>Discord invites</h1>
+    <p class="lede">Create one-use Discord invites for GitHub users who are not in the ranking.</p>
+  </div>
+</section>
+
+<section class="monitor-section">
+  <div class="content">
+    <h2>Invite GitHub user</h2>
+    <% if (url = manual_discord_invite_url) %>
+      <p class="monitor-success">
+        Created invite: <a href="<%= h url %>"><%= h url %></a>
+      </p>
+    <% end %>
+    <form class="monitor-form" method="post" action="<%= h app_path('/internal/discord-invites') %>">
+      <input type="hidden" name="csrf_token" value="<%= h csrf_token %>">
+      <label for="manual-discord-login">GitHub login</label>
+      <div class="monitor-form__row">
+        <input id="manual-discord-login" name="login" autocomplete="off" required>
+        <button class="ranking-action" type="submit">Create invite</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<section class="monitor-section monitor-section--alt">
+  <div class="content">
+    <h2>Active manual invites</h2>
+    <% if @invites.empty? %>
+      <p class="monitor-empty">No manual Discord invites yet.</p>
+    <% else %>
+      <div class="monitor-table-wrap">
+        <table class="monitor-table">
+          <thead>
+            <tr>
+              <th>Login</th>
+              <th>Invite</th>
+              <th>Invited by</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @invites.each do |invite| %>
+              <tr>
+                <th><%= h invite.fetch(:login) %></th>
+                <td><a href="<%= h invite.fetch(:url) %>"><%= h invite.fetch(:code) %></a></td>
+                <td><%= h invite.fetch(:invited_by) %></td>
+                <td><%= h format_monitor_time(invite.fetch(:created_at)) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </div>
+</section>

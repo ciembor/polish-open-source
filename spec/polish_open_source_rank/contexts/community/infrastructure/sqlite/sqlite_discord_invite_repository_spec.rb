@@ -55,6 +55,29 @@ RSpec.describe PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite
     ).twice
   end
 
+  it 'resolves profiles from manual Discord invite codes' do
+    manual_repository = PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite::SQLiteManualDiscordInviteRepository.new(
+      database,
+      clock: clock
+    )
+    manual_repository.record(
+      profile: {
+        platform: 'github',
+        source_id: 40,
+        login: 'guest',
+        html_url: 'https://github.com/guest'
+      },
+      invite: { code: 'manual-guest', url: 'https://discord.gg/manual-guest' },
+      invited_by: 'maciej'
+    )
+
+    expect(repository.profile_for_code('manual-guest')).to include(
+      platform: 'github',
+      source_id: 40,
+      login: 'guest'
+    )
+  end
+
   def seed_user
     database.execute(
       'INSERT INTO users(platform, github_id, login, html_url, updated_at) VALUES (?, ?, ?, ?, ?)',

@@ -5,14 +5,15 @@ module PolishOpenSourceRank
     # Composition root exposing web-facing use-case clusters without leaking infrastructure wiring to App.
     class Composition
       def initialize(configuration:, github_oauth_client: nil, discord_oauth_client: nil, discord_gateway: nil,
-                     discord_role_map: nil)
+                     discord_role_map: nil, github_profile_source: nil)
         @configuration = configuration
         @contexts = {}
         @overrides = {
           github_oauth_client: github_oauth_client,
           discord_oauth_client: discord_oauth_client,
           discord_gateway: discord_gateway,
-          discord_role_map: discord_role_map
+          discord_role_map: discord_role_map,
+          github_profile_source: github_profile_source
         }
       end
 

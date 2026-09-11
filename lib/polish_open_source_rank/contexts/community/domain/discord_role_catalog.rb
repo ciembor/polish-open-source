@@ -6,10 +6,14 @@ module PolishOpenSourceRank
       module Domain
         # Centralizes Discord role naming so callers only work with ranking concepts.
         class DiscordRoleCatalog
+          INVITED_ROLE_KEY = 'DISCORD_ROLE_INVITED'
           COUNTRY_ROLE_KEY = 'DISCORD_ROLE_TOP_100_PL'
           CITY_ROLE_PREFIX = 'DISCORD_ROLE_TOP_100_CITY_'
           LANGUAGE_CATEGORY_NAME = 'Languages'
           ROLE_NAME_RESOLVERS = [
+            lambda do |_catalog, role_key|
+              'Invited' if role_key == INVITED_ROLE_KEY
+            end,
             lambda do |_catalog, role_key|
               'Top 100 PL' if role_key == COUNTRY_ROLE_KEY
             end,

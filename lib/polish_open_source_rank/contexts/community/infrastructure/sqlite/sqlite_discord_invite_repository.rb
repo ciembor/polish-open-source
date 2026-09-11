@@ -41,12 +41,22 @@ module PolishOpenSourceRank
 
             def profile_for_code(code)
               database.fetch_all(<<~SQL, [code]).first
-                SELECT users.platform, users.github_id AS source_id, users.login
-                FROM discord_invites
-                JOIN users
-                  ON users.platform = discord_invites.platform
-                 AND users.github_id = discord_invites.user_github_id
-                WHERE discord_invites.code = ?
+                SELECT platform, source_id, login
+                FROM (
+                  SELECT users.platform, users.github_id AS source_id, users.login, discord_invites.code
+                  FROM discord_invites
+                  JOIN users
+                    ON users.platform = discord_invites.platform
+                   AND users.github_id = discord_invites.user_github_id
+                  UNION ALL
+                  SELECT users.platform, users.github_id AS source_id, users.login, manual_discord_invites.code
+                  FROM manual_discord_invites
+                  JOIN users
+                    ON users.platform = manual_discord_invites.platform
+                   AND users.github_id = manual_discord_invites.user_github_id
+                  WHERE manual_discord_invites.revoked_at IS NULL
+                )
+                WHERE code = ?
                 LIMIT 1
               SQL
             end

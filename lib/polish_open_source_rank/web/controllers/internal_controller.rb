@@ -33,6 +33,14 @@ module PolishOpenSourceRank
           hours, remaining_minutes = minutes.divmod(60)
           "#{hours}h #{remaining_minutes}m"
         end
+
+        def internal_actor
+          request.env.fetch('REMOTE_USER', 'internal')
+        end
+
+        def manual_discord_invite_url
+          session.delete(:manual_discord_invite_url)
+        end
       end
     end
   end

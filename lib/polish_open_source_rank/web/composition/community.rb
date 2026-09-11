@@ -71,10 +71,27 @@ module PolishOpenSourceRank
           end
         end
 
+        def invite_discord_guest
+          service(:invite_discord_guest) do
+            Contexts::Community::Application::InviteDiscordGuest.new(
+              profile_source: github_profile_source,
+              invite_gateway: discord_gateway,
+              invite_repository: manual_discord_invite_repository,
+              invite_channel_id: configuration.discord_invite_channel_id
+            )
+          end
+        end
+
+        def manual_discord_invite_repository
+          service(:manual_discord_invite_repository) do
+            Contexts::Community::Infrastructure::SQLite::SQLiteManualDiscordInviteRepository.new(persistence.database)
+          end
+        end
+
         def contributor_access_read_model
           service(:contributor_access_read_model) do
             Contexts::Community::Infrastructure::SQLite::SQLiteContributorAccessReadModel.new(
-              persistence.public_database
+              persistence.database
             )
           end
         end
@@ -92,6 +109,19 @@ module PolishOpenSourceRank
         def discord_sync_job_repository
           service(:discord_sync_job_repository) do
             Contexts::Community::Infrastructure::SQLite::SQLiteDiscordSyncJobRepository.new(persistence.database)
+          end
+        end
+
+        def github_profile_source
+          service(:github_profile_source) do
+            Infrastructure::GitHubGateway.new(
+              Infrastructure::GitHubClient.new(
+                token: configuration.github_token,
+                base_url: configuration.github_base_url,
+                requests_per_minute: configuration.requests_per_minute,
+                http: configuration.user_action_http_timeouts
+              )
+            )
           end
         end
 

@@ -32,6 +32,7 @@ module PolishOpenSourceRank
             )
 
             GLOBAL_KEYS = %w[
+              DISCORD_ROLE_INVITED
               DISCORD_ROLE_TOP_100_PL
               DISCORD_ROLE_BADGE_TOP_1
               DISCORD_ROLE_BADGE_TOP_2

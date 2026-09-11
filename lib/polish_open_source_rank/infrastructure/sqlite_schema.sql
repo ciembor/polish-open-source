@@ -282,6 +282,22 @@ CREATE TABLE IF NOT EXISTS discord_invites (
 );
 
 -- @owner community
+CREATE TABLE IF NOT EXISTS manual_discord_invites (
+  platform TEXT NOT NULL,
+  user_github_id INTEGER NOT NULL,
+  login TEXT NOT NULL,
+  code TEXT NOT NULL,
+  url TEXT NOT NULL,
+  invited_by TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  revoked_at TEXT,
+  PRIMARY KEY(platform, user_github_id),
+  UNIQUE(code),
+  UNIQUE(platform, login),
+  FOREIGN KEY(platform, user_github_id) REFERENCES users(platform, github_id)
+);
+
+-- @owner community
 CREATE TABLE IF NOT EXISTS discord_sync_jobs (
   platform TEXT NOT NULL,
   user_github_id INTEGER NOT NULL,

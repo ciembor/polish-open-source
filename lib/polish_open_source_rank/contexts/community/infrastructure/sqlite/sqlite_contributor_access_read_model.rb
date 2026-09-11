@@ -24,6 +24,8 @@ module PolishOpenSourceRank
               city_rank = city && user_city_rank(platform, source_id, city, period_start)
               language_accesses = user_language_accesses(platform, source_id, period_start)
               access_payload(
+                platform: platform,
+                source_id: source_id,
                 country_rank: rank,
                 city: city,
                 city_slug: city_slug,
@@ -133,7 +135,13 @@ module PolishOpenSourceRank
             end
 
             def access_payload(**attributes)
-              attributes
+              invited_role_key = if manual_invited?(attributes.fetch(:platform), attributes.fetch(:source_id))
+                                   Domain::DiscordRoleCatalog::INVITED_ROLE_KEY
+                                 end
+              attributes.except(:platform, :source_id).merge(
+                role_keys: [*attributes.fetch(:role_keys), invited_role_key].compact,
+                access_role_keys: [*attributes.fetch(:access_role_keys), invited_role_key].compact
+              )
             end
 
             def resolved_roles(country_rank:, city_slug:, city_rank:, language_accesses:)
@@ -150,6 +158,21 @@ module PolishOpenSourceRank
                 access_role_keys: access_role_keys,
                 badge_role_key: badge_role_key
               }
+            end
+
+            def manual_invited?(platform, source_id)
+              return false unless table_exists?('manual_discord_invites')
+
+              !database.fetch_all(<<~SQL, [platform, source_id]).empty?
+                SELECT 1
+                FROM manual_discord_invites
+                WHERE platform = ? AND user_github_id = ? AND revoked_at IS NULL
+                LIMIT 1
+              SQL
+            end
+
+            def table_exists?(table_name)
+              database.dataset(:sqlite_master).where(type: 'table', name: table_name).select(1).first
             end
 
             def user_language_access_bindings(period_start, platform, user_id)

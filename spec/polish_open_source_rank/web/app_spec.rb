@@ -112,6 +112,25 @@ class FakeDiscordGateway
   end
 end
 
+class FakeGitHubProfileSource
+  def platform
+    'github'
+  end
+
+  def user(login)
+    PolishOpenSourceRank::Contexts::Ranking::Domain::SourceContributor.new(
+      source_id: 40,
+      login: login,
+      name: 'Manual Guest',
+      location: 'Berlin, Germany',
+      email: 'guest@example.com',
+      homepage: 'https://guest.example',
+      html_url: "https://github.com/#{login}",
+      avatar_url: "https://avatars.example/#{login}.png"
+    )
+  end
+end
+
 class FailingDiscordGateway
   def invite_available?(_code)
     raise PolishOpenSourceRank::Contexts::Community::Infrastructure::Discord::DiscordApiGateway::Error
@@ -153,6 +172,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     old_github_oauth_client = described_class.github_oauth_client
     old_discord_oauth_client = described_class.discord_oauth_client
     old_discord_gateway = described_class.discord_gateway
+    old_github_profile_source = described_class.github_profile_source
     ENV['BASE_URL'] = 'https://rank.example'
     ENV.delete('APP_BASE_PATH')
     PolishOpenSourceRank::Web::RateLimiter.reset!
@@ -164,6 +184,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     described_class.set :github_oauth_client, old_github_oauth_client
     described_class.set :discord_oauth_client, old_discord_oauth_client
     described_class.set :discord_gateway, old_discord_gateway
+    described_class.set :github_profile_source, old_github_profile_source
     reset_app_memoized_dependencies
   end
 
@@ -1129,6 +1150,40 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     )
     expect(unauthenticated['Cache-Control']).to eq('no-store')
     expect(unauthenticated['Content-Security-Policy']).to include("default-src 'self'")
+  end
+
+  it 'lets only the internal operator create manual Discord invites', :aggregate_failures do
+    database_path = seed_database
+    ENV['DATABASE_URL'] = "sqlite://#{database_path}"
+    ENV['DISCORD_INVITE_CHANNEL_ID'] = 'invite-channel'
+    ENV['DISCORD_ROLE_INVITED'] = 'role-invited'
+    discord_gateway = FakeDiscordGateway.new
+    described_class.set :discord_gateway, discord_gateway
+    described_class.set :github_profile_source, FakeGitHubProfileSource.new
+    request = Rack::MockRequest.new(described_class)
+
+    form = request.get('/internal/discord-invites', internal_auth_env)
+    csrf_token = csrf_token_from(form)
+    unauthenticated = request.post('/internal/discord-invites', params: { login: 'guest', csrf_token: csrf_token })
+    created = request.post(
+      '/internal/discord-invites',
+      internal_auth_env.merge(
+        'HTTP_COOKIE' => cookie_header(form),
+        params: { login: 'guest', csrf_token: csrf_token }
+      )
+    )
+    list = request.get('/internal/discord-invites', internal_auth_env.merge('HTTP_COOKIE' => cookie_header(created)))
+
+    expect(unauthenticated.status).to eq(401)
+    expect(created.status).to eq(303)
+    expect(list.body).to include('https://discord.gg/invite-channel-once')
+    expect(list.body).to include('guest')
+
+    database = PolishOpenSourceRank::Shared::Infrastructure::SQLite::Database.open(database_path)
+    access = PolishOpenSourceRank::Contexts::Community::Infrastructure::SQLite::SQLiteContributorAccessReadModel
+             .new(database)
+             .discord_access('github', 40, period_start: nil)
+    expect(access.fetch(:role_keys)).to contain_exactly('DISCORD_ROLE_INVITED')
   end
 
   it 'marks every external target blank link as opener-safe', :aggregate_failures do

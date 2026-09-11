@@ -19,7 +19,7 @@ module PolishOpenSourceRank
         return app.call(env) unless internal_path?(env)
 
         request = Rack::Auth::Basic::Request.new(env)
-        return unauthorized unless authorized?(request)
+        return unauthorized unless authorized?(env, request)
 
         app.call(env)
       end
@@ -32,12 +32,14 @@ module PolishOpenSourceRank
         env.fetch('PATH_INFO', '').start_with?('/internal/')
       end
 
-      def authorized?(request)
+      def authorized?(env, request)
         return false unless request.provided? && request.basic?
 
         username, password = request.credentials
-        secure_equal?(username_digest, digest(username)) &&
-          secure_equal?(password_digest, digest(password))
+        authorized = secure_equal?(username_digest, digest(username)) &&
+                     secure_equal?(password_digest, digest(password))
+        env['REMOTE_USER'] = username if authorized
+        authorized
       end
 
       def digest(value)

@@ -116,7 +116,8 @@ module PolishOpenSourceRank
           github_oauth_client: settings.github_oauth_client,
           discord_oauth_client: settings.discord_oauth_client,
           discord_gateway: settings.discord_gateway,
-          discord_role_map: settings.discord_role_map
+          discord_role_map: settings.discord_role_map,
+          github_profile_source: settings.github_profile_source
         )
       end
 

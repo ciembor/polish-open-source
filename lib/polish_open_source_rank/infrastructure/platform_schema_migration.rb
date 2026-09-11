@@ -165,6 +165,7 @@ module PolishOpenSourceRank
         add_column_unless_exists('user_monthly_stats', 'merged_pull_requests_count INTEGER NOT NULL DEFAULT 0')
         add_column_unless_exists('organization_monthly_stats', 'merged_pull_requests_count INTEGER NOT NULL DEFAULT 0')
         add_column_unless_exists('organization_monthly_stats', 'members_count INTEGER NOT NULL DEFAULT 0')
+        create_manual_discord_invites
         create_discord_sync_jobs
         create_public_snapshot_publications
         create_published_badges
@@ -245,6 +246,25 @@ module PolishOpenSourceRank
             updated_at TEXT NOT NULL,
             synced_at TEXT,
             PRIMARY KEY(platform, user_github_id, action_kind),
+            FOREIGN KEY(platform, user_github_id) REFERENCES users(platform, github_id)
+          );
+        SQL
+      end
+
+      def create_manual_discord_invites
+        execute_batch(<<~SQL)
+          CREATE TABLE IF NOT EXISTS manual_discord_invites (
+            platform TEXT NOT NULL,
+            user_github_id INTEGER NOT NULL,
+            login TEXT NOT NULL,
+            code TEXT NOT NULL,
+            url TEXT NOT NULL,
+            invited_by TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            revoked_at TEXT,
+            PRIMARY KEY(platform, user_github_id),
+            UNIQUE(code),
+            UNIQUE(platform, login),
             FOREIGN KEY(platform, user_github_id) REFERENCES users(platform, github_id)
           );
         SQL
