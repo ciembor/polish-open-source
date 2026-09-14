@@ -136,7 +136,7 @@ module PolishOpenSourceRank
             end
 
             def retryable_candidates?(period, platforms: nil, candidate_types: nil)
-              return false if platforms&.empty?
+              return false if platforms && platforms.empty?
 
               retryable_candidates(
                 period.start_date.to_s,
