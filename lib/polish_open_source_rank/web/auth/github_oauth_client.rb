@@ -37,7 +37,12 @@ module PolishOpenSourceRank
             code: code,
             redirect_uri: redirect_uri
           )
-          json_request(uri, request).fetch('access_token')
+          token = json_request(uri, request)
+          unless token['access_token']
+            raise Error, token.fetch('error_description', token.fetch('error', 'missing access_token'))
+          end
+
+          token.fetch('access_token')
         end
 
         def user(access_token)

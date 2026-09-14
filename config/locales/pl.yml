@@ -157,6 +157,7 @@ pl:
       github: "Zaloguj"
     notice:
       missing_location: "Przepraszamy, nie ma cię w naszej bazie. Zmień lokalizację na Polskę lub miasto wojewódzkie. Po zmianie uwzględnimy cię w kolejnym rankingu."
+      github_oauth: "GitHub odrzucił logowanie. Spróbuj zalogować się ponownie."
     logout: "Wyloguj"
     unranked:
       body: "Przepraszamy, nie znaleźliśmy konta %{login} w aktualnym rankingu. Zaproszenie na Discorda jest dostępne tylko dla rankingowych profili GitHuba."

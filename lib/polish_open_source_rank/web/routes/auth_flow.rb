@@ -25,7 +25,7 @@ module PolishOpenSourceRank
             callback: oauth_callback('/auth/github/callback'),
             period_start: context_call(:latest_period)
           )
-          return redirect_after_missing_location(result.notice) if result.missing_location?
+          return redirect_after_auth_notice(result.notice) if result.notice
 
           context_call(:session)[:current_user] = result.session
           context_call :redirect, context_call(:app_path, context_call(:user_profile_path, result.profile))
@@ -59,7 +59,7 @@ module PolishOpenSourceRank
 
         attr_reader :context
 
-        def redirect_after_missing_location(notice)
+        def redirect_after_auth_notice(notice)
           session = context_call(:session)
           session[:current_user] = nil
           session[:auth_notice] = notice

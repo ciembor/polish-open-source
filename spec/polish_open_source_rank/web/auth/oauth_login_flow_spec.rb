@@ -65,7 +65,7 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::OAuthLoginFlow do
 
     expect(result.profile).to eq(@existing_profile)
     expect(result.session).to eq(platform: 'github', login: 'alice', github_id: 1)
-    expect(result).not_to be_missing_location
+    expect(result.notice).to be_nil
     expect(@register_public_github_profile.calls).to be_empty
   end
 
@@ -88,7 +88,18 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::OAuthLoginFlow do
 
     result = @flow.finish_github(callback: github_callback, period_start: @period_start)
 
-    expect(result).to be_missing_location
+    expect(result.notice).to eq('missing_location')
+    expect(result.session).to be_nil
+  end
+
+  it 'reports rejected GitHub OAuth callbacks without building a session' do
+    allow(@github_oauth_client).to receive(:exchange_code).and_raise(
+      PolishOpenSourceRank::Web::Auth::GitHubOAuthClient::Error
+    )
+
+    result = @flow.finish_github(callback: github_callback, period_start: @period_start)
+
+    expect(result.notice).to eq('github_oauth')
     expect(result.session).to be_nil
   end
 

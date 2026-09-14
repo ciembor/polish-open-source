@@ -54,6 +54,15 @@ class FakeDiscordOAuthClient
   end
 end
 
+class FailingGitHubOAuthClient < FakeGitHubOAuthClient
+  def exchange_code(code:, redirect_uri:)
+    raise ArgumentError, 'redirect_uri is required' unless redirect_uri
+
+    exchanged << code
+    raise PolishOpenSourceRank::Web::Auth::GitHubOAuthClient::Error, 'bad_verification_code'
+  end
+end
+
 class FakeDiscordGateway
   attr_reader :synced, :welcome
 
@@ -539,6 +548,25 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(github_callback.location).to eq('http://example.org/people')
     expect(rankings.body.force_encoding('UTF-8')).to include('Przepraszamy, nie ma cię w naszej bazie.')
     expect(rankings.body).not_to include('href="/users/github/outsider"')
+  end
+
+  it 'keeps users signed out when GitHub rejects the OAuth callback' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    github_client = FailingGitHubOAuthClient.new('alice')
+    described_class.set :github_oauth_client, github_client
+    request = Rack::MockRequest.new(described_class)
+
+    github_start = request.get('/auth/github')
+    github_state = Rack::Utils.parse_query(URI(github_start.location).query).fetch('state')
+    github_callback = request.get(
+      "/auth/github/callback?code=github-code&state=#{github_state}",
+      'HTTP_COOKIE' => cookie_header(github_start)
+    )
+    rankings = request.get('/people', 'HTTP_COOKIE' => cookie_header(github_callback))
+
+    expect(github_callback.location).to eq('http://example.org/people')
+    expect(rankings.body.force_encoding('UTF-8')).to include('GitHub odrzucił logowanie')
+    expect(github_client.exchanged).to eq(['github-code'])
   end
 
   it 'returns to the profile after Discord sync when the server channel is not configured' do

@@ -44,10 +44,6 @@ module PolishOpenSourceRank
             @session = session
             @notice = notice
           end
-
-          def missing_location?
-            notice == 'missing_location'
-          end
         end
 
         # Discord login outcome consumed by the web adapter to show retry feedback or continue.
@@ -91,6 +87,8 @@ module PolishOpenSourceRank
         def finish_github(callback:, period_start:)
           profile = public_or_registered_github_profile(github_user(callback), period_start)
           GitHubResult.new(profile: profile, session: github_session(profile))
+        rescue GitHubOAuthClient::Error
+          GitHubResult.new(notice: 'github_oauth')
         rescue Contexts::Publication::Application::RegisterPublicGitHubProfile::IneligibleLocation
           GitHubResult.new(notice: 'missing_location')
         end

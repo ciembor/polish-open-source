@@ -241,6 +241,16 @@ RSpec.describe PolishOpenSourceRank::Web::Auth::GitHubOAuthClient do
     end.to raise_error(PolishOpenSourceRank::Web::Auth::GitHubOAuthClient::Error, /401/)
   end
 
+  it 'raises typed OAuth errors when GitHub omits the access token' do
+    configuration = PolishOpenSourceRank::Configuration.load
+    client = described_class.new(configuration)
+    capture_http_requests([json_response('{"error":"bad_verification_code"}')])
+
+    expect do
+      client.exchange_code(code: 'bad-code', redirect_uri: 'https://rank/auth/github/callback')
+    end.to raise_error(PolishOpenSourceRank::Web::Auth::GitHubOAuthClient::Error, /bad_verification_code/)
+  end
+
   it 'counts OAuth and Discord API timeouts before reraising them' do
     configuration = PolishOpenSourceRank::Configuration.load
     github_client = described_class.new(configuration)
