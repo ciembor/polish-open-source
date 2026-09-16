@@ -489,6 +489,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   it 'logs public GitHub users in and syncs their Discord account', :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     ENV['DISCORD_INVITE_CHANNEL_ID'] = 'invite-channel'
+    ENV['DISCORD_WELCOME_CHANNEL_ID'] = 'welcome-channel'
     ENV['DISCORD_GUILD_ID'] = 'guild-1'
     ENV['DISCORD_ROLE_TOP_100_PL'] = 'role-top-100'
     ENV['DISCORD_ROLE_TOP_100_CITY_KRAKOW'] = 'role-krakow'
@@ -511,6 +512,25 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect_synced_discord_account(request, discord_callback, discord_gateway)
     expect(github_client.exchanged).to eq(['github-code'])
     expect(discord_client.exchanged).to eq(['discord-code'])
+  end
+
+  it 'keeps welcome messages out of the general Discord channel when welcome is not configured' do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    ENV['DISCORD_INVITE_CHANNEL_ID'] = 'general-channel'
+    ENV.delete('DISCORD_WELCOME_CHANNEL_ID')
+    ENV['DISCORD_GUILD_ID'] = 'guild-1'
+    described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
+    described_class.set :discord_oauth_client, FakeDiscordOAuthClient.new
+    discord_gateway = FakeDiscordGateway.new
+    described_class.set :discord_gateway, discord_gateway
+    request = Rack::MockRequest.new(described_class)
+
+    github_callback = sign_in_with_github(request)
+    discord_callback = finish_discord_auth(request, github_callback)
+
+    expect(discord_callback.location).to eq('https://discord.com/channels/guild-1/general-channel')
+    expect(discord_gateway.synced).to include(discord_user_id: 'discord-1', github_login: 'alice')
+    expect(discord_gateway.welcome).to be_nil
   end
 
   it 'creates a public profile for GitHub users with a supported location' do
@@ -573,6 +593,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     ENV['DISCORD_GUILD_ID'] = ''
     ENV['DISCORD_INVITE_CHANNEL_ID'] = ''
+    ENV['DISCORD_WELCOME_CHANNEL_ID'] = ''
     described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
     described_class.set :discord_oauth_client, FakeDiscordOAuthClient.new
     described_class.set :discord_gateway, FakeDiscordGateway.new
@@ -597,6 +618,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   it 'does not fail Discord login when the welcome message cannot be posted' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     ENV['DISCORD_INVITE_CHANNEL_ID'] = 'invite-channel'
+    ENV['DISCORD_WELCOME_CHANNEL_ID'] = 'welcome-channel'
     described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
     described_class.set :discord_oauth_client, FakeDiscordOAuthClient.new
     described_class.set :discord_gateway, FailingWelcomeDiscordGateway.new
@@ -664,6 +686,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     ENV['DISCORD_GUILD_ID'] = '1505949566229286972'
     ENV['DISCORD_INVITE_CHANNEL_ID'] = '1505949566699176050'
+    ENV['DISCORD_WELCOME_CHANNEL_ID'] = '1505949566699176051'
     described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
     described_class.set :discord_oauth_client, FakeDiscordOAuthClient.new
     described_class.set :discord_gateway, FailingMemberSyncDiscordGateway.new
@@ -2322,7 +2345,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       access_token: 'discord-access',
       github_login: 'alice'
     )
-    expect(discord_gateway.welcome).to include(channel_id: 'invite-channel', discord_user_id: 'discord-1')
+    expect(discord_gateway.welcome).to include(channel_id: 'welcome-channel', discord_user_id: 'discord-1')
   end
 
   def expect_repository_profile_page(**responses)

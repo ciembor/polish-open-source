@@ -17,6 +17,9 @@
 - The callback stores the Discord connection in SQLite.
 - The callback stores `member_sync` and `welcome_message` intents in the
   `discord_sync_jobs` outbox.
+- `welcome_message` jobs are created only when `DISCORD_WELCOME_CHANNEL_ID` is
+  configured. `DISCORD_INVITE_CHANNEL_ID` is kept for the general server link
+  and manual invite creation.
 - The Discord OAuth access token is kept only while a `member_sync` job is
   pending or retryable, then cleared when the job is synced or failed.
 - The callback does not join the guild, sync roles, or send the welcome message

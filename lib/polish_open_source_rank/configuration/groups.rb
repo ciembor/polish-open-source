@@ -29,7 +29,7 @@ module PolishOpenSourceRank
     OAuth = Data.define(:github_client_id, :github_client_secret, :discord_client_id, :discord_client_secret)
 
     # Groups Discord bot and guild settings.
-    Discord = Data.define(:bot_token, :guild_id, :invite_channel_id)
+    Discord = Data.define(:bot_token, :guild_id, :invite_channel_id, :welcome_channel_id)
 
     # Groups primary write database and public read database paths.
     Databases = Data.define(:primary, :public)

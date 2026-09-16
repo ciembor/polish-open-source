@@ -84,7 +84,8 @@ module PolishOpenSourceRank
       ConfigurationGroups::Discord.new(
         bot_token: discord_bot_token,
         guild_id: discord_guild_id,
-        invite_channel_id: discord_invite_channel_id
+        invite_channel_id: discord_invite_channel_id,
+        welcome_channel_id: discord_welcome_channel_id
       )
     end
 

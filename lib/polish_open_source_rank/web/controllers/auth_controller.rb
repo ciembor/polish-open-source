@@ -12,16 +12,15 @@ module PolishOpenSourceRank
         end
 
         def discord_channel_url
-          guild_id = ENV.fetch('DISCORD_GUILD_ID', '').strip
-          channel_id = ENV.fetch('DISCORD_INVITE_CHANNEL_ID', '').strip
+          guild_id = configuration.discord_guild_id.to_s.strip
+          channel_id = configuration.discord_invite_channel_id.to_s.strip
           return if guild_id.empty? || channel_id.empty?
 
           "https://discord.com/channels/#{guild_id}/#{channel_id}"
         end
 
         def discord_welcome_channel_id
-          channel_id = ENV.fetch('DISCORD_WELCOME_CHANNEL_ID') { ENV.fetch('DISCORD_INVITE_CHANNEL_ID', nil) }
-          channel_id.to_s.strip.then { |value| value.empty? ? nil : value }
+          configuration.discord_welcome_channel_id.to_s.strip.then { |value| value.empty? ? nil : value }
         end
 
         def redirect_to_profile_after_discord_error(type)

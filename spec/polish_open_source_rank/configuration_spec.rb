@@ -5,7 +5,7 @@ RSpec.describe PolishOpenSourceRank::Configuration do
     keys = %w[
       GITHUB_TOKEN GITLAB_TOKEN CODEBERG_TOKEN DATABASE_URL PUBLIC_DATABASE_URL REQUESTS_PER_MINUTE
       GITHUB_BASE_URL GITLAB_BASE_URL CODEBERG_BASE_URL BASE_URL
-      DISCORD_INVITE_CHANNEL_ID GITHUB_OAUTH_CLIENT_ID
+      DISCORD_INVITE_CHANNEL_ID DISCORD_WELCOME_CHANNEL_ID GITHUB_OAUTH_CLIENT_ID
       GITHUB_OAUTH_CLIENT_SECRET DISCORD_OAUTH_CLIENT_ID DISCORD_OAUTH_CLIENT_SECRET
       DISCORD_BOT_TOKEN DISCORD_GUILD_ID
       HTTP_OPEN_TIMEOUT HTTP_READ_TIMEOUT HTTP_WRITE_TIMEOUT
@@ -83,11 +83,13 @@ RSpec.describe PolishOpenSourceRank::Configuration do
     expect(ENV.fetch('EMPTY_VALUE')).to eq('')
   end
 
-  it 'exposes the configured Discord invite channel' do
+  it 'exposes the configured Discord channels' do
     ENV['DISCORD_INVITE_CHANNEL_ID'] = 'discord-channel'
+    ENV['DISCORD_WELCOME_CHANNEL_ID'] = 'welcome-channel'
     configuration = described_class.load(Pathname(File.join(Dir.mktmpdir, 'missing.env')))
 
     expect(configuration.discord_invite_channel_id).to eq('discord-channel')
+    expect(configuration.discord_welcome_channel_id).to eq('welcome-channel')
   end
 
   it 'uses stable defaults without an env file' do
@@ -193,6 +195,7 @@ RSpec.describe PolishOpenSourceRank::Configuration do
     ENV['DISCORD_BOT_TOKEN'] = 'discord-bot'
     ENV['DISCORD_GUILD_ID'] = 'discord-guild'
     ENV['DISCORD_INVITE_CHANNEL_ID'] = 'discord-invite-channel'
+    ENV['DISCORD_WELCOME_CHANNEL_ID'] = 'discord-welcome-channel'
     ENV['USER_ACTION_HTTP_OPEN_TIMEOUT'] = '2'
     ENV['USER_ACTION_HTTP_READ_TIMEOUT'] = '8'
     ENV['USER_ACTION_HTTP_WRITE_TIMEOUT'] = '9'
@@ -210,7 +213,8 @@ RSpec.describe PolishOpenSourceRank::Configuration do
     expect(configuration.discord).to have_attributes(
       bot_token: 'discord-bot',
       guild_id: 'discord-guild',
-      invite_channel_id: 'discord-invite-channel'
+      invite_channel_id: 'discord-invite-channel',
+      welcome_channel_id: 'discord-welcome-channel'
     )
     expect(configuration.database_paths).to have_attributes(
       primary: 'db/polish_open_source_rank.sqlite3',

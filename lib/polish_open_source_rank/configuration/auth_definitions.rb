@@ -14,6 +14,7 @@ module PolishOpenSourceRank
     ].freeze
 
     OPTIONAL_SETTINGS = {
+      discord_welcome_channel_id: { env: 'DISCORD_WELCOME_CHANNEL_ID' },
       session_secret: { env: 'SESSION_SECRET' },
       internal_basic_auth_username: { env: 'INTERNAL_BASIC_AUTH_USERNAME' },
       internal_basic_auth_password: { env: 'INTERNAL_BASIC_AUTH_PASSWORD' }
