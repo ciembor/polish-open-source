@@ -83,13 +83,16 @@ RSpec.describe File do
       'SuccessExitStatus=75',
       'RestartPreventExitStatus=1',
       'ExecStartPre=/usr/bin/python3 /home/ciembor/polish-open-source-rank/scripts/ensure_publishable_snapshot.py',
+      'ExecStartPre=/usr/bin/systemctl stop polish-open-source-rank.service',
+      'scripts/prepare_public_database_swap.py /home/ciembor/polish-open-source-rank/db/public.sqlite3',
       '--name=polish-open-source-rank-publish',
       '-e TZ=Europe/Warsaw',
       '-e PUBLIC_DATABASE_URL=sqlite://db/public.sqlite3',
       '--user=1000:1000 --read-only --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m',
       '-v /home/ciembor/polish-open-source-rank/db:/app/db:rw',
       'bundle exec ruby bin/publish_snapshot',
-      'ExecStartPost=/usr/bin/systemctl restart polish-open-source-rank.service'
+      'ExecStartPost=/usr/bin/systemctl restart polish-open-source-rank.service',
+      'ExecStopPost=/usr/bin/systemctl start polish-open-source-rank.service'
     )
     expect(deploy).to include('"${SERVICE_NAME}-publish.service"')
     expect(deploy).to include('systemctl disable --now "${SERVICE_NAME}-packages.timer"')

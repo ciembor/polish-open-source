@@ -76,8 +76,13 @@ restart_app_services() {
 }
 
 refresh_public_database_snapshot() {
+  sudo systemctl stop "${SERVICE_NAME}"
+  if ! sudo python3 "${REMOTE_DIR}/scripts/prepare_public_database_swap.py" "${REMOTE_DIR}/db/public.sqlite3"; then
+    sudo systemctl start "${SERVICE_NAME}"
+    return 1
+  fi
   sudo podman rm -f "${SERVICE_NAME}-public-db-refresh" >/dev/null 2>&1 || true
-  sudo podman run --rm --name="${SERVICE_NAME}-public-db-refresh" \
+  if ! sudo podman run --rm --name="${SERVICE_NAME}-public-db-refresh" \
     --user=1000:1000 \
     --read-only \
     --tmpfs /app/tmp:rw,noexec,nosuid,nodev,size=64m \
@@ -91,7 +96,10 @@ refresh_public_database_snapshot() {
     -v "${REMOTE_DIR}/db:/app/db:rw" \
     -v "${REMOTE_DIR}/log:/app/log:rw" \
     "${IMAGE_NAME}" \
-    bundle exec ruby bin/publish_snapshot --refresh-public-database
+    bundle exec ruby bin/publish_snapshot --refresh-public-database; then
+    sudo systemctl start "${SERVICE_NAME}"
+    return 1
+  fi
 }
 
 smoke_check_once() {

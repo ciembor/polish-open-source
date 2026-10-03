@@ -13,6 +13,8 @@ RSpec.describe File do
       'assert_production_session_secret',
       'assert_internal_basic_auth',
       'refresh_public_database_snapshot',
+      'sudo systemctl stop "${SERVICE_NAME}"',
+      'scripts/prepare_public_database_swap.py',
       'bundle exec ruby bin/publish_snapshot --refresh-public-database',
       'SESSION_SECRET in ${env_file} must be at least 64 characters before deploy.',
       'INTERNAL_BASIC_AUTH_PASSWORD in ${env_file} must be at least 32 characters before deploy.',
