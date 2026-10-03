@@ -53,6 +53,9 @@ module PolishOpenSourceRank
           rescue RetryableRepositoryScanFailure => e
             repository_queue.mark_failed(scan.fetch(:id), e.message)
             { status: :failed, manifest_count: 0 }
+          rescue StandardError => e
+            repository_queue.mark_failed(scan.fetch(:id), "#{e.class}: #{e.message}")
+            raise
           end
 
           def record_work_event(scan, ecosystem:, &)

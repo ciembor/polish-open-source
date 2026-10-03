@@ -168,6 +168,23 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Application::ScanReposi
     expect(result).to eq(scanned: 1, failed: 1, manifests: 2)
   end
 
+  it 'keeps an unexpected manifest failure retryable instead of leaving a processing scan' do
+    seed_scan(full_name: 'alice/app')
+    stub_changed_repository
+    repository = OneFailurePackageManifestRepository.new(manifest_repository, Encoding::UndefinedConversionError.new)
+    scanner = described_class.new(
+      repository_queue: repository_queue,
+      tree_gateway: tree_gateway,
+      manifest_repository: repository
+    )
+
+    expect { scanner.call(period, limit: 10) }.to raise_error(Encoding::UndefinedConversionError)
+    expect(scan).to include(status: 'failed')
+
+    expect(scanner.call(period, limit: 10)).to eq(scanned: 1, failed: 0, manifests: 2)
+    expect(scan).to include(status: 'scanned')
+  end
+
   it 'stores parser failures without aborting the repository scan' do
     seed_scan(full_name: 'alice/broken')
     tree_gateway.stub_repository('alice/broken', default_branch: 'main')

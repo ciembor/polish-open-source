@@ -40,6 +40,8 @@ module PolishOpenSourceRank
               return if body.fetch('size', 0).to_i > max_blob_bytes
 
               Base64.decode64(body.fetch('content').to_s.delete("\n"))
+                    .force_encoding(Encoding::UTF_8)
+                    .scrub
             end
 
             private

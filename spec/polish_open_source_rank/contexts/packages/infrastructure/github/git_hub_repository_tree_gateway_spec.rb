@@ -56,6 +56,17 @@ RSpec.describe PolishOpenSourceRank::Contexts::Packages::Infrastructure::GitHub:
     expect(gateway.blob('alice/app', sha: 'large-sha')).to be_nil
   end
 
+  it 'decodes text blobs as valid UTF-8 before manifest parsing' do
+    content = "name = \"żółw\"\n".b + "\xFF".b
+    client.stub('/repos/alice/app/git/blobs/text-sha',
+                body: { 'size' => content.bytesize, 'content' => Base64.strict_encode64(content) })
+
+    decoded = described_class.new(client).blob('alice/app', sha: 'text-sha')
+
+    expect(decoded.encoding).to eq(Encoding::UTF_8)
+    expect(decoded).to eq("name = \"żółw\"\n\uFFFD")
+  end
+
   it 'maps unavailable repositories to the package domain error' do
     client.stub_error(
       '/repos/alice/missing',

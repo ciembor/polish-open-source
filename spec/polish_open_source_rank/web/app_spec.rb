@@ -517,7 +517,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   it 'keeps welcome messages out of the general Discord channel when welcome is not configured' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     ENV['DISCORD_INVITE_CHANNEL_ID'] = 'general-channel'
-    ENV.delete('DISCORD_WELCOME_CHANNEL_ID')
+    ENV['DISCORD_WELCOME_CHANNEL_ID'] = ''
     ENV['DISCORD_GUILD_ID'] = 'guild-1'
     described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
     described_class.set :discord_oauth_client, FakeDiscordOAuthClient.new
