@@ -617,6 +617,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   it 'does not fail Discord login when the welcome message cannot be posted' do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    ENV['DISCORD_GUILD_ID'] = 'guild-1'
     ENV['DISCORD_INVITE_CHANNEL_ID'] = 'invite-channel'
     ENV['DISCORD_WELCOME_CHANNEL_ID'] = 'welcome-channel'
     described_class.set :github_oauth_client, FakeGitHubOAuthClient.new('alice')
