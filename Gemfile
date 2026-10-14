@@ -23,7 +23,7 @@ group :development, :test do
   gem 'rspec', '~> 3.13'
   gem 'rubocop', '~> 1.81', require: false
   gem 'rubocop-rspec', '~> 3.7', require: false
-  gem 'simplecov', '~> 0.22', require: false
+  gem 'simplecov', '~> 1.1', require: false
 end
 
 gem 'discordrb', '~> 3.7'
