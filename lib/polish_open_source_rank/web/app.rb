@@ -61,7 +61,29 @@ module PolishOpenSourceRank
         @title = t('not_found.title')
         @description = t('not_found.description')
         @robots = 'noindex,follow'
+        @not_found_action_label, @not_found_action_path = not_found_navigation
         erb :'pages/not_found'
+      end
+
+      def not_found_navigation
+        case not_found_section
+        when 'packages'
+          [t('not_found.actions.packages'), package_index_path(period_slug: 'latest')]
+        when 'languages'
+          [t('not_found.actions.languages'), language_index_path(period_slug: 'latest')]
+        when 'organizations', 'organization-repositories'
+          [t('not_found.actions.organizations'), organization_rankings_path(period_slug: 'latest')]
+        when 'editions'
+          [t('not_found.actions.editions'), editions_path]
+        else
+          [t('not_found.actions.rankings'), people_rankings_path(period_slug: 'latest')]
+        end
+      end
+
+      def not_found_section
+        segments = request.path_info.split('/').reject(&:empty?)
+        segments.shift if segments.first&.match?(/\A(?:latest|\d{4}-\d{2})\z/)
+        segments.first
       end
 
       def latest_public_cache_key

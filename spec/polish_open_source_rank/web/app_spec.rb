@@ -1103,8 +1103,29 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     responses.each do |response|
       expect(response.status).to eq(404)
       expect(response.body).to include('Tu nic nie ma')
-      expect(response.body).to include('Przejdź do rankingów')
+      expect(response.body).to include('Przeglądaj pakiety')
       expect(response['Cache-Control']).to eq('public, max-age=30, stale-while-revalidate=120, stale-if-error=300')
+    end
+  end
+
+  it 'links each not-found page back to its public route section', :aggregate_failures do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    request = Rack::MockRequest.new(described_class)
+
+    expected_actions = {
+      '/packages/.env' => ['/packages', 'Przeglądaj pakiety'],
+      '/2026-09/packages/.env' => ['/packages', 'Przeglądaj pakiety'],
+      '/languages/not-a-language' => ['/languages', 'Przeglądaj języki'],
+      '/organizations/github/missing' => ['/organizations', 'Rankingi organizacji'],
+      '/editions/2024' => ['/editions', 'Przeglądaj edycje'],
+      '/this-page-does-not-exist' => ['/people', 'Przejdź do rankingów']
+    }
+
+    expected_actions.each do |path, (target, label)|
+      response = request.get(path)
+
+      expect(response.status).to eq(404)
+      expect(response.body).to include(%(href="#{target}">#{label}</a>))
     end
   end
 

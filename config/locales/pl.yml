@@ -245,6 +245,9 @@ pl:
     profile: "Profil"
   not_found:
     actions:
+      editions: "Przeglądaj edycje"
+      languages: "Przeglądaj języki"
+      organizations: "Rankingi organizacji"
       packages: "Przeglądaj pakiety"
       rankings: "Przejdź do rankingów"
     body: "Adres mógł się zmienić albo strona nigdy nie istniała. Wróć do rankingów lub odkryj polskie pakiety open source."

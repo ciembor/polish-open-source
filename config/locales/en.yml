@@ -245,6 +245,9 @@ en:
     profile: "Profile"
   not_found:
     actions:
+      editions: "Browse editions"
+      languages: "Browse languages"
+      organizations: "Organization rankings"
       packages: "Browse packages"
       rankings: "Go to rankings"
     body: "The address may have changed, or this page never existed. Return to the rankings or explore Polish open-source packages."

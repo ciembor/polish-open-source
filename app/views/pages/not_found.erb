@@ -6,8 +6,7 @@
       <h1><%= h t('not_found.title') %></h1>
       <p class="lede"><%= h t('not_found.body') %></p>
       <div class="not-found__actions">
-        <a class="not-found__action not-found__action--primary" href="<%= h app_path(people_rankings_path(period_slug: 'latest')) %>"><%= h t('not_found.actions.rankings') %></a>
-        <a class="not-found__action" href="<%= h app_path(package_index_path(period_slug: 'latest')) %>"><%= h t('not_found.actions.packages') %></a>
+        <a class="not-found__action not-found__action--primary" href="<%= h app_path(@not_found_action_path) %>"><%= h @not_found_action_label %></a>
       </div>
     </div>
   </div>
