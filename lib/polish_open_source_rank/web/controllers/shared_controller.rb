@@ -38,7 +38,7 @@ module PolishOpenSourceRank
           period = publication.resolve_period.call(period_slug: period_slug)
           return period if period || period_slug == 'latest'
 
-          halt 404
+          halt_not_found!
         end
 
         def latest_period
@@ -76,13 +76,13 @@ module PolishOpenSourceRank
           redirect_query_ranking_page!(paginator) if route_page.nil? && params['page']
           paginator
         rescue Presentation::RankingPaginator::InvalidPage
-          halt 404
+          halt_not_found!
         end
 
         def fetch_ranking_page(paginator, &)
           paginator.fetch(&)
         rescue Presentation::RankingPaginator::InvalidPage
-          halt 404
+          halt_not_found!
         end
 
         def redirect_query_ranking_page!(paginator)

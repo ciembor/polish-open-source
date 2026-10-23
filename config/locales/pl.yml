@@ -244,9 +244,13 @@ pl:
     people: "Ludzie"
     profile: "Profil"
   not_found:
-    body: "Wybrana lokalizacja nie jest obsługiwana."
-    description: "Nie znaleziono rankingu dla podanej lokalizacji."
-    title: "Ranking nie znaleziony"
+    actions:
+      packages: "Przeglądaj pakiety"
+      rankings: "Przejdź do rankingów"
+    body: "Adres mógł się zmienić albo strona nigdy nie istniała. Wróć do rankingów lub odkryj polskie pakiety open source."
+    description: "Nie znaleziono żądanej strony."
+    eyebrow: "Nie znaleziono strony"
+    title: "Tu nic nie ma"
   rankings:
     back: "Wróć do rankingu"
     empty:

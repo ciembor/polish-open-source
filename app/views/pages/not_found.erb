@@ -1,4 +1,14 @@
-<section class="empty-state">
-  <h1><%= h t('not_found.title') %></h1>
-  <p><%= h t('not_found.body') %></p>
+<section class="not-found">
+  <div class="not-found__inner content">
+    <p class="not-found__code" aria-hidden="true">404</p>
+    <div class="not-found__content">
+      <p class="eyebrow"><%= h t('not_found.eyebrow') %></p>
+      <h1><%= h t('not_found.title') %></h1>
+      <p class="lede"><%= h t('not_found.body') %></p>
+      <div class="not-found__actions">
+        <a class="not-found__action not-found__action--primary" href="<%= h app_path(people_rankings_path(period_slug: 'latest')) %>"><%= h t('not_found.actions.rankings') %></a>
+        <a class="not-found__action" href="<%= h app_path(package_index_path(period_slug: 'latest')) %>"><%= h t('not_found.actions.packages') %></a>
+      </div>
+    </div>
+  </div>
 </section>

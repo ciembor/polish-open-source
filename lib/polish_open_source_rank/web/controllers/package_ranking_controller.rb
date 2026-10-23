@@ -30,7 +30,7 @@ module PolishOpenSourceRank
               offset: offset
             )
           end
-          halt 404 if repository_kind && pagination.records.empty?
+          halt_not_found! if repository_kind && pagination.records.empty?
 
           page = package_ranking_page(period_slug, ecosystem, metric_slug, metric, repository_kind, pagination)
           assign_public_page(public_page_state.package_ranking_detail(page))

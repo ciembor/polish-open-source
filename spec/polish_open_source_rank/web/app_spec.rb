@@ -1091,6 +1091,23 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(missing_profile['Cache-Control']).to be_nil
   end
 
+  it 'renders a cacheable 404 instead of raising for unsupported package ecosystems', :aggregate_failures do
+    ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
+    request = Rack::MockRequest.new(described_class)
+
+    responses = [
+      request.get('/packages/.env'),
+      request.get('/2026-09/packages/.env')
+    ]
+
+    responses.each do |response|
+      expect(response.status).to eq(404)
+      expect(response.body).to include('Tu nic nie ma')
+      expect(response.body).to include('Przejdź do rankingów')
+      expect(response['Cache-Control']).to eq('public, max-age=30, stale-while-revalidate=120, stale-if-error=300')
+    end
+  end
+
   it 'keeps public cache separate from private session responses', :aggregate_failures do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     request = Rack::MockRequest.new(described_class)
@@ -1289,6 +1306,10 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(Rack::MockRequest.new(described_class).get('/healthz').body).to eq('ok')
     expect(Rack::MockRequest.new(described_class).get('/people/locations/unknown').status).to eq(404)
     expect(Rack::MockRequest.new(described_class).get('/2026-13').status).to eq(404)
+    response = Rack::MockRequest.new(described_class).get('/this-page-does-not-exist')
+
+    expect(response.body).to include('Tu nic nie ma')
+    expect(response.body).to include('name="robots" content="noindex,follow"')
   end
 
   it 'serves robots.txt and sitemap.xml for crawlers', :aggregate_failures do

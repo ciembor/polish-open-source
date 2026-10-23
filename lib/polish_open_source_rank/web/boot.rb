@@ -13,6 +13,7 @@ module PolishOpenSourceRank
         '/css/components/hero.css',
         '/css/components/rankings.css',
         '/css/pages/editions.css',
+        '/css/pages/not_found.css',
         '/css/pages/about.css',
         '/css/pages/profiles.css',
         '/css/components/notices.css',

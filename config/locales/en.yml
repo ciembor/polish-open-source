@@ -244,9 +244,13 @@ en:
     people: "People"
     profile: "Profile"
   not_found:
-    body: "The selected location is not supported."
-    description: "No ranking was found for the selected location."
-    title: "Ranking not found"
+    actions:
+      packages: "Browse packages"
+      rankings: "Go to rankings"
+    body: "The address may have changed, or this page never existed. Return to the rankings or explore Polish open-source packages."
+    description: "The requested page could not be found."
+    eyebrow: "Page not found"
+    title: "Nothing to see here"
   rankings:
     back: "Back to ranking"
     empty:

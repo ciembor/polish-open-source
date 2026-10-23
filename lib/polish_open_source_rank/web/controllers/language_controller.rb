@@ -43,7 +43,7 @@ module PolishOpenSourceRank
           @period = period_for(period_slug)
           public_html_cache!('language', period_slug, language, @period, public_cache_revision(@period))
           ranking_groups = languages.show_language.call(language: language, period_start: @period, limit: 10)
-          halt 404 unless ranking_groups.values.any? { |rankings| rankings.values.any?(&:any?) }
+          halt_not_found! unless ranking_groups.values.any? { |rankings| rankings.values.any?(&:any?) }
 
           assign_public_page(
             public_page_state.language(

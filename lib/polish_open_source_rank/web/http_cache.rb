@@ -72,7 +72,7 @@ module PolishOpenSourceRank
 
       def halt_negative_public_404!(*parts)
         negative_public_cache!(*parts)
-        halt 404
+        halt_not_found!
       end
 
       def cache_response!(*etag_parts, cache_control:, vary_cookie:)

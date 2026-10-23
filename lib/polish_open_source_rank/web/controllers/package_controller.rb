@@ -21,13 +21,17 @@ module PolishOpenSourceRank
         end
 
         def render_package_ecosystem(period_slug, ecosystem)
+          unless Contexts::Packages::Domain::Ecosystem.supported?(ecosystem)
+            halt_negative_public_404!('package-ecosystem', period_slug, ecosystem)
+          end
+
           @period_slug = period_slug
           @period = period_for(period_slug)
           public_html_cache!('package-ecosystem', period_slug, ecosystem, @period, public_cache_revision(@period))
           rankings = packages.show_package_ecosystem_rankings.call(ecosystem: ecosystem, period_start: @period,
                                                                    limit: 10)
           ranking_groups = package_ranking_groups(ecosystem, @period, 10)
-          halt 404 if rankings.empty?
+          halt_not_found! if rankings.empty?
           assign_public_page(
             public_page_state.package_ecosystem(
               period_slug: period_slug,

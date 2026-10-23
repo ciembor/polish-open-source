@@ -39,7 +39,7 @@ module PolishOpenSourceRank
 
         def render_editions(year = nil)
           page = publication.list_editions.call(year: year)
-          halt 404 unless page
+          halt_not_found! unless page
           public_html_cache!('editions', @year || 'index', latest_public_cache_key)
           assign_public_page(public_page_state.editions(page: page, year: year))
           erb :'pages/editions'
@@ -49,7 +49,7 @@ module PolishOpenSourceRank
           @period_slug = 'latest'
           @period = latest_period
           @profile = publication.show_user_profile.call(platform: platform, login: login, period_start: @period)
-          halt 404 unless @profile
+          halt_not_found! unless @profile
           redirect_to_canonical_profile_path(user_profile_path(@profile))
           profile_cache!(@profile)
           assign_public_page(public_page_state.user_profile(profile: @profile, own_profile: own_profile?(@profile)))
@@ -61,7 +61,7 @@ module PolishOpenSourceRank
           @period = latest_period
           @repository = publication.show_repository_profile.call(platform: platform, owner: owner, name: name,
                                                                  period_start: @period)
-          halt 404 unless @repository
+          halt_not_found! unless @repository
           repository_profile_cache!(@repository)
           assign_public_page(public_page_state.repository_profile(repository: @repository))
           erb :'profiles/repository'
@@ -72,7 +72,7 @@ module PolishOpenSourceRank
           @period = latest_period
           @organization = publication.show_organization_profile.call(platform: platform, login: login,
                                                                      period_start: @period)
-          halt 404 unless @organization
+          halt_not_found! unless @organization
           redirect_to_canonical_profile_path(organization_profile_path(@organization))
           profile_cache!(@organization)
           assign_public_page(public_page_state.organization_profile(organization: @organization))
@@ -88,7 +88,7 @@ module PolishOpenSourceRank
             name: name,
             period_start: @period
           )
-          halt 404 unless @organization_repository
+          halt_not_found! unless @organization_repository
           repository_profile_cache!(@organization_repository)
           assign_public_page(public_page_state.organization_repository_profile(repository: @organization_repository))
           erb :'profiles/organization_repository'

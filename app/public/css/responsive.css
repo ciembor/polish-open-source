@@ -77,6 +77,15 @@
 }
 
 @media (max-width: 680px) {
+  .not-found__inner {
+    gap: 34px;
+    grid-template-columns: 1fr;
+  }
+
+  .not-found__code {
+    font-size: clamp(7rem, 45vw, 12rem);
+  }
+
   .hero__inner {
     grid-template-columns: 1fr;
     padding: 42px 0 34px;

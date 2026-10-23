@@ -16,7 +16,7 @@ module PolishOpenSourceRank
           paginator = ranking_paginator(page)
           cache_language_repository_ranking!(period_slug, language, repository_kind_slug, metric_slug, paginator.number)
           pagination = language_repository_ranking(language, repository_kind, metric, paginator)
-          halt 404 if pagination.records.empty?
+          halt_not_found! if pagination.records.empty?
 
           render_language_repository_ranking_page(
             period_slug,

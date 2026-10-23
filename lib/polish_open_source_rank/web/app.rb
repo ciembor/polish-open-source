@@ -43,16 +43,25 @@ module PolishOpenSourceRank
       end
 
       not_found do
-        status 404
-        @title = t('not_found.title')
-        @description = t('not_found.description')
-        erb :'pages/not_found'
+        render_not_found_page
       end
 
       private
 
       def public_cache_revision(period)
         publication.cache_revision.for_period(period)
+      end
+
+      def halt_not_found!
+        halt 404, render_not_found_page
+      end
+
+      def render_not_found_page
+        status 404
+        @title = t('not_found.title')
+        @description = t('not_found.description')
+        @robots = 'noindex,follow'
+        erb :'pages/not_found'
       end
 
       def latest_public_cache_key
