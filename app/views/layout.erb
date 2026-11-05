@@ -10,7 +10,7 @@
     <meta property="og:url" content="<%= h canonical_url %>">
     <meta property="og:type" content="<%= h open_graph_type %>">
     <meta property="og:image" content="<%= h social_image_url %>">
-    <meta property="og:site_name" content="Polish Open Source">
+    <meta property="og:site_name" content="<%= h t('site.name') %>">
     <meta property="og:locale" content="<%= h og_locale %>">
     <% if localized_page? %>
       <% og_alternate_locales.each do |locale| %>
@@ -54,7 +54,7 @@
   <body>
     <header class="site-header">
       <div class="site-header__inner">
-        <a class="brand" href="<%= h period_base_path('latest') %>"><img src="/icons/polish-open-source.png" alt="" aria-hidden="true">Polish Open Source</a>
+        <a class="brand" href="<%= h period_base_path('latest') %>"><img src="/icons/polish-open-source.png" alt="" aria-hidden="true"><%= h t('site.name') %></a>
         <nav class="nav js-nav" aria-label="<%= h t('nav.menu') %>">
           <a class="nav__link js-secondary-control js-collapsible-control <%= active_nav_link_class(:people) %>" href="<%= h app_path(people_rankings_path(period_slug: 'latest')) %>"><%= h t('nav.people') %></a>
           <a class="nav__link js-secondary-control js-collapsible-control <%= active_nav_link_class(:organizations) %>" href="<%= h app_path(organization_rankings_path(period_slug: 'latest')) %>"><%= h t('nav.organizations') %></a>

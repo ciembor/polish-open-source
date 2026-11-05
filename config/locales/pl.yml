@@ -1,14 +1,16 @@
 pl:
+  site:
+    name: "Polski Open Source"
   about:
     back_to_top: "Wróć na górę"
     badge:
       eyebrow: "Badge"
       hierarchy:
         items:
-          - "Jeśli jesteś w top 100 w Polsce, badge pokazuje Polish Open Source i Twoją pozycję w rankingu kraju."
+          - "Jeśli jesteś w top 100 w Polsce, badge pokazuje Polski Open Source i Twoją pozycję w rankingu kraju."
           - "Jeśli nie jesteś w top 100 w Polsce, ale jesteś w top 10 swojego miasta, badge pokazuje nazwę miasta i Elite, na przykład Kraków Elite."
           - "Jeśli nie jesteś w top 10 miasta, ale jesteś w top 100 miasta, badge pokazuje nazwę miasta i Top 100, na przykład Kraków Top 100."
-          - "Jeśli jesteś poza top 100 Polski i poza top 100 miasta, badge nadal może być wyświetlony jako Polish Open Source."
+          - "Jeśli jesteś poza top 100 Polski i poza top 100 miasta, badge nadal może być wyświetlony jako Polski Open Source."
         title: "Hierarchia badge profilu"
       paragraphs:
         - "Badge to publiczna odznaka SVG, którą możesz wkleić do profilu GitHuba albo README repozytorium. Jest generowana z ostatniego publicznego snapshotu i aktualizuje się po kolejnym przeliczeniu rankingu."
@@ -25,7 +27,7 @@ pl:
     discord:
       eyebrow: "Discord"
       paragraphs:
-        - "Discord jest przeznaczony dla osób obecnych w danych Polish Open Source."
+        - "Discord jest przeznaczony dla osób obecnych w danych Polski Open Source."
         - "Po zalogowaniu GitHubem zaproszenie do Discorda jest widoczne na stronie profilu. Możesz tam połączyć konto Discord, a aplikacja sprawdzi Twój profil rankingowy. Bot synchronizuje dostęp i role na serwerze."
         - "Role i dostępne kanały wynikają z ostatniego publicznego snapshotu. Mogą zależeć od pozycji w Polsce, pozycji w mieście, języków repozytoriów oraz najwyższych miejsc w rankingu."
         - "Jeśli nie masz dostępu, sprawdź publiczną lokalizację, zmień ją w profilu platformy z repozytoriami i poczekaj na kolejny snapshot."
@@ -109,7 +111,7 @@ pl:
         title: "Metryki pakietów"
       overview:
         paragraphs:
-          - "Polish Open Source wykrywa także pakiety powiązane z polskimi repozytoriami open source. Analizowane są pliki w domyślnej gałęzi repozytorium i manifesty charakterystyczne dla konkretnych ekosystemów."
+          - "Polski Open Source wykrywa także pakiety powiązane z polskimi repozytoriami open source. Analizowane są pliki w domyślnej gałęzi repozytorium i manifesty charakterystyczne dla konkretnych ekosystemów."
           - "Pomijane są katalogi techniczne i katalogi zależności, między innymi .git, build, dist, node_modules, target i vendor/bundle."
         title: "Zakres wykrywania"
       title: "Rankingi pakietów"
@@ -149,9 +151,9 @@ pl:
       packages: "Pakiety"
       rankings: "Rankingi"
     seo:
-      title: "O Polish Open Source"
+      title: "O Polski Open Source"
       description: "Misja, zasady rankingu open source dla Polski, pakiety, Discord, badge oraz publiczne źródła danych projektu."
-    title: "O Polish Open Source"
+    title: "O Polski Open Source"
   auth:
     login:
       github: "Zaloguj"
@@ -400,9 +402,9 @@ pl:
       top: "%{kind}, %{ecosystem}, według pobrań z 30 dni"
     seo:
       ecosystem_description: "Rankingi pakietów %{ecosystem} używanych przez polskie repozytoria open source."
-      ecosystem_title: "Pakiety %{ecosystem} - Polish Open Source"
+      ecosystem_title: "Pakiety %{ecosystem} - Polski Open Source"
       index_description: "Rankingi pakietów używanych przez polskie repozytoria open source."
-      index_title: "Pakiety open source - Polish Open Source"
+      index_title: "Pakiety open source - Polski Open Source"
       profile_description: "Profil pakietu %{package} w ekosystemie %{ecosystem}, z pobraniami, zależnymi projektami i powiązanymi repozytoriami."
       profile_title: "%{package} - pakiet open source"
       ranking_description: "Ranking pakietów %{ecosystem} według metryki %{metric}."
@@ -464,7 +466,7 @@ pl:
     repository_count: "%{count} repozytoriów"
     seo:
       index_description: "Rankingi języków programowania używanych w polskich repozytoriach open source."
-      index_title: "Języki open source - Polish Open Source"
+      index_title: "Języki open source - Polski Open Source"
       language_description: "Najpopularniejsze polskie repozytoria open source w języku %{language}, z podziałem na ludzi i organizacje."
       language_title: "%{language} - polskie repozytoria open source"
       ranking_description: "Ranking języków programowania według metryki %{metric}."
@@ -498,7 +500,7 @@ pl:
   organizations:
     avatar_alt: "Logo organizacji %{organization}"
     badge:
-      alt: "Badge Polish Open Source Org"
+      alt: "Badge Polski Open Source Org"
       title: "Odznaka organizacji"
     links:
       source_profile: "Organizacja na %{platform}"
@@ -523,7 +525,7 @@ pl:
   users:
     avatar_alt: "Zdjęcie profilowe %{user}"
     badge:
-      alt: "Badge Polish Open Source"
+      alt: "Badge Polski Open Source"
       title: "Odznaka"
     discord:
       groups_title: "Dostępne grupy"

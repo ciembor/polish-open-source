@@ -1,4 +1,6 @@
 en:
+  site:
+    name: "Polish Open Source"
   about:
     back_to_top: "Back to top"
     badge:

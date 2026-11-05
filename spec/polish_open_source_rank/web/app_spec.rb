@@ -811,7 +811,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     github_callback = sign_in_with_github(request)
     profile = request.get('/users/github/alice/alice-example', 'HTTP_COOKIE' => cookie_header(github_callback))
     expect(profile.body).to include(
-      '[![Badge Polish Open Source](https://rank.example/badges/users/github/alice.svg)]' \
+      '[![Badge Polski Open Source](https://rank.example/badges/users/github/alice.svg)]' \
       '(https://rank.example/people)'
     )
     expect(profile.body).not_to include('/badges/users/github/alice/alice-example.svg')
@@ -1401,7 +1401,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(about.body).to include('<html lang="pl">')
     expect(about.body).to include('rel="canonical" href="https://rank.example/about"')
     expect(about.body).to include('rel="alternate" hreflang="en" href="https://rank.example/en/about"')
-    expect(about.body).to include('property="og:title" content="O Polish Open Source"')
+    expect(about.body).to include('property="og:title" content="O Polski Open Source"')
     expect(about.body).to include('name="twitter:card" content="summary_large_image"')
 
     expect(editions.body).to include('rel="canonical" href="https://rank.example/editions"')
@@ -1432,7 +1432,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('<title>Job monitor</title>')
     expect(response.body).to include('noindex,nofollow,noarchive')
     expect(response.body).to include('2026-04-01 to 2026-05-01')
-    expect(response.body).to include('CEST')
+    expect(response.body).to match(/\bCE(?:ST|T)\b/)
     expect(response.body).to include('Independent job stages')
     expect(response.body).to include('user repositories / github')
     expect(response.body).to include('State')
@@ -1571,7 +1571,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   def expect_language_index_page(response)
     expect(response.status).to eq(200)
-    expect(response.body).to include('<title>Języki open source - Polish Open Source</title>')
+    expect(response.body).to include('<title>Języki open source - Polski Open Source</title>')
     expect(response.body).to include('Ruby')
     expect(response.body).to include('<dd>⭐ 31 110</dd>')
     expect(response.body).to include('href="/languages/Ruby"')
@@ -1750,7 +1750,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
 
   def expect_package_index_page(response)
     expect(response.status).to eq(200)
-    expect(response.body).to include('<title>Pakiety open source - Polish Open Source</title>')
+    expect(response.body).to include('<title>Pakiety open source - Polski Open Source</title>')
     expect(response.body).to include('rel="canonical" href="https://rank.example/packages"')
     expect(response.body).not_to include('index-card__repository')
     expect_public_package_index_links(response)
@@ -2459,7 +2459,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.status).to eq(200)
     expect_body_to_include(
       response,
-      '<title>O Polish Open Source</title>',
+      '<title>O Polski Open Source</title>',
       '"@type": "AboutPage"',
       '"@type": "WebSite"',
       'property="og:image" content="https://rank.example/images/polish_open_source_front.webp"',

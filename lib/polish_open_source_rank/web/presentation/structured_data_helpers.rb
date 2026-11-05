@@ -31,7 +31,7 @@ module PolishOpenSourceRank
             '@context' => 'https://schema.org',
             '@type' => 'WebSite',
             '@id' => full_url('/#website'),
-            'name' => 'Polish Open Source',
+            'name' => t('site.name'),
             'url' => full_url('/'),
             'inLanguage' => current_locale,
             'publisher' => { '@id' => full_url('/#organization') }
@@ -45,7 +45,7 @@ module PolishOpenSourceRank
             '@context' => 'https://schema.org',
             '@type' => 'Organization',
             '@id' => full_url('/#organization'),
-            'name' => 'Polish Open Source',
+            'name' => t('site.name'),
             'alternateName' => 'Open Source Polska',
             'url' => full_url('/'),
             'logo' => {
@@ -75,7 +75,7 @@ module PolishOpenSourceRank
         end
 
         def page_schema_details
-          return { 'about' => { '@type' => 'Organization', 'name' => 'Polish Open Source' } } if about_page?
+          return { 'about' => { '@type' => 'Organization', 'name' => t('site.name') } } if about_page?
           return { 'mainEntity' => collection_schema } if collection_page?
           return { 'mainEntity' => profile_schema } if profile_page?
           return repository_schema if repository_page?

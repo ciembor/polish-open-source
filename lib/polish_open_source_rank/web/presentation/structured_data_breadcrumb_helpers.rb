@@ -25,7 +25,7 @@ module PolishOpenSourceRank
         end
 
         def breadcrumb_items
-          items = [{ name: 'Polish Open Source', path: period_base_path('latest') }]
+          items = [{ name: t('site.name'), path: period_base_path('latest') }]
           items << { name: t('scope.poland'), path: period_base_path('latest') }
           items << { name: scope_name(@scope), path: scope_path(@scope) } if city_scope?
           items.concat(current_page_breadcrumbs)
