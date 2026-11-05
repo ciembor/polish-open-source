@@ -2492,6 +2492,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
                                   "[contains(@class, 'about-section__back-link')]")
     ).to be_nil
     expect_active_nav_link(response.body, '/')
+    expect(html_elements(response.body, "//nav[contains(@class, 'nav')]/a").first.text).to eq('O projekcie')
     expect(response.body).not_to include('Programista i autor projektu')
     expect(response.body).not_to include('//locations')
   end
