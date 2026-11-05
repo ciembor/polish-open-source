@@ -12,7 +12,7 @@ gem 'rake', '~> 13.3'
 gem 'rexml', '~> 3.4'
 gem 'sequel', '~> 5.90'
 gem 'sinatra', '~> 4.1'
-gem 'sqlite3', '~> 2.9', '>= 2.9.6'
+gem 'sqlite3', '~> 2.10', '>= 2.10.2'
 gem 'zeitwerk', '~> 2.7'
 
 group :development, :test do
