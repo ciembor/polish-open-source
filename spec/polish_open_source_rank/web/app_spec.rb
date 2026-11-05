@@ -228,7 +228,6 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     request = Rack::MockRequest.new(described_class)
 
-    expect(request.get('/').location).to eq('http://example.org/people')
     expect(request.get('/latest').location).to eq('http://example.org/people')
     expect(request.get('/locations/krakow').location).to eq('http://example.org/people/locations/krakow')
     expect(request.get('/latest/locations/krakow').location).to eq('http://example.org/people/locations/krakow')
@@ -902,10 +901,16 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(invalid_response.status).to eq(404)
   end
 
-  it 'renders the about page' do
-    response = Rack::MockRequest.new(described_class).get('/about')
+  it 'renders the project overview on the home page and redirects the old about path', :aggregate_failures do
+    request = Rack::MockRequest.new(described_class)
+    response = request.get('/')
+    old_about_path = request.get('/about')
+    old_english_about_path = request.get('/en/about')
 
     expect_about_page(response)
+    expect(old_about_path.status).to eq(301)
+    expect(old_about_path.location).to eq('http://example.org/')
+    expect(old_english_about_path.location).to eq('http://example.org/en')
   end
 
   it 'keeps core public pages semantically structured', :aggregate_failures do
@@ -913,7 +918,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     request = Rack::MockRequest.new(described_class)
 
     rankings = request.get('/people')
-    about = request.get('/about')
+    about = request.get('/')
     profile = request.get('/users/github/alice')
 
     expect(html_elements(rankings.body, '//h1').length).to eq(1)
@@ -935,7 +940,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
   end
 
   it 'links about platform cards to source platforms' do
-    response = Rack::MockRequest.new(described_class).get('/about')
+    response = Rack::MockRequest.new(described_class).get('/')
 
     expect(response.body).to include('href="https://github.com/"')
     expect(response.body).to include('href="https://gitlab.com/"')
@@ -946,7 +951,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
 
     ranking_response = Rack::MockRequest.new(described_class).get('/people')
-    about_response = Rack::MockRequest.new(described_class).get('/about')
+    about_response = Rack::MockRequest.new(described_class).get('/')
 
     expect(ranking_response.body).to include('src="/icons/github.svg"')
     expect(ranking_response.body).not_to include('>GH</span>')
@@ -1011,12 +1016,12 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     english_redirect = request.get('/people?lang=en', 'HTTP_COOKIE' => cookie_header(github_callback))
     english_cookie = cookie_header(github_callback, english_redirect)
     english_latest = request.get('/en/people', 'HTTP_COOKIE' => english_cookie)
-    english_about = request.get('/en/about', 'HTTP_COOKIE' => english_cookie)
+    english_about = request.get('/en', 'HTTP_COOKIE' => english_cookie)
     english_profile = request.get('/en/users/github/alice', 'HTTP_COOKIE' => english_cookie)
 
     expect(english_redirect.location).to eq('http://example.org/en/people')
     expect(english_latest.body).to include('<html lang="en">')
-    expect(english_latest.body).to include('href="/en/about"')
+    expect(english_latest.body).to include('href="/en"')
     expect(english_latest.body).to include('href="/en/users/github/alice"')
     expect(english_about.body).to include('<html lang="en">')
     expect(english_profile.body).to include('<html lang="en">')
@@ -1038,7 +1043,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(response.body).to include('href="/people/locations/krakow"')
     expect(response.body).to include('href="/people/users/top"')
     expect(response.body).to include('href="/editions"')
-    expect(response.body).to include('href="/about"')
+    expect(response.body).to include('href="/"')
   end
 
   it 'uses conditional cache headers for public pages and badges', :aggregate_failures do
@@ -1355,9 +1360,9 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(sitemap_locations).to include('https://rank.example/organizations/active')
     expect(sitemap_locations).to include('https://rank.example/organizations/locations/krakow')
     expect(sitemap_locations).to include('https://rank.example/en/people')
-    expect(sitemap_locations).not_to include('https://rank.example/')
-    expect(sitemap_locations).not_to include('https://rank.example/en')
-    expect(sitemap_locations).to include('https://rank.example/about')
+    expect(sitemap_locations).to include('https://rank.example/')
+    expect(sitemap_locations).to include('https://rank.example/en')
+    expect(sitemap_locations).not_to include('https://rank.example/about')
     expect(sitemap_locations).to include('https://rank.example/en/users/github/alice')
     expect(sitemap_locations).to include('https://rank.example/en/organizations/github/polish-org')
     expect(sitemap_locations).to include('https://rank.example/en/organization-repositories/github/polish-org/toolkit')
@@ -1392,15 +1397,15 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     ENV['DATABASE_URL'] = "sqlite://#{seed_database}"
     request = Rack::MockRequest.new(described_class)
 
-    about = request.get('/about')
+    about = request.get('/')
     editions = request.get('/editions')
     user_profile = request.get('/users/github/alice')
     repository_profile = request.get('/repositories/github/alice/app')
-    english_about = request.get('/en/about')
+    english_about = request.get('/en')
 
     expect(about.body).to include('<html lang="pl">')
-    expect(about.body).to include('rel="canonical" href="https://rank.example/about"')
-    expect(about.body).to include('rel="alternate" hreflang="en" href="https://rank.example/en/about"')
+    expect(about.body).to include('rel="canonical" href="https://rank.example/"')
+    expect(about.body).to include('rel="alternate" hreflang="en" href="https://rank.example/en"')
     expect(about.body).to include('property="og:title" content="O Polski Open Source"')
     expect(about.body).to include('name="twitter:card" content="summary_large_image"')
 
@@ -1415,7 +1420,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
     expect(repository_profile.body).to include('name="twitter:image" content="https://rank.example/images/polish_open_source_front.webp"')
 
     expect(english_about.body).to include('<html lang="en">')
-    expect(english_about.body).to include('rel="canonical" href="https://rank.example/en/about"')
+    expect(english_about.body).to include('rel="canonical" href="https://rank.example/en"')
     expect(english_about.body).to include('property="og:locale" content="en_US"')
     expect(english_about.body).to include('Back to top')
     expect(english_about.body).to include('Data sources')
@@ -2475,7 +2480,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       'Codeberg',
       'Maciej Ciemborowicz',
       'src="/images/maciej-ciemborowicz.jpg"',
-      'href="/people"'
+      'href="/"'
     )
     expect(
       html_element(response.body, "//section[@id='mission']//div[contains(@class, 'about-section__eyebrow-row')]" \
@@ -2486,7 +2491,7 @@ RSpec.describe PolishOpenSourceRank::Web::App do
       html_element(response.body, "//section[@id='mission']//h2/following-sibling::a" \
                                   "[contains(@class, 'about-section__back-link')]")
     ).to be_nil
-    expect_active_nav_link(response.body, '/about')
+    expect_active_nav_link(response.body, '/')
     expect(response.body).not_to include('Programista i autor projektu')
     expect(response.body).not_to include('//locations')
   end

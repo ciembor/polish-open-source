@@ -6,9 +6,9 @@ module PolishOpenSourceRank
       # Owns the public URL inventory so sitemap rendering does not reach into read models.
       class SitemapCatalog
         STATIC_PATHS = [
+          '/',
           '/people',
           '/organizations',
-          '/about',
           '/editions',
           '/languages',
           '/packages'

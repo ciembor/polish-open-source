@@ -25,7 +25,9 @@ module PolishOpenSourceRank
         end
 
         def breadcrumb_items
-          items = [{ name: t('site.name'), path: period_base_path('latest') }]
+          items = [{ name: t('site.name'), path: localized_public_path('/', locale: current_locale) }]
+          return items if project_overview_page?
+
           items << { name: t('scope.poland'), path: period_base_path('latest') }
           items << { name: scope_name(@scope), path: scope_path(@scope) } if city_scope?
           items.concat(current_page_breadcrumbs)
@@ -51,7 +53,7 @@ module PolishOpenSourceRank
         def current_resource_breadcrumbs
           return profile_breadcrumbs if profile_page? || repository_page?
 
-          [{ name: t('about.title'), path: canonical_path }] if about_page?
+          [{ name: t('about.title'), path: canonical_path }] if project_overview_page?
         end
 
         def package_breadcrumbs

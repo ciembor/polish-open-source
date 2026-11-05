@@ -63,7 +63,7 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::RoutingHelpers do
   end
 
   it 'builds page-specific schema types' do
-    helper_host.instance_variable_set(:@canonical_path, '/about')
+    helper_host.instance_variable_set(:@canonical_path, '/')
     expect(helper_host.send(:structured_data_type)).to eq('AboutPage')
 
     helper_host.remove_instance_variable(:@canonical_path)
@@ -104,8 +104,8 @@ RSpec.describe PolishOpenSourceRank::Web::Presentation::RoutingHelpers do
     helper_host.env['polish_open_source_rank.unlocalized_path'] = '/editions/2025'
     expect(helper_host.nav_link_active?(:editions)).to be(true)
 
-    helper_host.request.path_info = '/en/about'
-    helper_host.env['polish_open_source_rank.unlocalized_path'] = '/about'
+    helper_host.request.path_info = '/en'
+    helper_host.env['polish_open_source_rank.unlocalized_path'] = '/'
     expect(helper_host.nav_link_active?(:about)).to be(true)
     expect(helper_host.nav_link_active?(:missing)).to be(false)
   end

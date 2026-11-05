@@ -56,7 +56,7 @@ module PolishOpenSourceRank
         end
 
         def about_nav_active?
-          about_page? || unlocalized_request_path == '/about'
+          project_overview_page? || unlocalized_request_path == '/'
         end
 
         def profile_nav_active?
@@ -73,6 +73,7 @@ module PolishOpenSourceRank
         end
 
         def people_section_path?(path)
+          return false if path == '/'
           return true if path.start_with?('/users/', '/repositories/')
 
           path.match?(%r{\A/(?:|latest(?:/locations/[^/]+)?|\d{4}-\d{2}(?:/locations/[^/]+)?)

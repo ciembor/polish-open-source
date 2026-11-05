@@ -131,7 +131,7 @@ module PolishOpenSourceRank
         end
 
         def social_image_path
-          return '/images/polish_open_source_front.webp' if about_page?
+          return '/images/polish_open_source_front.webp' if project_overview_page?
           return '/images/polish_open_source_front.webp' if @editions
           return '/images/polish_open_source_front.webp' if profile_page? || repository_page?
 

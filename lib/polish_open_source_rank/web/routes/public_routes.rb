@@ -16,7 +16,7 @@ module PolishOpenSourceRank
           def register_static_pages(app)
             register_metadata_routes(app)
             register_ranking_shortcuts(app)
-            register_about_routes(app)
+            register_project_overview_routes(app)
             register_edition_routes(app)
           end
 
@@ -31,7 +31,6 @@ module PolishOpenSourceRank
           end
 
           def register_ranking_shortcuts(app)
-            app.get('/') { redirect_canonical_public_path('/people') }
             app.get('/people') { render_rankings('latest', 'poland') }
             app.get('/latest') { redirect_canonical_public_path('/people') }
             app.get('/organizations') { render_rankings('latest', 'poland', section: 'organizations') }
@@ -41,14 +40,16 @@ module PolishOpenSourceRank
             app.get('/people/locations/:slug') { render_city('latest', params.fetch('slug')) }
           end
 
-          def register_about_routes(app)
-            app.get '/about' do
+          def register_project_overview_routes(app)
+            app.get '/' do
               @title = t('about.seo.title')
               @description = t('about.seo.description')
-              @canonical_path = '/about'
-              public_html_cache!('about')
+              @canonical_path = '/'
+              public_html_cache!('project-overview')
               erb :'pages/about'
             end
+
+            app.get('/about') { redirect_canonical_public_path('/') }
           end
 
           def register_edition_routes(app)

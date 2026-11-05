@@ -6,8 +6,8 @@ module PolishOpenSourceRank
       module StructuredDataPageTypeHelpers
         private
 
-        def about_page?
-          @canonical_path == '/about'
+        def project_overview_page?
+          @canonical_path == '/'
         end
 
         def collection_page?
@@ -27,7 +27,7 @@ module PolishOpenSourceRank
         end
 
         def structured_data_type
-          return 'AboutPage' if about_page?
+          return 'AboutPage' if project_overview_page?
           return 'SoftwareSourceCode' if repository_resource?
           return 'ProfilePage' if profile_resource?
           return 'CollectionPage' if collection_resource?
