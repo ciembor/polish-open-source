@@ -28,4 +28,4 @@ end
 
 gem 'discordrb', '~> 3.7'
 
-gem 'sentry-ruby', '~> 6.5', require: false
+gem 'sentry-ruby', '~> 7.0', require: false
