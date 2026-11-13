@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
 
       - name: Setup Ruby
-        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1
         with:
           ruby-version: "4.0.5"
           bundler-cache: true
@@ -54,7 +54,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
 
       - name: Setup Ruby
-        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1
         with:
           ruby-version: "4.0.5"
           bundler-cache: true
@@ -75,12 +75,12 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@dc73d59c2d7bd4f8194098a91219eeee6d8a1719 # v4
+        uses: github/codeql-action/init@0911ee96d2d6c8def97122c36c5cadd93829a4b4 # v4
         with:
           languages: ruby
 
       - name: Analyze
-        uses: github/codeql-action/analyze@dc73d59c2d7bd4f8194098a91219eeee6d8a1719 # v4
+        uses: github/codeql-action/analyze@0911ee96d2d6c8def97122c36c5cadd93829a4b4 # v4
 
   container-smoke:
     name: Container smoke
