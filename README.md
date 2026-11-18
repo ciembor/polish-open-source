@@ -1,3 +1,5 @@
+
+
 <div align="center">
   <a href="https://polish-open-source.pl/">
     <img src="app/public/images/polish_open_source_banner.webp" alt="Polish Open Source" width="800">
@@ -48,6 +50,8 @@ Each ecosystem has rankings by repository stars and by monthly repository star g
 - Downloads in the last 30 days: npm, crates.io, Packagist, and Homebrew.
 - Total downloads: crates.io, RubyGems, Hex, Packagist, and NuGet.
 - Dependent package count: RubyGems.
+
+Missing registry metrics are shown as `n/a` when the registry does not expose a reliable source.
 
 ## Discord
 
